@@ -246,6 +246,27 @@ class Screen:
 
         logger.info(f"Input query file: {self.params.query.input_fasta_path}")
 
+        # Update screen data output with the Query information.
+        self.output_screen_data.query.name = self.params.query.query_description
+        self.output_screen_data.query.length = len(self.params.query.aa_raw)
+        self.output_screen_data.query.sequence = self.params.query.aa_raw
+
+        # Update screen data output with the commec run information.
+        if self.params.should_do_biorisk_screening and not self.databases.biorisk_db is None:
+            biorisk_v_info = self.databases.biorisk_db.get_version_information()
+            self.output_screen_data.commec_info.biorisk_database_info = biorisk_v_info.version_date
+
+        if self.params.should_do_protein_screening and not self.databases.protein_db is None:
+            protein_v_info = self.databases.protein_db.get_version_information()
+            self.output_screen_data.commec_info.protein_database_info = protein_v_info.version_date
+
+        if self.params.should_do_nucleotide_screening and not self.databases.nucleotide_db is None:
+            nucleotide_v_info = self.databases.nucleotide_db.get_version_information()
+            self.output_screen_data.commec_info.nucleotide_database_info = nucleotide_v_info.version_date
+
+        if self.params.should_do_benign_screening and not self.databases.benign_hmm is None:
+            benign_v_info = self.databases.benign_hmm.get_version_information()
+            self.output_screen_data.commec_info.benign_database_info = benign_v_info.version_date
 
     def run(self, args: argparse.Namespace):
         """
@@ -428,6 +449,13 @@ def run(args: argparse.Namespace):
     my_screen.run(args)
 
 
+def run(args : argparse.ArgumentParser):
+    """
+    Entry point from commec. Passes args to Screen object, and runs.
+    """
+    my_screen : Screen = Screen()
+    my_screen.run(args)
+
 def main():
     """
     Main function. Passes args to Screen object, which then runs.
@@ -436,7 +464,6 @@ def main():
     add_args(parser)
     args = parser.parse_args()
     run(args)
-
 
 if __name__ == "__main__":
     try:
