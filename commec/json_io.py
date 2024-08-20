@@ -15,8 +15,8 @@
 
 import json
 import string
-from dataclasses import dataclass, asdict, fields, field, is_dataclass
 import os
+from dataclasses import dataclass, asdict, fields, field, is_dataclass
 from typing import Dict, Type, get_origin, Any, get_args
 
 # Seperate versioning for the output JSON.
@@ -37,7 +37,7 @@ class MatchRange:
 class BenignData:
     '''Container to hold data related to the benign status of a taxonomy search'''
     benign : bool = False
-    benign_match_type : str = ""
+    benign_match_type : str = "" # CMscan, Blast, HMM
     percent_identity_e_value : float = 0.0
 
 @dataclass
@@ -55,10 +55,18 @@ class MatchFields:
     # etc etc
 
 @dataclass
+class BioRisk:
+    '''Container to hold information for a match to the query identified as a potential biorisk'''
+    description : str = ""
+    range : MatchRange = field(default_factory = MatchRange)
+    # etc etc
+
+@dataclass
 class BioRiskData:
     '''Container dataclass for a list of matches to biorisks 
     identified from a commec database screen.'''
-    matches : list[MatchFields] = field(default_factory = list)
+    regulated_genes : list[BioRisk] = field(default_factory = list)
+    virulance_factors : list[BioRisk] = field(default_factory = list)
 
 @dataclass
 class TaxonomyData:
@@ -80,14 +88,18 @@ class CommecRunInformation:
     '''Container dataclass to hold general run information for a commec screen '''
     commec_version : str = "0.1.2"
     json_output_version : str = JSON_COMMEC_FORMAT_VERSION
+    biorisk_database_info : str = ""
+    protein_database_info : str = ""
+    nucleotide_database_info : str = ""
+    benign_database_info : str = ""
     # add other settings / run parameters.
 
 @dataclass
 class ScreenData:
     ''' Root dataclass to hold all data related to the screening of an individual query by commec.'''
     recommendation : str = ""
-    query : QueryData = field(default_factory = QueryData)
-    biorisks : list[BioRiskData] = field(default_factory = list)
+    query : QueryData = field(default_factory = QueryData) # maybe this needs to be array too for multiple fasta inputs.
+    biorisks : BioRiskData = field(default_factory = BioRiskData)
     taxonomies : list[TaxonomyData] = field(default_factory = list)
     commec_info : CommecRunInformation = field(default_factory = CommecRunInformation)
 
@@ -97,12 +109,12 @@ class ScreenData:
 
 # The above could be moved to a custom .py script for variable importing under version control.
 
-def encode_screen_data_to_json(input_screendata: ScreenData, output_json_filepath: string = "output.json"):
+def encode_screen_data_to_json(input_screendata: ScreenData, output_json_filepath: string = "output.json") -> None:
     ''' Converts a ScreenData class object into a JSON file at the given filepath.'''
     with open(output_json_filepath, "w", encoding="utf-8") as json_file:
         json.dump(asdict(input_screendata), json_file, indent=4)
 
-def encode_dict_to_screen_data(input_dict : dict):
+def encode_dict_to_screen_data(input_dict : dict) -> ScreenData:
     ''' Converts a dictionary into a ScreenData object, 
     any keys within the dictionary not part of the ScreenData format are lost.
     any missing information will be simple set as defaults.'''
@@ -149,8 +161,13 @@ def dict_to_dataclass(cls: Type, data: Dict[str, Any]) -> Any:
     # Create an instance of the dataclass with the filtered data
     return cls(**filtered_data)
 
-def get_screen_data_from_json(input_json_filepath: string):
-    ''' Loads a JSON file from given filepath and returns a populated ScreenData object from its contents.'''
+def get_screen_data_from_json(input_json_filepath: string) -> ScreenData:
+    ''' Loads a JSON file from given filepath and returns 
+    a populated ScreenData object from its contents. If the file does not
+    exist, then returns a new screen data object.'''
+    if not os.path.exists(input_json_filepath):
+        return ScreenData()
+
     json_string : str
     with open(input_json_filepath, "r", encoding="utf-8") as json_file:
         # Read the file contents as a string
@@ -163,147 +180,3 @@ def get_screen_data_from_json(input_json_filepath: string):
         raise RuntimeError("""Version difference between input (v.{input_version}) and
                             expected (v.{JSON_COMMEC_FORMAT_VERSION}) JSON state file: {input_json_filepath}""")
     return encode_dict_to_screen_data(my_data)
-
-def test1():
-    ''' Simple test to ensure that read/write for json ScreenData I/O is working correctly.'''
-    print("Testing JSON i/o.")
-
-    test_data : ScreenData = ScreenData(
-        recommendation="PASS",
-        query = QueryData(
-            name="Query1",
-            length=10,
-            sequence="ABCDEFGHIJ"
-        ),
-        biorisks = [
-            BioRiskData(
-                matches = [
-                    MatchFields(
-                        "nt"
-                    )
-                ]
-            ),
-            BioRiskData(
-
-            ),
-        ],
-        taxonomies = [
-
-        ],
-        commec_info = CommecRunInformation(
-            commec_version="0.1.2",
-            json_output_version=JSON_COMMEC_FORMAT_VERSION,
-        )
-    )
-
-    encode_screen_data_to_json(test_data, "test.json")
-    test_data_retrieved = get_screen_data_from_json("test.json")
-
-    test_dict_1 = str(asdict(test_data))
-    test_dict_2 = str(asdict(test_data_retrieved))
-    if test_dict_1 == test_dict_2:
-        print("JSON interpreter T1 working correctly.")
-        return 0
-    print("JSON interpreter FAILED.")
-    print("Test JSON Reference data: \n", test_dict_1)
-    print("Test JSON output data: \n", test_dict_2)
-    return 1
-
-def test2():
-    ''' Simple test to ensure that read/write for json ScreenData I/O is working correctly.'''
-    test_data : ScreenData = ScreenData()
-    test_data.recommendation = "PASS"
-    encode_screen_data_to_json(test_data, "test.json")
-    test_data_retrieved = get_screen_data_from_json("test.json")
-    test_dict_1 : str = test_data.format()
-    test_dict_2 : str = test_data_retrieved.format()
-    if test_dict_1 == test_dict_2:
-        print("JSON interpreter T2 working correctly.")
-        return 0
-    print("JSON interpreter FAILED.")
-    print("Test JSON Reference data: \n", test_dict_1)
-    print("Test JSON output data: \n", test_dict_2)
-    return 1
-
-def test3():
-    ''' Simple test to ensure that read/write for json ScreenData I/O is working correctly.'''
-    test_data : ScreenData = ScreenData()
-    test_data.recommendation = "PASS"
-    encode_screen_data_to_json(test_data, "test.json")
-    test_data_retrieved = get_screen_data_from_json("test.json")
-    test_dict_1 = str(test_data.recommendation)
-    test_dict_2 = str(test_data_retrieved.recommendation)
-    if test_dict_1 == test_dict_2:
-        print("JSON interpreter T3 working correctly.")
-        return 0
-
-    print("JSON interpreter FAILED.")
-    print("Test JSON Reference data: \n", test_dict_1)
-    print("Test JSON output data: \n", test_dict_2)
-    return 1
-
-def test4():
-    ''' Simple test to ensure that read/write for json ScreenData I/O is working correctly.'''
-    test_data : ScreenData = ScreenData(
-        recommendation="PASS",
-        query = QueryData(
-            name="Query1",
-            length=10,
-            sequence="ABCDEFGHIJ"
-        ),
-        biorisks = [
-            BioRiskData(
-                matches = [
-                    MatchFields(
-                        "nt"
-                    )
-                ]
-            ),
-        ],
-        taxonomies = [
-
-        ],
-        commec_info = CommecRunInformation(
-            commec_version="0.1.2",
-            json_output_version=JSON_COMMEC_FORMAT_VERSION,
-        )
-    )
-
-    encode_screen_data_to_json(test_data, "test.json")
-    test_data_retrieved = get_screen_data_from_json("test.json")
-    test_data_dict = asdict(test_data_retrieved)
-    test_data_dict["ExtraStuff1"] = "ExtraBitStuff1"
-    test_data_dict["biorisks"][0]["ExtraStuff2"] = "ExtraBitStuff2"
-    test_data_dict["biorisks"].append("ExtraStuff3")
-    test_data_dict["biorisks"].append({"ExtraDictStuff4" : 9999})
-    test_data_dict2 = encode_dict_to_screen_data(test_data_dict)
-    encode_screen_data_to_json(test_data_dict2, "test2.json")
-    test_data_retrieved = get_screen_data_from_json("test2.json")
-
-    test_dict_1 = str(asdict(test_data))
-    test_dict_2 = str(asdict(test_data_dict2))
-    if test_dict_1 == test_dict_2:
-        print("JSON interpreter T4 working correctly.")
-        return 0
-    print("JSON interpreter FAILED.")
-    print("Test JSON Reference data: \n", test_dict_1)
-    print("Test JSON output data: \n", test_dict_2)
-    return 1
-
-if __name__ == "__main__":
-    # Use main as unit test entry point.
-    failed_tests : int = 0
-    failed_tests += test1() # O/I test.
-    failed_tests += test2() # Missing values test
-    failed_tests += test3() # Missing values test
-    failed_tests += test4() # Extra value test
-    # Added values test
-    # Version mismatch test
-    print("Failed", failed_tests, "out of 4 tests.")
-    if failed_tests == 0:
-        print("Testing SUCCESSFUL")
-        os.remove("test.json")
-        os.remove("test2.json")
-    else:
-        print("Testing FAILED")
-
