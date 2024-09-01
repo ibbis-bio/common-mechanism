@@ -247,9 +247,9 @@ class Screen:
         logger.info(f"Input query file: {self.params.query.input_fasta_path}")
 
         # Update screen data output with the Query information.
-        self.output_screen_data.query.name = self.params.query.query_description
-        self.output_screen_data.query.length = len(self.params.query.aa_raw)
-        self.output_screen_data.query.sequence = self.params.query.aa_raw
+        #self.output_screen_data.query.name = self.params.query.query_description
+        #self.output_screen_data.query.length = len(self.params.query.aa_raw)
+        #self.output_screen_data.query.sequence = self.params.query.aa_raw
 
         # Update screen data output with the commec run information.
         if self.params.should_do_biorisk_screening and not self.databases.biorisk_db is None:
@@ -451,7 +451,7 @@ def run(args: argparse.Namespace):
 
 def run(args : argparse.ArgumentParser):
     """
-    Entry point from commec. Passes args to Screen object, and runs.
+    Entry point from commec main. Passes args to Screen object, and runs.
     """
     my_screen : Screen = Screen()
     my_screen.run(args)

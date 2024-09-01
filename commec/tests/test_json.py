@@ -8,30 +8,30 @@ def test_screendata():
     '''Fixture to provide the ScreenData for testing.'''
     return ScreenData(
         recommendation="PASS",
-        query = QueryData(
-            name="Query1",
-            length=10,
-            sequence="ABCDEFGHIJ"
-        ),
-        biorisks = [
-            BioRiskData(
-                matches = [
-                    MatchFields(
-                        "nt"
-                    )
-                ]
-            ),
-            BioRiskData(
-
-            ),
-        ],
-        taxonomies = [
-
-        ],
         commec_info = CommecRunInformation(
             commec_version="0.1.2",
             json_output_version=JSON_COMMEC_FORMAT_VERSION,
-        )
+            biorisk_database_info="0.0.0",
+            protein_database_info="0.0.0",
+            nucleotide_database_info="0.0.0",
+            time_taken="00:00:00:00",
+            date_run="1.1.2024",
+        ),
+        queries= [
+            QueryData(
+                name="Query1",
+                length=10,
+                sequence="ABCDEFGHIJ",
+                recommendation="PASS",
+                biorisks = BioRiskData(
+                    [BioRisk("regulated_gene_01", [MatchRange(10,50), MatchRange(60,80)])],
+                    [BioRisk("virulance_factor_01", [MatchRange(50,60)])],
+                    ),
+                taxonomies = [
+
+                ],
+            ),
+        ],
     )
 
 @pytest.fixture
@@ -77,9 +77,9 @@ def test_erroneous_info(tmp_path, test_screendata):
     # Add erroneous information
     test_data_dict = asdict(test_data_retrieved)
     test_data_dict["ExtraStuff1"] = "ExtraBitStuff1"
-    test_data_dict["biorisks"][0]["ExtraStuff2"] = "ExtraBitStuff2"
-    test_data_dict["biorisks"].append("ExtraStuff3")
-    test_data_dict["biorisks"].append({"ExtraDictStuff4" : 9999})
+    test_data_dict["queries"][0]["ExtraStuff2"] = "ExtraBitStuff2"
+    test_data_dict["queries"][0]["biorisks"]["regulated_genes"].append("ExtraStuff3")
+    test_data_dict["queries"][0]["biorisks"]["regulated_genes"].append({"ExtraDictStuff4" : 9999})
     test_data_dict2 = encode_dict_to_screen_data(test_data_dict)
     encode_screen_data_to_json(test_data_dict2, json_filename4)
     test_data_retrieved = get_screen_data_from_json(json_filename4)

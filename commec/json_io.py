@@ -11,6 +11,14 @@
 
    In this way, the JSON object serves as a common state, that can be updated
     whilst not being temporally appended like a log file i.e. .screen file.
+
+    Example JSON structure:
+    {
+        commec_run_info : {
+            json / commec / database versions etc.
+            time run, date run etc.
+        }
+    }
 '''
 
 import json
@@ -21,6 +29,7 @@ from typing import Dict, Type, get_origin, Any, get_args
 
 # Seperate versioning for the output JSON.
 JSON_COMMEC_FORMAT_VERSION = "1.0"
+
 
 @dataclass
 class MatchRange:
@@ -50,7 +59,7 @@ class MatchFields:
     id : int = 0
     taxon : str = ""
     kingdom : str = ""
-    range : MatchRange = field(default_factory = MatchRange)
+    ranges : list[MatchRange] = field(default_factory = list)
     is_benign : BenignData = field(default_factory = BenignData)
     # etc etc
 
@@ -58,7 +67,7 @@ class MatchFields:
 class BioRisk:
     '''Container to hold information for a match to the query identified as a potential biorisk'''
     description : str = ""
-    range : MatchRange = field(default_factory = MatchRange)
+    range : list[MatchRange] = field(default_factory = list)
     # etc etc
 
 @dataclass
@@ -73,6 +82,7 @@ class TaxonomyData:
     '''Container dataclass for a list of matches of taxonomy hits, 
     identified from a commec database screen.'''
     is_regulated : bool
+    regulation_agency : str = ""
     matches : list[MatchFields] = field(default_factory = list)
 
 @dataclass
@@ -82,6 +92,9 @@ class QueryData:
     name : str = ""
     length : int = 0
     sequence : str = ""
+    recommendation : str = "" # Global recommendation.
+    biorisks : BioRiskData = field(default_factory = BioRiskData)
+    taxonomies : list[TaxonomyData] = field(default_factory = list)
 
 @dataclass
 class CommecRunInformation:
@@ -92,16 +105,16 @@ class CommecRunInformation:
     protein_database_info : str = ""
     nucleotide_database_info : str = ""
     benign_database_info : str = ""
+    time_taken : str = ""
+    date_run : str = ""
     # add other settings / run parameters.
 
 @dataclass
 class ScreenData:
     ''' Root dataclass to hold all data related to the screening of an individual query by commec.'''
-    recommendation : str = ""
-    query : QueryData = field(default_factory = QueryData) # maybe this needs to be array too for multiple fasta inputs.
-    biorisks : BioRiskData = field(default_factory = BioRiskData)
-    taxonomies : list[TaxonomyData] = field(default_factory = list)
+    recommendation : str = "" # Global recommendation.
     commec_info : CommecRunInformation = field(default_factory = CommecRunInformation)
+    queries : list[QueryData] = field(default_factory = list)
 
     def format(self):
         ''' Format this ScreenData as a json string to pass to a standard out if desired.'''
