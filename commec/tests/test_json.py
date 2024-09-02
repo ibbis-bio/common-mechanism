@@ -1,6 +1,6 @@
 import pytest
 import os
-from commec.json_io import *
+from commec.config.json_io import *
 from dataclasses import asdict
 
 @pytest.fixture
