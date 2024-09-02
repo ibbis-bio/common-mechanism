@@ -5,7 +5,7 @@ Database handler for Hidden Markov Model type databases.
 """
 import re
 import pandas as pd
-from commec.databases.database import DatabaseHandler, DatabaseVersion
+from commec.tools.database_handler import DatabaseHandler, DatabaseVersion
 
 class HMMDataBase(DatabaseHandler):
     """ A Database handler specifically for use with Hmmer files for commec screening. """

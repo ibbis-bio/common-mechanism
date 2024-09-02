@@ -68,6 +68,31 @@ class DatabaseHandler():
         if os.path.isfile(self.input_file):
             return True
         return False
+    
+    def has_hits(self, filepath: str = None) -> bool:
+        """
+        has_hits
+        usage: check to see if the file contains any hits (lines that don't start with #)
+        Override for custom hit behaviour for a database, 
+        currently returns true for any file with lines not starting with a comment #
+        input:
+        - path to file
+        """
+        file_to_check = filepath
+        if file_to_check is None:
+            file_to_check = self.input_file
+
+        try:
+            with open(file_to_check, "r", encoding="utf-8") as file:
+                for line in file:
+                    # Strip leading and trailing whitespace and check the first character
+                    if not line.strip().startswith("#"):
+                        # Found a hit!
+                        return True
+            return False
+        except FileNotFoundError:
+            # The file does not exist
+            return False
 
     def get_arguments(self) -> list:
         """ 
@@ -112,4 +137,5 @@ class DatabaseHandler():
 
     def __del__(self):
         if os.path.exists(self.temp_log_file):
-            return
+            os.remove(self.temp_log_file)
+

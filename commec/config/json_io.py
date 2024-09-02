@@ -21,6 +21,8 @@
     }
 '''
 
+# Consider whether this can get away with being part of config. rename to IO config?
+
 import json
 import string
 import os
@@ -29,7 +31,6 @@ from typing import Dict, Type, get_origin, Any, get_args
 
 # Seperate versioning for the output JSON.
 JSON_COMMEC_FORMAT_VERSION = "1.0"
-
 
 @dataclass
 class MatchRange:
