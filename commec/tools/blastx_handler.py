@@ -4,12 +4,14 @@
 Defines the `Input and Output Screen Parameters` class, and associated dataclasses.
 """
 
-from commec.databases.database import DatabaseHandler
+from commec.tools.database_handler import DatabaseHandler, DatabaseVersion
 
 class BlastXDataBase(DatabaseHandler):
-    """ A Database handler specifically for use with BlastX files for commec screening. 
+    """ 
+    A Database handler specifically for use with BlastX files for commec screening. 
     Allows for full customization of any of the callable blast flags. A better implementation
-    may be achieved using import blast"""
+    may be achieved using import blast.
+    """
 
     def __init__(self, directory : str, database_file : str, input_file : str, out_file : str):
         super().__init__(directory, database_file, input_file, out_file)

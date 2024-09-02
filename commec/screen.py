@@ -247,6 +247,7 @@ class Screen:
         logger.info(f"Input query file: {self.params.query.input_fasta_path}")
 
         # Update screen data output with the Query information.
+        # TODO: Parse the input query, separate out the input names, and 
         #self.output_screen_data.query.name = self.params.query.query_description
         #self.output_screen_data.query.length = len(self.params.query.aa_raw)
         #self.output_screen_data.query.sequence = self.params.query.aa_raw

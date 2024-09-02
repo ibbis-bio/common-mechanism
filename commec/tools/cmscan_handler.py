@@ -5,7 +5,7 @@ Defines the `Input and Output Screen Parameters` class, and associated dataclass
 """
 import re
 import pandas as pd
-from commec.databases.database import DatabaseHandler
+from commec.tools.database_handler import DatabaseHandler, DatabaseVersion
 
 class CmscanDataBase(DatabaseHandler):
     """ A Database handler specifically for use with Hmmer files for commec screening. """
