@@ -69,6 +69,21 @@ class DatabaseHandler():
             return True
         return False
     
+    def is_empty(self) -> bool:
+        """
+        is_empty
+
+        usage: check that a file is empty
+        input:
+        - name of file
+        """
+        try:
+            abspath = os.path.abspath(os.path.expanduser(self.out_file))
+            return os.path.getsize(abspath) == 0
+        except OSError:
+            # If there is an error (including FileNotFoundError) consider it empty
+            return True
+    
     def has_hits(self, filepath: str = None) -> bool:
         """
         has_hits
