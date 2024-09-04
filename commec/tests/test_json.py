@@ -7,7 +7,7 @@ from dataclasses import asdict
 def test_screendata():
     '''Fixture to provide the ScreenData for testing.'''
     return ScreenData(
-        recommendation="PASS",
+        #recommendation="PASS",
         commec_info = CommecRunInformation(
             commec_version="0.1.2",
             json_output_version=JSON_COMMEC_FORMAT_VERSION,
@@ -22,10 +22,10 @@ def test_screendata():
                 name="Query1",
                 length=10,
                 sequence="ABCDEFGHIJ",
-                recommendation="PASS",
+                recommendation=CommecRecomendation.PASS,
                 biorisks = BioRiskData(
-                    [BioRisk("regulated_gene_01", [MatchRange(10,50), MatchRange(60,80)])],
-                    [BioRisk("virulance_factor_01", [MatchRange(50,60)])],
+                    [BioRisk("regulated_gene_01", range = [MatchRange(10,50), MatchRange(60,80)])],
+                    [BioRisk("virulance_factor_01", range = [MatchRange(50,60)])],
                     ),
                 taxonomies = [
 
@@ -37,7 +37,7 @@ def test_screendata():
 @pytest.fixture
 def empty_screendata():
     '''Fixture to provide the ScreenData for testing.'''
-    return ScreenData(recommendation="PASS")
+    return ScreenData()
 
 @pytest.mark.parametrize("test_data_fixture",["test_screendata", "empty_screendata"])
 def test_json_io(tmp_path, request, test_data_fixture):

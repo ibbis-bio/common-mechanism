@@ -28,9 +28,18 @@ import string
 import os
 from dataclasses import dataclass, asdict, fields, field, is_dataclass
 from typing import Dict, Type, get_origin, Any, get_args
+from enum import StrEnum
 
 # Seperate versioning for the output JSON.
 JSON_COMMEC_FORMAT_VERSION = "1.0"
+
+class CommecRecomendation(StrEnum):
+    NULL = '-' # This was not set.
+    SKIP = 'Skip' # Intentionally skipped this step.
+    PASS = 'Pass' # Commec has approved this query at this step.
+    WARN = 'Warn' # This query may be suspicious...
+    FLAG = 'Flag' # Commec has flagged this query as an issue.
+    ERROR = 'Error' # An error occured, such that this step failed to run.
 
 @dataclass
 class MatchRange:
@@ -68,6 +77,8 @@ class MatchFields:
 class BioRisk:
     '''Container to hold information for a match to the query identified as a potential biorisk'''
     description : str = ""
+    regulated : bool = True
+    regulated_info : str = ""
     range : list[MatchRange] = field(default_factory = list)
     # etc etc
 
@@ -75,6 +86,7 @@ class BioRisk:
 class BioRiskData:
     '''Container dataclass for a list of matches to biorisks 
     identified from a commec database screen.'''
+    biorisk_recommendation : CommecRecomendation = CommecRecomendation.NULL
     regulated_genes : list[BioRisk] = field(default_factory = list)
     virulance_factors : list[BioRisk] = field(default_factory = list)
 
@@ -93,7 +105,7 @@ class QueryData:
     name : str = ""
     length : int = 0
     sequence : str = ""
-    recommendation : str = "" # Global recommendation.
+    recommendation : CommecRecomendation = CommecRecomendation.NULL # Global recommendation.
     biorisks : BioRiskData = field(default_factory = BioRiskData)
     taxonomies : list[TaxonomyData] = field(default_factory = list)
 
@@ -113,7 +125,6 @@ class CommecRunInformation:
 @dataclass
 class ScreenData:
     ''' Root dataclass to hold all data related to the screening of an individual query by commec.'''
-    recommendation : str = "" # Global recommendation.
     commec_info : CommecRunInformation = field(default_factory = CommecRunInformation)
     queries : list[QueryData] = field(default_factory = list)
 
