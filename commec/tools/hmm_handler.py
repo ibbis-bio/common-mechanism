@@ -49,6 +49,7 @@ class HMMDataBase(DatabaseHandler):
         except RuntimeError:
             return super().get_version_information()
 
+
 def readhmmer(fileh):
     """
     Read in HMMER output files
