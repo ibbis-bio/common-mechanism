@@ -36,6 +36,7 @@ class ScreenIOParameters:
         self.output_prefix = self.get_output_prefix(input_fasta, args.output_prefix)
         self.output_screen_file = f"{self.output_prefix}.screen"
         self.tmp_log = f"{self.output_prefix}.log.tmp"
+        self.output_json = f"{self.output_prefix}.output.json"
 
         # Query
         self.query: Query = Query(args.fasta_file)
@@ -263,4 +264,4 @@ class ScreenIOParameters:
 
     @property
     def should_do_benign_screening(self) -> bool:
-        return True
+        return self.should_do_protein_screening or self.should_do_nucleotide_screening

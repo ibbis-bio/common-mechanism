@@ -51,6 +51,7 @@ Output file handling:
 """
 import argparse
 import datetime
+import time
 import logging
 import os
 import sys
@@ -60,6 +61,7 @@ from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.logging import setup_console_logging, setup_file_logging, set_log_level
 from commec.config.io_parameters import ScreenIOParameters
 from commec.config.screen_tools import ScreenTools
+from commec.config.json_io import ScreenData, QueryData, CommecRecomendation, encode_screen_data_to_json, get_screen_data_from_json
 
 from commec.screeners.check_biorisk import check_biorisk
 from commec.screeners.check_benign import check_for_benign
@@ -219,6 +221,8 @@ class Screen:
         self.params: ScreenIOParameters = None
         self.database_tools: ScreenTools = None
         self.scripts_dir: str = os.path.dirname(__file__)  # Legacy.
+        self.screen_data : ScreenData = ScreenData()
+        self.start_time = time.time()
 
     def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
@@ -252,22 +256,31 @@ class Screen:
         #self.output_screen_data.query.length = len(self.params.query.aa_raw)
         #self.output_screen_data.query.sequence = self.params.query.aa_raw
 
-        # Update screen data output with the commec run information.
-        if self.params.should_do_biorisk_screening and not self.databases.biorisk_db is None:
-            biorisk_v_info = self.databases.biorisk_db.get_version_information()
-            self.output_screen_data.commec_info.biorisk_database_info = biorisk_v_info.version_date
+        # Initialise the json file:
+        for i, _value in enumerate(self.params.query.querie_names):
+            self.screen_data.queries.append(QueryData(
+                self.params.query.querie_names[i],
+                len(self.params.query.querie_raw[i]),
+                self.params.query.querie_raw[i],
+                CommecRecomendation.NULL)
+                )
+            
+        if self.params.should_do_biorisk_screening:
+            self.screen_data.commec_info.biorisk_database_info = self.databases.biorisk_db.get_version_information()
 
-        if self.params.should_do_protein_screening and not self.databases.protein_db is None:
-            protein_v_info = self.databases.protein_db.get_version_information()
-            self.output_screen_data.commec_info.protein_database_info = protein_v_info.version_date
+        if self.params.should_do_protein_screening:
+            self.screen_data.commec_info.protein_database_info = self.databases.biorisk_db.get_version_information()
 
-        if self.params.should_do_nucleotide_screening and not self.databases.nucleotide_db is None:
-            nucleotide_v_info = self.databases.nucleotide_db.get_version_information()
-            self.output_screen_data.commec_info.nucleotide_database_info = nucleotide_v_info.version_date
+        if self.params.should_do_nucleotide_screening:
+            self.screen_data.commec_info.nucleotide_database_info = self.databases.biorisk_db.get_version_information()
 
-        if self.params.should_do_benign_screening and not self.databases.benign_hmm is None:
-            benign_v_info = self.databases.benign_hmm.get_version_information()
-            self.output_screen_data.commec_info.benign_database_info = benign_v_info.version_date
+        if self.params.should_do_benign_screening:
+            self.screen_data.commec_info.benign_database_info = self.databases.benign_hmm.get_version_information()
+
+        self.screen_data.commec_info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        encode_screen_data_to_json(self.screen_data, self.params.output_json)
+        
 
     def run(self, args: argparse.Namespace):
         """
@@ -324,6 +337,15 @@ class Screen:
         logger.info(
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
+
+        self.screen_data = get_screen_data_from_json(self.params.output_json)
+        time_taken = (time.time() - self.start_time)
+        # Convert the elapsed time to hours, minutes, and seconds
+        hours, rem = divmod(time_taken, 3600)
+        minutes, seconds = divmod(rem, 60)
+        self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+        encode_screen_data_to_json(self.screen_data, self.params.output_json)
+
         self.params.clean()
 
     def screen_biorisks(self):
