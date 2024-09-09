@@ -158,7 +158,7 @@ class QueryData:
 @dataclass
 class CommecRunInformation:
     '''Container dataclass to hold general run information for a commec screen '''
-    commec_version : str = "0.1.2"
+    commec_version : str = "0.1.3"
     json_output_version : str = JSON_COMMEC_FORMAT_VERSION
     biorisk_database_info : str = ""
     protein_database_info : str = ""
@@ -182,8 +182,13 @@ class ScreenData:
         """
         Searches for a query, such that it can be updated or read from.
         """
+        search_term = query_name
+        # Some tools append _X where X is reading frame. Get rid of it for the moment...
+        if search_term[-2] == "_":
+            search_term = query_name[:-2]
+
         for data in self.queries:
-            if data.name == query_name:
+            if data.name == search_term:
                 return data
         return None
 

@@ -94,3 +94,10 @@ class DiamondHandler(DatabaseHandler):
                         outlog.write(infile.read())
                     os.remove(log_f)
 
+    def get_version_information(self) -> DatabaseVersion:
+        try:
+            result = subprocess.run(['diamond', 'version'], capture_output=True, text=True, check=True)
+            version_info = result.stdout.strip()
+            return version_info
+        except subprocess.CalledProcessError:
+            return None

@@ -3,6 +3,7 @@
 """
 Defines the `Input and Output Screen Parameters` class, and associated dataclasses.
 """
+import subprocess
 import re
 import pandas as pd
 from commec.tools.database_handler import DatabaseHandler, DatabaseVersion
@@ -18,6 +19,14 @@ class CmscanHandler(DatabaseHandler):
             self.input_file
             ]
         self.run_as_subprocess(command, self.temp_log_file)
+
+    def get_version_information(self) -> DatabaseVersion:
+        try:
+            result = subprocess.run(['cmscan', '-h'], capture_output=True, text=True, check=True)
+            version_info = result.stdout.splitlines()[1].strip()[2:]
+            return version_info
+        except subprocess.CalledProcessError:
+            return None
 
 def readcmscan(fileh):
     """
@@ -65,3 +74,4 @@ def readcmscan(fileh):
 
     #    print(cmscan)
     return cmscan
+

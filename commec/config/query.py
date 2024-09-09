@@ -21,8 +21,10 @@ class Query:
 
     def __init__(self, input_fasta_filepath: str):
         self.input_fasta_path = input_fasta_filepath
-        self.nt_path: str = ""
-        self.aa_path: str = ""
+        self.nt_path : str = ""
+        self.aa_path : str = ""
+        self.querie_names = []
+        self.querie_raw = []
 
     def setup(self, file_prefix: str):
         """
@@ -36,13 +38,29 @@ class Query:
         """Run command transeq, to translate our input sequences."""
         logger.debug("Starting translation of FASTA '%s'. Will output to: %s", self.nt_path, self.aa_path)
         command = ["transeq", self.nt_path, self.aa_path, "-frame", "6", "-clean"]
-        result = subprocess.run(command, check=True)
-        if result.returncode != 0:
-            raise RuntimeError(
-                f"Input FASTA '{self.input_fasta_filepath}' could not be translated:\n'{result.stderr}'"
-            )
-
-    def get_cleaned_fasta(self, out_prefix):
+        try:
+            result = subprocess.run(command, check=True)
+            if result.returncode != 0:
+                command_str = ' '.join(command)
+                raise RuntimeError(
+                    f"subprocess.run of command '{command_str}' encountered error."
+                )
+        except RuntimeError as error:
+            raise RuntimeError("Input FASTA {fasta_to_screen} could not be translated.") from error
+        
+    def get_query_names(self):
+        """ Populates query names with a list of all the queries within a fasta, for quick reference."""
+        self.querie_names = []
+        with (open(self.nt_path, "r", encoding="utf-8") as fin):
+            for line in fin:
+                if line.startswith('>'):
+                    self.querie_names.append(line[1:-1])
+                    continue
+                self.querie_raw.append(line)
+        return
+        
+    @staticmethod
+    def get_cleaned_fasta(input_file, out_prefix):
         """
         Return a FASTA where whitespace (including non-breaking spaces) and illegal characters are
         replaced with underscores.
