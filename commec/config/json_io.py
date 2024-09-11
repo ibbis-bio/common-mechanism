@@ -34,6 +34,9 @@ from enum import StrEnum
 JSON_COMMEC_FORMAT_VERSION = "1.0"
 
 class CommecRecomendation(StrEnum):
+    """
+    All possible recommendation outputs from commec for a query.
+    """
     NULL = '-' # This was not set.
     SKIP = 'Skip' # Intentionally skipped this step.
     PASS = 'Pass' # Commec has approved this query at this step.
@@ -64,8 +67,8 @@ class MatchFields:
     '''Container to hold information for a match to the query identified in a commec screen. 
     molecule_alphabet is expected to contain either 'aa' for aminoacids, or 'nt' for nucelotides.
     range contains information pertaining to over what range the match occured.'''
-    molecule_alphabet : str = ""
     description : str = ""
+    molecule_alphabet : str = ""
     id : int = 0
     taxon : str = ""
     kingdom : str = ""
@@ -76,6 +79,7 @@ class MatchFields:
 @dataclass
 class BioRisk:
     '''Container to hold information for a match to the query identified as a potential biorisk'''
+    target_name : str = ""
     description : str = ""
     regulated : bool = True
     regulated_info : str = ""
@@ -84,11 +88,43 @@ class BioRisk:
 
 @dataclass
 class BioRiskData:
-    '''Container dataclass for a list of matches to biorisks 
-    identified from a commec database screen.'''
+    '''
+    Container dataclass for a list of matches to biorisks 
+    identified from a commec database screen.
+    '''
     biorisk_recommendation : CommecRecomendation = CommecRecomendation.NULL
     regulated_genes : list[BioRisk] = field(default_factory = list)
     virulance_factors : list[BioRisk] = field(default_factory = list)
+
+    def get_existing(self, match_description : str):
+        """
+        Searches to see if a match already exists, and returns it, so that it can be modified.
+        """
+        for regulated_match in self.regulated_genes:
+            if regulated_match.description == match_description:
+                return regulated_match
+        for virulance_factor in self.virulance_factors:
+            if virulance_factor.description == match_description:
+                return virulance_factor
+        return None
+
+    def get_existing_regulated_gene(self, match_description : str):
+        """
+        Searches to see if a match already exists, and returns it, so that it can be modified.
+        """
+        for regulated_match in self.regulated_genes:
+            if regulated_match.description == match_description:
+                return regulated_match
+        return None
+
+    def get_existing_virulance_factor(self, match_description : str):
+        """
+        Searches to see if a match already exists, and returns it, so that it can be modified.
+        """
+        for virulance_factor in self.virulance_factors:
+            if virulance_factor.description == match_description:
+                return virulance_factor
+        return None
 
 @dataclass
 class TaxonomyData:
@@ -97,6 +133,16 @@ class TaxonomyData:
     is_regulated : bool
     regulation_agency : str = ""
     matches : list[MatchFields] = field(default_factory = list)
+
+    def get_existing_match(self, match_description : str):
+        """
+        Searches to see if a match already exists, and returns it, so that it can be modified.
+        """
+        for match in self.matches:
+            if match.description == match_description:
+                return match
+        return None
+
 
 @dataclass
 class QueryData:
@@ -131,6 +177,16 @@ class ScreenData:
     def format(self):
         ''' Format this ScreenData as a json string to pass to a standard out if desired.'''
         return str(asdict(self))
+    
+    def get_query(self, query_name : str) -> QueryData:
+        """
+        Searches for a query, such that it can be updated or read from.
+        """
+        for data in self.queries:
+            if data.name == query_name:
+                return data
+        return None
+
 
 # The above could be moved to a custom .py script for variable importing under version control.
 
