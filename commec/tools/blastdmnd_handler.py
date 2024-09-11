@@ -10,7 +10,7 @@ import subprocess
 from commec.tools.database_handler import DatabaseHandler, DatabaseVersion
 
 #TODO: Ensure updates from Tessas handling of Diamond are correctly incorperated here.
-class DiamondDataBase(DatabaseHandler):
+class DiamondHandler(DatabaseHandler):
     """ A Database handler specifically for use with Diamond files for commec screening. """
 
     def __init__(self, directory : str, database_file : str, input_file : str, out_file : str):
