@@ -145,6 +145,5 @@ def main():
     return_value = check_biorisk(args.in_file, args.db)
     return return_value
 
-
 if __name__ == "__main__":
     main()
