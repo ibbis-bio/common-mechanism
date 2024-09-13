@@ -38,15 +38,9 @@ class Query:
         """Run command transeq, to translate our input sequences."""
         logger.debug("Starting translation of FASTA '%s'. Will output to: %s", self.nt_path, self.aa_path)
         command = ["transeq", self.nt_path, self.aa_path, "-frame", "6", "-clean"]
-        try:
-            result = subprocess.run(command, check=True)
-            if result.returncode != 0:
-                command_str = ' '.join(command)
-                raise RuntimeError(
-                    f"subprocess.run of command '{command_str}' encountered error."
-                )
-        except RuntimeError as error:
-            raise RuntimeError("Input FASTA {fasta_to_screen} could not be translated.") from error
+        result = subprocess.run(command, check=True)
+        if result.returncode != 0:
+            raise RuntimeError("Input FASTA {fasta_to_screen} could not be translated:\n{result.stderr}")
         
     def get_query_names(self):
         """ Populates query names with a list of all the queries within a fasta, for quick reference."""
@@ -67,7 +61,7 @@ class Query:
         """
         cleaned_file = f"{out_prefix}.cleaned.fasta"
         with (
-            open(self.input_fasta_path, "r", encoding="utf-8") as fin,
+            open(input_file, "r", encoding="utf-8") as fin,
             open(cleaned_file, "w", encoding="utf-8") as fout,
         ):
             for line in fin:
