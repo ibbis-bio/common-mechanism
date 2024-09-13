@@ -85,7 +85,8 @@ class DatabaseHandler():
             # If there is an error (including FileNotFoundError) consider it empty
             return True
     
-    def has_hits(self, filepath: str = None) -> bool:
+    @staticmethod
+    def has_hits(filepath: str = None) -> bool:
         """
         has_hits
         usage: check to see if the file contains any hits (lines that don't start with #)
@@ -95,8 +96,8 @@ class DatabaseHandler():
         - path to file
         """
         file_to_check = filepath
-        if file_to_check is None:
-            file_to_check = self.input_file
+        #if file_to_check is None:
+        #    file_to_check = self.input_file
 
         try:
             with open(file_to_check, "r", encoding="utf-8") as file:
@@ -155,7 +156,7 @@ class DatabaseHandler():
 
             if not self.is_succesful_result(result):
                 command_str = ' '.join(command)
-                logging.info("\t ERROR: command %s failed", command_str)
+                logging.info("\t ERROR: command %s failed with error %s", command_str, result.stderr)
                 raise RuntimeError(
                     f"subprocess.run of command '{command_str}' encountered error."
                     f" Check {out_file} for logs."
