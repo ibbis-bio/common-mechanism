@@ -402,10 +402,10 @@ class Screen:
         noncoding regions (i.e. that would not be found with protein search).
         """
         # Only screen nucleotides in noncoding regions
-        fetch_noncoding_regions(
-            self.database_tools.regulated_protein.out_file, self.params.query.nt_path
-        )
-        noncoding_fasta = f"{self.params.output_prefix}.noncoding.fasta"
+        fetch_noncoding_regions(self.database_tools.protein_db.out_file,
+                                self.params.query.nt_path)
+        
+        noncoding_fasta = f"{self.params.output_prefix}.noncoding.fasta" # TODO: This should be passed into fetch_noncoding_regions.
 
         if not os.path.isfile(noncoding_fasta):
             logger.debug(
