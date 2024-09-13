@@ -22,7 +22,6 @@ def test_screendata():
                 name="Query1",
                 length=10,
                 sequence="ABCDEFGHIJ",
-                recommendation=CommecRecomendation.PASS,
                 biorisks = BioRiskData(
                     [BioRisk("regulated_gene_01", range = [MatchRange(10,50), MatchRange(60,80)])],
                     [BioRisk("virulance_factor_01", range = [MatchRange(50,60)])],
@@ -96,11 +95,11 @@ def test_adding_data_to_existing():
     """
     Tests to ensure the mutability of writing to queries is working as expected.
     """
-    def write_info(InputQuery : QueryData):
-        InputQuery.recommendation = CommecRecomendation.PASS
+    def write_info(input_query : QueryData):
+        input_query.recommendation.biorisk_screen = CommecRecomendation.PASS
     
     new_screen_data = ScreenData()
     new_screen_data.queries.append(QueryData("test01", 10, "ATGCATGCAT", CommecRecomendation.FLAG))
     write_query = new_screen_data.get_query("test01")
     write_info(write_query)
-    assert new_screen_data.queries[0].recommendation == CommecRecomendation.PASS
+    assert new_screen_data.queries[0].recommendation.biorisk_screen == CommecRecomendation.PASS

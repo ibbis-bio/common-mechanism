@@ -69,20 +69,24 @@ def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str) -
         logger.info("\t\t --> Biorisks: no significant hits detected, PASS\n")
         return 0
 
-        unique_query_data : pd.DataFrame = hmmer[hmmer['query name'] == affected_query]
-        unique_targets = unique_query_data['target name'].unique()
-        for affected_target in unique_targets:
-            unique_target_data : pd.DataFrame = unique_query_data[unique_query_data['target name'] == affected_target]
-            target_description = ", ".join(set(unique_target_data['description'])) # First should be unique.
-            must_flag = unique_target_data['Must flag'].iloc[0] # First should be unique.
-            match_ranges = []
-            for _, region in unique_target_data.iterrows():
-                match_range = MatchRange(
-                    int(region['hmm from']), int(region['hmm to']),
-                    int(region['ali from']), int(region['ali to']),
-                    0
-                )
-                match_ranges.append(match_range)
+    if sum(hmmer["Must flag"]) > 0:
+        for region in hmmer.index[hmmer["Must flag"] != 0]:
+            if hmmer["ali from"][region] > hmmer["qlen"][region]:
+                hmmer["ali from"][region] = divmod(
+                    hmmer["ali from"][region], hmmer["qlen"][region]
+                )[0]
+                hmmer["ali to"][region] = divmod(
+                    hmmer["ali to"][region], hmmer["qlen"][region]
+                )[0]
+            logger.info(
+                "\t\t --> Biorisks: Regulated gene in bases "
+                + str(hmmer["ali from"][region])
+                + " to "
+                + str(hmmer["ali to"][region])
+                + ": FLAG\n\t\t     Gene: "
+                + ", ".join(set(hmmer["description"][hmmer["Must flag"] == True]))
+                + "\n"
+            )
 
     else:
         logger.info("\t\t --> Biorisks: Regulated genes not found, PASS\n")

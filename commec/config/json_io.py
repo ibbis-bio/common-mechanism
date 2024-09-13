@@ -31,7 +31,7 @@ from typing import Dict, Type, get_origin, Any, get_args
 from enum import StrEnum
 
 # Seperate versioning for the output JSON.
-JSON_COMMEC_FORMAT_VERSION = "1.0"
+JSON_COMMEC_FORMAT_VERSION = "0.1"
 
 class CommecRecomendation(StrEnum):
     """
@@ -41,8 +41,58 @@ class CommecRecomendation(StrEnum):
     SKIP = 'Skip' # Intentionally skipped this step.
     PASS = 'Pass' # Commec has approved this query at this step.
     WARN = 'Warn' # This query may be suspicious...
-    FLAG = 'Flag' # Commec has flagged this query as an issue.
+    FLAG = 'Flag' # Commec has flagged this query.
     ERROR = 'Error' # An error occured, such that this step failed to run.
+
+    # I don't like the below, should we just use FLAG and PASS perhaps.
+    TRUE = 'true' # Useful for organism identification outputs.
+    FALSE = 'false' # Useful for organism identification outputs.
+
+@dataclass
+class CommecRecomendationContainer():
+    """
+    Summarises the recommendations at each step of the commec screen process.
+    """
+    commec_recommendation : CommecRecomendation = CommecRecomendation.NULL
+    biorisk_screen : CommecRecomendation = CommecRecomendation.NULL
+    protein_taxonomy_screen : CommecRecomendation = CommecRecomendation.NULL
+    nucleotide_taxonomy_screen : CommecRecomendation = CommecRecomendation.NULL
+    virus_flag : CommecRecomendation = CommecRecomendation.NULL
+    bacteria_flag : CommecRecomendation = CommecRecomendation.NULL
+    eukaryote_flag : CommecRecomendation = CommecRecomendation.NULL
+    benign_screen : CommecRecomendation = CommecRecomendation.NULL
+
+    def update_commec_recommendation(self):
+        """ 
+        Parses the current state of the json, 
+        and updates the global commec recommendation.
+        """
+        if self.biorisk_screen == CommecRecomendation.FLAG:
+            self.commec_recommendation = CommecRecomendation.FLAG
+            return
+
+        if (self.protein_taxonomy_screen == CommecRecomendation.FLAG
+            and self.benign_screen == CommecRecomendation.FLAG):
+            self.commec_recommendation = CommecRecomendation.FLAG
+            return
+        
+        if (self.nucleotide_taxonomy_screen == CommecRecomendation.FLAG
+            and self.benign_screen == CommecRecomendation.FLAG):
+            self.commec_recommendation = CommecRecomendation.FLAG
+            return
+        
+        if self.biorisk_screen == CommecRecomendation.WARN:
+            self.commec_recommendation = CommecRecomendation.WARN
+            return
+
+@dataclass
+class CommecSummaryStatistics:
+    """
+    Summary of some useful statistics for rapid intepretation of complicated screen outputs.
+    """
+    biorisk_toxin_percentage : int = 0
+    percentage_of_regulated_for_taxonomy_best_matches : int = 0
+    human_pathogen_flag_percentage : int = 0
 
 @dataclass
 class MatchRange:
@@ -81,7 +131,7 @@ class BioRisk:
     '''Container to hold information for a match to the query identified as a potential biorisk'''
     target_name : str = ""
     description : str = ""
-    regulated : bool = True
+    regulated : bool = True # This may already be encoded in the list that the instance exists in.
     regulated_info : str = ""
     range : list[MatchRange] = field(default_factory = list)
     # etc etc
@@ -92,7 +142,6 @@ class BioRiskData:
     Container dataclass for a list of matches to biorisks 
     identified from a commec database screen.
     '''
-    biorisk_recommendation : CommecRecomendation = CommecRecomendation.NULL
     regulated_genes : list[BioRisk] = field(default_factory = list)
     virulance_factors : list[BioRisk] = field(default_factory = list)
 
@@ -128,8 +177,10 @@ class BioRiskData:
 
 @dataclass
 class TaxonomyData:
-    '''Container dataclass for a list of matches of taxonomy hits, 
-    identified from a commec database screen.'''
+    '''
+    Container dataclass for a list of matches of taxonomy hits, 
+    identified from a commec database screen.
+    '''
     is_regulated : bool
     regulation_agency : str = ""
     matches : list[MatchFields] = field(default_factory = list)
@@ -143,7 +194,6 @@ class TaxonomyData:
                 return match
         return None
 
-
 @dataclass
 class QueryData:
     '''Container to hold data related to the Query
@@ -151,14 +201,15 @@ class QueryData:
     name : str = ""
     length : int = 0
     sequence : str = ""
-    recommendation : CommecRecomendation = CommecRecomendation.NULL # Global recommendation.
+    recommendation : CommecRecomendationContainer = field(default_factory=CommecRecomendationContainer)
+    summary_info : CommecSummaryStatistics = field(default_factory=CommecSummaryStatistics)
     biorisks : BioRiskData = field(default_factory = BioRiskData)
     taxonomies : list[TaxonomyData] = field(default_factory = list)
 
 @dataclass
 class CommecRunInformation:
     '''Container dataclass to hold general run information for a commec screen '''
-    commec_version : str = "0.1.3"
+    commec_version : str = "0.1.3" # We can programmatically set this eventually.
     json_output_version : str = JSON_COMMEC_FORMAT_VERSION
     biorisk_database_info : str = ""
     protein_database_info : str = ""
