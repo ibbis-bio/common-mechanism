@@ -269,16 +269,17 @@ class Screen:
             self.screen_data.commec_info.biorisk_database_info = self.databases.biorisk_db.get_version_information()
 
         if self.params.should_do_protein_screening:
-            self.screen_data.commec_info.protein_database_info = self.databases.biorisk_db.get_version_information()
+            self.screen_data.commec_info.protein_database_info = self.databases.protein_db.get_version_information()
 
         if self.params.should_do_nucleotide_screening:
-            self.screen_data.commec_info.nucleotide_database_info = self.databases.biorisk_db.get_version_information()
+            self.screen_data.commec_info.nucleotide_database_info = self.databases.nucleotide_db.get_version_information()
 
         if self.params.should_do_benign_screening:
             self.screen_data.commec_info.benign_database_info = self.databases.benign_hmm.get_version_information()
 
         self.screen_data.commec_info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
+        # Less of this, and more just passing the object in future - this might take too long in larger queries.
         encode_screen_data_to_json(self.screen_data, self.params.output_json)
         
 

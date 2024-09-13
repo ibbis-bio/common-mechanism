@@ -38,7 +38,7 @@ class BlastNHandler(DatabaseHandler):
     def get_version_information(self) -> DatabaseVersion:
         try:
             result = subprocess.run(['blastn', '-version'], capture_output=True, text=True, check=True)
-            version_info = result.stdout.strip()
+            version_info = " ".join(result.stdout.splitlines())
             return version_info
         except subprocess.CalledProcessError:
             return None
