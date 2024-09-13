@@ -439,30 +439,21 @@ class Screen:
         """
         sample_name = self.params.output_prefix
         if not os.path.exists(sample_name + ".reg_path_coords.csv"):
-            logger.info("\t...no regulated regions to clear\n")
+            logging.info("\t...no regulated regions to clear\n")
             return
 
-        logger.debug("\t...running benign hmmscan")
-        self.database_tools.benign_hmm.search()
-        logger.debug("\t...running benign blastn")
-        self.database_tools.benign_blastn.search()
-        logger.debug("\t...running benign cmscan")
-        self.database_tools.benign_cmscan.search()
+        logging.debug("\t...running benign hmmscan")
+        self.database_tools.benign_hmm.screen()
+        logging.debug("\t...running benign blastn")
+        self.database_tools.benign_blastn.screen()
+        logging.debug("\t...running benign cmscan")
+        self.database_tools.benign_cmscan.screen()
 
         coords = pd.read_csv(sample_name + ".reg_path_coords.csv")
-        benign_desc = pd.read_csv(
-            self.database_tools.benign_hmm.db_directory + "/benign_annotations.tsv",
-            sep="\t",
-        )
-
-        if coords.shape[0] == 0:
-            logger.info("\t...no regulated regions to clear\n")
-            return
-
-        logger.debug("\t...checking benign scan results")
-
-        # Note currently check_for_benign hard codes .benign.hmmscan,
-        # in future parse, and grab from search handler instead.
+        benign_desc =  pd.read_csv(self.database_tools.benign_hmm.db_directory + "/benign_annotations.tsv", sep="\t")
+        
+        logging.debug("\t...checking benign scan results")
+        # Note currently check_for_benign hard codes .benign.hmmscan, and should grab from handler instead.
         check_for_benign(sample_name, coords, benign_desc)
 
 def run(args: argparse.Namespace):
