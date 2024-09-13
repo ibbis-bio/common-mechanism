@@ -100,4 +100,4 @@ class DiamondHandler(DatabaseHandler):
             version_info = result.stdout.strip()
             return version_info
         except subprocess.CalledProcessError:
-            return None
+            return "No version information"

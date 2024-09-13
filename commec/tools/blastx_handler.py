@@ -48,7 +48,7 @@ class BlastXHandler(DatabaseHandler):
     def get_version_information(self) -> DatabaseVersion:
         try:
             result = subprocess.run(['blastx', '-version'], capture_output=True, text=True, check=True)
-            version_info = result.stdout.splitlines()[0].strip()
+            version_info = " ".join(result.stdout.splitlines())
             return version_info
         except subprocess.CalledProcessError:
-            return None
+            return "Version information retrieval error."
