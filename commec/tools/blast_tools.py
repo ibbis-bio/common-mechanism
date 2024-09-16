@@ -25,6 +25,17 @@ class BlastHandler(SearchHandler):
     A Database handler specifically for use with Blast.
     Inherit from this, and implement screen()
     """
+    blast2 = blast
+    cutrows = []
+    lastrow = blast.shape[0]
+    for i in range(0, len(blast["subject tax ids"])):
+        if str(blast.loc[i, "subject tax ids"]).find(";") != -1:
+            taxids = str(blast.loc[i, "subject tax ids"]).split(";")
+            cutrows.append(i)
+            for tax in taxids:
+                blast2.loc[lastrow + 1, :] = blast.loc[i, :]
+                blast2.loc[lastrow + 1, "subject tax ids"] = tax
+                lastrow = lastrow + 1
 
     def _validate_db(self):
         """

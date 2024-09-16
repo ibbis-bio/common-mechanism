@@ -6,6 +6,7 @@ Defines the `Input and Output Screen Parameters` class, and associated dataclass
 import os
 import glob
 import subprocess
+from typing import Optional
 
 from commec.tools.database_handler import DatabaseHandler, DatabaseVersion
 
@@ -18,7 +19,7 @@ class DiamondHandler(DatabaseHandler):
         self.frameshift : int = 15
         self.do_range_culling = True
         self.threads = 1
-        self.jobs = None
+        self.jobs : Optional[int] = None
         self.output_format = "6"
         self.output_format_tokens = [
             "qseqid",   "stitle",   "sseqid",   "staxids",
