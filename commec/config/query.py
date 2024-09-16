@@ -61,7 +61,7 @@ class Query:
         """
         cleaned_file = f"{out_prefix}.cleaned.fasta"
         with (
-            open(input_file, "r", encoding="utf-8") as fin,
+            open(self.input_fasta_path, "r", encoding="utf-8") as fin,
             open(cleaned_file, "w", encoding="utf-8") as fout,
         ):
             for line in fin:

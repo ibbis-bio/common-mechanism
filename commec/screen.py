@@ -117,7 +117,11 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     Add module arguments to an ArgumentParser object.
     """
 
-    parser.add_argument(dest="fasta_file", type=file_arg, help="FASTA file to screen")
+    parser.add_argument(
+        dest="fasta_file",
+        type=file_arg,
+        help="FASTA file to screen"
+    )
     parser.add_argument(
         "-d",
         "--databases",
