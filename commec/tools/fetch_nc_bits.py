@@ -8,17 +8,14 @@ the nucleotide regions between these hits and singles them out for nucleotide sc
 Usage:
     fetch_nc_bits.py query_name fasta_file_path
 """
-import sys, shutil
+import shutil
 import re
-from Bio import SeqIO
 import argparse
 import logging
-#from commec.utils import *
-from commec.tools.blast_tools import BlastTools
-from commec.utils.file_utils import FileTools
 
-    #query = sys.argv[1]
-    #f_file = sys.argv[2]
+from Bio import SeqIO
+from commec.tools.blast_tools import readblast, trimblast
+from commec.tools.database_handler import DatabaseHandler
 
 def fetch_noncoding_regions(nr_output_file : str, cleaned_fasta_file_path : str):
     """
@@ -29,16 +26,16 @@ def fetch_noncoding_regions(nr_output_file : str, cleaned_fasta_file_path : str)
     f_file = cleaned_fasta_file_path
 
     # check if the nr hits file is empty
-    if FileTools.is_empty(query):
+    if DatabaseHandler.is_empty(query):
         nc_bits = "all"
-    elif not FileTools.has_hits(query):
+    elif not DatabaseHandler.has_hits(query):
         logging.info("\t...no hits to the nr database\n")
         nc_bits = "all"
     # if not, check whether any of the hits has an E-value > 1e-30
     # if so, find the start and end of those hits and use these to get the coordinates of non-coding regions
     else:
-        blast = BlastTools.readblast(query)
-        blast = BlastTools.trimblast(blast)
+        blast = readblast(query)
+        blast = trimblast(blast)
         blast = blast[blast['% identity'] >= 90]
         if blast.shape[0] > 0:
         # find noncoding bits
