@@ -209,15 +209,11 @@ class ScreenIOParameters:
 
         # If no prefix given, use input filepath without extension
         if not prefix_arg:
-            return os.path.join(input_dir, input_name)
-
-        if (
-            os.path.isdir(prefix_arg)
-            or prefix_arg.endswith(os.path.sep)
-            or prefix_arg in {".", "..", "~"}
-        ):
-            os.makedirs(expand_and_normalize(prefix_arg), exist_ok=True)
-
+            return os.path.splitext(input_file)[0]
+        if os.path.isdir(prefix_arg) or prefix_arg.endswith(os.path.sep) or prefix_arg in {".", "..", "~"}:
+            # Make the directory if it doesn't exist
+            #if not os.path.isdir(prefix_arg):
+            os.makedirs(prefix_arg, exist_ok=True)
             # Use the input filename as a prefix within that directory (stripping out the path)
             return os.path.join(prefix_arg, input_name)
 
