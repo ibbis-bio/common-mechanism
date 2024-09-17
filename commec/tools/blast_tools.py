@@ -2,9 +2,8 @@
 # Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
 """
 Module for Blast related tools, a library for dealing with general blast file parsing tasks.
-Useful for reading any blast related outputs, for example from Blastx, Blastn, or diamond.
-
-Also contains the abstract base class for blastX/N/Diamond database search handlers.
+Useful for reading any blast outputs, for example from Blastx or Blastn.
+Also contains the abstract base class for blastX/N/Diamond database handlers.
 """
 import os
 import logging
@@ -25,17 +24,12 @@ class BlastHandler(SearchHandler):
     A Database handler specifically for use with Blast.
     Inherit from this, and implement screen()
     """
-    blast2 = blast
-    cutrows = []
-    lastrow = blast.shape[0]
-    for i in range(0, len(blast["subject tax ids"])):
-        if str(blast.loc[i, "subject tax ids"]).find(";") != -1:
-            taxids = str(blast.loc[i, "subject tax ids"]).split(";")
-            cutrows.append(i)
-            for tax in taxids:
-                blast2.loc[lastrow + 1, :] = blast.loc[i, :]
-                blast2.loc[lastrow + 1, "subject tax ids"] = tax
-                lastrow = lastrow + 1
+
+    def read_output(self):
+        output_dataframe = pd.DataFrame()
+        if self.has_hits(self.out_file):
+            output_dataframe = read_blast(self.out_file)
+        return output_dataframe
 
     def _validate_db(self):
         """
@@ -60,8 +54,18 @@ class BlastHandler(SearchHandler):
                 " File location can be set via --databases option or --config yaml."
             )
 
+        # Search for files of provided prefix.
+        filename, extension = os.path.splitext(self.db_file)
+        search_file = os.path.join(self.db_directory, "*" + os.path.basename(filename) + "*" + extension)
+        files = glob.glob(search_file)
+        if len(files) == 0:
+            raise DatabaseValidationError(f"Mandatory screening files with {filename}* not found.")
 
 def _split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
+    """
+    Some results will have multiple tax ids listed in a semicolon-separated list; split these into
+    multiple rows, each with their own taxon id.
+    """
     """
     Some results will have multiple tax ids listed in a semicolon-separated list; split these into
     multiple rows, each with their own taxon id.
@@ -146,14 +150,26 @@ def get_taxonomic_labels(
 
     lin = _get_lineages(blast[TAXIDS_COL], db_path, threads)
 
-    # Check if any rows will be removed due to not finding a valid lineage for them
-    rows_to_remove = blast[~blast[TAXIDS_COL].isin(lin["TaxID"])]
-    if not rows_to_remove.empty:
-        logger.warning(
-            "Removing %i rows from BLAST results due to invalid taxID(s): %s"
-            " - check that taxonomy and protein databases are up to date!",
-            len(rows_to_remove),
-            ", ".join(map(str, rows_to_remove[TAXIDS_COL].unique())),
+    try:
+        a = t["FullLineage"].str.split(";")[0]
+        b = t["FullLineageTaxIDs"].str.split(";")[0]
+        c = t["FullLineageRanks"].str.split(";")[0]
+    except AttributeError:
+        logging.error("The Blast database used has not returned any Lineage information!")
+        return blast
+
+    for x in range(0, blast.shape[0]):  # for each hit taxID
+        # fetch the full lineage for that taxID
+        # go through each taxonomy level and check for regulated taxIDs
+        tax_lin = pd.DataFrame(
+            list(
+                zip(
+                    t["FullLineage"].str.split(";")[x],
+                    t["FullLineageTaxIDs"].str.split(";")[x],
+                    t["FullLineageRanks"].str.split(";")[x],
+                )
+            ),
+            columns=["Lineage", "TaxID", "Rank"],
         )
     # Filter to only those rows which have a matching taxonomic lineage
     blast = blast[blast[TAXIDS_COL].isin(lin["TaxID"])]

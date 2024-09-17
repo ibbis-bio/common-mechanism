@@ -8,14 +8,13 @@ import glob
 import subprocess
 from typing import Optional
 
-from commec.tools.database_handler import DatabaseHandler, DatabaseVersion
+from commec.tools.blast_tools import BlastHandler
+from commec.tools.database_handler import DatabaseVersion
 
-#TODO: Ensure updates from Tessas handling of Diamond are correctly incorperated here.
-class DiamondHandler(DatabaseHandler):
+class DiamondHandler(BlastHandler):
     """ A Database handler specifically for use with Diamond files for commec screening. """
-
-    def __init__(self, directory : str, database_file : str, input_file : str, out_file : str):
-        super().__init__(directory, database_file, input_file, out_file)
+    def __init__(self, database_file : str, input_file : str, out_file : str):
+        super().__init__(database_file, input_file, out_file)
         self.frameshift : int = 15
         self.do_range_culling = True
         self.threads = 1
@@ -25,10 +24,6 @@ class DiamondHandler(DatabaseHandler):
             "qseqid",   "stitle",   "sseqid",   "staxids",
             "evalue", "bitscore", "pident", "qlen",
             "qstart", "qend",     "slen",   "sstart",  "send"]
-
-    def get_output_format(self) -> str:
-        """ Returns a formatted string version of the output format for blastx"""
-        return self.output_format + " ".join(self.output_format_tokens)
 
     def screen(self):
         # Find all files matching the pattern nr*.dmnd in DB_PATH
