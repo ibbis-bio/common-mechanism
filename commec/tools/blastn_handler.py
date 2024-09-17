@@ -5,14 +5,15 @@ Defines the `Input and Output Screen Parameters` class, and associated dataclass
 """
 
 import subprocess
-from commec.tools.database_handler import DatabaseHandler, DatabaseVersion
+from commec.tools.blast_tools import BlastHandler
+from commec.tools.database_handler import DatabaseVersion
 
-class BlastNHandler(DatabaseHandler):
+class BlastNHandler(BlastHandler):
     """ A Database handler specifically for use with BlastX files for commec screening. 
     Allows for full customization of any of the callable blast flags. A better implementation
     may be achieved using import blast"""
-    def __init__(self, directory : str, database_file : str, input_file : str, out_file : str):
-        super().__init__(directory, database_file, input_file, out_file)
+    def __init__(self, database_file : str, input_file : str, out_file : str):
+        super().__init__(database_file, input_file, out_file)
         # We fill this with the defaults, however they can always be overridden after instancing, before screening.
         self.arguments_dictionary = {
             "-outfmt": ["7", "qacc",   "stitle",   "sacc",   "staxids",
