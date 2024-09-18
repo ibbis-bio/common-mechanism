@@ -33,9 +33,19 @@ from enum import StrEnum
 # Seperate versioning for the output JSON.
 JSON_COMMEC_FORMAT_VERSION = "0.1"
 
+class CommecScreenStep(StrEnum):
+    """ 
+    Enumeration of possible stages of Commec screening
+    """
+    BIORISK = 'Biorisk Screen'
+    TAXONOMY_NT = "Nucleotide Taxonomy Screen"
+    TAXONOMY_AA = "Protein Taxonomy Screen"
+    BENIGN = "Benign Screen"
+
 class CommecRecomendation(StrEnum):
     """
     All possible recommendation outputs from commec for a query.
+    Ordered by importance of user feedback.
     """
     NULL = '-' # This was not set.
     SKIP = 'Skip' # Intentionally skipped this step.
@@ -44,12 +54,14 @@ class CommecRecomendation(StrEnum):
     FLAG = 'Flag' # Commec has flagged this query.
     ERROR = 'Error' # An error occured, such that this step failed to run.
 
-    # I don't like the below, should we just use FLAG and PASS perhaps.
-    TRUE = 'true' # Useful for organism identification outputs.
-    FALSE = 'false' # Useful for organism identification outputs.
+@dataclass
+class CommecScreenStepRecommendation:
+    """ Pairs a recomendation with a Screening step."""
+    Recommendation : CommecRecomendation = CommecRecomendation.NULL
+    ScreenStep : CommecScreenStep = field(default_factory=CommecScreenStep)
 
 @dataclass
-class CommecRecomendationContainer():
+class CommecRecomendationContainer:
     """
     Summarises the recommendations at each step of the commec screen process.
     """
@@ -85,25 +97,46 @@ class CommecRecomendationContainer():
             self.commec_recommendation = CommecRecomendation.WARN
             return
 
+        # At the moment we only get here when biorisk screen is just run.
+        # this will set the global recommend to pass or error, after biorisk is done.
+        # We will need earlier checks to maintian the error status of future steps however.
+        if self.commec_recommendation == CommecRecomendation.NULL:
+            self.commec_recommendation = self.biorisk_screen
+
+
 @dataclass
 class CommecSummaryStatistics:
     """
-    Summary of some useful statistics for rapid intepretation of complicated screen outputs.
+    Summary of the recommendations at each step of the commec screen process, and 
+    some useful statistics for rapid intepretation of complicated screen outputs.
     """
+    overall_recommendation : CommecRecomendation = CommecRecomendation.NULL
+    biorisk_screen : CommecRecomendation = CommecRecomendation.NULL
+    protein_taxonomy_screen : CommecRecomendation = CommecRecomendation.NULL
+    nucleotide_taxonomy_screen : CommecRecomendation = CommecRecomendation.NULL
+    virus_flag : CommecRecomendation = CommecRecomendation.NULL
+    bacteria_flag : CommecRecomendation = CommecRecomendation.NULL
+    eukaryote_flag : CommecRecomendation = CommecRecomendation.NULL
+    benign_screen : CommecRecomendation = CommecRecomendation.NULL
+
     biorisk_toxin_percentage : int = 0
     percentage_of_regulated_for_taxonomy_best_matches : int = 0
     human_pathogen_flag_percentage : int = 0
 
 @dataclass
 class MatchRange:
-    '''Container for information on how a match maps to a query, match direction
-      is +1, or positive, if the query and match are in the same direction, and 
-      -1 if they are inverse, and 0 if not set.'''
+    """
+    Container for information on matching hits to a query
+    """
     match_start : int = 0
     match_end : int = 0
     query_start : int = 0
     query_end : int = 0
-    query_direction : int = 0
+
+@dataclass
+class HitDescription:
+    recommendation : CommecScreenStepRecommendation = field(default_factory=CommecScreenStepRecommendation)
+    description : str = ""
 
 @dataclass
 class BenignData:
