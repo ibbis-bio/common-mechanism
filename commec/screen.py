@@ -270,13 +270,13 @@ class Screen:
                 )
             
         if self.params.should_do_biorisk_screening:
-            self.screen_data.commec_info.biorisk_database_info = self.databases.biorisk_db.get_version_information()
+            self.screen_data.commec_info.biorisk_database_info = self.database_tools.biorisk_hmm.get_version_information()
 
         if self.params.should_do_protein_screening:
-            self.screen_data.commec_info.protein_database_info = self.databases.protein_db.get_version_information()
+            self.screen_data.commec_info.protein_database_info = self.database_tools.regulated_protein.get_version_information()
 
         if self.params.should_do_nucleotide_screening:
-            self.screen_data.commec_info.nucleotide_database_info = self.databases.nucleotide_db.get_version_information()
+            self.screen_data.commec_info.nucleotide_database_info = self.database_tools.regulated_nt.get_version_information()
 
         if self.params.should_do_benign_screening:
             self.screen_data.commec_info.benign_database_info = self.databases.benign_hmm.get_version_information()
@@ -406,10 +406,9 @@ class Screen:
         noncoding regions (i.e. that would not be found with protein search).
         """
         # Only screen nucleotides in noncoding regions
-        fetch_noncoding_regions(self.database_tools.protein_db.out_file,
+        fetch_noncoding_regions(self.database_tools.regulated_protein.out_file,
                                 self.params.query.nt_path)
-        
-        noncoding_fasta = f"{self.params.output_prefix}.noncoding.fasta" # TODO: This should be passed into fetch_noncoding_regions.
+        noncoding_fasta = f"{self.params.output_prefix}.noncoding.fasta"
 
         if not os.path.isfile(noncoding_fasta):
             logger.debug(
@@ -447,17 +446,22 @@ class Screen:
             return
 
         logging.debug("\t...running benign hmmscan")
-        self.database_tools.benign_hmm.screen()
+        self.database_tools.benign_hmm.search()
         logging.debug("\t...running benign blastn")
-        self.database_tools.benign_blastn.screen()
+        self.database_tools.benign_blastn.search()
         logging.debug("\t...running benign cmscan")
-        self.database_tools.benign_cmscan.screen()
+        self.database_tools.benign_cmscan.search()
 
         coords = pd.read_csv(sample_name + ".reg_path_coords.csv")
-        benign_desc =  pd.read_csv(self.database_tools.benign_hmm.db_directory + "/benign_annotations.tsv", sep="\t")
-        
+        benign_desc =  pd.read_csv(
+            self.database_tools.benign_hmm.db_directory + "/benign_annotations.tsv", 
+            sep="\t"
+            )
+
         logging.debug("\t...checking benign scan results")
-        # Note currently check_for_benign hard codes .benign.hmmscan, and should grab from handler instead.
+
+        # Note currently check_for_benign hard codes .benign.hmmscan,
+        # in future parse, and grab from search handler instead.
         check_for_benign(sample_name, coords, benign_desc)
 
 def run(args: argparse.Namespace):
