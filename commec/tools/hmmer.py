@@ -11,7 +11,6 @@ import subprocess
 import pandas as pd
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
 
-
 class HmmerHandler(SearchHandler):
     """A Database handler specifically for use with Hmmer files for commec screening."""
 
@@ -105,7 +104,6 @@ def readhmmer(fileh):
     hmmer["ali to"] = pd.to_numeric(hmmer["ali to"])
     hmmer["qlen"] = pd.to_numeric(hmmer["qlen"])
     return hmmer
-
 
 def trimhmmer(hmmer):
     """
