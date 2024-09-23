@@ -2,7 +2,8 @@
 # Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
 """
 Module for Blast related tools, a library for dealing with general blast file parsing tasks.
-Useful for reading any blast outputs, for example from Blastx or Blastn.
+Useful for reading any blast related outputs, for example from Blastx, Blastn, or diamond.
+(split_taxa, taxdist, readblast, trimblast, tophits)
 Also contains the abstract base class for blastX/N/Diamond database handlers.
 """
 import os
@@ -12,7 +13,11 @@ from typing import BinaryIO, TextIO
 import pytaxonkit
 import pandas as pd
 import numpy as np
-from commec.tools.search_handler import SearchHandler, DatabaseValidationError
+
+from commec.tools.search_handler import (
+    SearchHandler,
+    DatabaseValidationError
+)
 
 TAXID_SYNTHETIC_CONSTRUCTS = 32630
 TAXID_VECTORS = 29278

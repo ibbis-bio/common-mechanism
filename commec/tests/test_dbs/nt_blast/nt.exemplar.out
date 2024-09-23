@@ -1,0 +1,7 @@
+# BLASTN 2.15.0+
+# Query: BBa_K380009_A_20830_Coding_"Protein_A_Z-domain"
+# Database: /root/repo/json/common-mechanism/commec/tests/test_dbs/nt_blast/nt
+# Fields: query acc., subject title, subject acc., subject tax ids, evalue, bit score, % identity, query length, q. start, q. end, subject length, s. start, s. end
+# 1 hits found
+BBa_K380009_A_20830_Coding_"Protein_A_Z-domain"	Pseudogene_E"FakeGeneE_Biorisk"[taxid=560]	Pseudogene_E"FakeGeneE_Biorisk"[taxid=560]	0	4.33e-91	322	100.000	174	1	174	174	1	174
+# BLAST processed 1 queries

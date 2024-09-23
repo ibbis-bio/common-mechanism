@@ -1,0 +1,12 @@
+#target name         accession query name                                      accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value inc description of target
+#------------------- --------- ----------------------------------------------- --------- --- -------- -------- -------- -------- ------ ----- ---- ---- ----- ------ --------- --- ---------------------
+#
+# Program:         cmscan
+# Version:         1.1.5 (Sep 2023)
+# Pipeline mode:   SCAN
+# Query file:      /root/repo/json/common-mechanism/commec/tests/test_data/single_record.fasta
+# Target file:     /root/repo/json/common-mechanism/commec/tests/test_dbs/benign_db/benign.cmscan
+# Option settings: cmscan --tblout /root/repo/json/common-mechanism/commec/tests/test_dbs/benign_db/benign.cmscan.exemplar.out /root/repo/json/common-mechanism/commec/tests/test_dbs/benign_db/benign.cmscan /root/repo/json/common-mechanism/commec/tests/test_data/single_record.fasta 
+# Current dir:     /root/repo/json/common-mechanism
+# Date:            Thu Sep 19 12:15:55 2024
+# [ok]
