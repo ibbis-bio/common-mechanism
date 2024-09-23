@@ -15,7 +15,7 @@ import logging
 
 from Bio import SeqIO
 from commec.tools.blast_tools import readblast, trimblast
-from commec.tools.database_handler import DatabaseHandler
+from commec.tools.search_handler import SearchHandler
 
 def fetch_noncoding_regions(nr_output_file : str, cleaned_fasta_file_path : str):
     """
@@ -26,9 +26,9 @@ def fetch_noncoding_regions(nr_output_file : str, cleaned_fasta_file_path : str)
     f_file = cleaned_fasta_file_path
 
     # check if the nr hits file is empty
-    if DatabaseHandler.is_empty(query):
+    if SearchHandler.is_empty(query):
         nc_bits = "all"
-    elif not DatabaseHandler.has_hits(query):
+    elif not SearchHandler.has_hits(query):
         logging.info("\t...no hits to the nr database\n")
         nc_bits = "all"
     # if not, check whether any of the hits has an E-value > 1e-30

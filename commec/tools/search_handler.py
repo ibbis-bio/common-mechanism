@@ -18,10 +18,8 @@ class SearchToolVersion:
     tool_info: str = "x.x.x"
     database_info: str = "x.x.x"
 
-
 class DatabaseValidationError(Exception):
     """Custom exception for database validation errors."""
-
 
 class SearchHandler(ABC):
     """
