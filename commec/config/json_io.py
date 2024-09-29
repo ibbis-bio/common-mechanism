@@ -26,12 +26,49 @@
 import json
 import string
 import os
+from commec.tools.search_handler import SearchToolVersion
 from dataclasses import dataclass, asdict, fields, field, is_dataclass
 from typing import Dict, Type, get_origin, Any, get_args
 from enum import StrEnum
 
 # Seperate versioning for the output JSON.
 JSON_COMMEC_FORMAT_VERSION = "0.1"
+
+class LifeDomainFlag(StrEnum):
+    """ Domains of life. """
+    SKIP = "Not assigned"
+    EUKARYOTE = "Eukaryote"
+    BACTERIA = "Bacteria"
+    VIRUS = "Virus"
+
+class RegulationFlag(StrEnum):
+    """ Domains of life. """
+    REGULATED = "Regulated"
+    REGULATED_GENE = "Regulated gene"
+    VIRULANCE_FACTOR = "Virulance Factor"
+    SKIP = "Not assigned"
+
+def guess_domain(search_string : str) -> LifeDomainFlag:
+    """ 
+    Given a string description, try to determine 
+    which domain of life this has come from.
+    """
+    def contains(search_string : str, search_terms):
+        for token in search_terms:
+            if search_string.find(token) == -1:
+                continue
+            return True
+        return False
+    
+    search_token = search_string.lower()
+    if contains(search_token, ["vir", "capsid", "RNA Polymerase"]):
+        return LifeDomainFlag.VIRUS
+    if contains(search_token, ["cillus","bact","coccus","phila","ella","cocci","coli"]):
+        return LifeDomainFlag.BACTERIA
+    if contains(search_token, ["eukary","nucleus","sona","odium","myces"]):
+        return LifeDomainFlag.EUKARYOTE
+    return LifeDomainFlag.SKIP
+
 
 class CommecScreenStep(StrEnum):
     """ 
@@ -54,31 +91,92 @@ class CommecRecomendation(StrEnum):
     FLAG = 'Flag' # Commec has flagged this query.
     ERROR = 'Error' # An error occured, such that this step failed to run.
 
+    @property
+    def importance(self):
+        """ Encode the importance of each Recommendations value. """
+        order = {
+            CommecRecomendation.NULL: 0,
+            CommecRecomendation.SKIP: 1,
+            CommecRecomendation.PASS: 2,
+            CommecRecomendation.WARN: 3,
+            CommecRecomendation.FLAG: 4,
+            CommecRecomendation.ERROR: 5,
+        }
+        return order[self]
+    
+def compare(a : CommecRecomendation, b : CommecRecomendation):
+    """ Compare two recommendations, return the most important one. """
+    if a.importance > b.importance:
+        return a
+    return b
+
 @dataclass
 class CommecScreenStepRecommendation:
     """ Pairs a recomendation with a Screening step."""
-    Recommendation : CommecRecomendation = CommecRecomendation.NULL
-    ScreenStep : CommecScreenStep = field(default_factory=CommecScreenStep)
+    outcome : CommecRecomendation = CommecRecomendation.NULL
+    from_step : CommecScreenStep = field(default_factory=CommecScreenStep)
 
+@dataclass
+class CommecSummaryStatistics:
+    """
+    Summary of the recommendations at each step of the commec screen process, and 
+    some useful statistics for rapid intepretation of complicated screen outputs.
+    """
+    biorisk_toxin_percentage : int = 0
+    percentage_of_regulated_for_taxonomy_best_matches : int = 0
+    human_pathogen_flag_percentage : int = 0
+
+@dataclass
+class MatchRange:
+    """
+    Container for information on matching a hit to a query
+    """
+    e_value : float = 0.0
+    match_start : int = 0
+    match_end : int = 0
+    query_start : int = 0
+    query_end : int = 0
+
+@dataclass
+class HitDescription:
+    """ Container for all information regarding a single hit with a range(s), to a single query."""
+    recommendation : CommecScreenStepRecommendation = field(default_factory=CommecScreenStepRecommendation)
+    name : str = ""
+    description : str = ""
+    regulation : RegulationFlag = RegulationFlag.SKIP
+    non_regulated_overlap_percent : int =  0 # The Percentage of non-regulated hits, sharing this hits start site(s).
+    domain : LifeDomainFlag = LifeDomainFlag.SKIP
+    ranges : list[MatchRange] = field(default_factory = list)
+
+    def get_e_value(self) -> float:
+        """ Gets the best e-value across all ranges, useful for sorting hits"""
+        out : float = 10.0
+        for r in self.ranges:
+            out = min(out, r.e_value)
+        return out
+    
 @dataclass
 class CommecRecomendationContainer:
     """
-    Summarises the recommendations at each step of the commec screen process.
+    Summarises the recommendations across all hits for a single query.
     """
     commec_recommendation : CommecRecomendation = CommecRecomendation.NULL
     biorisk_screen : CommecRecomendation = CommecRecomendation.NULL
     protein_taxonomy_screen : CommecRecomendation = CommecRecomendation.NULL
     nucleotide_taxonomy_screen : CommecRecomendation = CommecRecomendation.NULL
-    virus_flag : CommecRecomendation = CommecRecomendation.NULL
-    bacteria_flag : CommecRecomendation = CommecRecomendation.NULL
-    eukaryote_flag : CommecRecomendation = CommecRecomendation.NULL
+    virus_hits : int = 0
+    bacteria_hits : int = 0
+    eukaryote_hits : int = 0
     benign_screen : CommecRecomendation = CommecRecomendation.NULL
 
-    def update_commec_recommendation(self):
+    def update_commec_recommendation(self, list_of_hits : list[HitDescription]):
         """ 
         Parses the current state of the json, 
         and updates the global commec recommendation.
         """
+
+        #TODO: Go through the hit descriptions, and update each step recommendation?
+
         if self.biorisk_screen == CommecRecomendation.FLAG:
             self.commec_recommendation = CommecRecomendation.FLAG
             return
@@ -103,165 +201,63 @@ class CommecRecomendationContainer:
         if self.commec_recommendation == CommecRecomendation.NULL:
             self.commec_recommendation = self.biorisk_screen
 
-
-@dataclass
-class CommecSummaryStatistics:
-    """
-    Summary of the recommendations at each step of the commec screen process, and 
-    some useful statistics for rapid intepretation of complicated screen outputs.
-    """
-    overall_recommendation : CommecRecomendation = CommecRecomendation.NULL
-    biorisk_screen : CommecRecomendation = CommecRecomendation.NULL
-    protein_taxonomy_screen : CommecRecomendation = CommecRecomendation.NULL
-    nucleotide_taxonomy_screen : CommecRecomendation = CommecRecomendation.NULL
-    virus_flag : CommecRecomendation = CommecRecomendation.NULL
-    bacteria_flag : CommecRecomendation = CommecRecomendation.NULL
-    eukaryote_flag : CommecRecomendation = CommecRecomendation.NULL
-    benign_screen : CommecRecomendation = CommecRecomendation.NULL
-
-    biorisk_toxin_percentage : int = 0
-    percentage_of_regulated_for_taxonomy_best_matches : int = 0
-    human_pathogen_flag_percentage : int = 0
-
-@dataclass
-class MatchRange:
-    """
-    Container for information on matching hits to a query
-    """
-    match_start : int = 0
-    match_end : int = 0
-    query_start : int = 0
-    query_end : int = 0
-
-@dataclass
-class HitDescription:
-    recommendation : CommecScreenStepRecommendation = field(default_factory=CommecScreenStepRecommendation)
-    description : str = ""
-
-@dataclass
-class BenignData:
-    '''Container to hold data related to the benign status of a taxonomy search'''
-    benign : bool = False
-    benign_match_type : str = "" # CMscan, Blast, HMM
-    percent_identity_e_value : float = 0.0
-
-@dataclass
-class MatchFields:
-    '''Container to hold information for a match to the query identified in a commec screen. 
-    molecule_alphabet is expected to contain either 'aa' for aminoacids, or 'nt' for nucelotides.
-    range contains information pertaining to over what range the match occured.'''
-    description : str = ""
-    molecule_alphabet : str = ""
-    id : int = 0
-    taxon : str = ""
-    kingdom : str = ""
-    ranges : list[MatchRange] = field(default_factory = list)
-    is_benign : BenignData = field(default_factory = BenignData)
-    # etc etc
-
-@dataclass
-class BioRisk:
-    '''Container to hold information for a match to the query identified as a potential biorisk'''
-    target_name : str = ""
-    description : str = ""
-    regulated : bool = True # This may already be encoded in the list that the instance exists in.
-    regulated_info : str = ""
-    range : list[MatchRange] = field(default_factory = list)
-    # etc etc
-
-@dataclass
-class BioRiskData:
-    '''
-    Container dataclass for a list of matches to biorisks 
-    identified from a commec database screen.
-    '''
-    regulated_genes : list[BioRisk] = field(default_factory = list)
-    virulance_factors : list[BioRisk] = field(default_factory = list)
-
-    def get_existing(self, match_description : str):
-        """
-        Searches to see if a match already exists, and returns it, so that it can be modified.
-        """
-        for regulated_match in self.regulated_genes:
-            if regulated_match.description == match_description:
-                return regulated_match
-        for virulance_factor in self.virulance_factors:
-            if virulance_factor.description == match_description:
-                return virulance_factor
-        return None
-
-    def get_existing_regulated_gene(self, match_description : str):
-        """
-        Searches to see if a match already exists, and returns it, so that it can be modified.
-        """
-        for regulated_match in self.regulated_genes:
-            if regulated_match.description == match_description:
-                return regulated_match
-        return None
-
-    def get_existing_virulance_factor(self, match_description : str):
-        """
-        Searches to see if a match already exists, and returns it, so that it can be modified.
-        """
-        for virulance_factor in self.virulance_factors:
-            if virulance_factor.description == match_description:
-                return virulance_factor
-        return None
-
-@dataclass
-class TaxonomyData:
-    '''
-    Container dataclass for a list of matches of taxonomy hits, 
-    identified from a commec database screen.
-    '''
-    is_regulated : bool
-    regulation_agency : str = ""
-    matches : list[MatchFields] = field(default_factory = list)
-
-    def get_existing_match(self, match_description : str):
-        """
-        Searches to see if a match already exists, and returns it, so that it can be modified.
-        """
-        for match in self.matches:
-            if match.description == match_description:
-                return match
-        return None
-
 @dataclass
 class QueryData:
     '''Container to hold data related to the Query
       used in a commec database screen'''
-    name : str = ""
+    query : str = ""
     length : int = 0
     sequence : str = ""
     recommendation : CommecRecomendationContainer = field(default_factory=CommecRecomendationContainer)
     summary_info : CommecSummaryStatistics = field(default_factory=CommecSummaryStatistics)
-    biorisks : BioRiskData = field(default_factory = BioRiskData)
-    taxonomies : list[TaxonomyData] = field(default_factory = list)
+    hits : list[HitDescription] = field(default_factory=list)
+
+    def get_hit(self, match_name : str) -> HitDescription:
+        """
+        Searches to see if a match already exists, and returns it, so that it can be modified.
+        """
+        for hit in self.hits:
+            if hit.name == match_name:
+                return hit
+        return None
+
+    def update(self):
+        """
+        Call this before exporting to file.
+        Sorts the hits based on E-values,
+        TODO: Sorts the ranges based on position/E-value (to be confirmed)
+        Updates the commec recomendation based on all hits recommendations.
+        """
+        self.hits.sort(key = lambda hit: hit.get_e_value())
+        self.recommendation.update_commec_recommendation(self.hits)
 
 @dataclass
 class CommecRunInformation:
     '''Container dataclass to hold general run information for a commec screen '''
     commec_version : str = "0.1.3" # We can programmatically set this eventually.
     json_output_version : str = JSON_COMMEC_FORMAT_VERSION
-    biorisk_database_info : str = ""
-    protein_database_info : str = ""
-    nucleotide_database_info : str = ""
-    benign_database_info : str = ""
+    biorisk_database_info : SearchToolVersion = field(default_factory=SearchToolVersion)
+    protein_database_info : SearchToolVersion = field(default_factory=SearchToolVersion)
+    nucleotide_database_info : SearchToolVersion = field(default_factory=SearchToolVersion)
+    benign_protein_database_info : SearchToolVersion = field(default_factory=SearchToolVersion)
+    benign_rna_database_info : SearchToolVersion = field(default_factory=SearchToolVersion)
+    benign_synbio_database_info : SearchToolVersion = field(default_factory=SearchToolVersion)
     time_taken : str = ""
     date_run : str = ""
     # add other settings / run parameters.
 
 @dataclass
 class ScreenData:
-    ''' Root dataclass to hold all data related to the screening of an individual query by commec.'''
+    ''' 
+    Root dataclass to hold all data related to the screening of an individual query by commec.
+    '''
     commec_info : CommecRunInformation = field(default_factory = CommecRunInformation)
     queries : list[QueryData] = field(default_factory = list)
 
     def format(self):
         ''' Format this ScreenData as a json string to pass to a standard out if desired.'''
         return str(asdict(self))
-    
+
     def get_query(self, query_name : str) -> QueryData:
         """
         Searches for a query, such that it can be updated or read from.
@@ -272,12 +268,16 @@ class ScreenData:
             search_term = query_name[:-2]
 
         for data in self.queries:
-            if data.name == search_term:
+            if data.query == search_term:
                 return data
         return None
-
+    
+    def update(self):
+        for query in self.queries:
+            query.update()
 
 # The above could be moved to a custom .py script for variable importing under version control.
+# The below is generic commands for input and output of a dataclass hierarchy.
 
 def encode_screen_data_to_json(input_screendata: ScreenData, output_json_filepath: string = "output.json") -> None:
     ''' Converts a ScreenData class object into a JSON file at the given filepath.'''
@@ -289,8 +289,6 @@ def encode_dict_to_screen_data(input_dict : dict) -> ScreenData:
     any keys within the dictionary not part of the ScreenData format are lost.
     any missing information will be simple set as defaults.'''
     return dict_to_dataclass(ScreenData, input_dict)
-
-
 
 # Convert the dictionary back to the dataclass or list of dataclass
 def dict_to_dataclass(cls: Type, data: Dict[str, Any]) -> Any:
@@ -347,6 +345,7 @@ def get_screen_data_from_json(input_json_filepath: string) -> ScreenData:
     # Check version of imported json.
     input_version = my_data["commec_info"]["json_output_version"]
     if not input_version == JSON_COMMEC_FORMAT_VERSION:
-        raise RuntimeError("""Version difference between input (v.{input_version}) and
-                            expected (v.{JSON_COMMEC_FORMAT_VERSION}) JSON state file: {input_json_filepath}""")
+        raise RuntimeError("Version difference between input (v.{input_version}) and"
+                           "expected (v.{JSON_COMMEC_FORMAT_VERSION}) : "
+                           "JSON state file: {input_json_filepath}")
     return encode_dict_to_screen_data(my_data)

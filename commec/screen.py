@@ -61,12 +61,21 @@ from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.logging import setup_console_logging, setup_file_logging, set_log_level
 from commec.config.io_parameters import ScreenIOParameters
 from commec.config.screen_tools import ScreenTools
-from commec.config.json_io import ScreenData, QueryData, CommecRecomendation, encode_screen_data_to_json, get_screen_data_from_json
 
-from commec.screeners.check_biorisk import check_biorisk
+from commec.config.json_io import (
+    ScreenData,
+    CommecRecomendation,
+    CommecScreenStep,
+    QueryData,
+    get_screen_data_from_json,
+    encode_screen_data_to_json
+)
+
+from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
 from commec.screeners.check_benign import check_for_benign
-from commec.screeners.check_reg_path import check_for_regulated_pathogens
-from commec.screeners.fetch_nc_bits import fetch_noncoding_regions
+from commec.screeners.check_reg_path import check_for_regulated_pathogens, update_taxonomic_data_from_database
+
+from commec.tools.fetch_nc_bits import fetch_noncoding_regions
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -263,10 +272,9 @@ class Screen:
         # Initialise the json file:
         for i, _value in enumerate(self.params.query.querie_names):
             self.screen_data.queries.append(QueryData(
-                self.params.query.querie_names[i],
-                len(self.params.query.querie_raw[i]),
-                self.params.query.querie_raw[i],
-                CommecRecomendation.NULL)
+                query.name,
+                len(str(query.seq)),
+                str(query.seq))
                 )
             
         if self.params.should_do_biorisk_screening:
@@ -279,12 +287,14 @@ class Screen:
             self.screen_data.commec_info.nucleotide_database_info = self.database_tools.regulated_nt.get_version_information()
 
         if self.params.should_do_benign_screening:
-            self.screen_data.commec_info.benign_database_info = self.databases.benign_hmm.get_version_information()
+            self.screen_data.commec_info.benign_protein_database_info = self.database_tools.benign_hmm.get_version_information()
+            self.screen_data.commec_info.benign_rna_database_info = self.database_tools.benign_blastn.get_version_information()
+            self.screen_data.commec_info.benign_synbio_database_info = self.database_tools.benign_cmscan.get_version_information()
 
         self.screen_data.commec_info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         # Less of this, and more just passing the object in future - this might take too long in larger queries.
-        encode_screen_data_to_json(self.screen_data, self.params.output_json)
+        #encode_screen_data_to_json(self.screen_data, self.params.output_json)
         
 
     def run(self, args: argparse.Namespace):
@@ -343,12 +353,13 @@ class Screen:
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
 
-        self.screen_data = get_screen_data_from_json(self.params.output_json)
+        #self.screen_data = get_screen_data_from_json(self.params.output_json)
         time_taken = (time.time() - self.start_time)
         # Convert the elapsed time to hours, minutes, and seconds
         hours, rem = divmod(time_taken, 3600)
         minutes, seconds = divmod(rem, 60)
         self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+        self.screen_data.update()
         encode_screen_data_to_json(self.screen_data, self.params.output_json)
 
         self.params.clean()
@@ -359,15 +370,11 @@ class Screen:
         """
         logger.debug("\t...running hmmscan")
         self.database_tools.biorisk_hmm.search()
-        logger.debug("\t...checking hmmscan results")
-        exit_status = check_biorisk(
-            self.database_tools.biorisk_hmm.out_file,
-            self.database_tools.biorisk_hmm.db_directory,
-        )
-        if exit_status != 0:
-            raise RuntimeError(
-                f"Output of biorisk search could not be processed: {self.database_tools.biorisk_hmm.out_file}"
-            )
+        logging.debug("\t...checking hmmscan results")
+        check_biorisk(self.database_tools.biorisk_hmm.out_file,
+                      self.database_tools.biorisk_hmm.db_directory,
+                      self.params.output_json)
+        update_biorisk_data_from_database(self.database_tools.biorisk_hmm, self.screen_data)
 
     def screen_proteins(self):
         """
@@ -391,13 +398,17 @@ class Screen:
         if os.path.isfile(reg_path_coords):
             os.remove(reg_path_coords)
 
-        check_for_regulated_pathogens(
-            self.database_tools.regulated_protein.out_file,
-            self.params.config["databases"]["taxonomy"]["path"],
-            self.params.config["databases"]["taxonomy"]["benign_taxids"],
-            self.params.config["databases"]["taxonomy"]["regulated_taxids"],
-            self.params.config["threads"]
-        )
+        check_for_regulated_pathogens(self.database_tools.regulated_protein.out_file,
+                                       self.params.db_dir,
+                                       str(self.params.config.threads))
+        
+        update_taxonomic_data_from_database(self.database_tools.regulated_protein,
+                                               self.database_tools.benign_hmm,
+                                               self.database_tools.biorisk_hmm,
+                                               self.params.db_dir + "/taxonomy/",
+                                               self.screen_data,
+                                               CommecScreenStep.TAXONOMY_AA,
+                                               self.params.config.threads)
 
     def screen_nucleotides(self):
         """
@@ -434,6 +445,14 @@ class Screen:
             self.params.config["databases"]["taxonomy"]["regulated_taxids"],
             self.params.config["threads"]
         )
+
+        update_taxonomic_data_from_database(self.database_tools.regulated_nt,
+                                               self.database_tools.benign_hmm,
+                                               self.database_tools.biorisk_hmm,
+                                               self.params.db_dir + "/taxonomy/",
+                                               self.screen_data,
+                                               CommecScreenStep.TAXONOMY_NT,
+                                               self.params.config.threads)
 
     def screen_benign(self):
         """
