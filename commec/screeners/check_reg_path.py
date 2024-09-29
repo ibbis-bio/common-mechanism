@@ -18,41 +18,183 @@ import pandas as pd
 from commec.config.screen_tools import ScreenIOParameters
 from commec.tools.blast_tools import read_blast, get_taxonomic_labels, get_top_hits
 from commec.tools.blastn import BlastNHandler
+from commec.tools.search_handler import SearchHandler
+from commec.config.json_io import (
+    ScreenData,
+    HitDescription,
+    CommecScreenStep,
+    CommecRecomendation,
+    CommecScreenStepRecommendation,
+    MatchRange,
+    LifeDomainFlag,
+    RegulationFlag,
+    guess_domain,
+    compare
+)
 
 pd.set_option("display.max_colwidth", 10000)
 
-logger = logging.getLogger(__name__)
+def update_taxonomic_data_from_database(
+        search_handle : SearchHandler,
+        benign_handler : SearchHandler,
+        biorisk_handler : SearchHandler,
+        taxonomy_directory : str,
+        data : ScreenData,
+        step : CommecScreenStep,
+        n_threads : int
+        ):
+    vax_taxids_file = os.path.join(benign_handler.db_directory,"vax_taxids.txt")
+    reg_taxids_file = os.path.join(biorisk_handler.db_directory,"reg_taxids.txt")
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-i",
-        "--input",
-        dest="in_file",
-        required=True,
-        help="Input query file (e.g. QUERY.nr.dmnd)",
-    )
-    parser.add_argument(
-        "-d",
-        "--database",
-        dest="db",
-        required=True,
-        help="top-level database folder (assumes /taxonomy, /benign_db, /biorisk_db dirs",
-    )
-    parser.add_argument("-t", "--threads", dest="threads", required=True, help="number of threads")
-    args = parser.parse_args()
+    #check input files
+    if not search_handle.check_output():
+        logging.error("\t...ERROR: Taxonomic search results empty\n %s", search_handle.out_file)
+        return
+    if not os.path.exists(vax_taxids_file):
+        logging.error("\t...benign db file %s does not exist\n", vax_taxids_file)
+        return
+    if not os.path.exists(reg_taxids_file):
+        logging.error("\t...biorisk db file %s does not exist\n", reg_taxids_file)
+        return
 
-    # Legacy - assume hardcoded database locations; to adjust, call via screen.py
-    input_database_dir = args.db
-    taxonomy_db_path = f"{input_database_dir}/taxonomy/"
-    benign_taxid_path = f"{input_database_dir}/benign_db/vax_taxids.txt"
-    biorisk_taxid_path = f"{input_database_dir}/biorisk_db/reg_taxids.txt"
+    # read in files
+    reg_ids = pd.read_csv(reg_taxids_file, header=None)
+    vax_ids = pd.read_csv(vax_taxids_file, header=None)
 
-    exit_code = check_for_regulated_pathogens(
-        args.in_file, taxonomy_db_path, benign_taxid_path, biorisk_taxid_path, args.threads
-    )
-    sys.exit(exit_code)
+    if search_handle.is_empty(search_handle.out_file):
+        logging.info("\tERROR: Homology search has failed\n")
+        return 1
 
+    if step == CommecScreenStep.TAXONOMY_AA:
+        for query in data.queries:
+            query.recommendation.protein_taxonomy_screen = CommecRecomendation.PASS
+    if step == CommecScreenStep.TAXONOMY_NT:
+        for query in data.queries:
+            query.recommendation.nucleotide_taxonomy_screen = CommecRecomendation.PASS
+
+    if not search_handle.has_hits(search_handle.out_file):
+        logging.info("\t...no hits\n")
+        return 0
+
+    blast = readblast(search_handle.out_file)
+    blast = taxdist(blast, reg_ids, vax_ids, taxonomy_directory, n_threads)
+    #blast = taxdist(blast, reg_ids, vax_ids, input_database_dir + "/taxonomy/", n_threads)
+
+    blast = blast[blast['species'] != ""] # ignore submissions made above the species level
+
+    # trim down to the top hit for each region, ignoring any top hits that are synthetic constructs
+    #interesting_cols = ['query acc.', 'subject title', 'subject tax ids', 'regulated', 'q. start', 'q. end', '% identity']
+
+    blast2 = trimblast(blast)
+    blast2 = tophits(blast2) # trims down to only label each base with the top matching hit, but includes the different taxids attributed to the same hit
+
+    # We don't care if no regulated hits appear.
+    if blast2['regulated'].sum() == 0: 
+        logging.info("\t...no regulated hits\n")
+        return
+            
+    # if ANY of the trimmed hits are regulated
+    with pd.option_context('display.max_rows', None,
+                    'display.max_columns', None,
+                    'display.precision', 3,
+                    ):
+
+        unique_queries = blast2['query acc.'].unique()
+
+        for query in unique_queries:
+            query_write = data.get_query(query)
+            if not query_write:
+                logging.error("Query during %s could not be found! [%s]", str(step), query)
+                continue
+
+            n_regulated_bacteria = 0
+            n_regulated_virus = 0
+            n_regulated_eukaryote = 0
+
+            unique_query_data : pd.DataFrame = blast2[blast2['query acc.'] == query]
+            unique_query_data.dropna(subset = ['species'])
+            unique_hits = unique_query_data['subject acc.'][unique_query_data['regulated']].unique()
+
+            for hit in unique_hits:
+                unique_hit_data : pd.DataFrame = unique_query_data[unique_query_data['subject acc.'] == hit]
+                hit_description = unique_hit_data['subject title'].values[0]
+                n_reg = 0
+                n_total = 0
+
+                match_ranges = []
+                for _, region in unique_hit_data.iterrows():
+                    match_range = MatchRange(
+                        float(region['evalue']),
+                        int(region['s. start']), int(region['s. end']),
+                        int(region['q. start']), int(region['q. end'])
+                    )
+                    match_ranges.append(match_range)
+
+                    n_reg += (blast2['regulated'][blast2['q. start'] == region['q. start']] != False).sum()
+                    n_total += len(blast2['regulated'][blast2['q. start'] == region['q. start']])
+
+                non_regulated_percent : int = 100 - round(float(n_reg)/float(n_total)*100)
+
+                domain = LifeDomainFlag.SKIP
+                if unique_hit_data['superkingdom'].iloc[0] == "Viruses":
+                    domain = LifeDomainFlag.VIRUS
+                    n_regulated_virus += 1
+                if unique_hit_data['superkingdom'].iloc[0] == "Bacteria":
+                    domain = LifeDomainFlag.BACTERIA
+                    n_regulated_bacteria +=1
+                if unique_hit_data['superkingdom'].iloc[0] == "Eukaryota":
+                    domain = LifeDomainFlag.EUKARYOTE
+                    n_regulated_eukaryote+=1
+
+                recommendation : CommecRecomendation = CommecRecomendation.FLAG
+
+                # Example of how we might make decisions regarding the percent regulation from this step...
+                if non_regulated_percent > 50:
+                    recommendation = CommecRecomendation.WARN
+
+                # Update the query level recommendation of this step.
+                if step == CommecScreenStep.TAXONOMY_AA:
+                    for query in data.queries:
+                        query.recommendation.protein_taxonomy_screen = compare(
+                            query.recommendation.protein_taxonomy_screen,
+                            recommendation)
+                if step == CommecScreenStep.TAXONOMY_NT:
+                    for query in data.queries:
+                        query.recommendation.nucleotide_taxonomy_screen = compare(
+                            query.recommendation.nucleotide_taxonomy_screen,
+                            recommendation)
+
+                # Append our hit information to Screen data.
+                write_hit = query_write.get_hit(hit)
+                if write_hit:
+                    # Grab some ranges.
+                    write_hit.ranges.extend(match_ranges)
+                    write_hit.domain = domain # Always overwrite, better than our guess from biorisk.
+                    write_hit.description += " " + hit_description
+                    if (write_hit.regulation == RegulationFlag.SKIP):
+                        write_hit.regulation = RegulationFlag.REGULATED
+                    write_hit.non_regulated_overlap_percent = non_regulated_percent
+                    write_hit.recommendation = compare(write_hit.recommendation, recommendation)
+                    continue
+                    
+                # We need to create a new hit description.
+                query_write.hits.append(
+                    HitDescription(
+                        CommecScreenStepRecommendation(
+                            recommendation,
+                            step
+                        ),
+                        hit,
+                        hit_description,
+                        RegulationFlag.REGULATED,
+                        non_regulated_percent,
+                        domain,
+                        match_ranges
+                    )
+                )
+            query_write.recommendation.bacteria_hits += n_regulated_bacteria
+            query_write.recommendation.virus_hits += n_regulated_virus
+            query_write.recommendation.eukaryote_hits += n_regulated_eukaryote
 
 def check_for_regulated_pathogens(
         input_file: str | os.PathLike,
@@ -260,6 +402,30 @@ def check_for_regulated_pathogens(
 
     return 0
 
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i","--input",dest="in_file", 
+        required=True, help="Input query file (e.g. QUERY.nr.dmnd)")
+    parser.add_argument("-d","--database", dest="db",
+        required=True,help="database folder (must contain vax_taxids and reg_taxids file)")
+    parser.add_argument("-t","--threads", dest="threads",
+        required=True,help="number of threads")
+    args=parser.parse_args()
+
+    # Set up logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(message)s",
+        handlers=[logging.StreamHandler(sys.stderr)],
+    )
+
+    rv = check_for_regulated_pathogens(args.in_file, args.db, args.threads)
+    sys.exit(rv)
 
 if __name__ == "__main__":
     main()
