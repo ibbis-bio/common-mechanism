@@ -478,20 +478,9 @@ class Screen:
             )
 
         logging.debug("\t...checking benign scan results")
-
-        # Note currently check_for_benign hard codes .benign.hmmscan,
-        # in future parse, and grab from search handler instead.
         check_for_benign(sample_name, coords, benign_desc)
 
-def run(args: argparse.Namespace):
-    """
-    Entry point from commec main. Passes args to Screen object, and runs.
-    """
-    my_screen: Screen = Screen()
-    my_screen.run(args)
-
-
-def run(args : argparse.ArgumentParser):
+def run(args : argparse.Namespace):
     """
     Entry point from commec main. Passes args to Screen object, and runs.
     """
