@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        iframe {
+            width: 100%;
+            border: none;
+            display: block;
+        }
+        .plot-container {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>${heading}</h1>
+
+    <p>${general_info}</p>
+
+    % for plot_file in plot_files:
+    <div class="plot-container">
+        <iframe src="${plot_file}"></iframe>
+    </div>
+    % endfor
+</body>
+</html>
