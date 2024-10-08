@@ -4,14 +4,13 @@ into a visual HTML representation of the Commec output. Which can be embedded in
 any other HTML document as appropriate.
 """
 
-
 from enum import StrEnum
 import argparse
 import plotly.graph_objects as go
 from mako.template import Template
 
 from commec.config.json_io import (
-    get_screen_data_from_json, 
+    get_screen_data_from_json,
     ScreenData,
     QueryData,
     HitDescription,
@@ -65,7 +64,7 @@ def generate_html_from_screen_data(input_data : ScreenData, output_file : str):
 
     # Create the plot
     fig = go.Figure()
-    query_to_draw = input_data.queries[2]
+    query_to_draw = input_data.queries[0]
 
     #fig = make_subplots(
     #    rows=len(input_data.queries),
