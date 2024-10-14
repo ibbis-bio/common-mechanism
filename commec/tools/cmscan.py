@@ -32,7 +32,7 @@ class CmscanHandler(SearchHandler):
             with open(self.db_file, "r", encoding="utf-8") as file:
                 for line in file:
                     if line.startswith("INFERNAL1/a"):
-                        database_info = line.split("[", maxsplit=1)
+                        database_info = line.strip()
                         continue
                     # Early exit if data has been found
                     if database_info:

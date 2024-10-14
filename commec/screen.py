@@ -59,23 +59,21 @@ import pandas as pd
 
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.logging import setup_console_logging, setup_file_logging, set_log_level
+from commec.utils.json_html_output import generate_html_from_screen_data
 from commec.config.io_parameters import ScreenIOParameters
 from commec.config.screen_tools import ScreenTools
-
-from commec.config.json_io import (
-    ScreenData,
-    CommecRecomendation,
-    CommecScreenStep,
-    QueryData,
-    get_screen_data_from_json,
-    encode_screen_data_to_json
-)
 
 from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
 from commec.screeners.check_benign import check_for_benign
 from commec.screeners.check_reg_path import check_for_regulated_pathogens, update_taxonomic_data_from_database
-
 from commec.tools.fetch_nc_bits import fetch_noncoding_regions
+
+from commec.config.json_io import (
+    ScreenData,
+    CommecScreenStep,
+    QueryData,
+    encode_screen_data_to_json
+)
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -361,6 +359,7 @@ class Screen:
         self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
         self.screen_data.update()
         encode_screen_data_to_json(self.screen_data, self.params.output_json)
+        generate_html_from_screen_data(self.screen_data, self.params.output_prefix+"_summary.html")
 
         self.params.clean()
 
