@@ -28,17 +28,15 @@ class HmmerHandler(SearchHandler):
 
     def get_version_information(self) -> SearchToolVersion:
         """
-        At the moment this is just grabbing some basic header info of the
-        first entrant of the hmm database. Not really a true version control.
-        But better than nothing at the moment. There may be some way to return
-        some version information from hmmcan itself, look into that.
+        The first line of the HMM database typically contains creation date
+        information, and some version information.
         """
         database_info: str = None
         try:
             with open(self.db_file, "r", encoding="utf-8") as file:
                 for line in file:
                     if line.startswith("HMMER3/f"):
-                        database_info = line.split("[", maxsplit=1)
+                        database_info = line.split(";", maxsplit=1)[0].strip()
                         continue
                     # Early exit if data has been found
                     if database_info:
@@ -47,7 +45,7 @@ class HmmerHandler(SearchHandler):
             tool_version_result = subprocess.run(
                 ["hmmscan", "-h"], capture_output=True, text=True, check=True
             )
-            tool_info: str = tool_version_result.stdout.splitlines()[1]
+            tool_info: str = tool_version_result.stdout.splitlines()[1].strip()
             return SearchToolVersion(tool_info, database_info)
 
         except subprocess.CalledProcessError:
