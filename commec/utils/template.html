@@ -2,31 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
+    <title>Interactive Plotly Figures</title>
     <style>
         body {
+            margin: 0;
+            padding: 0;
             font-family: Arial, sans-serif;
         }
-        iframe {
-            width: 100%;
-            border: none;
-            display: block;
+
+        .container {
+            display: flex;
+            flex-direction: column; /* Changed to column to stack figures vertically */
+            height: 100vh;
+            overflow: auto; /* Enable scrolling for the container */
         }
-        .plot-container {
-            margin-bottom: 20px;
+
+        .figure {
+            padding: 10px;
+            margin-bottom: 20px; /* Space between figures */
+        }
+
+        .figure:nth-child(even) {
+            background-color: #f0f0f0; /* Light grey background for even figures */
         }
     </style>
 </head>
 <body>
-    <h1>${heading}</h1>
-
-    <p>${general_info}</p>
-
-    % for plot_file in plot_files:
-    <div class="plot-container">
-        <iframe src="${plot_file}"></iframe>
+    <div class="container">
+        % for fig_html in figures_html:
+            <div class="figure">
+                ${fig_html | n}
+            </div>
+        % endfor
     </div>
-    % endfor
 </body>
 </html>
