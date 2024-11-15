@@ -4,12 +4,10 @@ into a visual HTML representation of the Commec output. Which can be embedded in
 any other HTML document as appropriate.
 """
 
-from enum import StrEnum
+import os
 import argparse
 import plotly.graph_objects as go
 import pandas as pd
-import plotly.express as px
-import datetime
 from mako.template import Template
 
 from commec.config.json_io import (
@@ -47,7 +45,7 @@ class CommecPalette():
     rgba_YELLOW = 'rgba(241,80,36,255)'
     rgba_RED = 'rgba(207,27,81,255)'
 
-def color_from_hit(hit : HitDescription):
+def color_from_hit(hit : HitDescription) -> CommecPalette:
     """ Convert a Screen step into an associated Colour."""
     if hit.recommendation.from_step == CommecScreenStep.BIORISK:
         return CommecPalette.RED
@@ -63,140 +61,113 @@ def generate_html_from_screen_data(input_data : ScreenData, output_file : str):
     """
     Interpret the ScreenData from Commec Screen output as a visualisation, in 
     the form on an HTML output.
+    If Commec Screen handled multiple Queries, then they are combined in the HTML output.
     """
 
-    # Create the plot
-    fig = go.Figure()
-    query_to_draw = input_data.queries[0]
+    plot_filenames = []
+    figures_html = []
 
-    #fig = make_subplots(
-    #    rows=len(input_data.queries),
-    #    cols=1,
-    #    shared_xaxes=True,  # Share the x-axis across subplots
-    #    vertical_spacing=0.05  # Adjust vertical space between subplots
-    #)
-
-    stacks = draw_query_to_plot(fig, query_to_draw)
-
-    # Add an invisible trace to the secondary x-axis, else it wont show.
-    #fig.add_trace(go.Scatter(
-    #    x=[0, query_to_draw.length],  # The x-values; these can be any value
-    #    y=[0, 0],  # The y-values; these can be zeros or any dummy values
-    #    name='Invisible Trace',  # Optional name
-    #    xaxis='x2',  # Assign to the secondary x-axis
-    #    mode='lines',  # Use lines to create the trace
-    #    line=dict(color='rgba(255, 255, 255, 0)'),  # Fully transparent line
-    #    hoverinfo='none',  # No hover information
-    #    showlegend=False,
-    #))
-
-    # Update layout to display X-axis on top and hide Y-axis labels
-    fig.update_layout(
-        height = 100 * (stacks + 1),
-        #barmode='stack',
-        title="Query: " + query_to_draw.query + "  (" + str(query_to_draw.length)+" b.p.)",
-        xaxis_title="",
-        yaxis_title="",
-        yaxis=dict(
-            showticklabels=False,
-            autorange='reversed',
-            fixedrange=True,
-            tickmode="linear",
-            zeroline=False,
-            range=[-0.5,stacks+1+0.5]
-        ),
-        bargap=0.0,
-
-        template='plotly_white',
+    # Render each query as its own Plotly HTML visualisation:
+    for i, query in enumerate(input_data.queries):
+        fig = go.Figure()
+        vertical_stack_count : int = draw_query_to_plot(fig, query)
+        update_layout(fig, query, vertical_stack_count)
+        file_name = output_file.strip()+"_"+str(i)+".html"
+        html = fig.to_html(file_name, full_html = False, include_plotlyjs='cdn')
+        figures_html.append(html)
+        #plot_filenames.append(file_name)
         
-        # First x-axis (default)
-        xaxis=dict(
+    # Read each Plotly HTML file content
+    #for filename in plot_filenames:
+    #    with open(filename, "r", encoding = "utf-8") as file:
+    #        figures_html.append(file.read())
+
+    # Construct the composite HTML
+    template = Template(filename="commec/utils/template.html")
+    rendered_html = template.render(figures_html=figures_html)
+
+    # Save the combined HTML output
+    output_filename = output_file.strip()+".html"
+    with open(output_filename, "w", encoding = "utf-8") as output_file:
+        output_file.write(rendered_html)
+
+    # Remove intermediaries
+    #for file in plot_filenames:
+        #os.remove(file)
+
+def update_layout(fig, query_to_draw, stacks):
+    """ 
+    Applies some default settings to the plotly figure,
+    also adjusts the figure height based on the number of vertically stacking bars.
+    """
+
+    figure_base_height = 180
+    figure_stack_height = 30
+
+    # Update layout to display X-axis on top and hide Y-axis labels for specified subplot
+    fig.update_layout({
+        # General layout properties
+        'height': figure_base_height + (figure_stack_height * stacks),
+        'title': f"Query: {query_to_draw.query}  ({query_to_draw.length} b.p.)",
+        'barmode': 'overlay',
+        'template': 'plotly_white',
+        'plot_bgcolor': 'rgba(0,0,0,0)',  # Transparent plot area
+        'paper_bgcolor': 'rgba(0,0,0,0)',  # Transparent outer area
+        # Update specific xaxis and yaxis only for the specified subplot
+        "xaxis": dict(
+            title="Query Basepairs (bp)",
             showline=True,
-            #range=[convert_basepairs_to_datetime(0), convert_basepairs_to_datetime(query_to_draw.length)],
             constrain="domain",
             ticks='outside',
             showgrid=True,
-            #fixedrange=True,
+            fixedrange=True,
             zeroline=False,
-            tickformat="%s",  # Display seconds as a numeric value
-            type="date"
-            #tickmode="linear",  # Ensure ticks are linearly spaced
+            # Uncomment if time format and linear mode are needed
+            #tickformat="%s",
+            #type="date",
+            #tickmode="linear",
         ),
-
-
-    #fig.update_layout(
-    #    title="Benchmark Visualization",
-    #    xaxis=dict(
-    #        title="Time (seconds)",
-    #        showgrid=True,
-    #        zeroline=False,
-    #        tickformat="%s"
-    #    ),
-    #    yaxis=dict(
-    #        title="Call Stack",
-    #        tickmode="linear",
-    #        showgrid=True,
-    #        zeroline=False
-    #    )
-    #)
-
-        # Second x-axis (xaxis2) at the top
-        # the issue with having two axis is they don't necessarily scroll together.
-        # We could try draw the same thing to both axis, and hope for the best.
-        #xaxis2=dict(
-        #    overlaying='x',  # Overlay it on the same domain as xaxis
-        #    side='top',  # Place it on top
-        #    showline=True,  # Show the X-axis line
-        #    constrain="domain",  # Constrain the x-axis to its domain
-        #    #range=[convert_basepairs_to_datetime(0), convert_basepairs_to_datetime(query_to_draw.length)],  # Same range as xaxis (or modify if needed)
-        #    ticks='outside',  # Show ticks outside
-        #    showgrid=False,  # Hide gridlines
-        #    #fixedrange=True,
-        #    #tickformat="%s",  # Display seconds as a numeric value
-        #    #tickmode="linear",  # Ensure ticks are linearly spaced
-        #)
-    )
-
-    # Show the plot
-    fig.write_html(output_file.strip()+".html")
-
-def convert_basepairs_to_datetime(bp : int) -> datetime:
-    """ 
-    We can't draw timelines with any dtype, so we convert bps to seconds, 
-    and use a datetime object which parses as a string. Hurrah for hacky work-arounds.
-    """
-    return datetime.datetime(1970, 1, 1) + datetime.timedelta(seconds=bp)
+        "yaxis": dict(
+            title="",
+            showticklabels=False,
+            autorange='reversed',
+            range=[-0.5, stacks + 0.5],
+            fixedrange=True,
+            tickmode="linear",
+            zeroline=False,
+        ),
+        'bargap': 0.0,
+    })
 
 def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
     """ 
     Write the data from a single query into the figure for plotly. 
     """
-    print(query_to_draw.query, " with ", str(len(query_to_draw.hits)), " hits.")
-
+    # Interpret the QueryData into bars for the plot.
     graph_data = [
         {"label": query_to_draw.query, "outcome" : "", "start": 0, "stop": query_to_draw.length, "color" : CommecPalette.DK_BLUE, "stack" : 0},
     ]
 
-    write_stack_start_points = [query_to_draw.length]
+    # Keep track of how many vertical stacks this image has.
+    n_stacks = 1
 
     for hit in query_to_draw.hits:
         for match in hit.ranges:
+            # Find the best vertical position to reduce collisions, and fill all space.
+            collision_free = False
+            stack_write = 0
+            while not collision_free:
+                stack_write += 1
+                collision_free = True
+                for entry in graph_data:
+                    if entry["stack"] == stack_write:
+                        collision_free = (collision_free and
+                                            (match.query_start > entry["stop"] 
+                                            or match.query_end < entry["start"])
+                                            )
 
-            # Find the best spot.
-            stack_write = None # Query is 0, so 0 is also invalid default.
-            for i, start_point in enumerate(write_stack_start_points):
-                # Check if we fit after any existing stacks.
-                if start_point < match.query_start:
-                    print(i)
-                    write_stack_start_points[i-1] = match.query_end
-                    stack_write = i
-                    break
-            
-            # We don't fit, create a new stack...
-            if not stack_write:
-                stack_write = len(write_stack_start_points)
-                write_stack_start_points.append(match.query_end)
-            
+            n_stacks = max(n_stacks, stack_write + 1)
+
             graph_data.append(
                 {
                     "label" : hit.recommendation.from_step + " " + hit.description[:25] + "...",
@@ -208,71 +179,37 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
                 }
             )
 
-    for r in graph_data:
-        print(r)
-
-    # Add the actual data ranges with individual colors and text inside the bars
-    write_stack : int = len(write_stack_start_points)
-
     df = pd.DataFrame(graph_data)
-
-    # Convert start and stop times from seconds to datetime strings
-    epoch = datetime.datetime(1970, 1, 1)
-    df['start'] = df['start'].apply(lambda x: epoch + datetime.timedelta(seconds=x))
-    df['stop'] = df['stop'].apply(lambda x: epoch + datetime.timedelta(seconds=x))
-
-    print(df['start'])
-    print(df['stop'])
-
 
     # Convert RGB colors to hex format
     def rgb_to_hex(rgb):
         return '#{:02x}{:02x}{:02x}'.format(rgb[0], rgb[1], rgb[2])
-
     df['color'] = df['color'].apply(rgb_to_hex)
 
     # Generate hover text
-    df['hovertext'] = df.apply(lambda row: f"{row['label']}<br>({row['start']}-{row['stop']})", axis=1)
+    df['hovertext'] = df.apply(lambda bar_data: f"{bar_data['label']}<br>({bar_data['start']}-{bar_data['stop']})", axis=1)
+    df['clicktext'] = df.apply(lambda bar_data: f"{bar_data['label']}<br>({bar_data['start']}-{bar_data['stop']})<br>"
+                               "This is some special custom text to be shown when you click on something.", 
+                               axis=1)
 
-    print(df)
+    # Add each bar to the existing figure
+    for _i, bar_data in df.iterrows():
+        fig.add_trace(
+            go.Bar(
+                x=[bar_data['stop'] - bar_data['start']],  # Width of bar as timedelta
+                y=[bar_data['stack']],  # Stack position
+                base=bar_data['start'],  # Starting point on x-axis
+                orientation='h',
+                marker=dict(color=bar_data['color']),
+                hovertext=bar_data['hovertext'],
+                hoverinfo='text',
+                customdata=df['clicktext'],
+                name=bar_data['label'],
+                width = 1.0,
+            ),
+        )
 
-    # From benchmarking.
-    #fig = px.timeline(
-    #    df,
-    #    x_start="start_datetime",
-    #    x_end="end_datetime",
-    #    y="y_pos",
-    #    color="label",              # Unique colours for unique functions.
-    #    hover_name="label",
-    #    hover_data={"Duration": df["duration"]},
-    #    title="Benchmark Visualization"
-    #)
-
-
-    # Plot the timeline with Plotly
-    temp_fig = px.timeline(
-        df, 
-        x_start="start",
-        x_end="stop",
-        y="stack",
-        color="color",
-        hover_name="hovertext",
-        labels={"stack": "Stack"}
-    )
-
-    # Transfer the traces from temp_fig to the existing fig
-    for trace in temp_fig.data:
-        fig.add_trace(trace)
-
-    # Update the layout for better visualization
-    #fig.update_layout(
-    #    showlegend=False,
-    #    title="Timeline Plot",
-    #    xaxis_title="Time",
-    #    yaxis_title="Stack",
-    #)
-
-    return write_stack
+    return n_stacks
 
 def generate_rounded_rect(x0,y0,x1,y1,rx,ry):
     """ 
@@ -280,6 +217,8 @@ def generate_rounded_rect(x0,y0,x1,y1,rx,ry):
     xy0: Top Left Corner
     xy1: Bottom Right Corner.
     rxy: Radius of curvature for each axis.
+
+    Currently unused.
     """
     # Create an SVG path for the rounded rectangle:
     path = (

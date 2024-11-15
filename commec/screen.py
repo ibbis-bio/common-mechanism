@@ -359,7 +359,7 @@ class Screen:
         self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
         self.screen_data.update()
         encode_screen_data_to_json(self.screen_data, self.params.output_json)
-        generate_html_from_screen_data(self.screen_data, self.params.output_prefix+"_summary.html")
+        generate_html_from_screen_data(self.screen_data, self.params.output_prefix+"_summary")
 
         self.params.clean()
 
@@ -397,17 +397,19 @@ class Screen:
         if os.path.isfile(reg_path_coords):
             os.remove(reg_path_coords)
 
-        check_for_regulated_pathogens(self.database_tools.regulated_protein.out_file,
-                                       self.params.db_dir,
-                                       str(self.params.config.threads))
-        
+        check_for_regulated_pathogens(
+            self.database_tools.regulated_protein.out_file,
+            self.params.db_dir,
+            str(self.params.config.threads),
+        )
         update_taxonomic_data_from_database(self.database_tools.regulated_protein,
-                                               self.database_tools.benign_hmm,
-                                               self.database_tools.biorisk_hmm,
-                                               self.params.db_dir + "/taxonomy/",
-                                               self.screen_data,
-                                               CommecScreenStep.TAXONOMY_AA,
-                                               self.params.config.threads)
+                                            self.database_tools.benign_blastn,
+                                            self.database_tools.biorisk_hmm,
+                                            self.params.db_dir + "/taxonomy/",
+                                            self.screen_data,
+                                            CommecScreenStep.TAXONOMY_AA,
+                                            self.params.config.threads)
+
 
     def screen_nucleotides(self):
         """
