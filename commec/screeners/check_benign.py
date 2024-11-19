@@ -14,11 +14,12 @@ import argparse
 import os
 import sys
 import pandas as pd
-
-from commec.tools.blastn import BlastNHandler # For has_hits.
-from commec.tools.blast_tools import tophits, readblast, trimblast
-from commec.tools.hmmer import readhmmer, HmmerHandler
-from commec.tools.cmscan import readcmscan
+from commec.tools.blastn import BlastNHandler  # For has_hits.
+from commec.tools.hmmer import HmmerHandler
+from commec.tools.blast_tools import get_top_hits, read_blast
+from commec.tools.hmmer import readhmmer
+from commec.tools.cmscan import CmscanHandler, readcmscan
+from commec.tools.search_handler import SearchHandler
 
 from commec.config.json_io import (
     ScreenData,
@@ -35,16 +36,205 @@ from commec.config.json_io import (
 
 logger = logging.getLogger(__name__)
 
-def update_benign_data_from_database(search_handle : HmmerHandler, data : ScreenData):
 
-    if not search_handle.check_output():
-        logging.info("\t...no housekeeping protein data\n")
-    if not search_handle.has_hits(search_handle.out_file):
+def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
+                                     benign_rna_handle : CmscanHandler,
+                                     benign_synbio_handle : BlastNHandler,
+                                     data : ScreenData, coords, benign_desc):
+    # We are running the benign screen, so flag the queries by default for this step.
+    for query in data.queries:
+        query.recommendation.benign_screen = CommecRecomendation.FLAG
+
+    # PROTEIN HITS
+    # for each set of hits, need to pull out the coordinates covered by benign entries
+    if not benign_protein_handle.has_hits(benign_protein_handle.out_file):
         logging.info("\t...no housekeeping protein hits\n")
     else:
-        hmmer = readhmmer(search_handle.out_file)
-        hmmer = hmmer[hmmer["E-value"] < 1e-20]
-        # print(hmmer)
+        hmmer = benign_protein_handle.read_output()
+        print(hmmer)
+        hmmer = hmmer[hmmer["evalue"] < 1e-20]
+        for region in range(0, coords.shape[0]):  # for each regulated pathogen region
+            # look at only the hmmer hits that overlap with it
+            htrim =_trim_to_coords(hmmer, coords, region)
+            if htrim.shape[0] > 0:
+                htrim = htrim.assign(coverage=abs(htrim["q. start"] - htrim["q. end"]))
+                if any(htrim["query length"] - htrim["coverage"] < 50):
+                    htrim = htrim[htrim["coverage"] > 0.80]
+                    htrim = htrim.reset_index(drop=True)
+                    # for row in range(htrim.shape[0]):
+
+                    top_hit = htrim.iloc[0]
+                    print(top_hit)
+                    query = top_hit["query name"]
+                    hit = top_hit["subject title"]
+                    query_write = data.get_query(query)
+                    if not query_write:
+                        logging.debug("Query during %s could not be found! [%s]", str(CommecScreenStep.BENIGN_PROTEIN), query)
+                        continue
+                    hit_description = str(*benign_desc["Description"][benign_desc["ID"] == hit])
+                    non_regulated_percent = 0
+                    domain = LifeDomainFlag.SKIP
+                    if benign_desc['superkingdom'].iloc[0] == "Viruses":
+                        domain = LifeDomainFlag.VIRUS
+                    if benign_desc['superkingdom'].iloc[0] == "Bacteria":
+                        domain = LifeDomainFlag.BACTERIA
+                    if benign_desc['superkingdom'].iloc[0] == "Eukaryota":
+                        domain = LifeDomainFlag.EUKARYOTE
+
+                    match_ranges = [
+                        MatchRange(
+                        float(top_hit['evalue']),
+                        int(top_hit['s. start']), int(top_hit['s. end']),
+                        int(top_hit['q. start']), int(top_hit['q. end'])
+                    )
+                    ]
+
+                    # We need to create a new hit description.
+                    query_write.hits.append(
+                        HitDescription(
+                            CommecScreenStepRecommendation(
+                                CommecRecomendation.PASS,
+                                CommecScreenStep.BENIGN_PROTEIN
+                            ),
+                            hit,
+                            hit_description,
+                            RegulationFlag.REGULATED,
+                            non_regulated_percent,
+                            domain,
+                            match_ranges
+                        )
+                    )
+                    #TODO: This passes the whole query for a small region, need to go through and do a make-shift mini-cleared scenario. That is QUERY based.
+                    query_write.recommendation.benign_screen = CommecRecomendation.PASS
+
+    # RNA HITS
+    # for each set of hits, need to pull out the coordinates covered by benign entries
+    if not benign_rna_handle.has_hits(benign_rna_handle.out_file):
+        logging.info("\t...no benign RNA hits\n")
+    else:
+        cmscan = benign_rna_handle.read_output()
+        for region in range(0, coords.shape[0]):  # for each regulated pathogen region
+            # look at only the cmscan hits that overlap with it
+            qlen = abs(coords["q. start"][region] - coords["q. end"][region])
+            # filter hits for ones that overlap with the regulated region
+            htrim = _trim_to_coords(cmscan, coords,region)
+            if htrim.shape[0] > 0:
+                # bases unaccounted for based method
+                htrim = htrim.assign(
+                    coverage=qlen - abs(htrim["q. end"] - htrim["q. start"])
+                )
+                if any(htrim["coverage"] < 50):
+                    htrim = htrim[htrim["coverage"] < 50]
+                    htrim = htrim.reset_index(drop=True)
+
+                    #TODO: Consider only iterating over the unique subject titles for htrim at this stage.
+                    for row in range(htrim.shape[0]):
+                        hit = htrim["subject title"][row]
+                        hit_description =  htrim["description of target"][row]
+
+
+                        query = htrim["query name"][row]
+                        query_write = data.get_query(query)
+                        if not query_write:
+                            logging.debug("Query during %s could not be found! [%s]", str(CommecScreenStep.BENIGN_SYNBIO), query)
+                            continue
+                        
+                        non_regulated_percent = 0
+                        domain = LifeDomainFlag.SKIP
+
+                        match_ranges = [
+                            MatchRange(
+                            float(htrim['evalue'][row]),
+                            int(htrim['s. start'][row]), int(htrim['s. end'][row]),
+                            int(htrim['q. start'][row]), int(htrim['q. end'][row])
+                        )
+                        ]
+
+                        # We need to create a new hit description
+                        query_write.hits.append(
+                            HitDescription(
+                                CommecScreenStepRecommendation(
+                                    CommecRecomendation.PASS,
+                                    CommecScreenStep.BENIGN_RNA
+                                ),
+                                hit,
+                                hit_description,
+                                RegulationFlag.REGULATED,
+                                non_regulated_percent,
+                                domain,
+                                match_ranges
+                            )
+                        )
+                        #TODO: This passes the whole query for a small region, need to go through and do a make-shift mini-cleared scenario. That is QUERY based.
+                        query_write.recommendation.benign_screen = CommecRecomendation.PASS
+
+    # SYNBIO HITS
+    # annotate and clear benign nucleotide sequences
+    if not benign_synbio_handle.has_hits(benign_synbio_handle.out_file):
+        logging.info("\t...no Synbio sequence hits\n")
+    else:
+        blastn = benign_synbio_handle.read_output()  # synbio parts
+        blastn = get_top_hits(blastn)
+        for region in range(0, coords.shape[0]):  # for each regulated pathogen region
+            htrim = _trim_to_coords(blastn, coords, region)
+            if any(htrim["q. coverage"] > 0.80):
+                htrim = htrim[htrim["q. coverage"] > 0.80]
+                htrim = htrim.reset_index(drop=True)
+
+                #TODO: Consider only iterating over the unique subject titles for htrim at this stage.
+                for row in range(htrim.shape[0]):
+                    hit = htrim["subject title"][row]
+                    # TODO: Format a better description from Blast inputs.
+                    hit_description =  htrim["subject title"][row]
+
+                    non_regulated_percent = 0
+                    domain = LifeDomainFlag.SKIP
+
+                    query = htrim["query acc."][row]
+                    query_write = data.get_query(query)
+                    if not query_write:
+                        logging.debug("Query during %s could not be found! [%s]", str(CommecScreenStep.BENIGN_SYNBIO), query)
+                        continue
+
+                    match_ranges = [
+                        MatchRange(
+                        float(htrim['evalue'][row]),
+                        int(htrim['s. start'][row]), int(htrim['s. end'][row]),
+                        int(htrim['q. start'][row]), int(htrim['q. end'][row])
+                    )
+                    ]
+
+                    # We need to create a new hit description
+                    query_write.hits.append(
+                        HitDescription(
+                            CommecScreenStepRecommendation(
+                                CommecRecomendation.PASS,
+                                CommecScreenStep.BENIGN_SYNBIO
+                            ),
+                            hit,
+                            hit_description,
+                            RegulationFlag.REGULATED,
+                            non_regulated_percent,
+                            domain,
+                            match_ranges
+                        )
+                    )
+                    #TODO: This passes the whole query for a small region, need to go through and do a make-shift mini-cleared scenario. That is QUERY based.
+                    query_write.recommendation.benign_screen = CommecRecomendation.PASS
+
+
+def _trim_to_coords(data : pd.DataFrame, coords, region):
+    datatrim = data[
+        ~(
+            (data["q. start"] > coords["q. end"][region])
+            & (data["q. end"] > coords["q. end"][region])
+        )
+        & ~(
+            (data["q. start"] < coords["q. start"][region])
+            & (data["q. end"] < coords["q. start"][region])
+        )
+    ]
+    return datatrim
 
 def check_for_benign(query, coords, benign_desc):
     '''
@@ -55,7 +245,7 @@ def check_for_benign(query, coords, benign_desc):
     # PROTEIN HITS
     # for each set of hits, need to pull out the coordinates covered by benign entries
     hmmscan = query + ".benign.hmmscan"
-    if not BlastNHandler.has_hits(hmmscan):
+    if not HmmerHandler.has_hits(hmmscan):
         logger.info("\t...no housekeeping protein hits\n")
     else:
         hmmer = readhmmer(hmmscan)

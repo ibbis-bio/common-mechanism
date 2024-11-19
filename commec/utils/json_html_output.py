@@ -49,7 +49,9 @@ def color_from_hit(hit : HitDescription) -> CommecPalette:
     """ Convert a Screen step into an associated Colour."""
     if hit.recommendation.from_step == CommecScreenStep.BIORISK:
         return CommecPalette.RED
-    if hit.recommendation.from_step == CommecScreenStep.BENIGN:
+    if (hit.recommendation.from_step == CommecScreenStep.BENIGN_PROTEIN or
+        hit.recommendation.from_step == CommecScreenStep.BENIGN_RNA or
+        hit.recommendation.from_step == CommecScreenStep.BENIGN_SYNBIO):
         return CommecPalette.LT_BLUE
     if hit.recommendation.from_step == CommecScreenStep.TAXONOMY_AA:
         return CommecPalette.ORANGE
@@ -95,7 +97,7 @@ def generate_html_from_screen_data(input_data : ScreenData, output_file : str):
     #for file in plot_filenames:
         #os.remove(file)
 
-def update_layout(fig, query_to_draw, stacks):
+def update_layout(fig, query_to_draw : QueryData, stacks):
     """ 
     Applies some default settings to the plotly figure,
     also adjusts the figure height based on the number of vertically stacking bars.
@@ -108,7 +110,7 @@ def update_layout(fig, query_to_draw, stacks):
     fig.update_layout({
         # General layout properties
         'height': figure_base_height + (figure_stack_height * stacks),
-        'title': f"Query: {query_to_draw.query}  ({query_to_draw.length} b.p.)",
+        'title': f"{query_to_draw.recommendation.commec_recommendation} : {query_to_draw.query}  ({query_to_draw.length} b.p.)",
         'barmode': 'overlay',
         'template': 'plotly_white',
         'plot_bgcolor': 'rgba(0,0,0,0)',  # Transparent plot area
@@ -145,7 +147,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
     """
     # Interpret the QueryData into bars for the plot.
     graph_data = [
-        {"label": query_to_draw.query, "outcome" : "", "start": 0, "stop": query_to_draw.length, "color" : CommecPalette.DK_BLUE, "stack" : 0},
+        {"label": query_to_draw.query, "outcome" : query_to_draw.recommendation.commec_recommendation, "start": 0, "stop": query_to_draw.length, "color" : CommecPalette.DK_BLUE, "stack" : 0},
     ]
 
     # Keep track of how many vertical stacks this image has.
@@ -171,7 +173,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
             graph_data.append(
                 {
                     "label" : hit.recommendation.from_step + " " + hit.description[:25] + "...",
-                    "outcome" : hit.recommendation.outcome + ": " + hit.description[:25] + "...",
+                    "outcome" : hit.recommendation.outcome,
                     "start" : match.query_start,
                     "stop" : match.query_end,
                     "color" : color_from_hit(hit),
@@ -187,7 +189,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
     df['color'] = df['color'].apply(rgb_to_hex)
 
     # Generate hover text
-    df['hovertext'] = df.apply(lambda bar_data: f"{bar_data['label']}<br>({bar_data['start']}-{bar_data['stop']})", axis=1)
+    df['hovertext'] = df.apply(lambda bar_data: f"{bar_data['label']}<br>({bar_data['start']}-{bar_data['stop']})<br>{bar_data['outcome']}", axis=1)
     df['clicktext'] = df.apply(lambda bar_data: f"{bar_data['label']}<br>({bar_data['start']}-{bar_data['stop']})<br>"
                                "This is some special custom text to be shown when you click on something.", 
                                axis=1)
