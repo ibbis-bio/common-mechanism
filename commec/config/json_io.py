@@ -77,7 +77,9 @@ class CommecScreenStep(StrEnum):
     BIORISK = 'Biorisk Screen'
     TAXONOMY_NT = "Nucleotide Taxonomy Screen"
     TAXONOMY_AA = "Protein Taxonomy Screen"
-    BENIGN = "Benign Screen"
+    BENIGN_PROTEIN = "Benign Protein Screen"
+    BENIGN_RNA = "Benign RNA Screen"
+    BENIGN_SYNBIO = "Benign SynBio Screen"
 
 class CommecRecomendation(StrEnum):
     """
