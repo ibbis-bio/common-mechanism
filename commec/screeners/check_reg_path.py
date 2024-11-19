@@ -43,23 +43,26 @@ def update_taxonomic_data_from_database(
         step : CommecScreenStep,
         n_threads : int
         ):
-    vax_taxids_file = os.path.join(benign_handler.db_directory,"vax_taxids.txt")
-    reg_taxids_file = os.path.join(biorisk_handler.db_directory,"reg_taxids.txt")
+
+    logging.debug("Acquiring Taxonomic Data for JSON output:")
 
     #check input files
     if not search_handle.check_output():
-        logging.error("\t...ERROR: Taxonomic search results empty\n %s", search_handle.out_file)
-        return
-    if not os.path.exists(vax_taxids_file):
-        logging.error("\t...benign db file %s does not exist\n", vax_taxids_file)
-        return
-    if not os.path.exists(reg_taxids_file):
-        logging.error("\t...biorisk db file %s does not exist\n", reg_taxids_file)
+        logging.info("\t...ERROR: Taxonomic search results empty\n %s", search_handle.out_file)
         return
 
-    # read in files
-    reg_ids = pd.read_csv(reg_taxids_file, header=None)
-    vax_ids = pd.read_csv(vax_taxids_file, header=None)
+    # Read in lists of regulated and benign tax ids
+    benign_taxid_path = os.path.join(benign_handler.db_directory,"vax_taxids.txt")
+    if not os.path.exists(benign_taxid_path):
+        logging.error("\t...benign db file %s does not exist\n", benign_taxid_path)
+        return 1
+    vax_taxids = pd.read_csv(benign_taxid_path, header=None).squeeze().astype(str).tolist()
+
+    biorisk_taxid_path = os.path.join(biorisk_handler.db_directory,"reg_taxids.txt")
+    if not os.path.exists(biorisk_taxid_path):
+        logging.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
+        return 1
+    reg_taxids = pd.read_csv(biorisk_taxid_path, header=None).squeeze().astype(str).tolist()
 
     if search_handle.is_empty(search_handle.out_file):
         logging.info("\tERROR: Homology search has failed\n")
@@ -76,23 +79,17 @@ def update_taxonomic_data_from_database(
         logging.info("\t...no hits\n")
         return 0
 
-    blast = readblast(search_handle.out_file)
-    blast = taxdist(blast, reg_ids, vax_ids, taxonomy_directory, n_threads)
-    #blast = taxdist(blast, reg_ids, vax_ids, input_database_dir + "/taxonomy/", n_threads)
+    blast = read_blast(search_handle.out_file)
+    blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)
+    blast = blast[blast["species"] != ""]  # ignore submissions made above the species level
+    
+    # label each base with the top matching hit, but include different taxids attributed to same hit
+    blast2 = get_top_hits(blast)
 
-    blast = blast[blast['species'] != ""] # ignore submissions made above the species level
-
-    # trim down to the top hit for each region, ignoring any top hits that are synthetic constructs
-    #interesting_cols = ['query acc.', 'subject title', 'subject tax ids', 'regulated', 'q. start', 'q. end', '% identity']
-
-    blast2 = trimblast(blast)
-    blast2 = tophits(blast2) # trims down to only label each base with the top matching hit, but includes the different taxids attributed to the same hit
-
-    # We don't care if no regulated hits appear.
-    if blast2['regulated'].sum() == 0: 
+    if blast2["regulated"].sum() == 0:
         logging.info("\t...no regulated hits\n")
         return
-            
+        
     # if ANY of the trimmed hits are regulated
     with pd.option_context('display.max_rows', None,
                     'display.max_columns', None,
@@ -104,7 +101,7 @@ def update_taxonomic_data_from_database(
         for query in unique_queries:
             query_write = data.get_query(query)
             if not query_write:
-                logging.error("Query during %s could not be found! [%s]", str(step), query)
+                logging.debug("Query during %s could not be found! [%s]", str(step), query)
                 continue
 
             n_regulated_bacteria = 0
@@ -113,7 +110,7 @@ def update_taxonomic_data_from_database(
 
             unique_query_data : pd.DataFrame = blast2[blast2['query acc.'] == query]
             unique_query_data.dropna(subset = ['species'])
-            unique_hits = unique_query_data['subject acc.'][unique_query_data['regulated']].unique()
+            unique_hits = unique_query_data['subject acc.'][unique_query_data["regulated"]].unique()
 
             for hit in unique_hits:
                 unique_hit_data : pd.DataFrame = unique_query_data[unique_query_data['subject acc.'] == hit]
@@ -130,8 +127,8 @@ def update_taxonomic_data_from_database(
                     )
                     match_ranges.append(match_range)
 
-                    n_reg += (blast2['regulated'][blast2['q. start'] == region['q. start']] != False).sum()
-                    n_total += len(blast2['regulated'][blast2['q. start'] == region['q. start']])
+                    n_reg += (blast2["regulated"][blast2['q. start'] == region['q. start']] != False).sum()
+                    n_total += len(blast2["regulated"][blast2['q. start'] == region['q. start']])
 
                 non_regulated_percent : int = 100 - round(float(n_reg)/float(n_total)*100)
 
@@ -317,7 +314,7 @@ def check_for_regulated_pathogens(
 
                 blast2 = blast2.dropna(subset=["species"])
                 n_reg = (blast2["regulated"][blast2["q. start"] == site] != False).sum()
-                n_total = len(blast2["regulated"][blast2["q. start"] == site])
+                n_total = len(blast2["regulated"][blast2["q. start"] == site])                
                 gene_names = ", ".join(set(subset["subject acc."]))
                 end = blast2["q. end"][blast2["q. start"] == site].max()
                 coordinates = str(int(site)) + " - " + str(int(end))
