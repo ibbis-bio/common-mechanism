@@ -25,15 +25,15 @@ def test_screendata():
                 query="Query1",
                 length=10,
                 sequence="ABCDEFGHIJ",
-                #recomendation = CommecRecomendationContainer(),
-                #summary_info = CommecSummaryStatistics(),
+                recommendation = CommecRecomendationContainer(),
+                summary_info = CommecSummaryStatistics(),
                 hits = [
                     HitDescription(
-                        recommendation=CommecScreenStepRecommendation(CommecRecomendation.PASS, CommecScreenStep.BIORISK),
+                        recommendation=CommecScreenStepRecommendation(CommecRecomendation.WARN, CommecScreenStep.BIORISK),
                         name="ImportantProtein1",
                         description="The 1st of the most important proteins, its a bacteria",
-                        regulation = RegulationFlag.REGULATED_GENE,
-                        domain = LifeDomainFlag.BACTERIA,
+                        regulation = RegulationData(RegulationList.REGULATED,[],[],[]),
+                        taxonomic_data = TaxonomicData(domains = [LifeDomainFlag.BACTERIA, LifeDomainFlag.EUKARYOTE], species = ["Escherichia Coli"]),
                         ranges = [
                             MatchRange(
                                 e_value = 0.0,
@@ -101,8 +101,8 @@ def test_erroneous_info(tmp_path, test_screendata):
     # Convert both original and retrieved data to dictionaries and compare
     assert asdict(test_data) == asdict(test_data_retrieved), (
         f"JSON Write/Read interpreter failed.\n"
-        f"Test JSON Reference data: \n{asdict(test_data)}\n"
-        f"Test JSON output data: \n{asdict(test_data_retrieved)}"
+        f"Test JSON Reference data: \n{asdict(test_data)}\n\n\n\n"
+        f"Test JSON output data: \n{asdict(test_data_retrieved)}\n\n\n\n"
     )
 
 def test_recommendation_ordering():
