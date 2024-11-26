@@ -27,8 +27,7 @@ from commec.config.json_io import (
     CommecScreenStepRecommendation,
     MatchRange,
     LifeDomainFlag,
-    RegulationFlag,
-    guess_domain,
+    RegulationList,
     compare
 )
 
@@ -82,14 +81,14 @@ def update_taxonomic_data_from_database(
     blast = read_blast(search_handle.out_file)
     blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)
     blast = blast[blast["species"] != ""]  # ignore submissions made above the species level
-    
+
     # label each base with the top matching hit, but include different taxids attributed to same hit
     blast2 = get_top_hits(blast)
 
     if blast2["regulated"].sum() == 0:
         logging.info("\t...no regulated hits\n")
         return
-        
+
     # if ANY of the trimmed hits are regulated
     with pd.option_context('display.max_rows', None,
                     'display.max_columns', None,
@@ -110,16 +109,16 @@ def update_taxonomic_data_from_database(
 
             unique_query_data : pd.DataFrame = blast2[blast2['query acc.'] == query]
             unique_query_data.dropna(subset = ['species'])
-            unique_hits = unique_query_data['subject acc.'][unique_query_data["regulated"]].unique()
+            regulated_hits = unique_query_data['subject acc.'][unique_query_data["regulated"]].unique()
 
-            for hit in unique_hits:
-                unique_hit_data : pd.DataFrame = unique_query_data[unique_query_data['subject acc.'] == hit]
-                hit_description = unique_hit_data['subject title'].values[0]
+            for hit in regulated_hits:
+                regulated_hit_data : pd.DataFrame = unique_query_data[unique_query_data['subject acc.'] == hit]
+                hit_description = regulated_hit_data['subject title'].values[0]
                 n_reg = 0
                 n_total = 0
 
                 match_ranges = []
-                for _, region in unique_hit_data.iterrows():
+                for _, region in regulated_hit_data.iterrows():
                     match_range = MatchRange(
                         float(region['evalue']),
                         int(region['s. start']), int(region['s. end']),
@@ -128,26 +127,24 @@ def update_taxonomic_data_from_database(
                     match_ranges.append(match_range)
 
                     n_reg += (blast2["regulated"][blast2['q. start'] == region['q. start']] != False).sum()
+                    # TODO: maybe? should also confirm same query end???
                     n_total += len(blast2["regulated"][blast2['q. start'] == region['q. start']])
 
-                non_regulated_percent : int = 100 - round(float(n_reg)/float(n_total)*100)
-
                 domain = LifeDomainFlag.SKIP
-                if unique_hit_data['superkingdom'].iloc[0] == "Viruses":
+                if regulated_hit_data['superkingdom'].iloc[0] == "Viruses":
                     domain = LifeDomainFlag.VIRUS
                     n_regulated_virus += 1
-                if unique_hit_data['superkingdom'].iloc[0] == "Bacteria":
+                if regulated_hit_data['superkingdom'].iloc[0] == "Bacteria":
                     domain = LifeDomainFlag.BACTERIA
                     n_regulated_bacteria +=1
-                if unique_hit_data['superkingdom'].iloc[0] == "Eukaryota":
+                if regulated_hit_data['superkingdom'].iloc[0] == "Eukaryota":
                     domain = LifeDomainFlag.EUKARYOTE
                     n_regulated_eukaryote+=1
 
                 recommendation : CommecRecomendation = CommecRecomendation.FLAG
 
                 # Example of how we might make decisions regarding the percent regulation from this step...
-                if non_regulated_percent > 50:
-                    recommendation = CommecRecomendation.WARN
+                # TODO: if all hits are in the same genus n_reg > 0, and n_total > n_reg, WARN
 
                 # Update the query level recommendation of this step.
                 if step == CommecScreenStep.TAXONOMY_AA:
@@ -168,12 +165,11 @@ def update_taxonomic_data_from_database(
                     write_hit.ranges.extend(match_ranges)
                     write_hit.domain = domain # Always overwrite, better than our guess from biorisk.
                     write_hit.description += " " + hit_description
-                    if (write_hit.regulation == RegulationFlag.SKIP):
-                        write_hit.regulation = RegulationFlag.REGULATED
-                    write_hit.non_regulated_overlap_percent = non_regulated_percent
+                    if (write_hit.regulation == RegulationList.SKIP):
+                        write_hit.regulation = RegulationList.REGULATED
                     write_hit.recommendation = compare(write_hit.recommendation, recommendation)
                     continue
-                    
+
                 # We need to create a new hit description.
                 query_write.hits.append(
                     HitDescription(
@@ -183,15 +179,15 @@ def update_taxonomic_data_from_database(
                         ),
                         hit,
                         hit_description,
-                        RegulationFlag.REGULATED,
-                        non_regulated_percent,
+                        RegulationList.REGULATED,
                         domain,
                         match_ranges
                     )
                 )
-            query_write.recommendation.bacteria_hits += n_regulated_bacteria
-            query_write.recommendation.virus_hits += n_regulated_virus
-            query_write.recommendation.eukaryote_hits += n_regulated_eukaryote
+
+            query_write.recommendation.regulated_bacteria_hits += n_regulated_bacteria
+            query_write.recommendation.regulated_virus_hits += n_regulated_virus
+            query_write.recommendation.regulated_eukaryote_hits += n_regulated_eukaryote
 
 def check_for_regulated_pathogens(
         input_file: str | os.PathLike,
@@ -314,7 +310,7 @@ def check_for_regulated_pathogens(
 
                 blast2 = blast2.dropna(subset=["species"])
                 n_reg = (blast2["regulated"][blast2["q. start"] == site] != False).sum()
-                n_total = len(blast2["regulated"][blast2["q. start"] == site])                
+                n_total = len(blast2["regulated"][blast2["q. start"] == site])
                 gene_names = ", ".join(set(subset["subject acc."]))
                 end = blast2["q. end"][blast2["q. start"] == site].max()
                 coordinates = str(int(site)) + " - " + str(int(end))

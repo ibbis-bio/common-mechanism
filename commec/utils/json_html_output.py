@@ -66,7 +66,6 @@ def generate_html_from_screen_data(input_data : ScreenData, output_file : str):
     If Commec Screen handled multiple Queries, then they are combined in the HTML output.
     """
 
-    plot_filenames = []
     figures_html = []
 
     # Render each query as its own Plotly HTML visualisation:
@@ -77,12 +76,6 @@ def generate_html_from_screen_data(input_data : ScreenData, output_file : str):
         file_name = output_file.strip()+"_"+str(i)+".html"
         html = fig.to_html(file_name, full_html = False, include_plotlyjs='cdn')
         figures_html.append(html)
-        #plot_filenames.append(file_name)
-        
-    # Read each Plotly HTML file content
-    #for filename in plot_filenames:
-    #    with open(filename, "r", encoding = "utf-8") as file:
-    #        figures_html.append(file.read())
 
     # Construct the composite HTML
     template = Template(filename="commec/utils/template.html")
@@ -93,9 +86,6 @@ def generate_html_from_screen_data(input_data : ScreenData, output_file : str):
     with open(output_filename, "w", encoding = "utf-8") as output_file:
         output_file.write(rendered_html)
 
-    # Remove intermediaries
-    #for file in plot_filenames:
-        #os.remove(file)
 
 def update_layout(fig, query_to_draw : QueryData, stacks):
     """ 
@@ -115,7 +105,6 @@ def update_layout(fig, query_to_draw : QueryData, stacks):
         'template': 'plotly_white',
         'plot_bgcolor': 'rgba(0,0,0,0)',  # Transparent plot area
         'paper_bgcolor': 'rgba(0,0,0,0)',  # Transparent outer area
-        # Update specific xaxis and yaxis only for the specified subplot
         "xaxis": dict(
             title="Query Basepairs (bp)",
             showline=True,
@@ -124,10 +113,6 @@ def update_layout(fig, query_to_draw : QueryData, stacks):
             showgrid=True,
             fixedrange=True,
             zeroline=False,
-            # Uncomment if time format and linear mode are needed
-            #tickformat="%s",
-            #type="date",
-            #tickmode="linear",
         ),
         "yaxis": dict(
             title="",
@@ -138,7 +123,7 @@ def update_layout(fig, query_to_draw : QueryData, stacks):
             tickmode="linear",
             zeroline=False,
         ),
-        'bargap': 0.0,
+        'bargap': 0.01,
     })
 
 def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
@@ -190,9 +175,6 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
 
     # Generate hover text
     df['hovertext'] = df.apply(lambda bar_data: f"{bar_data['label']}<br>({bar_data['start']}-{bar_data['stop']})<br>{bar_data['outcome']}", axis=1)
-    df['clicktext'] = df.apply(lambda bar_data: f"{bar_data['label']}<br>({bar_data['start']}-{bar_data['stop']})<br>"
-                               "This is some special custom text to be shown when you click on something.", 
-                               axis=1)
 
     # Add each bar to the existing figure
     for _i, bar_data in df.iterrows():
