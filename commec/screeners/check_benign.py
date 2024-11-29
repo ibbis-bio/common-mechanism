@@ -28,8 +28,6 @@ from commec.config.json_io import (
     CommecRecomendation,
     CommecScreenStepRecommendation,
     MatchRange,
-    LifeDomainFlag,
-    RegulationList,
     guess_domain,
     compare
 )
@@ -72,14 +70,8 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                         logging.debug("Query during %s could not be found! [%s]", str(CommecScreenStep.BENIGN_PROTEIN), query)
                         continue
                     hit_description = str(*benign_desc["Description"][benign_desc["ID"] == hit])
-                    non_regulated_percent = 0
-                    domain = LifeDomainFlag.SKIP
-                    if benign_desc['superkingdom'].iloc[0] == "Viruses":
-                        domain = LifeDomainFlag.VIRUS
-                    if benign_desc['superkingdom'].iloc[0] == "Bacteria":
-                        domain = LifeDomainFlag.BACTERIA
-                    if benign_desc['superkingdom'].iloc[0] == "Eukaryota":
-                        domain = LifeDomainFlag.EUKARYOTE
+                    domain = "skip"
+                    domain = benign_desc['superkingdom'].iloc[0]
 
                     match_ranges = [
                         MatchRange(
@@ -98,10 +90,8 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                             ),
                             hit,
                             hit_description,
-                            RegulationList.REGULATED,
-                            non_regulated_percent,
-                            domain,
-                            match_ranges
+                            match_ranges,
+                            {"domain" : [domain]},
                         )
                     )
                     #TODO: This passes the whole query for a small region, need to go through and do a make-shift mini-cleared scenario. That is QUERY based.
@@ -140,7 +130,6 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                             continue
                         
                         non_regulated_percent = 0
-                        domain = LifeDomainFlag.SKIP
 
                         match_ranges = [
                             MatchRange(
@@ -152,18 +141,15 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
 
                         # We need to create a new hit description
                         query_write.hits.append(
-                            HitDescription(
-                                CommecScreenStepRecommendation(
-                                    CommecRecomendation.PASS,
-                                    CommecScreenStep.BENIGN_RNA
-                                ),
-                                hit,
-                                hit_description,
-                                RegulationList.REGULATED,
-                                non_regulated_percent,
-                                domain,
-                                match_ranges
-                            )
+                        HitDescription(
+                            CommecScreenStepRecommendation(
+                                CommecRecomendation.PASS,
+                                CommecScreenStep.BENIGN_RNA
+                            ),
+                            hit,
+                            hit_description,
+                            match_ranges
+                        )
                         )
                         #TODO: This passes the whole query for a small region, need to go through and do a make-shift mini-cleared scenario. That is QUERY based.
                         query_write.recommendation.benign_screen = CommecRecomendation.PASS
@@ -188,7 +174,6 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                     hit_description =  htrim["subject title"][row]
 
                     non_regulated_percent = 0
-                    domain = LifeDomainFlag.SKIP
 
                     query = htrim["query acc."][row]
                     query_write = data.get_query(query)
@@ -213,9 +198,6 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                             ),
                             hit,
                             hit_description,
-                            RegulationList.REGULATED,
-                            non_regulated_percent,
-                            domain,
                             match_ranges
                         )
                     )

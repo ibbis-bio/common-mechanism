@@ -187,7 +187,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
                 marker=dict(color=bar_data['color']),
                 hovertext=bar_data['hovertext'],
                 hoverinfo='text',
-                customdata=df['clicktext'],
+                #customdata=df['clicktext'],
                 name=bar_data['label'],
                 width = 1.0,
             ),
