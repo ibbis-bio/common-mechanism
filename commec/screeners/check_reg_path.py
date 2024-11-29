@@ -26,8 +26,6 @@ from commec.config.json_io import (
     CommecRecomendation,
     CommecScreenStepRecommendation,
     MatchRange,
-    LifeDomainFlag,
-    RegulationList,
     compare
 )
 
@@ -117,6 +115,10 @@ def update_taxonomic_data_from_database(
                 n_reg = 0
                 n_total = 0
 
+                reg_taxids = [] # Regulated Taxonomy IDS
+                non_reg_taxids = [] # Non-regulated Taxonomy IDS.
+                reg_species = []
+                domains = []
                 match_ranges = []
                 for _, region in regulated_hit_data.iterrows():
                     match_range = MatchRange(
@@ -126,20 +128,34 @@ def update_taxonomic_data_from_database(
                     )
                     match_ranges.append(match_range)
 
+                    domain = region['superkingdom'].iloc[0]
+                    if domain == "Viruses":
+                        n_regulated_virus += 1
+                    if domain == "Bacteria":
+                        n_regulated_bacteria +=1
+                    if domain == "Eukaryota":
+                        n_regulated_eukaryote+=1
+                    domains.append(domain)
+
+                    # Filter shared_site based on 'q. start' or 'q. end' (Previously only shared starts were used)
+                    shared_site = blast2[(blast2['q. start'] == region['q. start']) | (blast2['q. end'] == region['q. end'])]
+
+                    # Filter for regulated and non-regulated entries
+                    regulated = shared_site[shared_site["regulated"] == True]
+                    non_regulated = shared_site[shared_site["regulated"] == False]
+
+                    # Collect unique species from both regulated and non-regulated
+                    reg_species = []
+                    reg_species.extend(regulated["species"].unique())
+                    reg_taxids.extend(regulated["subject tax ids"].unique())
+                    non_reg_taxids.extend(non_regulated["subject tax ids"].unique())
+
+                    # Consider converting to Sets, and then back to lists, if the unique() is having issues.
+
+                    # TODO: Update to append taxids, uniquefy, then count.
                     n_reg += (blast2["regulated"][blast2['q. start'] == region['q. start']] != False).sum()
                     # TODO: maybe? should also confirm same query end???
                     n_total += len(blast2["regulated"][blast2['q. start'] == region['q. start']])
-
-                domain = LifeDomainFlag.SKIP
-                if regulated_hit_data['superkingdom'].iloc[0] == "Viruses":
-                    domain = LifeDomainFlag.VIRUS
-                    n_regulated_virus += 1
-                if regulated_hit_data['superkingdom'].iloc[0] == "Bacteria":
-                    domain = LifeDomainFlag.BACTERIA
-                    n_regulated_bacteria +=1
-                if regulated_hit_data['superkingdom'].iloc[0] == "Eukaryota":
-                    domain = LifeDomainFlag.EUKARYOTE
-                    n_regulated_eukaryote+=1
 
                 recommendation : CommecRecomendation = CommecRecomendation.FLAG
 
@@ -157,16 +173,24 @@ def update_taxonomic_data_from_database(
                         query.recommendation.nucleotide_taxonomy_screen = compare(
                             query.recommendation.nucleotide_taxonomy_screen,
                             recommendation)
+                        
+                regulation_dict = {"number_of_regulated_taxids" : n_reg,
+                                   "number_of_unregulated_taxids" : n_total - n_reg,
+                                   "regulated_eukaryotes": n_regulated_eukaryote,
+                                   "regulated_bacteria": n_regulated_bacteria,
+                                   "regulated_viruses": n_regulated_virus,
+                                   "regulated_taxids": reg_taxids,
+                                   "non_regulated_taxids" : non_reg_taxids,
+                                   "regulated_species" : reg_species}
 
                 # Append our hit information to Screen data.
                 write_hit = query_write.get_hit(hit)
                 if write_hit:
                     # Grab some ranges.
                     write_hit.ranges.extend(match_ranges)
-                    write_hit.domain = domain # Always overwrite, better than our guess from biorisk.
+                    write_hit.annotations["domain"] = domains # Always overwrite, better than our guess from biorisk.
                     write_hit.description += " " + hit_description
-                    if (write_hit.regulation == RegulationList.SKIP):
-                        write_hit.regulation = RegulationList.REGULATED
+                    write_hit.annotations["regulation"].append(regulation_dict)
                     write_hit.recommendation = compare(write_hit.recommendation, recommendation)
                     continue
 
@@ -179,9 +203,8 @@ def update_taxonomic_data_from_database(
                         ),
                         hit,
                         hit_description,
-                        RegulationList.REGULATED,
-                        domain,
-                        match_ranges
+                        match_ranges,
+                        {"domain" : [domain],"regulation":[regulation_dict]},
                     )
                 )
 
