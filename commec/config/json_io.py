@@ -34,68 +34,9 @@ from enum import StrEnum
 # Seperate versioning for the output JSON.
 JSON_COMMEC_FORMAT_VERSION = "0.1"
 
-class LifeDomainFlag(StrEnum):
-    """ Domains of life. """
-    SKIP = "Not assigned"
-    EUKARYOTE = "Eukaryote"
-    BACTERIA = "Bacteria"
-    VIRUS = "Virus"
-
-class RegulationRegions(StrEnum):
-    """ Flag for . """
-    # BIORISK:
-    VIRULANCE_FACTOR = "Virulance Factor" # For Biorisk.
-    TOXIN = "Toxin"
-    REGULATED = "Regulated Biorisk" # For Biorisk / undefined NR taxonomy.
-    REGULATED_GENE = "Regulated gene" # For undefined NT taxonomy.
-    # Update supported lists here.
-    AUS_HU_ANI_PATH = "australia_group_human_and_animal_pathogens"
-    EU_EXP_CONTROLS = "eu_export_controls"
-    US_FED_SELAGNTS = "us_federal_select_agents"
-
-    SKIP = "Not assigned"
-
-class RegulationList(StrEnum):
-    """
-    Information related to what list regulation originates from.
-    Includes Flags used in Commec Biorisk VF outputs.
-    """
-    REGULATED = "Commec Regulated Biorisk" # For Biorisk / undefined NR taxonomy.
-    VIRULANCE_FACTOR = "Commec Virulance Factor" # For Biorisk.
-    REGULATED_GENE = "Regulated gene" # For undefined NT taxonomy.
-    # Update supported lists here.
-    AUS_HU_ANI_PATH = "australia_group_human_and_animal_pathogens"
-    EU_EXP_CONTROLS = "eu_export_controls"
-    US_FED_SELAGNTS = "us_federal_select_agents"
-
-    SKIP = "Not assigned"
-
-class RegulationRegion(StrEnum):
-    """ Information related to what list regulation originates from. Includes Commec Biorisk VF outputs."""
-    EU = "European Union"
-    US = "United States of America"
-    JP = "Japan"
-    CH = "Peoples Republic of China"
-    SK = "Republic of Korea"
-    SKIP = "Not assigned"
-
-@dataclass
-class TaxonomicData():
-    """ Container for holding Domain, and Species information. """
-    domains : List[LifeDomainFlag] = field(default_factory=list)#= [LifeDomainFlag.SKIP]
-    species : List[str] = field(default_factory=list)# = ["skip"]
-
-@dataclass
-class RegulationData():
-    list : RegulationList = RegulationList.SKIP
-    regions : List[str] = field(default_factory=list)
-    species : List[str] = field(default_factory=list)
-    non_regulated_species : List[str] = field(default_factory=list)
-    #regulated_domains : str = field(default_factory=list)
-
-def guess_domain(search_string : str) -> LifeDomainFlag:
-    """
-    Given a string description, try to determine
+def guess_domain(search_string : str) -> str:
+    """ 
+    Given a string description, try to determine 
     which domain of life this has come from. Temporary work around
     until we can retrieve this data directly from biorisk outputs.
     """
@@ -108,13 +49,12 @@ def guess_domain(search_string : str) -> LifeDomainFlag:
 
     search_token = search_string.lower()
     if contains(search_token, ["vir", "capsid", "RNA Polymerase"]):
-        return LifeDomainFlag.VIRUS
+        return "Virus"
     if contains(search_token, ["cillus","bact","coccus","phila","ella","cocci","coli"]):
-        return LifeDomainFlag.BACTERIA
+        return "Bacteria"
     if contains(search_token, ["eukary","nucleus","sona","odium","myces"]):
-        return LifeDomainFlag.EUKARYOTE
-    return LifeDomainFlag.SKIP
-
+        return "Eukaryote"
+    return ""
 
 class CommecScreenStep(StrEnum):
     """
@@ -135,6 +75,7 @@ class CommecRecomendation(StrEnum):
     NULL = '-' # This was not set.
     SKIP = 'Skip' # Intentionally skipped this step.
     PASS = 'Pass' # Commec has approved this query at this step.
+    CLEARED = 'Cleared' # Commec has cleared this region during Benign Screen
     WARN = 'Warn' # This query may be suspicious...
     FLAG = 'Flag' # Commec has flagged this query.
     ERROR = 'Error' # An error occured, such that this step failed to run.
@@ -146,9 +87,10 @@ class CommecRecomendation(StrEnum):
             CommecRecomendation.NULL: 0,
             CommecRecomendation.SKIP: 1,
             CommecRecomendation.PASS: 2,
-            CommecRecomendation.WARN: 3,
-            CommecRecomendation.FLAG: 4,
-            CommecRecomendation.ERROR: 5,
+            CommecRecomendation.CLEARED: 3,
+            CommecRecomendation.WARN: 4,
+            CommecRecomendation.FLAG: 5,
+            CommecRecomendation.ERROR: 6,
         }
         return order[self]
 
@@ -191,9 +133,8 @@ class HitDescription:
     recommendation : CommecScreenStepRecommendation = field(default_factory=CommecScreenStepRecommendation)
     name : str = ""
     description : str = ""
-    regulation : RegulationData = field(default_factory = RegulationData)
-    taxonomic_data : TaxonomicData = field(default_factory = TaxonomicData)
     ranges : list[MatchRange] = field(default_factory=list)
+    annotations : dict = field(default_factory = dict)
 
     def get_e_value(self) -> float:
         """ Gets the best e-value across all ranges, useful for sorting hits"""
@@ -201,38 +142,7 @@ class HitDescription:
         for r in self.ranges:
             out = min(out, r.e_value)
         return out
-
-    def get_taxonomic_text(self):
-        output_string = ""
-        if len(TaxonomicData.domains) > 1:
-            output_string += "multiple "
-        output_string += "multiple domains " if len(TaxonomicData.domains) > 1 else ""
-        return output_string
-
-@dataclass
-class HitDescriptionBiorisk:
-    """ Container for all information regarding a single hit with a range(s), to a single query."""
-    recommendation : CommecScreenStepRecommendation = field(default_factory=CommecScreenStepRecommendation)
-    name : str = ""
-    description : str = ""
-    regulation : RegulationData = field(default_factory = RegulationData)
-    taxonomic_data : TaxonomicData = field(default_factory = TaxonomicData)
-    ranges : list[MatchRange] = field(default_factory=list)
-
-    def get_e_value(self) -> float:
-        """ Gets the best e-value across all ranges, useful for sorting hits"""
-        out : float = 10.0
-        for r in self.ranges:
-            out = min(out, r.e_value)
-        return out
-
-    def get_taxonomic_text(self):
-        output_string = ""
-        if len(TaxonomicData.domains) > 1:
-            output_string += "multiple "
-        output_string += "multiple domains " if len(TaxonomicData.domains) > 1 else ""
-        return output_string
-
+    
 @dataclass
 class CommecRecomendationContainer:
     """

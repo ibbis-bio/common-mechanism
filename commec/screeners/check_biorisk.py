@@ -19,8 +19,6 @@ from commec.config.json_io import (
     CommecRecomendation,
     CommecScreenStepRecommendation,
     MatchRange,
-    LifeDomainFlag,
-    RegulationList,
     guess_domain,
     compare
 )
@@ -112,21 +110,19 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
                 hit_data.ranges.extend(match_ranges)
                 continue
 
-            regulation : RegulationList = RegulationList.REGULATED_GENE if must_flag else RegulationList.VIRULANCE_FACTOR
+            regulation_str : str = "Regulated Gene" if must_flag else "Virulance Factor"
             
-            domain : LifeDomainFlag = guess_domain(""+str(affected_target)+target_description)
+            domain : str = guess_domain(""+str(affected_target)+target_description)
             
             new_hit : HitDescription = HitDescription(
                 CommecScreenStepRecommendation(
                     target_recommendation,
                     CommecScreenStep.BIORISK
-                    ),
+                ),
                 affected_target,
                 target_description,
-                regulation,
-                0,
-                domain,
-                match_ranges
+                match_ranges,
+                {"domain" : [domain],"regulated":[regulation_str]},
             )
             query_data.hits.append(new_hit)
 
