@@ -31,9 +31,7 @@ def test_screendata():
                     HitDescription(
                         recommendation=CommecScreenStepRecommendation(CommecRecomendation.WARN, CommecScreenStep.BIORISK),
                         name="ImportantProtein1",
-                        description="The 1st of the most important proteins, its a bacteria",
-                        regulation = RegulationData(RegulationList.REGULATED,[],[],[]),
-                        taxonomic_data = TaxonomicData(domains = [LifeDomainFlag.BACTERIA, LifeDomainFlag.EUKARYOTE], species = ["Escherichia Coli"]),
+                        annotations = {"domain" : ["Bacteria"]},
                         ranges = [
                             MatchRange(
                                 e_value = 0.0,
