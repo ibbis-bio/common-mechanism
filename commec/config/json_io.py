@@ -28,8 +28,10 @@ import string
 import os
 from commec.tools.search_handler import SearchToolVersion
 from dataclasses import dataclass, asdict, fields, field, is_dataclass
-from typing import Dict, Type, get_origin, Any, get_args, List
+from typing import Dict, Type, get_origin, Any, get_args, List, Iterator, Tuple
 from enum import StrEnum
+import pandas as pd
+from commec.tools.search_handler import SearchToolVersion
 
 # Seperate versioning for the output JSON.
 JSON_COMMEC_FORMAT_VERSION = "0.1"
@@ -54,7 +56,7 @@ def guess_domain(search_string : str) -> str:
         return "Bacteria"
     if contains(search_token, ["eukary","nucleus","sona","odium","myces"]):
         return "Eukaryote"
-    return ""
+    return "not assigned"
 
 class CommecScreenStep(StrEnum):
     """
@@ -67,7 +69,7 @@ class CommecScreenStep(StrEnum):
     BENIGN_RNA = "Benign RNA Screen"
     BENIGN_SYNBIO = "Benign SynBio Screen"
 
-class CommecRecomendation(StrEnum):
+class CommecRecommendation(StrEnum):
     """
     All possible recommendation outputs from commec for a query.
     Ordered by importance of user feedback.
@@ -84,17 +86,17 @@ class CommecRecomendation(StrEnum):
     def importance(self):
         """ Encode the importance of each Recommendations value. """
         order = {
-            CommecRecomendation.NULL: 0,
-            CommecRecomendation.SKIP: 1,
-            CommecRecomendation.PASS: 2,
-            CommecRecomendation.CLEARED: 3,
-            CommecRecomendation.WARN: 4,
-            CommecRecomendation.FLAG: 5,
-            CommecRecomendation.ERROR: 6,
+            CommecRecommendation.NULL: 0,
+            CommecRecommendation.SKIP: 1,
+            CommecRecommendation.PASS: 2,
+            CommecRecommendation.CLEARED: 3,
+            CommecRecommendation.WARN: 4,
+            CommecRecommendation.FLAG: 5,
+            CommecRecommendation.ERROR: 6,
         }
         return order[self]
 
-def compare(a : CommecRecomendation, b : CommecRecomendation):
+def compare(a : CommecRecommendation, b : CommecRecommendation):
     """ Compare two recommendations, return the most important one. """
     if a.importance > b.importance:
         return a
@@ -102,8 +104,8 @@ def compare(a : CommecRecomendation, b : CommecRecomendation):
 
 @dataclass
 class CommecScreenStepRecommendation:
-    """ Pairs a recomendation with a Screening step."""
-    outcome : CommecRecomendation = CommecRecomendation.NULL
+    """ Pairs a recommendation with a Screening step."""
+    outcome : CommecRecommendation = CommecRecommendation.NULL
     from_step : CommecScreenStep = field(default_factory=CommecScreenStep)
 
 @dataclass
@@ -127,6 +129,9 @@ class MatchRange:
     query_start : int = 0
     query_end : int = 0
 
+    def query_length(self):
+        return abs(self.query_start - self.query_end)
+
 @dataclass
 class HitDescription:
     """ Container for all information regarding a single hit with a range(s), to a single query."""
@@ -144,15 +149,15 @@ class HitDescription:
         return out
     
 @dataclass
-class CommecRecomendationContainer:
+class CommecRecommendationContainer:
     """
     Summarises the recommendations across all hits for a single query.
     """
-    commec_recommendation : CommecRecomendation = CommecRecomendation.NULL
-    biorisk_screen : CommecRecomendation = CommecRecomendation.NULL
-    protein_taxonomy_screen : CommecRecomendation = CommecRecomendation.NULL
-    nucleotide_taxonomy_screen : CommecRecomendation = CommecRecomendation.NULL
-    benign_screen : CommecRecomendation = CommecRecomendation.NULL
+    commec_recommendation : CommecRecommendation = CommecRecommendation.NULL
+    biorisk_screen : CommecRecommendation = CommecRecommendation.NULL
+    protein_taxonomy_screen : CommecRecommendation = CommecRecommendation.NULL
+    nucleotide_taxonomy_screen : CommecRecommendation = CommecRecommendation.NULL
+    benign_screen : CommecRecommendation = CommecRecommendation.NULL
 
     def update_commec_recommendation(self, list_of_hits : list[HitDescription]):
         """
@@ -162,28 +167,28 @@ class CommecRecomendationContainer:
 
         #TODO: Go through the hit descriptions, and update each step recommendation?
 
-        if self.biorisk_screen == CommecRecomendation.FLAG:
-            self.commec_recommendation = CommecRecomendation.FLAG
+        if self.biorisk_screen == CommecRecommendation.FLAG:
+            self.commec_recommendation = CommecRecommendation.FLAG
             return
 
-        if (self.protein_taxonomy_screen == CommecRecomendation.FLAG
-            and self.benign_screen == CommecRecomendation.FLAG):
-            self.commec_recommendation = CommecRecomendation.FLAG
+        if (self.protein_taxonomy_screen == CommecRecommendation.FLAG
+            and self.benign_screen == CommecRecommendation.FLAG):
+            self.commec_recommendation = CommecRecommendation.FLAG
             return
 
-        if (self.nucleotide_taxonomy_screen == CommecRecomendation.FLAG
-            and self.benign_screen == CommecRecomendation.FLAG):
-            self.commec_recommendation = CommecRecomendation.FLAG
+        if (self.nucleotide_taxonomy_screen == CommecRecommendation.FLAG
+            and self.benign_screen == CommecRecommendation.FLAG):
+            self.commec_recommendation = CommecRecommendation.FLAG
             return
 
-        if self.biorisk_screen == CommecRecomendation.WARN:
-            self.commec_recommendation = CommecRecomendation.WARN
+        if self.biorisk_screen == CommecRecommendation.WARN:
+            self.commec_recommendation = CommecRecommendation.WARN
             return
 
         # At the moment we only get here when biorisk screen is just run.
         # this will set the global recommend to pass or error, after biorisk is done.
         # We will need earlier checks to maintain the error status of future steps however.
-        if self.commec_recommendation == CommecRecomendation.NULL:
+        if self.commec_recommendation == CommecRecommendation.NULL:
             self.commec_recommendation = self.biorisk_screen
 
 @dataclass
@@ -193,7 +198,7 @@ class QueryData:
     query : str = ""
     length : int = 0
     sequence : str = ""
-    recommendation : CommecRecomendationContainer = field(default_factory=CommecRecomendationContainer)
+    recommendation : CommecRecommendationContainer = field(default_factory=CommecRecommendationContainer)
     # TODO: Remove summary statistics for first PR?
     summary_info : CommecSummaryStatistics = field(default_factory=CommecSummaryStatistics)
     hits : list[HitDescription] = field(default_factory=list)
@@ -212,7 +217,7 @@ class QueryData:
         Call this before exporting to file.
         Sorts the hits based on E-values,
         TODO: Sorts the ranges based on position/E-value (to be confirmed)
-        Updates the commec recomendation based on all hits recommendations.
+        Updates the commec recommendation based on all hits recommendations.
         """
         self.hits.sort(key = lambda hit: hit.get_e_value())
         self.recommendation.update_commec_recommendation(self.hits)
@@ -259,17 +264,60 @@ class ScreenData:
         return None
 
     def update(self):
+        """
+        Propagate update to all children dataclasses.
+        """
         for query in self.queries:
             query.update()
+
+    def get_flagged_hits(self) -> List[HitDescription]:
+        """
+        Calculates and returns the list of hits, for all Warnings or Flags.
+        Typically used as regions to check against for benign screens.
+        """
+        flagged_and_warnings_data = [
+        hit
+        for query in self.queries
+        for hit in query.hits if hit.recommendation.outcome in
+        {CommecRecommendation.WARN, CommecRecommendation.FLAG}
+        ]
+
+        # Create a DataFrame from the collected data
+        return flagged_and_warnings_data
+    
+    
+    def regions(self) -> Iterator[Tuple[QueryData, HitDescription, MatchRange]]:
+        """
+        Iterates through all queries, hits, and regions in the ScreenData object.
+        Yields tuples of (query, hit, region).
+        """
+        for query in self.queries:
+            for hit in query.hits:
+                for region in hit.ranges:
+                    yield query, hit, region
+
+    def hits(self) -> Iterator[Tuple[QueryData, HitDescription, MatchRange]]:
+        """
+        Iterates through all queries, hits, and regions in the ScreenData object.
+        Yields tuples of (query, hit, region).
+        """
+        for query in self.queries:
+            for hit in query.hits:
+                for region in hit.ranges:
+                    yield query, hit, region
 
 # The above could be moved to a custom .py script for variable importing under version control.
 # The below is generic commands for input and output of a dataclass hierarchy.
 
 def encode_screen_data_to_json(input_screendata: ScreenData, output_json_filepath: string = "output.json") -> None:
     ''' Converts a ScreenData class object into a JSON file at the given filepath.'''
-    with open(output_json_filepath, "w", encoding="utf-8") as json_file:
-        json.dump(asdict(input_screendata), json_file, indent=4)
-
+    try:
+        with open(output_json_filepath, "w", encoding="utf-8") as json_file:
+            json.dump(asdict(input_screendata), json_file, indent=4)
+    except TypeError as e:
+        print("Error outputting JSON:", e)
+        print(input_screendata)
+        
 def encode_dict_to_screen_data(input_dict : dict) -> ScreenData:
     ''' Converts a dictionary into a ScreenData object,
     any keys within the dictionary not part of the ScreenData format are lost.
