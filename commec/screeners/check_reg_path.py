@@ -23,7 +23,7 @@ from commec.config.json_io import (
     ScreenData,
     HitDescription,
     CommecScreenStep,
-    CommecRecomendation,
+    CommecRecommendation,
     CommecScreenStepRecommendation,
     MatchRange,
     compare
@@ -67,10 +67,10 @@ def update_taxonomic_data_from_database(
 
     if step == CommecScreenStep.TAXONOMY_AA:
         for query in data.queries:
-            query.recommendation.protein_taxonomy_screen = CommecRecomendation.PASS
+            query.recommendation.protein_taxonomy_screen = CommecRecommendation.PASS
     if step == CommecScreenStep.TAXONOMY_NT:
         for query in data.queries:
-            query.recommendation.nucleotide_taxonomy_screen = CommecRecomendation.PASS
+            query.recommendation.nucleotide_taxonomy_screen = CommecRecommendation.PASS
 
     if not search_handle.has_hits(search_handle.out_file):
         logging.info("\t...no hits\n")
@@ -128,7 +128,7 @@ def update_taxonomic_data_from_database(
                     )
                     match_ranges.append(match_range)
 
-                    domain = region['superkingdom'].iloc[0]
+                    domain = region['superkingdom']
                     if domain == "Viruses":
                         n_regulated_virus += 1
                     if domain == "Bacteria":
@@ -147,8 +147,9 @@ def update_taxonomic_data_from_database(
                     # Collect unique species from both regulated and non-regulated
                     reg_species = []
                     reg_species.extend(regulated["species"].unique())
-                    reg_taxids.extend(regulated["subject tax ids"].unique())
-                    non_reg_taxids.extend(non_regulated["subject tax ids"].unique())
+                    # JSON serialization requires int, not np.int64, hence the map()
+                    reg_taxids.extend(map(str, regulated["subject tax ids"].unique()))
+                    non_reg_taxids.extend(map(str, non_regulated["subject tax ids"].unique()))
 
                     # Consider converting to Sets, and then back to lists, if the unique() is having issues.
 
@@ -157,7 +158,7 @@ def update_taxonomic_data_from_database(
                     # TODO: maybe? should also confirm same query end???
                     n_total += len(blast2["regulated"][blast2['q. start'] == region['q. start']])
 
-                recommendation : CommecRecomendation = CommecRecomendation.FLAG
+                recommendation : CommecRecommendation = CommecRecommendation.FLAG
 
                 # Example of how we might make decisions regarding the percent regulation from this step...
                 # TODO: if all hits are in the same genus n_reg > 0, and n_total > n_reg, WARN
@@ -174,11 +175,11 @@ def update_taxonomic_data_from_database(
                             query.recommendation.nucleotide_taxonomy_screen,
                             recommendation)
                         
-                regulation_dict = {"number_of_regulated_taxids" : n_reg,
-                                   "number_of_unregulated_taxids" : n_total - n_reg,
-                                   "regulated_eukaryotes": n_regulated_eukaryote,
-                                   "regulated_bacteria": n_regulated_bacteria,
-                                   "regulated_viruses": n_regulated_virus,
+                regulation_dict = {"number_of_regulated_taxids" : str(n_reg),
+                                   "number_of_unregulated_taxids" : str(n_total - n_reg),
+                                   "regulated_eukaryotes": str(n_regulated_eukaryote),
+                                   "regulated_bacteria": str(n_regulated_bacteria),
+                                   "regulated_viruses": str(n_regulated_virus),
                                    "regulated_taxids": reg_taxids,
                                    "non_regulated_taxids" : non_reg_taxids,
                                    "regulated_species" : reg_species}
@@ -208,9 +209,9 @@ def update_taxonomic_data_from_database(
                     )
                 )
 
-            query_write.recommendation.regulated_bacteria_hits += n_regulated_bacteria
-            query_write.recommendation.regulated_virus_hits += n_regulated_virus
-            query_write.recommendation.regulated_eukaryote_hits += n_regulated_eukaryote
+            #query_write.recommendation.regulated_bacteria_hits += n_regulated_bacteria
+            #query_write.recommendation.regulated_virus_hits += n_regulated_virus
+            #query_write.recommendation.regulated_eukaryote_hits += n_regulated_eukaryote
 
 def check_for_regulated_pathogens(
         input_file: str | os.PathLike,
