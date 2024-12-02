@@ -16,7 +16,7 @@ from commec.config.json_io import (
     ScreenData,
     HitDescription,
     CommecScreenStep,
-    CommecRecomendation,
+    CommecRecommendation,
     CommecScreenStepRecommendation,
     MatchRange,
     guess_domain,
@@ -48,7 +48,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
         return
 
     for query in data.queries:
-        query.recommendation.biorisk_screen = CommecRecomendation.PASS
+        query.recommendation.biorisk_screen = CommecRecommendation.PASS
 
     if not search_handle.has_hits(search_handle.out_file):
         return 0
@@ -77,7 +77,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
     unique_queries = hmmer['query name'].unique()
     for affected_query in unique_queries:
 
-        biorisk_overall : CommecRecomendation = CommecRecomendation.PASS
+        biorisk_overall : CommecRecommendation = CommecRecommendation.PASS
 
         query_data = data.get_query(affected_query)
         if not query_data:
@@ -101,7 +101,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
                 )
                 match_ranges.append(match_range)
 
-            target_recommendation : CommecRecomendation = CommecRecomendation.FLAG if must_flag > 0 else CommecRecomendation.WARN
+            target_recommendation : CommecRecommendation = CommecRecommendation.FLAG if must_flag > 0 else CommecRecommendation.WARN
 
             biorisk_overall = compare(target_recommendation, biorisk_overall)
 
