@@ -25,11 +25,11 @@ def test_screendata():
                 query="Query1",
                 length=10,
                 sequence="ABCDEFGHIJ",
-                recommendation = CommecRecomendationContainer(),
+                recommendation = CommecRecommendationContainer(),
                 summary_info = CommecSummaryStatistics(),
                 hits = [
                     HitDescription(
-                        recommendation=CommecScreenStepRecommendation(CommecRecomendation.WARN, CommecScreenStep.BIORISK),
+                        recommendation=CommecScreenStepRecommendation(CommecRecommendation.WARN, CommecScreenStep.BIORISK),
                         name="ImportantProtein1",
                         annotations = {"domain" : ["Bacteria"]},
                         ranges = [
@@ -104,18 +104,18 @@ def test_erroneous_info(tmp_path, test_screendata):
     )
 
 def test_recommendation_ordering():
-    assert CommecRecomendation.PASS.importance < CommecRecomendation.FLAG.importance
-    assert compare(CommecRecomendation.PASS, CommecRecomendation.FLAG) == CommecRecomendation.FLAG
+    assert CommecRecommendation.PASS.importance < CommecRecommendation.FLAG.importance
+    assert compare(CommecRecommendation.PASS, CommecRecommendation.FLAG) == CommecRecommendation.FLAG
 
 def test_adding_data_to_existing():
     """
     Tests to ensure the mutability of writing to queries is working as expected.
     """
     def write_info(input_query : QueryData):
-        input_query.recommendation.biorisk_screen = CommecRecomendation.PASS
+        input_query.recommendation.biorisk_screen = CommecRecommendation.PASS
     
     new_screen_data = ScreenData()
-    new_screen_data.queries.append(QueryData("test01", 10, "ATGCATGCAT", CommecRecomendation.FLAG))
+    new_screen_data.queries.append(QueryData("test01", 10, "ATGCATGCAT", CommecRecommendation.FLAG))
     write_query = new_screen_data.get_query("test01")
     write_info(write_query)
-    assert new_screen_data.queries[0].recommendation.biorisk_screen == CommecRecomendation.PASS
+    assert new_screen_data.queries[0].recommendation.biorisk_screen == CommecRecommendation.PASS
