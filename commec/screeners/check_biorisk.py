@@ -72,7 +72,6 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
         hmmer.loc[model, 'description'] = lookup.iloc[name_index[0], 1]
         hmmer.loc[model, 'Must flag'] = lookup.iloc[name_index[0], 2]
 
-
     # Update the data state to capture the outputs from biorisk search:
     unique_queries = hmmer['query name'].unique()
     for affected_query in unique_queries:

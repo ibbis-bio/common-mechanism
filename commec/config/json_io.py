@@ -71,13 +71,14 @@ class CommecScreenStep(StrEnum):
 
 class CommecRecommendation(StrEnum):
     """
-    All possible recommendation outputs from commec for a query.
-    Ordered by importance of user feedback.
+    All possible outputs from commec for a query or individual hit.
+    Ordered by importance of user feedback, and by severity of screened outcome.
     """
     NULL = '-' # This was not set.
     SKIP = 'Skip' # Intentionally skipped this step.
     PASS = 'Pass' # Commec has approved this query at this step.
-    CLEARED = 'Cleared' # Commec has cleared this region during Benign Screen
+    CLEARED_WARN = 'Warn (Cleared)' # Commec has cleared this warning during Benign Screen
+    CLEARED_FLAG = 'Flag (Cleared)' # Commec has cleared this flag during Benign Screen
     WARN = 'Warn' # This query may be suspicious...
     FLAG = 'Flag' # Commec has flagged this query.
     ERROR = 'Error' # An error occured, such that this step failed to run.
@@ -89,12 +90,21 @@ class CommecRecommendation(StrEnum):
             CommecRecommendation.NULL: 0,
             CommecRecommendation.SKIP: 1,
             CommecRecommendation.PASS: 2,
-            CommecRecommendation.CLEARED: 3,
-            CommecRecommendation.WARN: 4,
-            CommecRecommendation.FLAG: 5,
-            CommecRecommendation.ERROR: 6,
+            CommecRecommendation.CLEARED_WARN: 3,
+            CommecRecommendation.CLEARED_FLAG: 4,
+            CommecRecommendation.WARN: 5,
+            CommecRecommendation.FLAG: 6,
+            CommecRecommendation.ERROR: 7,
         }
         return order[self]
+
+    def clear(self):
+        """ Convert a WARN or FLAG into its cleared counterpart, and return that. """
+        if self == CommecRecommendation.WARN:
+            return CommecRecommendation.CLEARED_WARN
+        if self == CommecRecommendation.FLAG:
+            return CommecRecommendation.CLEARED_FLAG
+        return self
 
 def compare(a : CommecRecommendation, b : CommecRecommendation):
     """ Compare two recommendations, return the most important one. """
@@ -166,7 +176,6 @@ class CommecRecommendationContainer:
         """
 
         #TODO: Go through the hit descriptions, and update each step recommendation?
-
         if self.biorisk_screen == CommecRecommendation.FLAG:
             self.commec_recommendation = CommecRecommendation.FLAG
             return
@@ -273,7 +282,7 @@ class ScreenData:
     def get_flagged_hits(self) -> List[HitDescription]:
         """
         Calculates and returns the list of hits, for all Warnings or Flags.
-        Typically used as regions to check against for benign screens.
+        Typically used as the regions to check against for benign screens.
         """
         flagged_and_warnings_data = [
         hit
@@ -281,11 +290,8 @@ class ScreenData:
         for hit in query.hits if hit.recommendation.outcome in
         {CommecRecommendation.WARN, CommecRecommendation.FLAG}
         ]
-
-        # Create a DataFrame from the collected data
         return flagged_and_warnings_data
-    
-    
+
     def regions(self) -> Iterator[Tuple[QueryData, HitDescription, MatchRange]]:
         """
         Iterates through all queries, hits, and regions in the ScreenData object.
@@ -309,7 +315,8 @@ class ScreenData:
 # The above could be moved to a custom .py script for variable importing under version control.
 # The below is generic commands for input and output of a dataclass hierarchy.
 
-def encode_screen_data_to_json(input_screendata: ScreenData, output_json_filepath: string = "output.json") -> None:
+def encode_screen_data_to_json(input_screendata: ScreenData, 
+                               output_json_filepath: string = "output.json") -> None:
     ''' Converts a ScreenData class object into a JSON file at the given filepath.'''
     try:
         with open(output_json_filepath, "w", encoding="utf-8") as json_file:
