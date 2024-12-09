@@ -81,9 +81,9 @@ def update_taxonomic_data_from_database(
     blast = blast[blast["species"] != ""]  # ignore submissions made above the species level
 
     # label each base with the top matching hit, but include different taxids attributed to same hit
-    blast2 = get_top_hits(blast)
+    top_hits = get_top_hits(blast)
 
-    if blast2["regulated"].sum() == 0:
+    if top_hits["regulated"].sum() == 0:
         logging.info("\t...no regulated hits\n")
         return
 
@@ -93,7 +93,7 @@ def update_taxonomic_data_from_database(
                     'display.precision', 3,
                     ):
 
-        unique_queries = blast2['query acc.'].unique()
+        unique_queries = top_hits['query acc.'].unique()
 
         for query in unique_queries:
             query_write = data.get_query(query)
@@ -101,11 +101,9 @@ def update_taxonomic_data_from_database(
                 logging.debug("Query during %s could not be found! [%s]", str(step), query)
                 continue
 
-            n_regulated_bacteria = 0
-            n_regulated_virus = 0
-            n_regulated_eukaryote = 0
 
-            unique_query_data : pd.DataFrame = blast2[blast2['query acc.'] == query]
+
+            unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
             unique_query_data.dropna(subset = ['species'])
             regulated_hits = unique_query_data['subject acc.'][unique_query_data["regulated"]].unique()
 
@@ -115,11 +113,16 @@ def update_taxonomic_data_from_database(
                 n_reg = 0
                 n_total = 0
 
+                n_regulated_bacteria = 0
+                n_regulated_virus = 0
+                n_regulated_eukaryote = 0
+                
                 reg_taxids = [] # Regulated Taxonomy IDS
                 non_reg_taxids = [] # Non-regulated Taxonomy IDS.
-                reg_species = []
-                domains = []
-                match_ranges = []
+                reg_species = [] # List of species
+                domains = [] # List of domains.
+                match_ranges = [] # Ranges where hit matches query.
+
                 for _, region in regulated_hit_data.iterrows():
                     match_range = MatchRange(
                         float(region['evalue']),
@@ -128,6 +131,14 @@ def update_taxonomic_data_from_database(
                     )
                     match_ranges.append(match_range)
 
+                    # Filter shared_site based on 'q. start' or 'q. end' (Previously only shared starts were used)
+                    shared_site = top_hits[(top_hits['q. start'] == region['q. start']) | (top_hits['q. end'] == region['q. end'])]
+
+                    # Filter for regulated and non-regulated entries
+                    regulated = shared_site[shared_site["regulated"] == True]
+                    non_regulated = shared_site[shared_site["regulated"] == False]
+
+                    # Count domain information.
                     domain = region['superkingdom']
                     if domain == "Viruses":
                         n_regulated_virus += 1
@@ -137,31 +148,26 @@ def update_taxonomic_data_from_database(
                         n_regulated_eukaryote+=1
                     domains.append(domain)
 
-                    # Filter shared_site based on 'q. start' or 'q. end' (Previously only shared starts were used)
-                    shared_site = blast2[(blast2['q. start'] == region['q. start']) | (blast2['q. end'] == region['q. end'])]
-
-                    # Filter for regulated and non-regulated entries
-                    regulated = shared_site[shared_site["regulated"] == True]
-                    non_regulated = shared_site[shared_site["regulated"] == False]
-
                     # Collect unique species from both regulated and non-regulated
-                    reg_species = []
-                    reg_species.extend(regulated["species"].unique())
+                    reg_species.extend(regulated["species"])
                     # JSON serialization requires int, not np.int64, hence the map()
-                    reg_taxids.extend(map(str, regulated["subject tax ids"].unique()))
-                    non_reg_taxids.extend(map(str, non_regulated["subject tax ids"].unique()))
+                    reg_taxids.extend(map(str, regulated["subject tax ids"]))
+                    non_reg_taxids.extend(map(str, non_regulated["subject tax ids"]))
 
                     # Consider converting to Sets, and then back to lists, if the unique() is having issues.
 
                     # TODO: Update to append taxids, uniquefy, then count.
-                    n_reg += (blast2["regulated"][blast2['q. start'] == region['q. start']] != False).sum()
+                    n_reg += (top_hits["regulated"][top_hits['q. start'] == region['q. start']] != False).sum()
                     # TODO: maybe? should also confirm same query end???
-                    n_total += len(blast2["regulated"][blast2['q. start'] == region['q. start']])
+                    n_total += len(top_hits["regulated"][top_hits['q. start'] == region['q. start']])
 
                 recommendation : CommecRecommendation = CommecRecommendation.FLAG
 
                 # Example of how we might make decisions regarding the percent regulation from this step...
                 # TODO: if all hits are in the same genus n_reg > 0, and n_total > n_reg, WARN
+                reg_species = list(set(reg_species))
+                reg_taxids = list(set(reg_taxids))
+                non_reg_taxids = list(set(non_reg_taxids))
 
                 # Update the query level recommendation of this step.
                 if step == CommecScreenStep.TAXONOMY_AA:
@@ -175,8 +181,8 @@ def update_taxonomic_data_from_database(
                             query.recommendation.nucleotide_taxonomy_screen,
                             recommendation)
                         
-                regulation_dict = {"number_of_regulated_taxids" : str(n_reg),
-                                   "number_of_unregulated_taxids" : str(n_total - n_reg),
+                regulation_dict = {"number_of_regulated_taxids" : str(len(reg_taxids)),
+                                   "number_of_unregulated_taxids" : str(len(non_reg_taxids)),
                                    "regulated_eukaryotes": str(n_regulated_eukaryote),
                                    "regulated_bacteria": str(n_regulated_bacteria),
                                    "regulated_viruses": str(n_regulated_virus),
@@ -209,17 +215,41 @@ def update_taxonomic_data_from_database(
                     )
                 )
 
-            #query_write.recommendation.regulated_bacteria_hits += n_regulated_bacteria
-            #query_write.recommendation.regulated_virus_hits += n_regulated_virus
-            #query_write.recommendation.regulated_eukaryote_hits += n_regulated_eukaryote
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-i",
+        "--input",
+        dest="in_file",
+        required=True,
+        help="Input query file (e.g. QUERY.nr.dmnd)",
+    )
+    parser.add_argument(
+        "-d",
+        "--database",
+        dest="db",
+        required=True,
+        help="database folder (must contain vax_taxids and reg_taxids file)",
+    )
+    parser.add_argument("-t", "--threads", dest="threads", required=True, help="number of threads")
+    args = parser.parse_args()
 
-def check_for_regulated_pathogens(
-        input_file: str | os.PathLike,
-        taxonomy_path: str | os.PathLike,
-        benign_taxid_path: str | os.PathLike,
-        regulated_taxid_path: str | os.PathLike,
-        threads: int
-    ):
+    # Set up logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(message)s",
+        handlers=[logging.StreamHandler(sys.stderr)],
+    )
+
+    exit_code = check_for_regulated_pathogens(args.in_file, args.db, args.threads)
+    sys.exit(exit_code)
+
+def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_threads: int):
     """
     Check an input file (output from a database search) for regulated pathogens, from the benign and
     biorisk database taxids.
@@ -419,30 +449,3 @@ def check_for_regulated_pathogens(
 
     return 0
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-i","--input",dest="in_file", 
-        required=True, help="Input query file (e.g. QUERY.nr.dmnd)")
-    parser.add_argument("-d","--database", dest="db",
-        required=True,help="database folder (must contain vax_taxids and reg_taxids file)")
-    parser.add_argument("-t","--threads", dest="threads",
-        required=True,help="number of threads")
-    args=parser.parse_args()
-
-    # Set up logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(message)s",
-        handlers=[logging.StreamHandler(sys.stdout)],
-    )
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(message)s",
-        handlers=[logging.StreamHandler(sys.stderr)],
-    )
-
-    rv = check_for_regulated_pathogens(args.in_file, args.db, args.threads)
-    sys.exit(rv)
-
-if __name__ == "__main__":
-    main()
