@@ -131,7 +131,10 @@ def fetch_noncoding_regions(protein_results, query_fasta):
     write_nc_sequences(ranges_to_screen, records[0], outfile)
 
 def calculate_noncoding_regions_per_query(protein_results, screen_parameters : ScreenIOParameters):
-    """Fetch noncoding regions > 50bp and write to a new file. However performs this action for many queries."""
+    """
+    Fetch noncoding regions > 50bp and write to a new file. 
+    However performs this action for many queries.
+    """
     outfile = re.sub(".nr.*", "", protein_results) + ".noncoding.fasta"
 
     logging.info("Checking protein hits in: %s", protein_results)
@@ -154,7 +157,7 @@ def calculate_noncoding_regions_per_query(protein_results, screen_parameters : S
         ranges_to_screen = get_ranges_with_no_hits(protein_matches_for_query)
         # if the entire sequence, save regions <50 bases, is covered with protein, skip nt scan
         if not ranges_to_screen:
-            logging.info(f"\t\t --> no noncoding regions >= 50 bases found for {record.name}, skipping nt scan\n")
+            logging.info("\t\t --> no noncoding regions >= 50 bases found for %s, skipping nt scan\n", record.name)
             screen_parameters.query.non_coding_regions.append([]) # Append an empty array for this query.
             continue
         screen_parameters.query.non_coding_regions.append(ranges_to_screen)
@@ -187,7 +190,6 @@ def main():
     )
     args = parser.parse_args()
     fetch_noncoding_regions(args.protein_results, args.fasta_file_path)
-
 
 if __name__ == "__main__":
     main()
