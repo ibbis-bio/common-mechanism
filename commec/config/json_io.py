@@ -220,6 +220,36 @@ class QueryData:
             if hit.name == match_name:
                 return hit
         return None
+    
+    def add_new_hit_information(self, new_hit : HitDescription):
+        """
+        Adds a Hit Description to this query, but only adds if the hit is unique, or has a new range.
+        """
+        existing_hit = self.get_hit(new_hit.name)
+        if not existing_hit:
+            self.hits.append(new_hit)
+            return
+    
+        for new_region in new_hit.ranges:
+            is_unique_region = True
+            for existin_region in existing_hit.ranges:
+                if new_region.query_start == existin_region.query_start and new_region.query_end == existin_region.query_end:
+                    is_unique_region = False
+            if is_unique_region:
+                existing_hit.ranges.append(new_region)
+
+
+    def get_flagged_hits(self) -> List[HitDescription]:
+        """
+        Calculates and returns the list of hits, for all Warnings or Flags.
+        Typically used as the regions to check against for benign screens.
+        """
+        flagged_and_warnings_data = [
+        flagged_hit
+        for flagged_hit in self.hits if flagged_hit.recommendation.outcome in
+        {CommecRecommendation.WARN, CommecRecommendation.FLAG}
+        ]
+        return flagged_and_warnings_data
 
     def update(self):
         """
@@ -279,19 +309,6 @@ class ScreenData:
         for query in self.queries:
             query.update()
 
-    def get_flagged_hits(self) -> List[HitDescription]:
-        """
-        Calculates and returns the list of hits, for all Warnings or Flags.
-        Typically used as the regions to check against for benign screens.
-        """
-        flagged_and_warnings_data = [
-        hit
-        for query in self.queries
-        for hit in query.hits if hit.recommendation.outcome in
-        {CommecRecommendation.WARN, CommecRecommendation.FLAG}
-        ]
-        return flagged_and_warnings_data
-
     def regions(self) -> Iterator[Tuple[QueryData, HitDescription, MatchRange]]:
         """
         Iterates through all queries, hits, and regions in the ScreenData object.
@@ -304,13 +321,12 @@ class ScreenData:
 
     def hits(self) -> Iterator[Tuple[QueryData, HitDescription, MatchRange]]:
         """
-        Iterates through all queries, hits, and regions in the ScreenData object.
-        Yields tuples of (query, hit, region).
+        Iterates through all queries, and hits in the ScreenData object.
+        Yields tuples of (query, hit).
         """
         for query in self.queries:
             for hit in query.hits:
-                for region in hit.ranges:
-                    yield query, hit, region
+                yield query, hit
 
 # The above could be moved to a custom .py script for variable importing under version control.
 # The below is generic commands for input and output of a dataclass hierarchy.
