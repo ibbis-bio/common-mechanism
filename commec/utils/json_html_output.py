@@ -96,6 +96,7 @@ def update_layout(fig, query_to_draw : QueryData, stacks):
     figure_base_height = 180
     figure_stack_height = 30
 
+    fig.update_layout(showlegend=False)
     # Update layout to display X-axis on top and hide Y-axis labels for specified subplot
     fig.update_layout({
         # General layout properties
@@ -106,7 +107,7 @@ def update_layout(fig, query_to_draw : QueryData, stacks):
         'plot_bgcolor': 'rgba(0,0,0,0)',  # Transparent plot area
         'paper_bgcolor': 'rgba(0,0,0,0)',  # Transparent outer area
         "xaxis": dict(
-            title="Query Basepairs (bp)",
+            #title="Query Basepairs (bp)",
             showline=True,
             constrain="domain",
             ticks='outside',
@@ -126,13 +127,76 @@ def update_layout(fig, query_to_draw : QueryData, stacks):
         'bargap': 0.01,
     })
 
+def generate_outcome_string(query : QueryData, hit : HitDescription) -> str:
+    # 
+    if "Biorisk" in hit.recommendation.from_step:
+        if "regulated" in hit.annotations:
+            return hit.recommendation.outcome + ": " + hit.annotations["regulated"][0] + " from " + hit.recommendation.from_step
+        return hit.recommendation.outcome + " from " + hit.recommendation.from_step
+    
+    if "Benign" in hit.recommendation.from_step:
+        return hit.recommendation.outcome + " from " + hit.recommendation.from_step
+
+    # If Blast NR or NT result:
+    if "Taxonomy" in hit.recommendation.from_step:
+        output_string = ""
+
+        n_regulated_eukaryotes = 0
+        n_regulated_bacteria = 0
+        n_regulated_viruses = 0
+        regulated_taxids = []
+        non_regulated_taxids = []
+        regulated_species = []
+
+        if "regulation" in hit.annotations:
+            reg = hit.annotations["regulation"]
+            for r in reg:
+                n_regulated_eukaryotes += int(r["regulated_eukaryotes"])
+                n_regulated_bacteria += int(r["regulated_bacteria"])
+                n_regulated_viruses += int(r["regulated_viruses"])
+                regulated_taxids.extend(r["regulated_taxids"])
+                non_regulated_taxids.extend(r["non_regulated_taxids"])
+                regulated_species.extend(r["regulated_species"])
+            
+            domain_string = " across multiple domains."
+            if n_regulated_bacteria > 0 and n_regulated_viruses == 0 and n_regulated_eukaryotes == 0:
+                domain_string = " bacteria"
+            elif n_regulated_eukaryotes > 0 and n_regulated_viruses == 0:
+                domain_string = " eukaryotes"
+            elif n_regulated_viruses > 0:
+                domain_string = " viruses"
+
+            total_hits : int = len(regulated_taxids) + len(non_regulated_taxids)
+            peptide_type = "protein" if "Protein" in hit.recommendation.from_step else "nucleotides"
+
+            if len(non_regulated_taxids) > 0:
+                output_string += "Mix of regulated and non-regulated" + domain_string
+            else:
+                output_string += "Best match to regulated" + domain_string + "."
+
+            output_string += str(total_hits) + " Best match hits to " if total_hits > 1 else " Best hit to "
+            output_string += peptide_type + " found in " + str(len(regulated_species)) + " species, with regulated pathogen taxId in "
+            output_string += "lineage " if len(regulated_species) == 1 else "lineages "
+
+            output_string += ", ".join(regulated_species)
+
+            return output_string
+            #Best match to regulated viruses. 2 best match hits to nucleotides found in 1 species, 2 with regulated pathogen taxId in lineage (Influenza A)
+        return "No Annotations."
+
 def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
     """ 
     Write the data from a single query into the figure for plotly. 
     """
     # Interpret the QueryData into bars for the plot.
     graph_data = [
-        {"label": query_to_draw.query, "outcome" : query_to_draw.recommendation.commec_recommendation, "start": 0, "stop": query_to_draw.length, "color" : CommecPalette.DK_BLUE, "stack" : 0},
+        {"label": query_to_draw.query[:25], 
+         "label_verbose": query_to_draw.query, 
+         "outcome" : query_to_draw.recommendation.commec_recommendation, 
+         "outcome_verbose":"",
+         "start": 0, "stop": query_to_draw.length, 
+         "color" : CommecPalette.DK_BLUE, 
+         "stack" : 0},
     ]
 
     # Keep track of how many vertical stacks this image has.
@@ -157,8 +221,10 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
 
             graph_data.append(
                 {
-                    "label" : hit.recommendation.from_step + " " + hit.description[:25] + "...",
+                    "label" : hit.description[:25] + "...",
+                    "label_verbose" : hit.description[:],
                     "outcome" : hit.recommendation.outcome,
+                    "outcome_verbose" : generate_outcome_string(query_to_draw, hit),
                     "start" : match.query_start,
                     "stop" : match.query_end,
                     "color" : color_from_hit(hit),
@@ -174,17 +240,22 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
     df['color'] = df['color'].apply(rgb_to_hex)
 
     # Generate hover text
-    df['hovertext'] = df.apply(lambda bar_data: f"{bar_data['label']}<br>({bar_data['start']}-{bar_data['stop']})<br>{bar_data['outcome']}", axis=1)
+    df['hovertext'] = df.apply(lambda bar_data: f"{bar_data['label_verbose']}<br>({bar_data['start']}-{bar_data['stop']})<br>{bar_data["outcome_verbose"]}", axis=1)
 
     # Add each bar to the existing figure
     for _i, bar_data in df.iterrows():
+
+        marker_dictionary = {"color" : bar_data["color"]}
+        if "Cleared" in bar_data["outcome"]:
+            marker_dictionary["pattern"] = dict(shape="/")  # Options: "/", "\\", "x", "-", "|", ".", "+"
+
         fig.add_trace(
             go.Bar(
                 x=[bar_data['stop'] - bar_data['start']],  # Width of bar as timedelta
                 y=[bar_data['stack']],  # Stack position
                 base=bar_data['start'],  # Starting point on x-axis
                 orientation='h',
-                marker=dict(color=bar_data['color']),
+                marker=marker_dictionary,
                 hovertext=bar_data['hovertext'],
                 hoverinfo='text',
                 #customdata=df['clicktext'],
