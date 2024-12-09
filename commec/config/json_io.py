@@ -176,6 +176,12 @@ class CommecRecommendationContainer:
         """
 
         #TODO: Go through the hit descriptions, and update each step recommendation?
+        if self.benign_screen in {CommecRecommendation.CLEARED_FLAG,
+                                  CommecRecommendation.CLEARED_WARN,
+                                  CommecRecommendation.PASS}:
+            self.commec_recommendation = self.benign_screen
+            return
+
         if self.biorisk_screen == CommecRecommendation.FLAG:
             self.commec_recommendation = CommecRecommendation.FLAG
             return
