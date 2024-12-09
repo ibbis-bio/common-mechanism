@@ -217,6 +217,7 @@ class QueryData:
     # TODO: Remove summary statistics for first PR?
     summary_info : CommecSummaryStatistics = field(default_factory=CommecSummaryStatistics)
     hits : list[HitDescription] = field(default_factory=list)
+    # non_coding_regions : list[list[int]] = field(default_factory=list)
 
     def get_hit(self, match_name : str) -> HitDescription:
         """
