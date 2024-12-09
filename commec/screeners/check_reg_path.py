@@ -154,8 +154,6 @@ def update_taxonomic_data_from_database(
                     reg_taxids.extend(map(str, regulated["subject tax ids"]))
                     non_reg_taxids.extend(map(str, non_regulated["subject tax ids"]))
 
-                    # Consider converting to Sets, and then back to lists, if the unique() is having issues.
-
                     # TODO: Update to append taxids, uniquefy, then count.
                     n_reg += (top_hits["regulated"][top_hits['q. start'] == region['q. start']] != False).sum()
                     # TODO: maybe? should also confirm same query end???
@@ -163,8 +161,8 @@ def update_taxonomic_data_from_database(
 
                 recommendation : CommecRecommendation = CommecRecommendation.FLAG
 
-                # Example of how we might make decisions regarding the percent regulation from this step...
                 # TODO: if all hits are in the same genus n_reg > 0, and n_total > n_reg, WARN
+                
                 reg_species = list(set(reg_species))
                 reg_taxids = list(set(reg_taxids))
                 non_reg_taxids = list(set(non_reg_taxids))
