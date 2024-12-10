@@ -5,6 +5,7 @@ any other HTML document as appropriate.
 """
 
 import os
+import textwrap
 import argparse
 import plotly.graph_objects as go
 import pandas as pd
@@ -170,15 +171,19 @@ def generate_outcome_string(query : QueryData, hit : HitDescription) -> str:
             peptide_type = "protein" if "Protein" in hit.recommendation.from_step else "nucleotides"
 
             if len(non_regulated_taxids) > 0:
-                output_string += "Mix of regulated and non-regulated" + domain_string
+                output_string += "Mix of regulated and non-regulated" + domain_string + ".<br>"
             else:
-                output_string += "Best match to regulated" + domain_string + "."
+                output_string += "Best match to regulated" + domain_string + ".<br>"
 
             output_string += str(total_hits) + " Best match hits to " if total_hits > 1 else " Best hit to "
             output_string += peptide_type + " found in " + str(len(regulated_species)) + " species, with regulated pathogen taxId in "
             output_string += "lineage " if len(regulated_species) == 1 else "lineages "
 
-            output_string += ", ".join(regulated_species)
+            species_list = textwrap.fill(
+                ", ".join(regulated_species), 100
+            ).replace("\n", "<br>")
+            
+            output_string += "<br>" + species_list
 
             return output_string
             #Best match to regulated viruses. 2 best match hits to nucleotides found in 1 species, 2 with regulated pathogen taxId in lineage (Influenza A)
@@ -240,7 +245,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
     df['color'] = df['color'].apply(rgb_to_hex)
 
     # Generate hover text
-    df['hovertext'] = df.apply(lambda bar_data: f"{bar_data['label_verbose']}<br>({bar_data['start']}-{bar_data['stop']})<br>{bar_data["outcome_verbose"]}", axis=1)
+    df['hovertext'] = df.apply(lambda bar_data: f"{bar_data['label_verbose']}<br>bases ({bar_data['start']}-{bar_data['stop']})<br>{bar_data["outcome_verbose"]}", axis=1)
 
     # Add each bar to the existing figure
     for _i, bar_data in df.iterrows():
