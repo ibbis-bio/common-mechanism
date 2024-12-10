@@ -110,8 +110,8 @@ def update_taxonomic_data_from_database(
             for hit in regulated_hits:
                 regulated_hit_data : pd.DataFrame = unique_query_data[unique_query_data['subject acc.'] == hit]
                 hit_description = regulated_hit_data['subject title'].values[0]
-                n_reg = 0
-                n_total = 0
+                #n_reg = 0
+                #n_total = 0
 
                 n_regulated_bacteria = 0
                 n_regulated_virus = 0
@@ -154,10 +154,9 @@ def update_taxonomic_data_from_database(
                     reg_taxids.extend(map(str, regulated["subject tax ids"]))
                     non_reg_taxids.extend(map(str, non_regulated["subject tax ids"]))
 
-                    # TODO: Update to append taxids, uniquefy, then count.
-                    n_reg += (top_hits["regulated"][top_hits['q. start'] == region['q. start']] != False).sum()
-                    # TODO: maybe? should also confirm same query end???
-                    n_total += len(top_hits["regulated"][top_hits['q. start'] == region['q. start']])
+                    # These are the old values, now we simply count the size of the regulated, and non_regulated taxid arrays.
+                    #n_reg += (top_hits["regulated"][top_hits['q. start'] == region['q. start']] != False).sum()
+                    #n_total += len(top_hits["regulated"][top_hits['q. start'] == region['q. start']])
 
                 recommendation : CommecRecommendation = CommecRecommendation.FLAG
 
@@ -189,29 +188,23 @@ def update_taxonomic_data_from_database(
                                    "regulated_species" : reg_species}
 
                 # Append our hit information to Screen data.
-                write_hit = query_write.get_hit(hit)
-                if write_hit:
-                    # Grab some ranges.
-                    write_hit.ranges.extend(match_ranges)
-                    write_hit.annotations["domain"] = domains # Always overwrite, better than our guess from biorisk.
-                    write_hit.description += " " + hit_description
-                    write_hit.annotations["regulation"].append(regulation_dict)
-                    write_hit.recommendation = compare(write_hit.recommendation, recommendation)
-                    continue
-
-                # We need to create a new hit description.
-                query_write.hits.append(
-                    HitDescription(
-                        CommecScreenStepRecommendation(
-                            recommendation,
-                            step
-                        ),
-                        hit,
-                        hit_description,
-                        match_ranges,
-                        {"domain" : [domain],"regulation":[regulation_dict]},
-                    )
+                new_hit = HitDescription(
+                    CommecScreenStepRecommendation(
+                        recommendation,
+                        step
+                    ),
+                    hit,
+                    hit_description,
+                    match_ranges,
+                    {"domain" : [domain],"regulation":[regulation_dict]},
                 )
+
+                if query_write.add_new_hit_information(new_hit):
+                    write_hit = query_write.get_hit(hit)
+                    if write_hit:
+                        write_hit.annotations["domain"] = domains # Always overwrite, better than our guess from biorisk.
+                        write_hit.annotations["regulation"].append(regulation_dict)
+                        write_hit.recommendation.outcome = compare(write_hit.recommendation.outcome, recommendation)
 
 def main():
     parser = argparse.ArgumentParser()

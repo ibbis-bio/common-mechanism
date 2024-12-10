@@ -228,22 +228,30 @@ class QueryData:
                 return hit
         return None
     
-    def add_new_hit_information(self, new_hit : HitDescription):
+    def add_new_hit_information(self, new_hit : HitDescription) -> bool:
         """
         Adds a Hit Description to this query, but only adds if the hit is unique, or has a new range.
+        Returns True if the hit was not unique, but added to another hit.
         """
         existing_hit = self.get_hit(new_hit.name)
         if not existing_hit:
             self.hits.append(new_hit)
-            return
+            return False
     
+        is_updated : bool = False
         for new_region in new_hit.ranges:
             is_unique_region = True
-            for existin_region in existing_hit.ranges:
-                if new_region.query_start == existin_region.query_start and new_region.query_end == existin_region.query_end:
+            for existing_region in existing_hit.ranges:
+                if new_region.query_start == existing_region.query_start and new_region.query_end == existing_region.query_end:
                     is_unique_region = False
             if is_unique_region:
+                is_updated = True
                 existing_hit.ranges.append(new_region)
+
+        if is_updated:
+            return True
+
+        return False
 
 
     def get_flagged_hits(self) -> List[HitDescription]:
