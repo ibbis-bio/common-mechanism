@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class Query:
     """
     Query to screen, based on an input FASTA. Self-calculates AA version.
-    Future direction to back translate to NT when given AA too.
+    TODO: back translate to NT when given AA too.
     """
 
     def __init__(self, input_fasta_filepath: str):
@@ -24,40 +24,34 @@ class Query:
         self.nt_path : str = ""
         self.aa_path : str = ""
         self.raw : list[SeqRecord] = []
-        self.non_coding_regions : list[list[int]] = [[]]
+        self.non_coding_regions : list[list[int]] = []
 
-    def setup(self, file_prefix: str):
+    def setup(self, output_prefix : str) -> None:
+        """ 
+        Translate or reverse translate query, to be ready in AA or NT format. 
         """
-        Translate or reverse translate query, to be ready in AA or NT format.
-        """
-        self.nt_path = self.get_cleaned_fasta(file_prefix)
-        self.aa_path = f"{file_prefix}.transeq.faa"
-        self.translate_query()
+        self.nt_path = self.clean_fasta(output_prefix)
+        self.aa_path = f"{output_prefix}.transeq.faa"
+        self.parse_query_data()
 
-    def translate_query(self):
-        """Run command transeq, to translate our input sequences."""
-        logger.debug("Starting translation of FASTA '%s'. Will output to: %s", self.nt_path, self.aa_path)
+    def translate_query(self) -> None:
+        """ Run command transeq, to translate our input sequences. """
         command = ["transeq", self.nt_path, self.aa_path, "-frame", "6", "-clean"]
-        result = subprocess.run(command, check=True)
+        result = subprocess.run(command)
         if result.returncode != 0:
-            raise RuntimeError("Input FASTA {fasta_to_screen} could not be translated:\n{result.stderr}")
+            raise RuntimeError(f"Input FASTA {self.nt_path} could not be translated:\n{result.stderr}")
         
-    def get_query_names(self):
-        """ Populates query names with a list of all the queries within a fasta, for quick reference."""
-        self.querie_names = []
-        with (open(self.nt_path, "r", encoding="utf-8") as fin):
-            for line in fin:
-                if line.startswith('>'):
-                    self.querie_names.append(line[1:-1])
-                    continue
-                self.querie_raw.append(line)
-        return
-        
-    @staticmethod
-    def get_cleaned_fasta(input_file, out_prefix):
+    def parse_query_data(self) -> None:
         """
-        Return a FASTA where whitespace (including non-breaking spaces) and illegal characters are
-        replaced with underscores.
+        Populate a list of query names, and associated sequences, for json formatting purposes.
+        """
+        with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
+                self.raw : list[SeqRecord] = list(SeqIO.parse(fasta_file, "fasta"))
+
+    def clean_fasta(self, out_prefix : str) -> str:
+        """
+        Write a FASTA in which whitespace (including non-breaking spaces) and 
+        illegal characters are replaced with underscores.
         """
         cleaned_file = f"{out_prefix}.cleaned.fasta"
         with (
@@ -81,6 +75,7 @@ class Query:
         for start, end in self.non_coding_regions:
             output += self.raw[start-1:end]
         return output
+
 
     def convert_noncoding_index_to_query_index(self, index : int) -> int:
         """
