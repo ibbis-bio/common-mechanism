@@ -144,7 +144,7 @@ class ScreenIOParameters:
              if arg in self.config and hasattr(args, arg):
                 self.config[arg] = getattr(args, arg)
 
-    def _format_config_paths(self,
+ def _format_config_paths(self,
         db_dir_override: str | os.PathLike = None
     ):
         """
