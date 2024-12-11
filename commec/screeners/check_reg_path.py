@@ -282,7 +282,6 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
         return 0
 
     blast = read_blast(input_file)
-    print(blast)
     blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, input_database_dir + "/taxonomy/", n_threads)
     blast = blast[blast["species"] != ""]  # ignore submissions made above the species level
 
