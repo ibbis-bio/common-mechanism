@@ -184,9 +184,11 @@ class CommecRecommendationContainer:
         """
         Parses the current state of the json,
         and updates the global commec recommendation.
+
+        TODO: Consider the value of iterating over all HitDescriptions (provided as input)
+        and updating things with stricter logic.
         """
 
-        #TODO: Go through the hit descriptions, and update each step recommendation?
         if self.benign_screen in {CommecRecommendation.CLEARED_FLAG,
                                   CommecRecommendation.CLEARED_WARN,
                                   CommecRecommendation.PASS}:
@@ -197,13 +199,8 @@ class CommecRecommendationContainer:
             self.commec_recommendation = CommecRecommendation.FLAG
             return
 
-        if (self.protein_taxonomy_screen == CommecRecommendation.FLAG
-            and self.benign_screen == CommecRecommendation.FLAG):
-            self.commec_recommendation = CommecRecommendation.FLAG
-            return
-
-        if (self.nucleotide_taxonomy_screen == CommecRecommendation.FLAG
-            and self.benign_screen == CommecRecommendation.FLAG):
+        if (self.protein_taxonomy_screen == CommecRecommendation.FLAG or
+            self.nucleotide_taxonomy_screen == CommecRecommendation.FLAG):
             self.commec_recommendation = CommecRecommendation.FLAG
             return
 
@@ -211,6 +208,10 @@ class CommecRecommendationContainer:
             self.commec_recommendation = CommecRecommendation.WARN
             return
 
+        if (self.protein_taxonomy_screen == CommecRecommendation.WARN or
+            self.nucleotide_taxonomy_screen == CommecRecommendation.WARN):
+            self.commec_recommendation = CommecRecommendation.WARN
+            return
         # At the moment we only get here when biorisk screen is just run.
         # this will set the global recommend to pass or error, after biorisk is done.
         # We will need earlier checks to maintain the error status of future steps however.
