@@ -240,8 +240,12 @@ class Screen:
         self.start_time = time.time()
 
     def __del__(self):
+        """ 
+        Before we are finished, we attempt to write a JSON and HTML output.
+        Doing this in the destructor means that sometimes this will complete
+        successfully, despite exceptions.
+        """
         time_taken = (time.time() - self.start_time)
-        # Convert the elapsed time to hours, minutes, and seconds
         hours, rem = divmod(time_taken, 3600)
         minutes, seconds = divmod(rem, 60)
         self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
