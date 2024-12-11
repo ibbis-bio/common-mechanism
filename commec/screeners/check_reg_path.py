@@ -111,14 +111,12 @@ def update_taxonomic_data_from_database(
 
             unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
             unique_query_data.dropna(subset = ['species'])
-            regulated_hits = unique_query_data[unique_query_data["regulated"] == True]['subject acc.'].unique()
+            regulated_only_data = unique_query_data[unique_query_data["regulated"] == True]
+            regulated_hits = regulated_only_data['subject acc.'].unique()
 
             for hit in regulated_hits:
-                regulated_hit_data : pd.DataFrame = unique_query_data[unique_query_data["subject acc."] == hit]
-                regulated_hit_data = regulated_hit_data[regulated_hit_data["regulated"] == True]
+                regulated_hit_data : pd.DataFrame = regulated_only_data[regulated_only_data["subject acc."] == hit]
                 hit_description = regulated_hit_data['subject title'].values[0]
-                #n_reg = 0
-                #n_total = 0
 
                 n_regulated_bacteria = 0
                 n_regulated_virus = 0
