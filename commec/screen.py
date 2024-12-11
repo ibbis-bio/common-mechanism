@@ -238,7 +238,18 @@ class Screen:
         self.screen_data : ScreenData = ScreenData()
         self.start_time = time.time()
 
-    def setup(self, args: argparse.Namespace):
+    def __del__(self):
+        time_taken = (time.time() - self.start_time)
+        # Convert the elapsed time to hours, minutes, and seconds
+        hours, rem = divmod(time_taken, 3600)
+        minutes, seconds = divmod(rem, 60)
+        self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+        self.screen_data.update()
+        encode_screen_data_to_json(self.screen_data, self.params.output_json)
+        generate_html_from_screen_data(self.screen_data, self.params.output_prefix+"_summary")
+        self.params.clean()
+
+    def setup(self, args: argparse.ArgumentParser):
         """Instantiates and validates parameters, and databases, ready for a run."""
         # Start logging to console
         log_level = logging.INFO if not args.verbose else logging.DEBUG
@@ -350,16 +361,7 @@ class Screen:
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
 
-        time_taken = (time.time() - self.start_time)
-        # Convert the elapsed time to hours, minutes, and seconds
-        hours, rem = divmod(time_taken, 3600)
-        minutes, seconds = divmod(rem, 60)
-        self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
-        self.screen_data.update()
-        encode_screen_data_to_json(self.screen_data, self.params.output_json)
-        generate_html_from_screen_data(self.screen_data, self.params.output_prefix+"_summary")
 
-        self.params.clean()
 
     def screen_biorisks(self):
         """
