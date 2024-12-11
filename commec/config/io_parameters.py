@@ -198,7 +198,8 @@ class ScreenIOParameters:
         Returns a prefix that can be used for all output files.
 
         - If no prefix was given, use the input filename.
-        - If a directory was given, use the input filename as file prefix within that directory.
+        - If a directory was given, use the input filename 
+            as file prefix within that directory.
         """
         input_dir = os.path.dirname(input_file)
         # Get file stem (e.g. /home/user/commec/testing_cm_02.fasta -> testing_cm_02)

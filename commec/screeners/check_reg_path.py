@@ -40,13 +40,21 @@ def update_taxonomic_data_from_database(
         step : CommecScreenStep,
         n_threads : int
         ):
-
+    """
+    Given a Taxonomic database screen output, update the screen data appropriately.
+        search_handle : The handle of the search tool used to screen taxonomic data.
+        benign/biorisk_handlers : Only used to determine the location of taxid related information
+        taxonomy_directory : The location of taxonomy.
+        data : the Screen data object, to be updated.
+        step : Which taxonomic step this is (Nucleotide, Protein, etc)
+        n_threads : maximum number of available threads for allocation.
+    """
     logging.debug("Acquiring Taxonomic Data for JSON output:")
 
     #check input files
     if not search_handle.check_output():
         logging.info("\t...ERROR: Taxonomic search results empty\n %s", search_handle.out_file)
-        return
+        return 1
 
     # Read in lists of regulated and benign tax ids
     benign_taxid_path = os.path.join(benign_handler.db_directory,"vax_taxids.txt")
@@ -85,7 +93,7 @@ def update_taxonomic_data_from_database(
 
     if top_hits["regulated"].sum() == 0:
         logging.info("\t...no regulated hits\n")
-        return
+        return 0
 
     # if ANY of the trimmed hits are regulated
     with pd.option_context('display.max_rows', None,
@@ -101,14 +109,13 @@ def update_taxonomic_data_from_database(
                 logging.debug("Query during %s could not be found! [%s]", str(step), query)
                 continue
 
-
-
             unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
             unique_query_data.dropna(subset = ['species'])
-            regulated_hits = unique_query_data['subject acc.'][unique_query_data["regulated"]].unique()
+            regulated_hits = unique_query_data[unique_query_data["regulated"] == True]['subject acc.'].unique()
 
             for hit in regulated_hits:
-                regulated_hit_data : pd.DataFrame = unique_query_data[unique_query_data['subject acc.'] == hit]
+                regulated_hit_data : pd.DataFrame = unique_query_data[unique_query_data["subject acc."] == hit]
+                regulated_hit_data = regulated_hit_data[regulated_hit_data["regulated"] == True]
                 hit_description = regulated_hit_data['subject title'].values[0]
                 #n_reg = 0
                 #n_total = 0
@@ -158,26 +165,32 @@ def update_taxonomic_data_from_database(
                     #n_reg += (top_hits["regulated"][top_hits['q. start'] == region['q. start']] != False).sum()
                     #n_total += len(top_hits["regulated"][top_hits['q. start'] == region['q. start']])
 
-                recommendation : CommecRecommendation = CommecRecommendation.FLAG
-
-                # TODO: if all hits are in the same genus n_reg > 0, and n_total > n_reg, WARN
-                
+                # Uniquefy.
                 reg_species = list(set(reg_species))
                 reg_taxids = list(set(reg_taxids))
                 non_reg_taxids = list(set(non_reg_taxids))
                 match_ranges = list(set(match_ranges))
 
+                recommendation : CommecRecommendation = CommecRecommendation.FLAG
+
+                # TODO: Currently, we recapitulate old behaviour,
+                # # " no top hit exclusive to a regulated pathogen: PASS" 
+                #  however in the future:
+                # if all hits are in the same genus n_reg > 0, and n_total > n_reg, WARN, or other logic.
+                # the point is, this is where you do it.
+
+                if len(non_reg_taxids) > 0:
+                    recommendation = CommecRecommendation.PASS
+
                 # Update the query level recommendation of this step.
                 if step == CommecScreenStep.TAXONOMY_AA:
-                    for query in data.queries:
-                        query.recommendation.protein_taxonomy_screen = compare(
-                            query.recommendation.protein_taxonomy_screen,
-                            recommendation)
+                    query_write.recommendation.protein_taxonomy_screen = compare(
+                        query_write.recommendation.protein_taxonomy_screen,
+                        recommendation)
                 if step == CommecScreenStep.TAXONOMY_NT:
-                    for query in data.queries:
-                        query.recommendation.nucleotide_taxonomy_screen = compare(
-                            query.recommendation.nucleotide_taxonomy_screen,
-                            recommendation)
+                    query_write.recommendation.nucleotide_taxonomy_screen = compare(
+                        query_write.recommendation.nucleotide_taxonomy_screen,
+                        recommendation)
                         
                 regulation_dict = {"number_of_regulated_taxids" : str(len(reg_taxids)),
                                    "number_of_unregulated_taxids" : str(len(non_reg_taxids)),
