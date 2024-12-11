@@ -9,16 +9,15 @@
     create erroneous outputs to the JSON which wont be read back in. This
     ensures an expected i/o behaviour.
 
-   In this way, the JSON object serves as a common state, that can be updated
+    The single exception to this is the "annotations" dictionary, present
+    in the HitDescription, which contains non-structured information, and is
+    populated with differing information under differing keys depending on
+    which step the information is derived (Biorisk, Taxonomy etc)
+
+    In this way, the JSON object serves as a common state, that can be updated
     whilst not being temporally appended like a log file i.e. .screen file.
 
-    Example JSON structure:
-    {
-        commec_run_info : {
-            json / commec / database versions etc.
-            time run, date run etc.
-        }
-    }
+    The JSON stores all pertinent information of a run.
 '''
 
 # Consider whether this can get away with being part of config. rename to IO config?
@@ -326,7 +325,7 @@ class ScreenData:
 
     def regions(self) -> Iterator[Tuple[QueryData, HitDescription, MatchRange]]:
         """
-        Iterates through all queries, hits, and regions in the ScreenData object.
+        Helper function, Iterates through all queries, hits, and regions in the ScreenData object.
         Yields tuples of (query, hit, region).
         """
         for query in self.queries:
@@ -336,7 +335,7 @@ class ScreenData:
 
     def hits(self) -> Iterator[Tuple[QueryData, HitDescription, MatchRange]]:
         """
-        Iterates through all queries, and hits in the ScreenData object.
+        helper function, Iterates through all queries, and hits in the ScreenData object.
         Yields tuples of (query, hit).
         """
         for query in self.queries:
