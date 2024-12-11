@@ -141,6 +141,18 @@ class MatchRange:
     def query_length(self):
         return abs(self.query_start - self.query_end)
 
+    def __hash__(self):
+        return hash((self.e_value, self.match_start, self.match_end, self.query_start, self.query_end))
+
+    def __eq__(self, other):
+        if not isinstance(other, MatchRange):
+            return NotImplemented
+        return (self.e_value == other.e_value and
+                self.match_start == other.match_start and
+                self.match_end == other.match_end and
+                self.query_start == other.query_start and
+                self.query_end == other.query_end)
+
 @dataclass
 class HitDescription:
     """ Container for all information regarding a single hit with a range(s), to a single query."""
