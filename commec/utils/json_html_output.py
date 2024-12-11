@@ -133,15 +133,15 @@ def generate_outcome_string(query : QueryData, hit : HitDescription) -> str:
     """
     if "Biorisk" in hit.recommendation.from_step:
         if "regulated" in hit.annotations:
-            return hit.recommendation.outcome + ": " + hit.annotations["regulated"][0] + " from " + hit.recommendation.from_step
-        return hit.recommendation.outcome + " from " + hit.recommendation.from_step
+            return hit.annotations["regulated"][0]
+        return ""
     
     if "Benign" in hit.recommendation.from_step:
-        return hit.recommendation.outcome + " from " + hit.recommendation.from_step
+        return ""
 
     # If Blast NR or NT result:
     if "Taxonomy" in hit.recommendation.from_step:
-        output_string = hit.recommendation.outcome + " from " + hit.recommendation.from_step + "<br>"
+        output_string = ""
 
         n_regulated_eukaryotes = 0
         n_regulated_bacteria = 0
@@ -245,7 +245,12 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
         return '#{:02x}{:02x}{:02x}'.format(rgb[0], rgb[1], rgb[2])
     df['color'] = df['color'].apply(rgb_to_hex)
 
-    df['hovertext'] = df.apply(lambda bar_data: f"{bar_data['label_verbose']}<br>bases ({bar_data['start']}-{bar_data['stop']})<br>{bar_data["outcome_verbose"]}", axis=1)
+
+    df['hovertext'] = df.apply(lambda bar_data: 
+                               f"{hit.recommendation.outcome} from {hit.recommendation.from_step}<br>"
+                               f"bases ({bar_data['start']}-{bar_data['stop']})<br>"
+                               f"{bar_data['label_verbose']}<br>"
+                               f"{bar_data["outcome_verbose"]}", axis=1)
 
     # Add each bar to the existing figure
     for _i, bar_data in df.iterrows():
