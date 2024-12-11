@@ -21,14 +21,13 @@ from commec.config.json_io import (
 
 class CommecPalette():
     """ 
-    Enum of the colour palette used with Commec 
+    Static Container for colours used in Commec.
     """
     WHITE = [255,255,255]
     DK_BLUE = [35,42,88]
     LT_BLUE = [66,155,185]
     ORANGE = [241,80,36]
-    # Yellow and Red are not official Commec colours,
-    # however I like these to compliment the above.
+    # Yellow and Red are not official Commec colours.
     YELLOW = [241,80,36]
     RED = [207,27,81]
 
@@ -42,7 +41,6 @@ class CommecPalette():
     rgba_LT_BLUE = 'rgba(66,155,185,255)'
     rgba_ORANGE = 'rgba(241,80,36,255)'
     # Yellow and Red are not official Commec colours,
-    # however I like these to compliment the above.
     rgba_YELLOW = 'rgba(241,80,36,255)'
     rgba_RED = 'rgba(207,27,81,255)'
 
@@ -129,7 +127,10 @@ def update_layout(fig, query_to_draw : QueryData, stacks):
     })
 
 def generate_outcome_string(query : QueryData, hit : HitDescription) -> str:
-    # 
+    """
+    Takes a Query, and associated hit, and formats a human readable output string,
+    handling associated construction logic.
+    """
     if "Biorisk" in hit.recommendation.from_step:
         if "regulated" in hit.annotations:
             return hit.recommendation.outcome + ": " + hit.annotations["regulated"][0] + " from " + hit.recommendation.from_step
@@ -140,7 +141,7 @@ def generate_outcome_string(query : QueryData, hit : HitDescription) -> str:
 
     # If Blast NR or NT result:
     if "Taxonomy" in hit.recommendation.from_step:
-        output_string = ""
+        output_string = hit.recommendation.outcome + " from " + hit.recommendation.from_step + "<br>"
 
         n_regulated_eukaryotes = 0
         n_regulated_bacteria = 0
@@ -244,7 +245,6 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
         return '#{:02x}{:02x}{:02x}'.format(rgb[0], rgb[1], rgb[2])
     df['color'] = df['color'].apply(rgb_to_hex)
 
-    # Generate hover text
     df['hovertext'] = df.apply(lambda bar_data: f"{bar_data['label_verbose']}<br>bases ({bar_data['start']}-{bar_data['stop']})<br>{bar_data["outcome_verbose"]}", axis=1)
 
     # Add each bar to the existing figure
