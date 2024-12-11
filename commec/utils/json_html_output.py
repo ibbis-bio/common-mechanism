@@ -198,7 +198,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
     graph_data = [
         {"label": query_to_draw.query[:25], 
          "label_verbose": query_to_draw.query, 
-         "outcome" : query_to_draw.recommendation.commec_recommendation, 
+         "outcome" : f"Commec Recommendation for this query: {query_to_draw.recommendation.commec_recommendation}",
          "outcome_verbose":"",
          "start": 0, "stop": query_to_draw.length, 
          "color" : CommecPalette.DK_BLUE, 
@@ -229,7 +229,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
                 {
                     "label" : hit.description[:25] + "...",
                     "label_verbose" : hit.description[:],
-                    "outcome" : hit.recommendation.outcome,
+                    "outcome" : f"{hit.recommendation.outcome} from {hit.recommendation.from_step}",
                     "outcome_verbose" : generate_outcome_string(query_to_draw, hit),
                     "start" : match.query_start,
                     "stop" : match.query_end,
@@ -247,7 +247,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
 
 
     df['hovertext'] = df.apply(lambda bar_data: 
-                               f"{hit.recommendation.outcome} from {hit.recommendation.from_step}<br>"
+                               f"{bar_data["outcome"]}<br>"
                                f"bases ({bar_data['start']}-{bar_data['stop']})<br>"
                                f"{bar_data['label_verbose']}<br>"
                                f"{bar_data["outcome_verbose"]}", axis=1)
