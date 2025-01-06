@@ -18,11 +18,9 @@ from commec.config.json_io import (
     ScreenData,
     HitDescription,
     CommecScreenStep,
-    CommecRecomendation,
+    CommecRecommendation,
     CommecScreenStepRecommendation,
     MatchRange,
-    LifeDomainFlag,
-    RegulationFlag,
     guess_domain,
     compare
 )
@@ -53,7 +51,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
         return
 
     for query in data.queries:
-        query.recommendation.biorisk_screen = CommecRecomendation.PASS
+        query.recommendation.biorisk_screen = CommecRecommendation.PASS
 
     if not search_handle.has_hits(search_handle.out_file):
         return 0
@@ -77,12 +75,11 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
         hmmer.loc[model, 'description'] = lookup.iloc[name_index[0], 1]
         hmmer.loc[model, 'Must flag'] = lookup.iloc[name_index[0], 2]
 
-
     # Update the data state to capture the outputs from biorisk search:
     unique_queries = hmmer['query name'].unique()
     for affected_query in unique_queries:
 
-        biorisk_overall : CommecRecomendation = CommecRecomendation.PASS
+        biorisk_overall : CommecRecommendation = CommecRecommendation.PASS
 
         query_data = data.get_query(affected_query)
         if not query_data:
@@ -106,7 +103,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
                 )
                 match_ranges.append(match_range)
 
-            target_recommendation : CommecRecomendation = CommecRecomendation.FLAG if must_flag > 0 else CommecRecomendation.WARN
+            target_recommendation : CommecRecommendation = CommecRecommendation.FLAG if must_flag > 0 else CommecRecommendation.WARN
 
             biorisk_overall = compare(target_recommendation, biorisk_overall)
 
@@ -115,21 +112,19 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
                 hit_data.ranges.extend(match_ranges)
                 continue
 
-            regulation : RegulationFlag = RegulationFlag.REGULATED_GENE if must_flag else RegulationFlag.VIRULANCE_FACTOR
+            regulation_str : str = "Regulated Gene" if must_flag else "Virulance Factor"
             
-            domain : LifeDomainFlag = guess_domain(""+str(affected_target)+target_description)
+            domain : str = guess_domain(""+str(affected_target)+target_description)
             
             new_hit : HitDescription = HitDescription(
                 CommecScreenStepRecommendation(
                     target_recommendation,
                     CommecScreenStep.BIORISK
-                    ),
+                ),
                 affected_target,
                 target_description,
-                regulation,
-                0,
-                domain,
-                match_ranges
+                match_ranges,
+                {"domain" : [domain],"regulated":[regulation_str]},
             )
             query_data.hits.append(new_hit)
 

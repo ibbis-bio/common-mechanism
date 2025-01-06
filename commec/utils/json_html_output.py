@@ -4,9 +4,10 @@ into a visual HTML representation of the Commec output. Which can be embedded in
 any other HTML document as appropriate.
 """
 
-from enum import StrEnum
+import textwrap
 import argparse
 import plotly.graph_objects as go
+import pandas as pd
 from mako.template import Template
 
 from commec.config.json_io import (
@@ -19,14 +20,13 @@ from commec.config.json_io import (
 
 class CommecPalette():
     """ 
-    Enum of the colour palette used with Commec 
+    Static Container for colours used in Commec.
     """
     WHITE = [255,255,255]
     DK_BLUE = [35,42,88]
     LT_BLUE = [66,155,185]
     ORANGE = [241,80,36]
-    # Yellow and Red are not official Commec colours,
-    # however I like these to compliment the above.
+    # Yellow and Red are not official Commec colours.
     YELLOW = [241,80,36]
     RED = [207,27,81]
 
@@ -40,15 +40,16 @@ class CommecPalette():
     rgba_LT_BLUE = 'rgba(66,155,185,255)'
     rgba_ORANGE = 'rgba(241,80,36,255)'
     # Yellow and Red are not official Commec colours,
-    # however I like these to compliment the above.
     rgba_YELLOW = 'rgba(241,80,36,255)'
     rgba_RED = 'rgba(207,27,81,255)'
 
-def color_from_hit(hit : HitDescription):
+def color_from_hit(hit : HitDescription) -> CommecPalette:
     """ Convert a Screen step into an associated Colour."""
     if hit.recommendation.from_step == CommecScreenStep.BIORISK:
         return CommecPalette.RED
-    if hit.recommendation.from_step == CommecScreenStep.BENIGN:
+    if (hit.recommendation.from_step == CommecScreenStep.BENIGN_PROTEIN or
+        hit.recommendation.from_step == CommecScreenStep.BENIGN_RNA or
+        hit.recommendation.from_step == CommecScreenStep.BENIGN_SYNBIO):
         return CommecPalette.LT_BLUE
     if hit.recommendation.from_step == CommecScreenStep.TAXONOMY_AA:
         return CommecPalette.ORANGE
@@ -60,171 +61,220 @@ def generate_html_from_screen_data(input_data : ScreenData, output_file : str):
     """
     Interpret the ScreenData from Commec Screen output as a visualisation, in 
     the form on an HTML output.
+    If Commec Screen handled multiple Queries, then they are combined in the HTML output.
     """
 
-    # Create the plot
-    fig = go.Figure()
-    query_to_draw = input_data.queries[0]
+    figures_html = []
 
-    #fig = make_subplots(
-    #    rows=len(input_data.queries),
-    #    cols=1,
-    #    shared_xaxes=True,  # Share the x-axis across subplots
-    #    vertical_spacing=0.05  # Adjust vertical space between subplots
-    #)
+    # Render each query as its own Plotly HTML visualisation:
+    for i, query in enumerate(input_data.queries):
+        fig = go.Figure()
+        vertical_stack_count : int = draw_query_to_plot(fig, query)
+        update_layout(fig, query, vertical_stack_count)
+        file_name = output_file.strip()+"_"+str(i)+".html"
+        html = fig.to_html(file_name, full_html = False, include_plotlyjs='cdn')
+        figures_html.append(html)
 
-    stacks = draw_query_to_plot(fig, query_to_draw)
+    # Construct the composite HTML
+    template = Template(filename="commec/utils/template.html")
+    rendered_html = template.render(figures_html=figures_html)
 
-    # Add an invisible trace to the secondary x-axis, else it wont show.
-    fig.add_trace(go.Scatter(
-        x=[0, query_to_draw.length],  # The x-values; these can be any value
-        y=[0, 0],  # The y-values; these can be zeros or any dummy values
-        name='Invisible Trace',  # Optional name
-        xaxis='x2',  # Assign to the secondary x-axis
-        mode='lines',  # Use lines to create the trace
-        line=dict(color='rgba(255, 255, 255, 0)'),  # Fully transparent line
-        hoverinfo='none',  # No hover information
-        showlegend=False,
-    ))
+    # Save the combined HTML output
+    output_filename = output_file.strip()+".html"
+    with open(output_filename, "w", encoding = "utf-8") as output_file:
+        output_file.write(rendered_html)
 
-    # Update layout to display X-axis on top and hide Y-axis labels
-    fig.update_layout(
-        height= 100 * (stacks + 1),
-        barmode='stack',
-        title="Query: " + query_to_draw.query + "  (" + str(query_to_draw.length)+" b.p.)",
-        xaxis_title="",
-        yaxis_title="",
-        yaxis=dict(
-            showticklabels=False,
-            autorange='reversed',
-            fixedrange=True,
-        ),
-        template='plotly_white',
-        
-        # First x-axis (default)
-        xaxis=dict(
+
+def update_layout(fig, query_to_draw : QueryData, stacks):
+    """ 
+    Applies some default settings to the plotly figure,
+    also adjusts the figure height based on the number of vertically stacking bars.
+    """
+
+    figure_base_height = 180
+    figure_stack_height = 30
+
+    fig.update_layout(showlegend=False)
+    # Update layout to display X-axis on top and hide Y-axis labels for specified subplot
+    fig.update_layout({
+        # General layout properties
+        'height': figure_base_height + (figure_stack_height * stacks),
+        'title': f"{query_to_draw.recommendation.commec_recommendation} :"
+                 f" {query_to_draw.query}  ({query_to_draw.length} b.p.)",
+        'barmode': 'overlay',
+        'template': 'plotly_white',
+        'plot_bgcolor': 'rgba(0,0,0,0)',  # Transparent plot area
+        'paper_bgcolor': 'rgba(0,0,0,0)',  # Transparent outer area
+        "xaxis": dict(
+            #title="Query Basepairs (bp)",
             showline=True,
-            range=[0, query_to_draw.length],
             constrain="domain",
             ticks='outside',
             showgrid=True,
             fixedrange=True,
+            zeroline=False,
         ),
-        
-        # Second x-axis (xaxis2) at the top
-        # the issue with having two axis is they don't necessarily scroll together.
-        # We could try draw the same thing to both axis, and hope for the best.
-        xaxis2=dict(
-            overlaying='x',  # Overlay it on the same domain as xaxis
-            side='top',  # Place it on top
-            showline=True,  # Show the X-axis line
-            constrain="domain",  # Constrain the x-axis to its domain
-            range=[0, query_to_draw.length],  # Same range as xaxis (or modify if needed)
-            ticks='outside',  # Show ticks outside
-            showgrid=False,  # Hide gridlines
+        "yaxis": dict(
+            title="",
+            showticklabels=False,
+            autorange='reversed',
+            range=[-0.5, stacks + 0.5],
             fixedrange=True,
-        )
-    )
+            tickmode="linear",
+            zeroline=False,
+        ),
+        'bargap': 0.01,
+    })
 
-    # Show the plot
-    fig.write_html(output_file.strip()+".html")
+def generate_outcome_string(query : QueryData, hit : HitDescription) -> str:
+    """
+    Takes a Query, and associated hit, and formats a human readable output string,
+    handling associated construction logic.
+    """
+    if "Biorisk" in hit.recommendation.from_step:
+        if "regulated" in hit.annotations:
+            return hit.annotations["regulated"][0]
+        return ""
+    
+    if "Benign" in hit.recommendation.from_step:
+        return ""
 
+    # If Blast NR or NT result:
+    if "Taxonomy" in hit.recommendation.from_step:
+        output_string = ""
+
+        n_regulated_eukaryotes = 0
+        n_regulated_bacteria = 0
+        n_regulated_viruses = 0
+        regulated_taxids = []
+        non_regulated_taxids = []
+        regulated_species = []
+
+        if "regulation" in hit.annotations:
+            reg = hit.annotations["regulation"]
+            for r in reg:
+                n_regulated_eukaryotes += int(r["regulated_eukaryotes"])
+                n_regulated_bacteria += int(r["regulated_bacteria"])
+                n_regulated_viruses += int(r["regulated_viruses"])
+                regulated_taxids.extend(r["regulated_taxids"])
+                non_regulated_taxids.extend(r["non_regulated_taxids"])
+                regulated_species.extend(r["regulated_species"])
+            
+            domain_string = " across multiple domains."
+            if n_regulated_bacteria > 0 and n_regulated_viruses == 0 and n_regulated_eukaryotes == 0:
+                domain_string = " bacteria"
+            elif n_regulated_eukaryotes > 0 and n_regulated_viruses == 0:
+                domain_string = " eukaryotes"
+            elif n_regulated_viruses > 0:
+                domain_string = " viruses"
+
+            total_hits : int = len(regulated_taxids) + len(non_regulated_taxids)
+            peptide_type = "protein" if "Protein" in hit.recommendation.from_step else "nucleotides"
+
+            if len(non_regulated_taxids) > 0:
+                output_string += "Mix of regulated and non-regulated" + domain_string + ".<br>"
+            else:
+                output_string += "Best match to regulated" + domain_string + ".<br>"
+
+            output_string += str(total_hits) + " Best match hits to " if total_hits > 1 else "Best hit to "
+            output_string += peptide_type + " found in " + str(len(regulated_species)) + " species, with regulated pathogen taxId in "
+            output_string += "lineage " if len(regulated_species) == 1 else "lineages "
+
+            species_list = textwrap.fill(
+                ", ".join(regulated_species), 100
+            ).replace("\n", "<br>")
+            
+            output_string += "<br>" + species_list
+
+            return output_string
+            #Best match to regulated viruses. 2 best match hits to nucleotides found in 1 species, 2 with regulated pathogen taxId in lineage (Influenza A)
+        return "No Annotations."
 
 def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
-    print(query_to_draw.query, " with ", str(len(query_to_draw.hits)), " hits.")
-
+    """ 
+    Write the data from a single query into the figure for plotly. 
+    """
+    # Interpret the QueryData into bars for the plot.
     graph_data = [
-        {"label": query_to_draw.query, "outcome" : "", "start": 0, "stop": query_to_draw.length, "color" : CommecPalette.DK_BLUE},
+        {"label": query_to_draw.query[:25], 
+         "label_verbose": query_to_draw.query, 
+         "outcome" : f"Commec Recommendation for this query: {query_to_draw.recommendation.commec_recommendation}",
+         "outcome_verbose":"",
+         "start": 0, "stop": query_to_draw.length, 
+         "color" : CommecPalette.DK_BLUE, 
+         "stack" : 0},
     ]
+
+    # Keep track of how many vertical stacks this image has.
+    n_stacks = 1
 
     for hit in query_to_draw.hits:
         for match in hit.ranges:
+            # Find the best vertical position to reduce collisions, and fill all space.
+            collision_free = False
+            stack_write = 0
+            while not collision_free:
+                stack_write += 1
+                collision_free = True
+                for entry in graph_data:
+                    if entry["stack"] == stack_write:
+                        collision_free = (collision_free and
+                                            (match.query_start > entry["stop"] 
+                                            or match.query_end < entry["start"])
+                                            )
+
+            n_stacks = max(n_stacks, stack_write + 1)
+
             graph_data.append(
                 {
-                    "label" : hit.recommendation.from_step + " " + hit.description[:25]+"...",
-                    "outcome" : hit.recommendation.outcome + ": " + hit.description[:25] + "...",
+                    "label" : hit.description[:25] + "...",
+                    "label_verbose" : hit.description[:],
+                    "outcome" : f"{hit.recommendation.outcome} from {hit.recommendation.from_step}",
+                    "outcome_verbose" : generate_outcome_string(query_to_draw, hit),
                     "start" : match.query_start,
                     "stop" : match.query_end,
                     "color" : color_from_hit(hit),
+                    "stack" : stack_write
                 }
             )
 
-    # Prepare the data for the stacked bar plot
-    labels = [f'{r["label"]}_{i}' for i, r in enumerate(graph_data)]
-    #outcomes = [r["outcome"] for r in graph_data]
-    data_ranges = [r["stop"] - r["start"] for r in graph_data]  # The data ranges (stop - start)
-    colors = [r["color"] for r in graph_data]  # The data ranges (stop - start)
+    df = pd.DataFrame(graph_data)
 
-    for r in graph_data:
-        print(r)
+    # Convert RGB colors to hex format
+    def rgb_to_hex(rgb):
+        return '#{:02x}{:02x}{:02x}'.format(rgb[0], rgb[1], rgb[2])
+    df['color'] = df['color'].apply(rgb_to_hex)
 
-    # Add the actual data ranges with individual colors and text inside the bars
-    write_stack : int = 0
-    current_pos : int = 0
-    for i, r in enumerate(graph_data):
 
-        # Naive approach adds to the same column, if range comes after.
-        if r["start"] < current_pos:
-            write_stack+=1
-            current_pos=0
-        
-        # Calculate the gap size, and add it if required.
-        # (This is secretly a stacked horizontal bar graph)
-        gap_size = r['start'] - current_pos
-        if gap_size > 0:
-            add_gap(fig, gap_size, write_stack)
+    df['hovertext'] = df.apply(lambda bar_data: 
+                               f"{bar_data["outcome"]}<br>"
+                               f"bases {bar_data['start']}-{bar_data['stop']}<br>"
+                               f"{bar_data['label_verbose']}<br>"
+                               f"{bar_data["outcome_verbose"]}", axis=1)
 
-        current_pos = r['stop']
+    # Add each bar to the existing figure
+    for _i, bar_data in df.iterrows():
 
-        fill_colour =CommecPalette.mod(colors[i], multiplier=1.0)
-        line_colour = CommecPalette.mod(colors[i], multiplier=0.5)
+        marker_dictionary = {"color" : bar_data["color"]}
+        if "Cleared" in bar_data["outcome"]:
+            marker_dictionary["pattern"] = dict(shape="/")  # Options: "/", "\\", "x", "-", "|", ".", "+"
 
-        # Add the rounded rectangle as a path shape
-        #fig.add_shape(
-        #    layer='below',
-        #    type="path",
-        #    path=generate_rounded_rect(r["start"], i-0.4, r["stop"], i+0.4, 25, 0.3),
-        #    line=dict(color=line_colour),
-        #    fillcolor=fill_colour,
-        #)
-
-        fig.add_trace(go.Bar(
-            x=[data_ranges[i]],  # Length of the data ranges (on x-axis)
-            y=[write_stack],  # Labels for each range
-            orientation='h',  # Horizontal bars
-            name=r["label"],
-            #marker={"color":fill_colour},  # Assign different color for each range
-            marker={"color":fill_colour,
-                            "line": {
-                                "color": line_colour,  # Make border line invisible
-                                "width": 1  # Set line width (optional, set to 0 if no border is desired)
-                                    }
-                    },  # Make gaps invisible
-            hoverinfo='text',
-            hovertext=str(labels[i]) + "<br>("+str(r["start"])+"-"+str(r["stop"])+")",
-            #hoverinfo='x+y+name',  # Show hover info
-            #hovertemplate="%{name} <br>("+str(r["start"])+"-"+str(r["stop"])+")",
-            text=r["outcome"],  # Text to display inside the bar
-            textposition='inside',  # Position text inside the bar
-            insidetextanchor='start', # Align text to the start of the bar (left-aligned)
-            #hovertext="",
-        ),
+        fig.add_trace(
+            go.Bar(
+                x=[bar_data['stop'] - bar_data['start']],  # Width of bar as timedelta
+                y=[bar_data['stack']],  # Stack position
+                base=bar_data['start'],  # Starting point on x-axis
+                orientation='h',
+                marker=marker_dictionary,
+                hovertext=bar_data['hovertext'],
+                hoverinfo='text',
+                #customdata=df['clicktext'],
+                name=bar_data['label'],
+                width = 1.0,
+            ),
         )
-    return write_stack
 
-def add_gap(fig : go.Figure, gap_size : int, y_axis):
-    """ Add an invisible stack to the bar graph, emulating a gap. """
-    fig.add_trace(go.Bar(
-        x=[gap_size],  # Gap length (on x-axis)
-        y=[y_axis],  # Labels for each range (on y-axis, which will be horizontal due to orientation)
-        orientation='h',  # Horizontal bars
-        name="Gap",
-        marker={"color":'rgba(255, 255, 255, 0)',
-                "line": {"color": 'rgba(0, 0, 0, 0)',
-                        "width": 0}},
-        hoverinfo='skip',  # Don't show hover info for the gaps
-        showlegend=False
-    ))
+    return n_stacks
 
 def generate_rounded_rect(x0,y0,x1,y1,rx,ry):
     """ 
@@ -232,6 +282,8 @@ def generate_rounded_rect(x0,y0,x1,y1,rx,ry):
     xy0: Top Left Corner
     xy1: Bottom Right Corner.
     rxy: Radius of curvature for each axis.
+
+    Currently unused.
     """
     # Create an SVG path for the rounded rectangle:
     path = (

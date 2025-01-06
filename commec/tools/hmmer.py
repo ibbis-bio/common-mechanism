@@ -27,6 +27,21 @@ class HmmerHandler(SearchHandler):
         ]
         self.run_as_subprocess(command, self.temp_log_file)
 
+    def read_output(self):
+        output_dataframe = readhmmer(self.out_file)
+        # Standardize the output column names to be like blast:
+        output_dataframe = output_dataframe.rename(columns={
+            "ali from": "q. start",
+            "ali to": "q. end",
+            "coverage": "q. coverage",
+            "target name": "subject title",
+            "qlen":"query length",
+            "hmm from":"s. start",
+            "hmm end":"s. end",
+            'E-value': "evalue",
+        })
+        return output_dataframe
+
     def get_version_information(self) -> SearchToolVersion:
         """
         The first line of the HMM database typically contains creation date

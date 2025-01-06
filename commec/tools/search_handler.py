@@ -101,6 +101,12 @@ class SearchHandler(ABC):
         """
 
     @abstractmethod
+    def read_output(self):
+        """
+        Returns the output of the handler in the form of a pandas dataframe.
+        """
+
+    @abstractmethod
     def get_version_information(self) -> SearchToolVersion:
         """
         Provide version for the search tool used, to allow reproducibility.

@@ -20,14 +20,12 @@ from yaml.parser import ParserError
 from commec.config.query import Query
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 
-
 @dataclass
 class ScreenConfig:
     """
     Namespace for optional input parameters for screening; provided by parsing command line
     arguments. Default values, where applicable, are stored here.
     """
-
     threads: int = 1
     protein_search_tool: str = "blastx"
     in_fast_mode: bool = False
@@ -37,7 +35,6 @@ class ScreenConfig:
     config_yaml_file: str | os.PathLike = DEFAULT_CONFIG_YAML_PATH
     force: bool = False
     resume: bool = False
-
 
 class ScreenIOParameters:
     """
@@ -184,7 +181,8 @@ class ScreenIOParameters:
         """
         Returns a prefix that can be used for all output files.
         - If no prefix was given, use the input filename.
-        - If a directory was given, use the input filename as file prefix within that directory.
+        - If a directory was given, use the input filename 
+            as file prefix within that directory.
         """
         if not prefix_arg:
             return os.path.splitext(input_file)[0]

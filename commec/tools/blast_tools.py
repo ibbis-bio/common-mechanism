@@ -27,6 +27,10 @@ class BlastHandler(SearchHandler):
     Inherit from this, and implement screen()
     """
 
+    def read_output(self):
+        output_dataframe = read_blast(self.out_file)
+        return output_dataframe
+
     def _validate_db(self):
         """
         Blast expects a set of files with shared prefix, rather than a single file.

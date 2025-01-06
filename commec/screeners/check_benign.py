@@ -18,34 +18,211 @@ from commec.tools.blastn import BlastNHandler  # For has_hits.
 from commec.tools.hmmer import HmmerHandler
 from commec.tools.blast_tools import get_top_hits, read_blast
 from commec.tools.hmmer import readhmmer
-from commec.tools.cmscan import readcmscan
+from commec.tools.cmscan import CmscanHandler, readcmscan
+from commec.tools.search_handler import SearchHandler
 
 from commec.utils.benchmark import benchmark
 
 from commec.config.json_io import (
     ScreenData,
     HitDescription,
+    QueryData,
     CommecScreenStep,
-    CommecRecomendation,
+    CommecRecommendation,
     CommecScreenStepRecommendation,
     MatchRange,
-    LifeDomainFlag,
-    RegulationFlag,
     guess_domain,
     compare
 )
 
-@benchmark
-def update_benign_data_from_database(search_handle : HmmerHandler, data : ScreenData):
+# Constants determining Commec's sensitivity for benign screen.
+BENIGN_PROTEIN_EVALUE_CUTOFF : float = 1e-20
+MINIMUM_PEPTIDE_COVERAGE : int = 50 # Consider the implications of whether coverage in this context represents the translated aa, or bp count.
+MINIMUM_QUERY_COVERAGE_FRACTION : float = 0.80
+MINIMUM_RNA_BASEPAIR_COVERAGE : int = 50
+MINIMUM_SYNBIO_COVERAGE_FRACTION : float = 0.80
 
-    if not search_handle.check_output():
-        logging.info("\t...no housekeeping protein data\n")
-    if not search_handle.has_hits(search_handle.out_file):
-        logging.info("\t...no housekeeping protein hits\n")
-    else:
-        hmmer = readhmmer(search_handle.out_file)
-        hmmer = hmmer[hmmer["E-value"] < 1e-20]
-        # print(hmmer)
+def _update_benign_data_for_query(query : QueryData,
+                                  benign_protein : pd.DataFrame,
+                                  benign_rna : pd.DataFrame,
+                                  benign_synbio : pd.DataFrame,
+                                  benign_descriptions : pd.DataFrame):
+    """
+    For a single query, look at all three benign database outputs, and update the 
+    single queries hit descriptions to record all the benign hits, as well as clear
+    any overlapping WARN or FLAG hits.
+    """
+    # We only care about the benign data for this query.
+    benign_protein_for_query = benign_protein[benign_protein["query name"] == query.query]
+    benign_rna_for_query = benign_rna[benign_rna["query name"] == query.query]
+    benign_synbio_for_query = benign_synbio[benign_synbio["query acc."] == query.query]
+
+    # Check every region, of every hit that is a FLAG or WARN, against the Benign screen outcomes.
+    for hit in query.hits:
+        if hit.recommendation.outcome not in {
+            CommecRecommendation.FLAG,
+            CommecRecommendation.WARN
+            }:
+            continue
+
+        for region in hit.ranges:
+            benign_protein_for_query = _trim_to_region(benign_protein_for_query, region)
+
+            # Filter benign proteins for relevance...
+            benign_protein_for_query = benign_protein_for_query.assign(
+                coverage=abs(
+                    benign_protein_for_query["q. start"] - benign_protein_for_query["q. end"]
+                    ))
+
+            benign_protein_for_query = benign_protein_for_query[
+                benign_protein_for_query["query length"] - benign_protein_for_query["coverage"]
+                < MINIMUM_PEPTIDE_COVERAGE
+                ]
+
+            benign_protein_for_query = benign_protein_for_query[
+                benign_protein_for_query["coverage"] > MINIMUM_QUERY_COVERAGE_FRACTION]
+            benign_protein_for_query = benign_protein_for_query.reset_index(drop=True)
+
+            # Filter benign RNA for relevance...
+            benign_rna_for_query = _trim_to_region(benign_rna_for_query, region)
+            benign_rna_for_query = benign_rna_for_query.assign(
+                        coverage=region.query_length - abs(benign_rna_for_query["q. end"] - benign_rna_for_query["q. start"])
+                    )
+            
+            benign_rna_for_query = benign_rna_for_query[
+                benign_rna_for_query["coverage"] < MINIMUM_RNA_BASEPAIR_COVERAGE]
+            benign_rna_for_query = benign_rna_for_query.reset_index(drop=True)
+
+            # Filter benign SynBio for relevance... 
+            benign_synbio_for_query = _trim_to_region(benign_synbio_for_query, region)
+            benign_synbio_for_query = benign_synbio_for_query[
+                benign_synbio_for_query["q. coverage"] > MINIMUM_SYNBIO_COVERAGE_FRACTION]
+            benign_synbio_for_query = benign_synbio_for_query.reset_index(drop=True)
+
+            # Report top hit for 
+            if not benign_protein_for_query.empty:
+                benign_hit = benign_protein_for_query["subject title"][0]
+                benign_hit_description = str(*benign_descriptions["Description"][benign_descriptions["ID"] == benign_hit])
+                match_ranges = [
+                    MatchRange(
+                    float(benign_protein_for_query['evalue'][0]),
+                    int(benign_protein_for_query['s. start'][0]), int(benign_protein_for_query['s. end'][0]),
+                    int(benign_protein_for_query['q. start'][0]), int(benign_protein_for_query['q. end'][0])
+                    )
+                ]
+                benign_hit_outcome = HitDescription(
+                        CommecScreenStepRecommendation(
+                            CommecRecommendation.PASS,
+                            CommecScreenStep.BENIGN_PROTEIN
+                        ),
+                        benign_hit,
+                        benign_hit_description,
+                        match_ranges,
+                    )
+                query.add_new_hit_information(benign_hit_outcome)
+                hit.recommendation.outcome = hit.recommendation.outcome.clear()
+
+            if not benign_rna_for_query.empty:
+                benign_hit = benign_rna_for_query["subject title"][0]
+                benign_hit_description =  benign_rna_for_query["description of target"][0]
+                match_ranges = [
+                    MatchRange(
+                    float(benign_rna_for_query['evalue'][0]),
+                    int(benign_rna_for_query['s. start'][0]), int(benign_rna_for_query['s. end'][0]),
+                    int(benign_rna_for_query['q. start'][0]), int(benign_rna_for_query['q. end'][0])
+                    )
+                ]
+                benign_hit_outcome = HitDescription(
+                        CommecScreenStepRecommendation(
+                            CommecRecommendation.PASS,
+                            CommecScreenStep.BENIGN_RNA
+                        ),
+                        benign_hit,
+                        benign_hit_description,
+                        match_ranges,
+                    )
+                query.add_new_hit_information(benign_hit_outcome)
+                hit.recommendation.outcome = hit.recommendation.outcome.clear()
+
+            if not benign_synbio_for_query.empty:
+                benign_hit = benign_synbio_for_query["subject title"][0]
+                benign_hit_description =  benign_synbio_for_query["subject title"][0]
+                match_ranges = [
+                    MatchRange(
+                    float(benign_synbio_for_query['evalue'][0]),
+                    int(benign_synbio_for_query['s. start'][0]), int(benign_synbio_for_query['s. end'][0]),
+                    int(benign_synbio_for_query['q. start'][0]), int(benign_synbio_for_query['q. end'][0])
+                    )
+                ]
+                benign_hit_outcome = HitDescription(
+                        CommecScreenStepRecommendation(
+                            CommecRecommendation.PASS,
+                            CommecScreenStep.BENIGN_SYNBIO
+                        ),
+                        benign_hit,
+                        benign_hit_description,
+                        match_ranges,
+                    )
+                query.add_new_hit_information(benign_hit_outcome)
+                hit.recommendation.outcome = hit.recommendation.outcome.clear()
+
+
+def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
+                                     benign_rna_handle : CmscanHandler,
+                                     benign_synbio_handle : BlastNHandler,
+                                     data : ScreenData, 
+                                     benign_desc : pd.DataFrame):
+    """
+    Parse the outputs from the protein, rna, and synbio database searches, and populate
+    the benign hits into a Screen dataset. Marks those hits that are cleared for benign
+    as cleared if benign screen passes them.
+    """
+    # Reading empty outcomes should result in empty DataFrames, not errors.
+    benign_protein_screen_data = benign_protein_handle.read_output()
+    benign_rna_screen_data = benign_rna_handle.read_output()
+    benign_synbio_screen_data = benign_synbio_handle.read_output()
+
+    for query in data.queries:
+        _update_benign_data_for_query(query,
+                                      benign_protein_screen_data,
+                                      benign_rna_screen_data,
+                                      benign_synbio_screen_data,
+                                      benign_desc)
+
+        # Calculate the Benign Screen outcomes for each query.
+        query.recommendation.benign_screen = CommecRecommendation.PASS
+        # If any hits are still warnings, or flags, propagate that.
+        for flagged_hit in query.get_flagged_hits():
+            query.recommendation.benign_screen = compare(
+                flagged_hit.recommendation.outcome,
+                query.recommendation.benign_screen
+                )
+
+def _trim_to_coords(data : pd.DataFrame, coords, region):
+    datatrim = data[
+        ~(
+            (data["q. start"] > coords["q. end"][region])
+            & (data["q. end"] > coords["q. end"][region])
+        )
+        & ~(
+            (data["q. start"] < coords["q. start"][region])
+            & (data["q. end"] < coords["q. start"][region])
+        )
+    ]
+    return datatrim
+
+def _trim_to_region(data : pd.DataFrame, region : MatchRange):
+    datatrim = data[
+        ~(
+            (data["q. start"] > region.query_end)
+            & (data["q. end"] > region.query_end)
+        )
+        & ~(
+            (data["q. start"] < region.query_start)
+            & (data["q. end"] < region.query_end)
+        )
+    ]
+    return datatrim
 
 @benchmark
 def check_for_benign(query, coords, benign_desc):
@@ -57,7 +234,7 @@ def check_for_benign(query, coords, benign_desc):
     # PROTEIN HITS
     # for each set of hits, need to pull out the coordinates covered by benign entries
     hmmscan = query + ".benign.hmmscan"
-    if not BlastNHandler.has_hits(hmmscan):
+    if not HmmerHandler.has_hits(hmmscan):
         logging.info("\t...no housekeeping protein hits\n")
     else:
         hmmer = readhmmer(hmmscan)

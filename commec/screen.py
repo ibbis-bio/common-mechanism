@@ -65,8 +65,11 @@ from commec.config.io_parameters import ScreenIOParameters, ScreenConfig
 from commec.config.screen_tools import ScreenTools
 
 from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
-from commec.screeners.check_benign import check_for_benign
-from commec.screeners.check_reg_path import check_for_regulated_pathogens, update_taxonomic_data_from_database
+from commec.screeners.check_benign import check_for_benign, update_benign_data_from_database
+from commec.screeners.check_reg_path import (
+    check_for_regulated_pathogens,
+    update_taxonomic_data_from_database
+)
 from commec.tools.fetch_nc_bits import fetch_noncoding_regions
 from dev_scripts.benchmark_visualisation import visualize_data as create_benchmark_visual
 
@@ -74,6 +77,7 @@ from commec.config.json_io import (
     ScreenData,
     CommecScreenStep,
     QueryData,
+    CommecRecommendation,
     encode_screen_data_to_json
 )
 
@@ -187,7 +191,21 @@ class Screen:
         self.screen_data : ScreenData = ScreenData()
         self.start_time = time.time()
 
-    @benchmark
+    def __del__(self):
+        """ 
+        Before we are finished, we attempt to write a JSON and HTML output.
+        Doing this in the destructor means that sometimes this will complete
+        successfully, despite exceptions.
+        """
+        time_taken = (time.time() - self.start_time)
+        hours, rem = divmod(time_taken, 3600)
+        minutes, seconds = divmod(rem, 60)
+        self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+        self.screen_data.update()
+        encode_screen_data_to_json(self.screen_data, self.params.output_json)
+        generate_html_from_screen_data(self.screen_data, self.params.output_prefix+"_summary")
+        self.params.clean()
+
     def setup(self, args: argparse.ArgumentParser):
         """Instantiates and validates parameters, and databases, ready for a run."""
         self.params: ScreenIOParameters = ScreenIOParameters(args)
@@ -240,12 +258,6 @@ class Screen:
 
         self.screen_data.commec_info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        benchmark_set_log_file_name(self.params.output_prefix+".bm")
-        
-        # Less of this, and more just passing the object in future - this might take too long in larger queries.
-        #encode_screen_data_to_json(self.screen_data, self.params.output_json)
-        
-    @benchmark
     def run(self, args : argparse.ArgumentParser):
         """
         Wrapper so that args be parsed in main() or commec.py interface.
@@ -271,6 +283,7 @@ class Screen:
             )
         else:
             logging.info(" SKIPPING STEP 2: Protein search")
+            self.update_protein_recommendations(CommecRecommendation.SKIP)
 
         # Taxonomy screen (Nucleotide)
         if self.params.should_do_nucleotide_screening:
@@ -282,6 +295,7 @@ class Screen:
             )
         else:
             logging.info(" SKIPPING STEP 3: Nucleotide search")
+            self.update_nucleotide_recommendations(CommecRecommendation.SKIP)
 
         # Benign Screen
         if self.params.should_do_benign_screening:
@@ -295,26 +309,12 @@ class Screen:
             )
         else:
             logging.info(" SKIPPING STEP 4: Benign search")
+            self.update_benign_recommendations(CommecRecommendation.SKIP)
 
         logging.info(
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
 
-        #self.screen_data = get_screen_data_from_json(self.params.output_json)
-        time_taken = (time.time() - self.start_time)
-
-        # Convert the elapsed time to hours, minutes, and seconds
-        hours, rem = divmod(time_taken, 3600)
-        minutes, seconds = divmod(rem, 60)
-        self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
-        self.screen_data.update()
-        encode_screen_data_to_json(self.screen_data, self.params.output_json)
-        generate_html_from_screen_data(self.screen_data, self.params.output_prefix+"_summary")
-
-        benchmark_write_log()
-        create_benchmark_visual(self.params.output_prefix + ".bm")
-
-        self.params.clean()
 
     @benchmark
     def screen_biorisks(self):
@@ -339,6 +339,7 @@ class Screen:
         logging.debug("\t...running %s", self.params.config.protein_search_tool)
         self.database_tools.regulated_protein.search()
         if not self.database_tools.regulated_protein.check_output():
+            self.update_protein_recommendations(CommecRecommendation.ERROR)
             raise RuntimeError(
                 "ERROR: Expected protein search output not created: "
                 + self.database_tools.regulated_protein.out_file
@@ -358,8 +359,8 @@ class Screen:
             self.params.db_dir,
             str(self.params.config.threads),
         )
-        update_taxonomic_data_from_database(self.database_tools.regulated_protein, 
-                                            self.database_tools.benign_blastn, 
+        update_taxonomic_data_from_database(self.database_tools.regulated_protein,
+                                            self.database_tools.benign_blastn,
                                             self.database_tools.biorisk_hmm,
                                             self.params.db_dir + "/taxonomy/",
                                             self.screen_data,
@@ -377,12 +378,15 @@ class Screen:
         fetch_noncoding_regions(
             self.database_tools.regulated_protein.out_file, self.params.query.nt_path
         )
+
         noncoding_fasta = f"{self.params.output_prefix}.noncoding.fasta"
+
 
         if not os.path.isfile(noncoding_fasta):
             logging.debug(
                 "\t...skipping nucleotide search since no noncoding regions fetched"
             )
+            self.update_nucleotide_recommendations(CommecRecommendation.SKIP)
             return
 
         # Only run new blastn search if there are no previous results
@@ -390,10 +394,12 @@ class Screen:
             self.database_tools.regulated_nt.search()
 
         if not self.database_tools.regulated_nt.check_output():
+            self.update_nucleotide_recommendations(CommecRecommendation.ERROR)
             raise RuntimeError(
                 "ERROR: Expected nucleotide search output not created: "
                 + self.database_tools.regulated_nt.out_file
             )
+
 
         logging.debug("\t...checking blastn results")
         check_for_regulated_pathogens(
@@ -401,12 +407,12 @@ class Screen:
             self.params.db_dir,
             str(self.params.config.threads),
         )
-        update_taxonomic_data_from_database(self.database_tools.regulated_nt, 
-                                            self.database_tools.benign_blastn, 
+        update_taxonomic_data_from_database(self.database_tools.regulated_nt,
+                                            self.database_tools.benign_blastn,
                                             self.database_tools.biorisk_hmm,
                                             self.params.db_dir + "/taxonomy/",
                                             self.screen_data,
-                                            CommecScreenStep.TAXONOMY_AA,
+                                            CommecScreenStep.TAXONOMY_NT,
                                             self.params.config.threads)
 
     @benchmark
@@ -418,6 +424,7 @@ class Screen:
         sample_name = self.params.output_prefix
         if not os.path.exists(sample_name + ".reg_path_coords.csv"):
             logging.info("\t...no regulated regions to clear\n")
+            self.update_benign_recommendations(CommecRecommendation.SKIP)
             return
 
         logging.debug("\t...running benign hmmscan")
@@ -435,6 +442,7 @@ class Screen:
 
         if coords.shape[0] == 0:
             logging.info("\t...no regulated regions to clear\n")
+            self.update_benign_recommendations(CommecRecommendation.SKIP)
             return
 
         logging.debug("\t...checking benign scan results")
@@ -442,6 +450,29 @@ class Screen:
         # Note currently check_for_benign hard codes .benign.hmmscan,
         # in future parse, and grab from search handler instead.
         check_for_benign(sample_name, coords, benign_desc)
+
+        update_benign_data_from_database(
+            self.database_tools.benign_hmm,
+            self.database_tools.benign_cmscan,
+            self.database_tools.benign_blastn,
+            self.screen_data,
+            benign_desc
+        )
+
+    def update_benign_recommendations(self, new_recommendation : CommecRecommendation):
+        """ Helper function, to apply a single recommendation to the whole benign step."""
+        for query in self.screen_data.queries:
+            query.recommendation.benign_screen = new_recommendation
+
+    def update_protein_recommendations(self, new_recommendation : CommecRecommendation):
+        """ Helper function, to apply a single recommendation to the whole protein taxonomy step."""
+        for query in self.screen_data.queries:
+            query.recommendation.protein_taxonomy_screen = new_recommendation
+
+    def update_nucleotide_recommendations(self, new_recommendation : CommecRecommendation):
+        """ Helper function, to apply a single recommendation to the whole nucleotide taxonomy step."""
+        for query in self.screen_data.queries:
+            query.recommendation.nucleotide_taxonomy_screen = new_recommendation
 
 
 def run(args: argparse.ArgumentParser):
