@@ -58,7 +58,11 @@ def benchmark_set_logging(is_logging : bool = True):
 def benchmark_write_log():
     logger.write_to_file()
 
-class benchmark_scope:
+def benchmark_scope(name : str):
+    """ Factory function for BenchmarkScope instantiation."""
+    return BenchmarkScope(name)
+
+class BenchmarkScope:
     """ 
     Benchmarks a given scope from instantiation
     to out of scope or deletion.
