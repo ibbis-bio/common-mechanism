@@ -9,7 +9,7 @@ Screening involves (up to) four steps:
   2. Protein search:    protein homology search for best matches to regulated pathogens.
   3. Nucleotide search: nucleotide homology search for best matches to regulated pathogens.
   4. Benign scan:       three different scans (against conserved proteins, housekeeping RNAs, and
-                        synbio parts) to see if hits identified in homology search can be cleared. 
+                        synbio parts) to see if hits identified in homology search can be cleared.
 
 In "fast" mode, only the biorisk scan is run. By default, all four steps are run, but the nucleotide
 search is only run for regions that do not have any protein hits with a high sequence identity. The
@@ -23,21 +23,30 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -d DATABASE_DIR, --databases DATABASE_DIR
-                        Path to directory containing reference databases (e.g. taxonomy, protein,
-                        HMM)
-  -o OUTPUT_PREFIX, --output OUTPUT_PREFIX
-                        Prefix for output files. Can be a string (interpreted as output basename) or
-                        a directory (in which case the output file names will be determined from the
-                        input FASTA)
+                        Path to directory containing reference databases (e.g. taxonomy, protein, HMM)
+  -y CONFIG_YAML, --config CONFIG_YAML
+                        Configuration for screen run in YAML format, including custom database paths
+
+Screen run logic:
+  -f, --fast            Run in fast mode and skip protein and nucleotide homology search
+  -p {blastx,diamond}, --protein-search-tool {blastx,diamond}
+                        Tool for protein homology search to identify regulated pathogens
+  -n, --skip-nt         Skip nucleotide search (regulated pathogens will only be identified based on
+                        protein hits)
+
+Parallelisation:
   -t THREADS, --threads THREADS
                         Number of CPU threads to use. Passed to search tools.
-  -p {blastx,diamond}, --protein-search-tool {blastx,diamond}
-                        Tool for homology search to identify regulated pathogen proteins
   -j DIAMOND_JOBS, --diamond-jobs DIAMOND_JOBS
-                        Diamond-only: number of runs to do in parallel
-  -f, --fast            Run in fast mode and skip homology search
-  -n, --skip-nt         Skip nucleotide search, even for regions where no protein hits were found
-  -c, --cleanup         Delete intermediate files
+                        Diamond-only: number of runs to do in parallel on split Diamond databases
+
+Output file handling:
+  -o OUTPUT_PREFIX, --output OUTPUT_PREFIX
+                        Prefix for output files. Can be a string (interpreted as output basename) or
+                        a directory (files will be output there, names determined from input FASTA)
+  -c, --cleanup         Delete intermediate output files for run
+  -F, --force           Overwrite any pre-existing output for run (cannot be used with --resume)
+  -R, --resume          Re-use any pre-existing output run (cannot be used with --force)
 
 """
 import argparse
@@ -83,17 +92,41 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--databases",
         dest="database_dir",
         type=directory_arg,
-        required=True,
+        default=None,
         help="Path to directory containing reference databases (e.g. taxonomy, protein, HMM)",
     )
     parser.add_argument(
-        "-o",
-        "--output",
-        dest="output_prefix",
-        help="Prefix for output files. Can be a string (interpreted as output basename) or a"
-        + " directory (in which case the output file names will be determined from the input FASTA)",
+        "-y",
+        "--config",
+        dest="config_yaml",
+        default=default_config.config_yaml_file,
+        help="Configuration for screen run in YAML format, including custom database paths",
     )
-    parser.add_argument(
+    screen_logic_group = parser.add_argument_group("Screen run logic")
+    screen_logic_group.add_argument(
+        "-f",
+        "--fast",
+        dest="fast_mode",
+        action="store_true",
+        help="Run in fast mode and skip protein and nucleotide homology search",
+    )
+    screen_logic_group.add_argument(
+        "-p",
+        "--protein-search-tool",
+        dest="protein_search_tool",
+        choices=["blastx", "diamond"],
+        default=default_config.protein_search_tool,
+        help="Tool for protein homology search to identify regulated pathogens",
+    )
+    screen_logic_group.add_argument(
+        "-n",
+        "--skip-nt",
+        dest="skip_nt_search",
+        action="store_true",
+        help="Skip nucleotide search (regulated pathogens will only be identified based on protein hits)",
+    )
+    parallel_group = parser.add_argument_group("Parallelisation")
+    parallel_group.add_argument(
         "-t",
         "--threads",
         dest="threads",
@@ -101,42 +134,43 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         default=default_config.threads,
         help="Number of CPU threads to use. Passed to search tools.",
     )
-    parser.add_argument(
-        "-p",
-        "--protein-search-tool",
-        dest="protein_search_tool",
-        choices=["blastx", "diamond"],
-        default=default_config.protein_search_tool,
-        help="Tool for homology search to identify regulated pathogen proteins",
-    )
-    parser.add_argument(
+    parallel_group.add_argument(
         "-j",
         "--diamond-jobs",
         dest="diamond_jobs",
         type=int,
         default=default_config.diamond_jobs,
-        help="Diamond-only: number of runs to do in parallel",
+        help="Diamond-only: number of runs to do in parallel on split Diamond databases",
     )
-    parser.add_argument(
-        "-f",
-        "--fast",
-        dest="fast_mode",
-        action="store_true",
-        help="Run in fast mode and skip homology search",
+    output_handling_group = parser.add_argument_group("Output file handling")
+    output_exclusive_group = output_handling_group.add_mutually_exclusive_group()
+    output_handling_group.add_argument(
+        "-o",
+        "--output",
+        dest="output_prefix",
+        help="Prefix for output files. Can be a string (interpreted as output basename) or a"
+        + " directory (files will be output there, names will be determined from input FASTA)",
     )
-    parser.add_argument(
-        "-n",
-        "--skip-nt",
-        dest="skip_nt_search",
-        action="store_true",
-        help="Skip nucleotide search, even for regions where no protein hits were found",
-    )
-    parser.add_argument(
+    output_handling_group.add_argument(
         "-c",
         "--cleanup",
         dest="cleanup",
         action="store_true",
-        help="Delete intermediate files",
+        help="Delete intermediate output files for this Screen run",
+    )
+    output_exclusive_group.add_argument(
+        "-F",
+        "--force",
+        dest="force",
+        action="store_true",
+        help="Overwrite any pre-existing output for this Screen run (cannot be used with --resume)",
+    )
+    output_exclusive_group.add_argument(
+        "-R",
+        "--resume",
+        dest="resume",
+        action="store_true",
+        help="Re-use any pre-existing output for this Screen run (cannot be used with --force)",
     )
     return parser
 
@@ -398,6 +432,10 @@ class Screen:
             self.database_tools.benign_hmm.db_directory + "/benign_annotations.tsv",
             sep="\t",
         )
+
+        if coords.shape[0] == 0:
+            logging.info("\t...no regulated regions to clear\n")
+            return
 
         logging.debug("\t...checking benign scan results")
 

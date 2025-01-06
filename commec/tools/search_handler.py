@@ -34,13 +34,37 @@ class SearchHandler(ABC):
         database_file: str | os.PathLike,
         input_file: str | os.PathLike,
         out_file: str | os.PathLike,
-        threads: int = 1,
+        **kwargs,
     ):
+        """
+        Initialise a Search Handler.
+
+        Parameters
+        ----------
+        database_file : str | os.PathLike
+            Path to the database file.
+        input_file : str | os.PathLike
+            Path to the input file to be processed.
+        out_file : str | os.PathLike
+            Path where the output will be saved.
+
+        Keyword Arguments
+        -----------------
+        threads : int, optional
+            Number of threads to use for processing. Default is 1.
+        force : bool, optional
+            Whether to force overwrite existing files. Default is False.
+
+        Notes
+        -----
+        - `database_file`, `input_file`, and `out_file` are validated on instantiation.
+        """
+
         self.db_file = os.path.abspath(database_file)
         self.input_file = os.path.abspath(input_file)
         self.out_file = os.path.abspath(out_file)
-        self.threads = threads
-
+        self.threads = kwargs.get('threads', 1)
+        self.force = kwargs.get('force', False)
         self.arguments_dictionary = {}
 
         self._validate_db()
@@ -56,8 +80,21 @@ class SearchHandler(ABC):
         """Temporary log file used for this search. Based on outfile name."""
         return f"{self.out_file}.log.tmp"
 
-    @abstractmethod
     def search(self):
+        """
+        Wrapper for _search, to ensure that it is only called if 
+         - The output doesn't already exist,
+         - If force is enabled.
+        """
+        if not self.force and self.check_output():
+            logging.info("%s expected output data already exists, "
+                         "will use existing data found in:\n%s",
+                         self.__class__.__name__, self.out_file)
+            return
+        self._search()
+
+    @abstractmethod
+    def _search(self):
         """
         Use a tool to search the input query against a database.
         Should be implemented by all subclasses to perform the actual search against the database.
@@ -83,12 +120,14 @@ class SearchHandler(ABC):
         """
         if not os.path.isdir(self.db_directory):
             raise DatabaseValidationError(
-                f"Mandatory screening directory {self.db_directory} not found."
+                f"Mandatory screening database directory not found: {self.db_directory}."
+                " Screening directory can be set via --databases option or --config yaml."
             )
 
         if not os.path.isfile(self.db_file):
             raise DatabaseValidationError(
                 f"Provided database file not found: {self.db_file}."
+                " File location can be set via --databases option or --config yaml."
             )
 
     @staticmethod

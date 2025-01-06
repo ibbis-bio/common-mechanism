@@ -99,7 +99,7 @@ def visualize_data(filename : os.PathLike):
     root, _ext = os.path.splitext(filename)
     output_filename = root + ".html"
     fig.write_html(output_filename)
-    print("Benchmarking plot saved at " + output_filename)
+    # print("Benchmarking plot saved at " + output_filename)
 
 # Usage:
 if __name__ == "__main__":

@@ -1,0 +1,19 @@
+base_paths:
+  default: commec-dbs/
+databases:
+  benign:
+    cm:
+      path: '{default}benign_db/benign.cm'
+    fasta:
+      path: '{default}benign_db/benign.fasta'
+    hmm:
+      path: '{default}benign_db/benign.hmm'
+  biorisk_hmm:
+    path: '{default}biorisk_db/biorisk.hmm'
+  regulated_nt:
+    path: '{default}nt_blast/nt'
+  regulated_protein:
+    blast:
+      path: '{default}nr_blast/nr'
+    diamond:
+      path: '{default}nr_dmnd/nr.dmnd'

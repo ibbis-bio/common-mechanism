@@ -10,6 +10,7 @@ dependencies:
   - numpy
   - pandas
   - pytaxonkit
+  - pyyaml
   # Runtime non-Python dependencies
   - bedtools
   - blast

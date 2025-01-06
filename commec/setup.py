@@ -14,6 +14,10 @@ import ftplib
 from urllib import request, error, parse
 import zipfile
 import tarfile
+import yaml
+from yaml.parser import ParserError
+
+from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 
 DESCRIPTION = """Helper script for downloading the databases
  required for running the Common Mechanism Screen"""
@@ -175,7 +179,7 @@ class CliSetup:
         # Handily, all sorts of special characters are identified with a %XX, within posix, and are replaced
         # by similar characters during mkdir, whilst technically legal, lets recommend against cursed dir names.
         if '%' in path.as_posix():
-            print("Please avoid using special characters (\"|\}{\":?><*&\" etc) in filepath names.")
+            print("Please avoid using special characters (\"|}{\":?><*&\" etc) in filepath names.")
             return False
     
         # If the path doesn't exist, the best way to know if user input is valid, is to try make it.
@@ -617,6 +621,10 @@ class CliSetup:
 
             os.remove(filename_zipped)
 
+        # Default config file installed with commec package should by point to the newly
+        # installed databases
+        self.update_default_db_base_path(DEFAULT_CONFIG_YAML_PATH, self.database_directory)
+
         print(
             "\n\nThe common mechanism setup has completed!"
             "\nYou can find all downloaded databases in",
@@ -681,6 +689,35 @@ class CliSetup:
             i,
             f" {C_F_BLUE}*-------------------*{C_RESET}",
         )
+
+    def update_default_db_base_path(self, config_file: str, new_path: str) -> None:
+        """
+        Update the ['basepaths']['default'] path in the configuration yaml file to match the path
+        where the databases were installed.
+        """
+        try:
+            with open(config_file, 'r', encoding = "utf-8") as file:
+                config_data = yaml.safe_load(file)
+
+            # Update the default path under 'base_paths'
+            if 'base_paths' in config_data and 'default' in config_data['base_paths']:
+                config_data['base_paths']['default'] = new_path
+            else:
+                # For some reason this didn't exist, so lets just silently make it, and throw a warning.
+                print(f"{C_F_ORANGE}WARNING: base paths weren't defined in the default configuration file "
+                      f"{config_file}, the correct data will be added, however we recommend you double "
+                      "check that the default config yaml is correct. {C_RESET}")
+                config_data['base_paths'] = {'default' : new_path}
+
+            with open(config_file, 'w', encoding = "utf-8") as file:
+                yaml.safe_dump(config_data, file)
+
+        except FileNotFoundError:
+            print(f"Error: File '{config_file}' not found.")
+        except ParserError as e:
+            print(f"YAML parsing error: {e}")
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
     def print_database_options(self):
         """

@@ -39,7 +39,7 @@ def test_database_can_run(input_db):
 
     output_file = "db.out"
 
-    new_db = input_db[0](db_file, INPUT_QUERY, output_file)
+    new_db = input_db[0](db_file, INPUT_QUERY, output_file, force=True)
     new_db.search()
     assert new_db.check_output()
 

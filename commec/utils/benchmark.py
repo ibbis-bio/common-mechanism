@@ -58,9 +58,9 @@ def benchmark_set_logging(is_logging : bool = True):
 def benchmark_write_log():
     logger.write_to_file()
 
-def benchmark_scope(name : str):
+def benchmark_scope(name : str, stack : int = 0):
     """ Factory function for BenchmarkScope instantiation."""
-    return BenchmarkScope(name)
+    return BenchmarkScope(name, stack)
 
 class BenchmarkScope:
     """ 

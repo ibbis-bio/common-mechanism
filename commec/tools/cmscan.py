@@ -15,7 +15,7 @@ from commec.tools.search_handler import SearchHandler, SearchToolVersion
 class CmscanHandler(SearchHandler):
     """A Database handler specifically for use with Hmmer files for commec screening."""
 
-    def search(self):
+    def _search(self):
         command = [
             "cmscan",
             "--cpu",
@@ -29,7 +29,7 @@ class CmscanHandler(SearchHandler):
 
     def get_version_information(self) -> SearchToolVersion:
         try:
-            database_info = ""
+            database_info = None
             with open(self.db_file, "r", encoding="utf-8") as file:
                 for line in file:
                     if line.startswith("INFERNAL1/a"):

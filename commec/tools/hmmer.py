@@ -15,7 +15,7 @@ from commec.tools.search_handler import SearchHandler, SearchToolVersion
 class HmmerHandler(SearchHandler):
     """A Database handler specifically for use with Hmmer files for commec screening."""
 
-    def search(self):
+    def _search(self):
         command = [
             "hmmscan",
             "--cpu",
