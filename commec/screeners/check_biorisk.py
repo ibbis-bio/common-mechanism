@@ -11,7 +11,7 @@ import os
 import sys
 import argparse
 import pandas as pd
-from commec.tools.hmmer import readhmmer, trimhmmer, HmmerHandler
+from commec.tools.hmmer import readhmmer, trimhmmer, recalculate_hmmer_query_coordinates, HmmerHandler
 
 
 def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str):
@@ -45,9 +45,12 @@ def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str):
         return
 
     hmmer = readhmmer(hmmscan_input_file)
+
     keep1 = [i for i, x in enumerate(hmmer["E-value"]) if x < 1e-20]
     hmmer = hmmer.iloc[keep1, :]
-    hmmer = trimhmmer(hmmer)
+    #hmmer = trimhmmer(hmmer)
+    recalculate_hmmer_query_coordinates(hmmer, 1)
+
     hmmer["description"] = ""
     hmmer["Must flag"] = False
     hmmer = hmmer.reset_index(drop=True)
@@ -76,9 +79,9 @@ def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str):
                 )[0]
             logging.info(
                 "\t\t --> Biorisks: Regulated gene in bases "
-                + str(hmmer["ali from"][region])
+                + str(hmmer["q. start"][region])
                 + " to "
-                + str(hmmer["ali to"][region])
+                + str(hmmer["q. end"][region])
                 + ": FLAG\n\t\t     Gene: "
                 + ", ".join(set(hmmer["description"][hmmer["Must flag"] == True]))
                 + "\n"
@@ -91,9 +94,9 @@ def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str):
         for region in hmmer.index[hmmer["Must flag"] == 0]:
             logging.info(
                 "\t\t --> Virulence factor found in bases "
-                + str(hmmer["ali from"][region])
+                + str(hmmer["q. start"][region])
                 + " to "
-                + str(hmmer["ali to"][region])
+                + str(hmmer["q. end"][region])
                 + ", WARNING\n\t\t     Gene: "
                 + ", ".join(set(hmmer["description"][hmmer["Must flag"] == False]))
                 + "\n"

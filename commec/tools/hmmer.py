@@ -10,6 +10,7 @@ import re
 import subprocess
 import pandas as pd
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
+from commec.utils.coordinates import convert_protein_to_nucleotide_coords
 
 
 class HmmerHandler(SearchHandler):
@@ -104,8 +105,9 @@ def readhmmer(fileh):
     hmmer["ali from"] = pd.to_numeric(hmmer["ali from"])
     hmmer["ali to"] = pd.to_numeric(hmmer["ali to"])
     hmmer["qlen"] = pd.to_numeric(hmmer["qlen"])
+    # Extract the frame information.
+    hmmer["frame"] = hmmer["query name"].str.split('_').str[-1].astype(int)
     return hmmer
-
 
 def trimhmmer(hmmer):
     """
@@ -118,7 +120,7 @@ def trimhmmer(hmmer):
     #     hmmer = hmmer.drop_duplicates(subset=['query acc.', 'q. start', 'q. end'], keep='first', ignore_index=True)
 
     hmmer2 = hmmer
-    # only keep  top ranked hits that don't overlap
+    # only keep top ranked hits that don't overlap
     for query in hmmer["query name"].unique():
         df = hmmer[hmmer["query name"] == query]
         for i in df.index:
@@ -134,3 +136,17 @@ def trimhmmer(hmmer):
                         hmmer2 = hmmer2.drop([j])
         hmmer2 = hmmer2.reset_index(drop=True)
     return hmmer2
+
+def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame, query_nt_length : int):
+    """
+    Recalculate the coordinates of the hmmer database , such that each translated frame
+    reverts to original nucleotide coordinates.
+    """
+    query_start, query_end = convert_protein_to_nucleotide_coords(
+        hmmer["frame"],
+        hmmer["ali from"],
+        hmmer["ali to"],
+        hmmer["qlen"]*3) # TODO: Update this to the scalar for each query.
+
+    hmmer["q. start"] = query_start
+    hmmer["q. end"] = query_end
