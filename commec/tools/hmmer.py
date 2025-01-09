@@ -9,6 +9,7 @@ Throws if inputs are invalid. Creates a temporary log file, which is deleted on 
 import re
 import subprocess
 import pandas as pd
+import itertools
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
 from commec.utils.coordinates import convert_protein_to_nucleotide_coords
 
@@ -118,13 +119,13 @@ def trimhmmer(hmmer):
     # rank hits by bitscore
     hmmer = hmmer.sort_values(by=["score"], ascending=False)
     #     hmmer = hmmer.drop_duplicates(subset=['query acc.', 'q. start', 'q. end'], keep='first', ignore_index=True)
-
     hmmer2 = hmmer
     # only keep top ranked hits that don't overlap
     for query in hmmer["query name"].unique():
         df = hmmer[hmmer["query name"] == query]
         for i in df.index:
             for j in df.index[(i + 1) :]:
+                print("Comparing :", df.loc[i, "ali from"], "-", df.loc[i, "ali to"], ", with ", df.loc[j, "ali from"], "-",df.loc[j, "ali to"])
                 if (
                     df.loc[i, "ali from"] <= df.loc[j, "ali from"]
                     and df.loc[i, "ali to"] >= df.loc[j, "ali to"]
@@ -135,7 +136,49 @@ def trimhmmer(hmmer):
                     if j in hmmer2.index:
                         hmmer2 = hmmer2.drop([j])
         hmmer2 = hmmer2.reset_index(drop=True)
+
     return hmmer2
+
+def remove_overlaps(hmmer : pd.DataFrame) -> pd.DataFrame:
+    """
+    Trims verbosity of a HMMER output, 
+    by removing weaker hits which are 
+    encompassed in extent by higher scoring hits.
+
+    Note, works to trip nucleotide coordinates relative to the query, 
+    not ali from and ali to from the HMMER itself.
+
+    This means it can be used on any dataframe with the q. start and q. end NT headings.
+    (Consider moving to a general coordinates tool function?)
+    """
+    assert "q. start" in hmmer.columns, ("No \"q. start\" heading in HMMER output dataframe being "
+                                         "passed to remove overlaps, ensure that the dataframe has "
+                                         "been processed for converstion to nucleotide coordinates.")
+
+    assert "q. end" in hmmer.columns, ("No \"q. end\" heading in HMMER output dataframe being "
+                                         "passed to remove overlaps, ensure that the dataframe has "
+                                         "been processed for converstion to nucleotide coordinates.")
+
+    trimmed_hmmer = hmmer # Direct Assignment, reassigned later with .drop() for deep-copy.
+
+    # Ensure all logic is performed per unique Query name.
+    for query in hmmer["query name"].unique():
+
+        hmmer_for_query = hmmer[hmmer["query name"] == query]
+        sorted_values = hmmer_for_query.sort_values(by=["score"], ascending = False)
+
+        for i, j in itertools.combinations(sorted_values.index, 2):
+            if (sorted_values.loc[i, "q. start"] <= sorted_values.loc[j, "q. start"]
+                and sorted_values.loc[i, "q. end"] >= sorted_values.loc[j, "q. end"]):
+                print("Do a trim!")
+                if j in trimmed_hmmer.index:
+                    print("Trimming...")
+                    trimmed_hmmer = trimmed_hmmer.drop([j])
+
+    # Tidy the output indices.
+    trimmed_hmmer = trimmed_hmmer.reset_index(drop=True)
+
+    return trimmed_hmmer
 
 def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame, query_nt_length : int):
     """
@@ -146,7 +189,7 @@ def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame, query_nt_length : 
         hmmer["frame"],
         hmmer["ali from"],
         hmmer["ali to"],
-        hmmer["qlen"]*3) # TODO: Update this to the scalar for each query.
+        hmmer["qlen"]*3) # TODO: Update this to the scalar for each query, else risk of by 1 errors.
 
     hmmer["q. start"] = query_start
     hmmer["q. end"] = query_end

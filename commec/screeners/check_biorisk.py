@@ -11,7 +11,7 @@ import os
 import sys
 import argparse
 import pandas as pd
-from commec.tools.hmmer import readhmmer, trimhmmer, recalculate_hmmer_query_coordinates, HmmerHandler
+from commec.tools.hmmer import readhmmer, trimhmmer, remove_overlaps, recalculate_hmmer_query_coordinates, HmmerHandler
 
 
 def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str):
@@ -48,8 +48,15 @@ def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str):
 
     keep1 = [i for i, x in enumerate(hmmer["E-value"]) if x < 1e-20]
     hmmer = hmmer.iloc[keep1, :]
+
+    print(hmmer)
+
+
     #hmmer = trimhmmer(hmmer)
     recalculate_hmmer_query_coordinates(hmmer, 1)
+    hmmer = remove_overlaps(hmmer)
+
+    print(hmmer)
 
     hmmer["description"] = ""
     hmmer["Must flag"] = False
