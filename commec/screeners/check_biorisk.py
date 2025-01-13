@@ -11,8 +11,11 @@ import os
 import sys
 import argparse
 import pandas as pd
-from commec.tools.hmmer import readhmmer, trimhmmer, remove_overlaps, recalculate_hmmer_query_coordinates, HmmerHandler
-
+from commec.tools.hmmer import (
+    readhmmer,
+    remove_overlaps,
+    recalculate_hmmer_query_coordinates,
+    HmmerHandler)
 
 def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str):
     """

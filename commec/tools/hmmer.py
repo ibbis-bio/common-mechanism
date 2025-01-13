@@ -110,35 +110,6 @@ def readhmmer(fileh):
     hmmer["frame"] = hmmer["query name"].str.split('_').str[-1].astype(int)
     return hmmer
 
-def trimhmmer(hmmer):
-    """
-    Trim hmmer files.
-
-    Don't forget this is a report on 6-frame translations so coordinates will be complicated.
-    """
-    # rank hits by bitscore
-    hmmer = hmmer.sort_values(by=["score"], ascending=False)
-    #     hmmer = hmmer.drop_duplicates(subset=['query acc.', 'q. start', 'q. end'], keep='first', ignore_index=True)
-    hmmer2 = hmmer
-    # only keep top ranked hits that don't overlap
-    for query in hmmer["query name"].unique():
-        df = hmmer[hmmer["query name"] == query]
-        for i in df.index:
-            for j in df.index[(i + 1) :]:
-                print("Comparing :", df.loc[i, "ali from"], "-", df.loc[i, "ali to"], ", with ", df.loc[j, "ali from"], "-",df.loc[j, "ali to"])
-                if (
-                    df.loc[i, "ali from"] <= df.loc[j, "ali from"]
-                    and df.loc[i, "ali to"] >= df.loc[j, "ali to"]
-                ) | (
-                    df.loc[i, "ali from"] >= df.loc[j, "ali from"]
-                    and df.loc[i, "ali to"] <= df.loc[j, "ali to"]
-                ):
-                    if j in hmmer2.index:
-                        hmmer2 = hmmer2.drop([j])
-        hmmer2 = hmmer2.reset_index(drop=True)
-
-    return hmmer2
-
 def remove_overlaps(hmmer : pd.DataFrame) -> pd.DataFrame:
     """
     Trims verbosity of a HMMER output, 
