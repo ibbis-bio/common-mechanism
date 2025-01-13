@@ -139,17 +139,24 @@ def remove_overlaps(hmmer : pd.DataFrame) -> pd.DataFrame:
         sorted_values = hmmer_for_query.sort_values(by=["score"], ascending = False)
 
         for i, j in itertools.combinations(sorted_values.index, 2):
+            # If J is encapsulated:
             if (sorted_values.loc[i, "q. start"] <= sorted_values.loc[j, "q. start"]
                 and sorted_values.loc[i, "q. end"] >= sorted_values.loc[j, "q. end"]):
                 if j in trimmed_hmmer.index:
                     trimmed_hmmer = trimmed_hmmer.drop([j])
+                    continue
+            # If I is encapsulated:
+            if (sorted_values.loc[i, "q. start"] >= sorted_values.loc[j, "q. start"]
+                and sorted_values.loc[i, "q. end"] <= sorted_values.loc[j, "q. end"]):
+                if i in trimmed_hmmer.index:
+                    trimmed_hmmer = trimmed_hmmer.drop([i])
 
     # Tidy the output indices.
     trimmed_hmmer = trimmed_hmmer.reset_index(drop=True)
 
     return trimmed_hmmer
 
-def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame, query_nt_length : int):
+def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame):
     """
     Recalculate the coordinates of the hmmer database , such that each translated frame
     reverts to original nucleotide coordinates.
@@ -158,7 +165,7 @@ def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame, query_nt_length : 
         hmmer["frame"],
         hmmer["ali from"],
         hmmer["ali to"],
-        hmmer["qlen"]*3) # TODO: Update this to the scalar for each query, else risk off by 1 NT miss-reporting.
+        hmmer["qlen"]*3) #TODO: Update this to the scalar for each query, else risk off-by-1 NT reporting.
 
     hmmer["q. start"] = query_start
     hmmer["q. end"] = query_end
