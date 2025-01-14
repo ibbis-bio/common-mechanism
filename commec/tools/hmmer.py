@@ -167,5 +167,5 @@ def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame):
         hmmer["ali to"],
         hmmer["qlen"]*3) #TODO: Update this to the scalar for each query, else risk off-by-1 NT reporting.
 
-    hmmer["q. start"] = query_start
-    hmmer["q. end"] = query_end
+    hmmer["q. start"] = pd.Series(query_start, dtype="int64")
+    hmmer["q. end"] = pd.Series(query_end, dtype="int64")
