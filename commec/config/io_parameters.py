@@ -11,7 +11,6 @@ import glob
 import argparse
 import logging
 from dataclasses import dataclass
-from typing import Optional
 import multiprocessing
 
 import yaml
@@ -33,7 +32,7 @@ class ScreenConfig:
     in_fast_mode: bool = False
     skip_nt_search: bool = False
     do_cleanup: bool = False
-    diamond_jobs: Optional[int] = None
+    diamond_jobs: int | None = None
     config_yaml_file: str | os.PathLike = DEFAULT_CONFIG_YAML_PATH
     force: bool = False
     resume: bool = False

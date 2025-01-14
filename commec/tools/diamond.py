@@ -9,7 +9,6 @@ Throws if inputs are invalid. Creates a temporary log file, which is deleted on 
 import os
 import glob
 import subprocess
-from typing import Optional
 import logging
 from math import gcd as greatest_common_denominator
 from multiprocessing import Pool
@@ -29,7 +28,7 @@ class DiamondHandler(BlastHandler):
         super().__init__(database_file, input_file, out_file, **kwargs)
         self.frameshift: int = 15
         self.do_range_culling = True
-        self.jobs: Optional[int] = None
+        self.jobs: int | None = None
         self.output_format = "6"
         self.output_format_tokens = [
             "qseqid",

@@ -7,7 +7,6 @@ Sets and alters defaults based on input parameters.
 """
 
 import logging
-from typing import Union
 from commec.config.io_parameters import ScreenIOParameters
 from commec.tools.blastn import BlastNHandler
 from commec.tools.blastx import BlastXHandler
@@ -22,7 +21,7 @@ class ScreenTools:
 
     def __init__(self, params: ScreenIOParameters):
         self.biorisk_hmm: HmmerHandler = None
-        self.regulated_protein : Union[BlastXHandler, DiamondHandler] = None
+        self.regulated_protein : BlastXHandler | DiamondHandler = None
         self.regulated_nt: BlastNHandler = None
         self.benign_hmm: HmmerHandler = None
         self.benign_blastn: BlastNHandler = None
