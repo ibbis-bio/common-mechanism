@@ -141,13 +141,15 @@ def remove_overlaps(hmmer : pd.DataFrame) -> pd.DataFrame:
         for i, j in itertools.combinations(sorted_values.index, 2):
             # If J is encapsulated:
             if (sorted_values.loc[i, "q. start"] <= sorted_values.loc[j, "q. start"]
-                and sorted_values.loc[i, "q. end"] >= sorted_values.loc[j, "q. end"]):
+                and sorted_values.loc[i, "q. end"] >= sorted_values.loc[j, "q. end"]
+                and sorted_values.loc[i, "score"] >= sorted_values.loc[j, "score"]):
                 if j in trimmed_hmmer.index:
                     trimmed_hmmer = trimmed_hmmer.drop([j])
                     continue
             # If I is encapsulated:
             if (sorted_values.loc[i, "q. start"] >= sorted_values.loc[j, "q. start"]
-                and sorted_values.loc[i, "q. end"] <= sorted_values.loc[j, "q. end"]):
+                and sorted_values.loc[i, "q. end"] <= sorted_values.loc[j, "q. end"]
+                and sorted_values.loc[i, "score"] <= sorted_values.loc[j, "score"]):
                 if i in trimmed_hmmer.index:
                     trimmed_hmmer = trimmed_hmmer.drop([i])
 

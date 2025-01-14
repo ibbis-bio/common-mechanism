@@ -14,7 +14,7 @@ from commec.tools.hmmer import remove_overlaps
 # Test the following hmmer configuration:
 # 10-----------------50 (Largest, should stay.)
 #               40-------60 (Extends 1. Should stay.)
-#      20-------40      (encapsulated, should be removed.)
+#      20-------40      (encapsulated, but high score, should stay!)
 # 10-----------------50 (lower score than 1, should be removed.)
 #      20---30 (Different query, removed)
 # 10------------------------------90 (different query)
@@ -29,10 +29,10 @@ example_hmmer_01 = pd.DataFrame({
 
 # Example DataFrame
 example_hmmer_01_output = pd.DataFrame({
-    "query name": ["one","one", "two"],
-    "q. start": [10, 40, 10],
-    "q. end":   [50, 60, 90],
-    "score":    [3, 5, 2]
+    "query name": ["one","one", "one", "two"],
+    "q. start": [10, 40, 20, 10],
+    "q. end":   [50, 60, 40, 90],
+    "score":    [3, 5, 6, 2]
 })
 
 @pytest.mark.parametrize(
