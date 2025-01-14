@@ -13,13 +13,13 @@ build:
 
 requirements:
   build:
-    - python
+    - python >=3.10
     - pip
   host:
-    - python
+    - python >=3.10
     - pip
   run:
-    - python
+    - python >=3.10
     # Runtime Python dependencies
     - biopython
     - numpy
@@ -35,7 +35,6 @@ requirements:
     - parallel
     - perl-list-moreutils
     - taxonkit
-    - python
 
 test:
   commands:
