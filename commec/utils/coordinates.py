@@ -48,6 +48,11 @@ def convert_protein_to_nucleotide_coords(frame,
     nucleotide_start[reverse_mask] = seq_length[reverse_mask] - nuc_end_reverse - 1
     nucleotide_end[reverse_mask] = seq_length[reverse_mask] - nuc_start_reverse - 1
 
+    # Frames 2,3, 5,6, have 1 less qlen, thus require a codon offset. But only for reverse frames.
+    qlen_reverse_mask = frame > 4
+    nucleotide_start[qlen_reverse_mask] += 3
+    nucleotide_end[qlen_reverse_mask] += 3
+
     # Convert to back to 1-based coordinates for reporting.
     nucleotide_start += 1
     nucleotide_end += 1
