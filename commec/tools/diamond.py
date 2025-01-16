@@ -62,9 +62,10 @@ class DiamondHandler(BlastHandler):
         self.db_files = glob.glob(f"{self.db_directory}/{db_suffix}")
         if len(self.db_files) == 0:
             raise FileNotFoundError(
-                f"Mandatory Diamond database directory {self.db_directory} "
+                f"Screening database directory {self.db_directory} "
                 f"contains no databases matching the pattern: {db_suffix}"
-                " Screening directory can be set via --databases option or --config yaml."
+                " Screening directory path can be set via --databases option or --config yaml."
+
             )
 
     def run_diamond_search(self, args):
