@@ -37,3 +37,4 @@ Repository = "https://github.com/ibbis-screening/common-mechanism.git"
 
 [tool.setuptools]
 packages = { find = { "include" = ["commec", "commec.*"] } }
+package-data = { "commec" = ["screen-default-config.yaml"] }
