@@ -5,7 +5,7 @@ Container class to hold information pertaining to query from an input fasta file
 """
 import os
 import subprocess
-from Bio import SeqIO
+from Bio import SeqIO, Seq
 from Bio.SeqRecord import SeqRecord
 
 class Query:
@@ -28,7 +28,7 @@ class Query:
         self.aa_path = f"{output_prefix}.faa"
         self._write_clean_fasta()
         self.parse_query_data()
-        self._write_six_frame_translation(self)
+        self._write_six_frame_translation()
 
     def parse_query_data(self) -> None:
         """
@@ -60,17 +60,17 @@ class Query:
         with open(self.aa_path, "w", encoding="utf-8") as fout:
             for record in self.seq_records:
                 seq = str(record.seq)
-                seq_rev = SeqIO.reverse_complement(seq)
+                seq_rev = Seq.reverse_complement(seq)
                 seq_len = len(seq)
 
                 for i in range(3):
                     # Use integer division to get frame length 
                     frame_len = 3 * ((seq_len - i) // 3)
                     # Forward frame
-                    protein = SeqIO.translate(seq[i:i + frame_len], stop_symbol="X")
+                    protein = Seq.translate(seq[i:i + frame_len], stop_symbol="X")
                     fout.write(f">{record.id}_f{i+1}\n{protein}\n")
                     # Reverse frame
-                    protein = SeqIO.translate(seq_rev[i:i + frame_len], stop_symbol="X")[::-1]
+                    protein = Seq.translate(seq_rev[i:i + frame_len], stop_symbol="X")[::-1]
                     fout.write(f">{record.id}_r{i+1}\n{protein}\n")
 
     def get_non_coding_regions(self) -> str:
