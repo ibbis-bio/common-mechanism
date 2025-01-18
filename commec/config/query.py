@@ -17,40 +17,34 @@ class Query:
         self.input_fasta_path = input_fasta_filepath
         self.nt_path : str = ""
         self.aa_path : str = ""
-        self.raw : list[SeqRecord] = []
+        self.seq_records : list[SeqRecord] = []
         self.non_coding_regions : list[list[int]] = []
 
     def setup(self, output_prefix : str) -> None:
         """ 
-        Translate or reverse translate query, to be ready in AA or NT format. 
+        Parse the input FASTA file and set up the NT and AA files that will be used as queries.
         """
-        self.nt_path = self.clean_fasta(output_prefix)
-        self.aa_path = f"{output_prefix}.transeq.faa"
+        self.nt_path = f"{output_prefix}.cleaned.fasta"
+        self.aa_path = f"{output_prefix}.faa"
+        self._write_clean_fasta()
         self.parse_query_data()
+        self._write_six_frame_translation(self)
 
-    def translate_query(self) -> None:
-        """ Run command transeq, to translate our input sequences. """
-        command = ["transeq", self.nt_path, self.aa_path, "-frame", "6", "-clean"]
-        result = subprocess.run(command)
-        if result.returncode != 0:
-            raise RuntimeError(f"Input FASTA {self.nt_path} could not be translated:\n{result.stderr}")
-        
     def parse_query_data(self) -> None:
         """
         Populate a list of query names, and associated sequences, for json formatting purposes.
         """
         with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
-                self.raw : list[SeqRecord] = list(SeqIO.parse(fasta_file, "fasta"))
+            self.seq_records : list[SeqRecord] = list(SeqIO.parse(fasta_file, "fasta"))
 
-    def clean_fasta(self, out_prefix : str) -> str:
+    def _write_clean_fasta(self) -> str:
         """
         Write a FASTA in which whitespace (including non-breaking spaces) and 
         illegal characters are replaced with underscores.
         """
-        cleaned_file = f"{out_prefix}.cleaned.fasta"
         with (
             open(self.input_fasta_path, "r", encoding="utf-8") as fin,
-            open(cleaned_file, "w", encoding="utf-8") as fout,
+            open(self.nt_path, "w", encoding="utf-8") as fout,
         ):
             for line in fin:
                 line = line.strip()
@@ -59,8 +53,26 @@ class Query:
                     for c in line
                 )
                 fout.write(f"{modified_line}{os.linesep}")
-        return cleaned_file
-    
+
+
+    def _write_six_frame_translation(self):
+        """Wrote a file with nucleotide sequences translated in all 6 reading frames."""
+        with open(self.aa_path, "w", encoding="utf-8") as fout:
+            for record in self.seq_records:
+                seq = str(record.seq)
+                seq_rev = SeqIO.reverse_complement(seq)
+                seq_len = len(seq)
+
+                for i in range(3):
+                    # Use integer division to get frame length 
+                    frame_len = 3 * ((seq_len - i) // 3)
+                    # Forward frame
+                    protein = SeqIO.translate(seq[i:i + frame_len], stop_symbol="X")
+                    fout.write(f">{record.id}_f{i+1}\n{protein}\n")
+                    # Reverse frame
+                    protein = SeqIO.translate(seq_rev[i:i + frame_len], stop_symbol="X")[::-1]
+                    fout.write(f">{record.id}_r{i+1}\n{protein}\n")
+
     def get_non_coding_regions(self) -> str:
         """ 
         Return the concatenation of all non-coding regions as a string,
@@ -68,7 +80,7 @@ class Query:
         """
         output : str = ""
         for start, end in self.non_coding_regions:
-            output += self.raw[start-1:end]
+            output += self.seq_records[start-1:end]
         return output
 
 

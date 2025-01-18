@@ -228,13 +228,12 @@ class Screen:
         logging.info(" Validating Inputs...")
         self.params.setup()
         self.database_tools: ScreenTools = ScreenTools(self.params)
-        self.params.query.translate_query()
 
         # Add the input contents to the log
         shutil.copyfile(self.params.query.input_fasta_path, self.params.tmp_log)
 
         # Initialise the json file:
-        for query in self.params.query.raw:
+        for query in self.params.query.seq_records:
             self.screen_data.queries.append(QueryData(
                 query.name,
                 len(str(query.seq)),

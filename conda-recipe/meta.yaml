@@ -28,7 +28,6 @@ requirements:
     # Runtime non-Python dependencies
     - bedtools
     - blast
-    - emboss
     - diamond
     - hmmer
     - infernal
