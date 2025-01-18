@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "commec"
-version = '0.2.0'
+version = '0.3.0'
 # This is not a pure python project; dependencies are managed through environment.yml
 authors = [
   { name = "Nicole Wheeler" },
