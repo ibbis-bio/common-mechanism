@@ -165,26 +165,32 @@ class DiamondHandler(BlastHandler):
         """
         if self.threads_per_run * self.concurrent_runs < self.threads:
             logging.info(
-                "WARNING: Total number of threads across concurrent Diamond job pools [%i*%i]"
-                " is less than number of allocated threads [%i]. CPU may be underutilised.",
+                "WARNING: With provided settings, the total number of threads [%i*%i] used across"
+                " [%i] concurrent Diamond jobs is less than maximum threads [%i]. CPU may not be"
+                " fully utilised.",
                 self.threads_per_run,
+                self.concurrent_runs,
                 self.concurrent_runs,
                 self.threads,
             )
         if self.threads_per_run * self.concurrent_runs > self.threads:
             logging.info(
-                "WARNING: The number of Diamond job pools [%i], each using [%i] threads, may"
-                " exceed maximum threads [%i]. CPU may be bottlenecked.",
+                "WARNING: With provided settings, the [%i] concurrent Diamond jobs, each using"
+                " [%i] threads, may exceed maximum threads [%i]. CPU may be bottlenecked.",
                 self.concurrent_runs,
                 self.threads_per_run,
                 self.threads,
             )
         if n_diamond_dbs % self.concurrent_runs > 0:
             logging.info(
-                "WARNING: The number of Diamond database files [%i] is not "
-                " divisible by concurrent jobs [%i]. CPU may be underutilised.",
+                "WARNING: With provided settings, DIAMOND will run through its [%i] database files"
+                " using [%i] concurrent jobs with [%i] threads each. Since number of DIAMOND "
+                " database files [%i] is not divisible by [%i], CPU may not be fully utilised.",
                 n_diamond_dbs,
                 self.concurrent_runs,
+                self.threads_per_run,
+                n_diamond_dbs,
+                self.concurrent_runs
             )
 
     def concatenate_concurrent_outputs(self, base_filename, temp_files):
