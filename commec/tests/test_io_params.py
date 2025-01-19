@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
 import os
 import argparse
 
@@ -10,9 +10,13 @@ INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.f
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
 
 @patch("sys.argv", ["test_io_params.py", "-f", INPUT_QUERY, "-d", DATABASE_DIRECTORY])
-def test_default_parameters():
+def test_default_parameters_runs():
     args = argparse.ArgumentParser()
     add_args(args)
     args = args.parse_args()
     new_params = ScreenIOParameters(args)
-    assert new_params.setup()
+    
+    # Avoid writing cleaned + translated FASTA files
+    with patch("builtins.open", mock_open()):
+        assert new_params.setup()
+
