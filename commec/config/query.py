@@ -56,7 +56,16 @@ class Query:
 
 
     def _write_six_frame_translation(self):
-        """Wrote a file with nucleotide sequences translated in all 6 reading frames."""
+        """
+        Write a file with translations of the query records in all 6 reading frames.
+       
+        Each record is named with the id of the sequence record, followed by "_index", where
+        the frame indexes, following the same format as transeq, are:
+          * _1, _2, _3: Forward frames starting at positions 0, 1, 2
+          * _4, _5, _6: Reverse frames, starting at positions 0, 1, 2
+
+        As in previous `transeq -clean` command, all stop codons (*) are replaced with (X).
+        """
         with open(self.aa_path, "w", encoding="utf-8") as fout:
             for record in self.seq_records:
                 seq = str(record.seq)
@@ -68,10 +77,12 @@ class Query:
                     frame_len = 3 * ((seq_len - i) // 3)
                     # Forward frame
                     protein = Seq.translate(seq[i:i + frame_len], stop_symbol="X")
-                    fout.write(f">{record.id}_f{i+1}\n{protein}\n")
+                    frame = i+1
+                    fout.write(f">{record.id}_{frame}\n{protein}\n")
                     # Reverse frame
-                    protein = Seq.translate(seq_rev[i:i + frame_len], stop_symbol="X")[::-1]
-                    fout.write(f">{record.id}_r{i+1}\n{protein}\n")
+                    protein = Seq.translate(seq_rev[i:i + frame_len], stop_symbol="X")
+                    rev_frame = 6-i
+                    fout.write(f">{record.id}_{rev_frame}\n{protein}\n")
 
     def get_non_coding_regions(self) -> str:
         """ 
