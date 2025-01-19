@@ -14,7 +14,6 @@ dependencies:
   # Runtime non-Python dependencies
   - bedtools
   - blast
-  - emboss
   - diamond>=2.1
   - hmmer
   - infernal
