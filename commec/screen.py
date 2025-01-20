@@ -199,7 +199,6 @@ class Screen:
     def __init__(self):
         self.params : ScreenIOParameters = None
         self.database_tools : ScreenTools = None
-        self.scripts_dir : str = os.path.dirname(__file__) # Legacy.
         self.screen_data : ScreenData = ScreenData()
         self.start_time = time.time()
 
@@ -380,10 +379,11 @@ class Screen:
             self.params.db_dir,
             str(self.params.config.threads),
         )
+
         update_taxonomic_data_from_database(self.database_tools.regulated_protein,
-                                            self.database_tools.benign_blastn,
-                                            self.database_tools.biorisk_hmm,
-                                            self.params.db_dir + "/taxonomy/",
+                                            self.database_tools.benign_taxid_path,
+                                            self.database_tools.biorisk_taxid_path,
+                                            self.database_tools.taxonomy_path,
                                             self.screen_data,
                                             CommecScreenStep.TAXONOMY_AA,
                                             self.params.config.threads)
@@ -429,9 +429,9 @@ class Screen:
             str(self.params.config.threads),
         )
         update_taxonomic_data_from_database(self.database_tools.regulated_nt,
-                                            self.database_tools.benign_blastn,
-                                            self.database_tools.biorisk_hmm,
-                                            self.params.db_dir + "/taxonomy/",
+                                            self.database_tools.benign_taxid_path,
+                                            self.database_tools.biorisk_taxid_path,
+                                            self.database_tools.taxonomy_path,
                                             self.screen_data,
                                             CommecScreenStep.TAXONOMY_NT,
                                             self.params.config.threads)

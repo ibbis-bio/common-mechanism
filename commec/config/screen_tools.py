@@ -7,6 +7,7 @@ Sets and alters defaults based on input parameters.
 """
 
 import logging
+import os
 from typing import Union
 from commec.config.io_parameters import ScreenIOParameters
 from commec.tools.blastn import BlastNHandler
@@ -28,8 +29,26 @@ class ScreenTools:
         self.benign_blastn: BlastNHandler = None
         self.benign_cmscan: CmscanHandler = None
 
+        self.taxonomy_path: str | os.PathLike = None
+        self.benign_taxid_path: str | os.PathLike = None
+        self.biorisk_taxid_path: str | os.PathLike = None
+
         config_file = params.yaml_configuration
 
+        # Paths for vaxid, taxids, and taxonomy directory, used for check_regulated_pathogens
+        # (Declared this way for backwards compatibility at this stage)
+        value = config_file.get("databases", {}).get("taxonomy", {}).get("path")
+        self.taxonomy_path = value if value is not None else params.db_dir + "/taxonomy/"
+
+        value = config_file.get("databases", {}).get("taxonomy", {}).get("regulated")
+        self.biorisk_taxid_path = value if value is not None else os.path.join(
+            config_file["databases"]["biorisk_hmm"]["path"],"reg_taxids.txt")
+
+        value = config_file.get("databases", {}).get("taxonomy", {}).get("benign")
+        self.benign_taxid_path = value if value is not None else os.path.join(
+            config_file["databases"]["benign"]["hmm"]["path"],"vax_taxids.txt")
+
+        # Database tools for Biorisks / Protein and NT screens / Benign screen:
         self.biorisk_hmm = HmmerHandler(
             config_file["databases"]["biorisk_hmm"]["path"],
             params.query.aa_path,

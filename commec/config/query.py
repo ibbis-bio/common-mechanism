@@ -11,40 +11,40 @@ from Bio.SeqRecord import SeqRecord
 class Query:
     """
     Query to screen, based on an input FASTA. Self-calculates AA version.
-    Future direction to back translate to NT when given AA too.
+    TODO: back translate to NT when given AA too.
     """
     def __init__(self, input_fasta_filepath : str):
         self.input_fasta_path = input_fasta_filepath
         self.nt_path : str = ""
         self.aa_path : str = ""
         self.raw : list[SeqRecord] = []
-        self.non_coding_regions : list[list[int]] = [[]]
+        self.non_coding_regions : list[list[int]] = []
 
-    def setup(self, output_prefix : str):
+    def setup(self, output_prefix : str) -> None:
         """ 
         Translate or reverse translate query, to be ready in AA or NT format. 
         """
-        self.nt_path = self.get_cleaned_fasta(output_prefix)
+        self.nt_path = self.clean_fasta(output_prefix)
         self.aa_path = f"{output_prefix}.transeq.faa"
         self.parse_query_data()
 
-    def translate_query(self):
+    def translate_query(self) -> None:
         """ Run command transeq, to translate our input sequences. """
         command = ["transeq", self.nt_path, self.aa_path, "-frame", "6", "-clean"]
-        result = subprocess.run(command, check=True)
+        result = subprocess.run(command)
         if result.returncode != 0:
-            raise RuntimeError("Input FASTA {fasta_to_screen} could not be translated:\n{result.stderr}")
+            raise RuntimeError(f"Input FASTA {self.nt_path} could not be translated:\n{result.stderr}")
         
-    def parse_query_data(self):
+    def parse_query_data(self) -> None:
         """
         Populate a list of query names, and associated sequences, for json formatting purposes.
         """
         with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
                 self.raw : list[SeqRecord] = list(SeqIO.parse(fasta_file, "fasta"))
 
-    def get_cleaned_fasta(self, out_prefix):
+    def clean_fasta(self, out_prefix : str) -> str:
         """
-        Return a FASTA where whitespace (including non-breaking spaces) and 
+        Write a FASTA in which whitespace (including non-breaking spaces) and 
         illegal characters are replaced with underscores.
         """
         cleaned_file = f"{out_prefix}.cleaned.fasta"
@@ -70,6 +70,7 @@ class Query:
         for start, end in self.non_coding_regions:
             output += self.raw[start-1:end]
         return output
+
 
     def convert_noncoding_index_to_query_index(self, index : int) -> int:
         """

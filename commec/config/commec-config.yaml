@@ -17,3 +17,7 @@ databases:
       path: '{default}nr_blast/nr'
     diamond:
       path: '{default}nr_dmnd/nr.dmnd'
+  taxonomy:
+    path: '{default}taxonomy/'
+    benign: '{default}benign_db/vax_taxids.txt'
+    regulated: '{default}biorisk_db/reg_taxids.txt'

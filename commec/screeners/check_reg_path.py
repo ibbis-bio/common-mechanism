@@ -32,12 +32,45 @@ from commec.config.json_io import (
 
 pd.set_option("display.max_colwidth", 10000)
 
+def _check_inputs(
+        search_handle : SearchHandler,
+        benign_taxid_path : str | os.PathLike,
+        biorisk_taxid_path : str | os.PathLike,
+        taxonomy_directory : str | os.PathLike
+        ):
+    """ 
+    Simply check for the existance of files, 
+    returns True if it is safe to continue. 
+    """
+    # check input files
+    if not search_handle.check_output():
+        logging.info("\t...ERROR: Taxonomic search results empty\n %s", search_handle.out_file)
+        return False
+
+    if not os.path.exists(benign_taxid_path):
+        logging.error("\t...benign db file %s does not exist\n", benign_taxid_path)
+        return False
+
+    if not os.path.exists(biorisk_taxid_path):
+        logging.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
+        return False
+
+    if search_handle.is_empty(search_handle.out_file):
+        logging.info("\tERROR: Homology search has failed\n")
+        return False
+
+    if not search_handle.has_hits(search_handle.out_file):
+        logging.info("\t...no hits\n")
+        return False
+    
+    return True
+
 @benchmark
 def update_taxonomic_data_from_database(
         search_handle : SearchHandler,
-        benign_handler : SearchHandler,
-        biorisk_handler : SearchHandler,
-        taxonomy_directory : str,
+        benign_taxid_path : str | os.PathLike,
+        biorisk_taxid_path : str | os.PathLike,
+        taxonomy_directory : str | os.PathLike,
         data : ScreenData,
         step : CommecScreenStep,
         n_threads : int
@@ -53,38 +86,21 @@ def update_taxonomic_data_from_database(
     """
     logging.debug("Acquiring Taxonomic Data for JSON output:")
 
-    #check input files
-    if not search_handle.check_output():
-        logging.info("\t...ERROR: Taxonomic search results empty\n %s", search_handle.out_file)
+    if not _check_inputs(search_handle, benign_taxid_path, 
+                         biorisk_taxid_path, taxonomy_directory):
         return 1
 
     # Read in lists of regulated and benign tax ids
-    benign_taxid_path = os.path.join(benign_handler.db_directory,"vax_taxids.txt")
-    if not os.path.exists(benign_taxid_path):
-        logging.error("\t...benign db file %s does not exist\n", benign_taxid_path)
-        return 1
     vax_taxids = pd.read_csv(benign_taxid_path, header=None).squeeze().astype(str).tolist()
-
-    biorisk_taxid_path = os.path.join(biorisk_handler.db_directory,"reg_taxids.txt")
-    if not os.path.exists(biorisk_taxid_path):
-        logging.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
-        return 1
     reg_taxids = pd.read_csv(biorisk_taxid_path, header=None).squeeze().astype(str).tolist()
 
-    if search_handle.is_empty(search_handle.out_file):
-        logging.info("\tERROR: Homology search has failed\n")
-        return 1
-
+    # The default is to pass, its up to the data to over-write this.
     if step == CommecScreenStep.TAXONOMY_AA:
         for query in data.queries:
             query.recommendation.protein_taxonomy_screen = CommecRecommendation.PASS
     if step == CommecScreenStep.TAXONOMY_NT:
         for query in data.queries:
             query.recommendation.nucleotide_taxonomy_screen = CommecRecommendation.PASS
-
-    if not search_handle.has_hits(search_handle.out_file):
-        logging.info("\t...no hits\n")
-        return 0
 
     blast = read_blast(search_handle.out_file)
     blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)
@@ -191,7 +207,7 @@ def update_taxonomic_data_from_database(
                     query_write.recommendation.nucleotide_taxonomy_screen = compare(
                         query_write.recommendation.nucleotide_taxonomy_screen,
                         recommendation)
-                        
+
                 regulation_dict = {"number_of_regulated_taxids" : str(len(reg_taxids)),
                                    "number_of_unregulated_taxids" : str(len(non_reg_taxids)),
                                    "regulated_eukaryotes": str(n_regulated_eukaryote),
