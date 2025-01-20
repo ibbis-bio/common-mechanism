@@ -39,7 +39,7 @@ def visualize_data(filename : os.PathLike):
             if len(parts) < 5:
                 continue
 
-            y_pos = parts[0]                             # Stack depth
+            y_pos = int(parts[0])                             # Stack depth
             label = capitalize_and_concatenate(parts[1]) # Function name
             duration_str = parts[2]                      # Duration string (for hover info)
             start_time_str = parts[3]                    # Start time as string
@@ -99,8 +99,14 @@ def visualize_data(filename : os.PathLike):
     root, _ext = os.path.splitext(filename)
     output_filename = root + ".html"
     fig.write_html(output_filename)
-    # print("Benchmarking plot saved at " + output_filename)
 
 # Usage:
 if __name__ == "__main__":
-    visualize_data("benchmark.txt")
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]  # Take the first argument as the filename
+    else:
+        print("Error: No filename provided.")
+        print("Usage: python script.py <filename>")
+        sys.exit(1)  # Exit if no filename is provided
+
+    visualize_data(filename)

@@ -35,6 +35,7 @@ class ScreenConfig:
     config_yaml_file: str | os.PathLike = DEFAULT_CONFIG_YAML_PATH
     force: bool = False
     resume: bool = False
+    benchmark : bool = False
 
 class ScreenIOParameters:
     """
@@ -53,13 +54,13 @@ class ScreenIOParameters:
             config_yaml_file=args.config_yaml.strip(),
             force=args.force,
             resume=args.resume,
+            benchmark=args.benchmark,
         )
 
         # Outputs
         self.output_prefix = self.get_output_prefix(args.fasta_file, args.output_prefix)
         self.output_screen_file = f"{self.output_prefix}.screen"
         self.tmp_log = f"{self.output_prefix}.log.tmp"
-
         self.output_json = f"{self.output_prefix}.output.json"
 
         # Query
@@ -211,7 +212,6 @@ class ScreenIOParameters:
                 "*blastx",
                 "*dmnd",
                 "*.tmp",
-                "*.bm",
             ]:
                 for file in glob.glob(f"{self.output_prefix}.{pattern}"):
                     if os.path.isfile(file):

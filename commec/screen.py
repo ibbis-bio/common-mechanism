@@ -59,7 +59,12 @@ import sys
 import pandas as pd
 
 from commec.utils.file_utils import file_arg, directory_arg
-from commec.utils.benchmark import benchmark, benchmark_set_log_file_name, benchmark_write_log
+from commec.utils.benchmark import (
+    benchmark, 
+    benchmark_set_log_file_name, 
+    benchmark_set_logging, 
+    benchmark_write_log
+)
 from commec.utils.json_html_output import generate_html_from_screen_data
 from commec.config.io_parameters import ScreenIOParameters, ScreenConfig
 from commec.config.screen_tools import ScreenTools
@@ -176,6 +181,13 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         action="store_true",
         help="Re-use any pre-existing output for this Screen run (cannot be used with --force)",
     )
+    parser.add_argument(
+        "-b",
+        "--bm",
+        dest="benchmark",
+        action="store_true",
+        help="Output benchmarking statistics (txt and html graphic) for this screening run.",
+    )
     return parser
 
 class Screen:
@@ -204,6 +216,11 @@ class Screen:
         self.screen_data.update()
         encode_screen_data_to_json(self.screen_data, self.params.output_json)
         generate_html_from_screen_data(self.screen_data, self.params.output_prefix+"_summary")
+
+        if self.params.config.benchmark:
+            benchmark_write_log()
+            create_benchmark_visual(self.params.output_prefix+".bm")
+
         self.params.clean()
 
     def setup(self, args: argparse.ArgumentParser):
@@ -257,6 +274,11 @@ class Screen:
             self.screen_data.commec_info.benign_synbio_database_info = self.database_tools.benign_cmscan.get_version_information()
 
         self.screen_data.commec_info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Benchmarking init
+        benchmark_set_logging(self.params.config.benchmark)
+        if self.params.config.benchmark:
+            benchmark_set_log_file_name(self.params.output_prefix + ".bm")
 
     def run(self, args : argparse.ArgumentParser):
         """
@@ -314,7 +336,6 @@ class Screen:
         logging.info(
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
-
 
     @benchmark
     def screen_biorisks(self):
