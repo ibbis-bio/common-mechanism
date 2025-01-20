@@ -26,15 +26,11 @@ requirements:
     - pandas
     - pytaxonkit
     # Runtime non-Python dependencies
-    - bedtools
     - blast
+    - diamond>=2.1
     - emboss
-    - diamond
     - hmmer
     - infernal
-    - parallel
-    - perl-list-moreutils
-    - taxonkit
 
 test:
   commands:

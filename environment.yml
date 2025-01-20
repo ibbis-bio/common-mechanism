@@ -10,17 +10,12 @@ dependencies:
   - numpy
   - pandas
   - pytaxonkit
-  - pyyaml
   # Runtime non-Python dependencies
-  - bedtools
   - blast
-  - emboss
   - diamond>=2.1
+  - emboss
   - hmmer
   - infernal
-  - parallel
-  - perl-list-moreutils
-  - taxonkit
   # Development dependencies
   - pip
   - pytest
