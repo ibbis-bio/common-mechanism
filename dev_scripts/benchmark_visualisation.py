@@ -104,7 +104,7 @@ def visualize_data(filename : os.PathLike, outfile : os.PathLike = None):
 
     root, _ext = os.path.splitext(filename)
     output_filename = outfile or f"{root}_benchmarking.html"
-    fig.write_html(output_filename)
+    fig.write_html(output_filename, full_html = False, include_plotlyjs='cdn')
 
 # Usage:
 if __name__ == "__main__":
