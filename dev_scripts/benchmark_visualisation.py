@@ -1,4 +1,10 @@
-
+#! /usr/bin/env python3
+# Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
+"""
+This script is used to quickly visualise the data of a .bm (benchmarking data text file)
+output from a Commec Screen run. It generates an HTML file of provided name. It is run
+automatically at the end of a Commec Screen, but can also be run as main on a valid .bm file.
+"""
 import os
 import sys
 import pandas as pd
@@ -19,7 +25,7 @@ def capitalize_and_concatenate(input_str):
     capitalized_tokens = [token.capitalize() for token in tokens]
     return ' '.join(capitalized_tokens)
 
-def visualize_data(filename : os.PathLike):
+def visualize_data(filename : os.PathLike, outfile : os.PathLike = None):
     """ 
     Takes the output benchmarking log from commec, 
     and produces a pretty html visual using plotly. 
@@ -97,7 +103,7 @@ def visualize_data(filename : os.PathLike):
     )
 
     root, _ext = os.path.splitext(filename)
-    output_filename = root + ".html"
+    output_filename = outfile or f"{root}_benchmarking.html"
     fig.write_html(output_filename)
 
 # Usage:
