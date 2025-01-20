@@ -103,10 +103,10 @@ def visualize_data(filename : os.PathLike):
 # Usage:
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        filename = sys.argv[1]  # Take the first argument as the filename
+        input_filename = sys.argv[1]  # Take the first argument as the filename
     else:
         print("Error: No filename provided.")
         print("Usage: python script.py <filename>")
         sys.exit(1)  # Exit if no filename is provided
 
-    visualize_data(filename)
+    visualize_data(input_filename)
