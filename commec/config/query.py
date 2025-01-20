@@ -1,6 +1,6 @@
 """
 Container class to hold information pertaining to query from an input fasta file,
- as well as derived information, such as translated sequences, whether or not 
+ as well as derived information, such as translated sequences and whether or not 
  the query was derived from AA or NT.
 """
 import os
@@ -81,7 +81,7 @@ class Query:
                     fout.write(f">{record.id}_{frame}\n{protein}\n")
                     # Reverse frame
                     protein = Seq.translate(seq_rev[i:i + frame_len], stop_symbol="X")
-                    rev_frame = 6-i
+                    rev_frame = i+4
                     fout.write(f">{record.id}_{rev_frame}\n{protein}\n")
 
     def get_non_coding_regions(self) -> str:
@@ -93,7 +93,6 @@ class Query:
         for start, end in self.non_coding_regions:
             output += self.seq_records[start-1:end]
         return output
-
 
     def convert_noncoding_index_to_query_index(self, index : int) -> int:
         """
