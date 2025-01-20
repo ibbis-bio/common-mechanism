@@ -25,6 +25,7 @@ requirements:
     - numpy
     - pandas
     - pytaxonkit
+    - pyyaml
     # Runtime non-Python dependencies
     - blast
     - diamond>=2.1
