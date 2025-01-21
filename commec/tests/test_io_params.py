@@ -3,7 +3,7 @@ from unittest.mock import patch
 import os
 import argparse
 
-from commec.config.io_parameters import ScreenIOParameters
+from commec.config.io_parameters import ScreenIO
 from commec.screen import add_args
 
 INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.fasta")
@@ -14,5 +14,5 @@ def test_default_parameters():
     args = argparse.ArgumentParser()
     add_args(args)
     args = args.parse_args()
-    new_params = ScreenIOParameters(args)
+    new_params = ScreenIO(args)
     assert new_params.setup()

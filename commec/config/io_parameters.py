@@ -17,6 +17,8 @@ import multiprocessing
 import yaml
 from yaml.parser import ParserError
 
+from Bio import SeqIO
+
 from commec.config.query import Query
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 
@@ -36,13 +38,13 @@ class ScreenConfig:
     force: bool = False
     resume: bool = False
 
-class ScreenIOParameters:
+class ScreenIO:
     """
     Container for input settings constructed from arguments to `screen`.
     """
 
     def __init__(self, args: argparse.ArgumentParser):
-        # Inputs
+        # Process command-line inputs from user
         self.config: ScreenConfig = ScreenConfig(
             threads=args.threads,
             protein_search_tool=args.protein_search_tool,
@@ -55,15 +57,15 @@ class ScreenIOParameters:
             resume=args.resume,
         )
 
+        self.input_fasta_path = args.fasta_file
+
         # Outputs
-        self.output_prefix = self.get_output_prefix(args.fasta_file, args.output_prefix)
+        self.output_prefix = self.get_output_prefix(self.input_fasta_path, args.output_prefix)
+        self.nt_path = f"{self.output_prefix}.cleaned.fasta"
+        self.aa_path = f"{self.output_prefix}.faa"
         self.output_screen_file = f"{self.output_prefix}.screen"
         self.tmp_log = f"{self.output_prefix}.log.tmp"
-
         self.output_json = f"{self.output_prefix}.output.json"
-
-        # Query
-        self.query: Query = Query(args.fasta_file)
 
         # Parse paths to input databases (may be from CLI or YAML configuration file)
         self.db_dir = args.database_dir
@@ -93,7 +95,7 @@ class ScreenIOParameters:
         """
         Additional setup once the class has been instantiated (i.e. that requires logs).
         """
-        # Sanity checks on thread input.
+        # Make sure the number of threads provided by the user makes sense
         if self.config.threads > multiprocessing.cpu_count():
             logging.info(
                 "Requested allocated threads [%i] is greater"
@@ -115,7 +117,8 @@ class ScreenIOParameters:
                 'tool as "diamond" will have no effect!'
             )
 
-        self.query.setup(self.output_prefix)
+        # Write a clean FASTA that can be used downstream
+        self._write_clean_fasta()
         return True
 
     def get_configurations_from_yaml(
@@ -197,6 +200,34 @@ class ScreenIOParameters:
             return prefix_arg + input_name
         # Existing, non-path prefixes can be used as-is
         return prefix_arg
+
+    def _write_clean_fasta(self) -> str:
+        """
+        Write a FASTA in which whitespace (including non-breaking spaces) and 
+        illegal characters are replaced with underscores.
+        """
+        with (
+            open(self.input_fasta_path, "r", encoding="utf-8") as fin,
+            open(self.nt_path, "w", encoding="utf-8") as fout,
+        ):
+            for line in fin:
+                line = line.strip()
+                modified_line = "".join(
+                    "_" if c.isspace() or c == "\xc2\xa0" or c == "#" else c
+                    for c in line
+                )
+                fout.write(f"{modified_line}{os.linesep}")
+
+    def parse_queries(self) -> dict[str, Query]:
+        """
+        Parse queries from FASTA file.
+        """
+        with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
+            # TODO: make this a static method in Query instead, to avoid a ioparams importing SeqIO?
+            parsed = SeqIO.parse(fasta_file, "fasta")
+            parsed_queries = {record.id: Query(record) for record in parsed}
+
+        return parsed_queries
 
     def clean(self):
         """
