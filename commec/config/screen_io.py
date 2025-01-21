@@ -16,6 +16,8 @@ import importlib.resources
 import yaml
 from yaml.parser import ParserError
 
+from Bio import SeqIO
+
 from commec.config.query import Query
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 from commec.utils.file_utils import expand_and_normalize
@@ -23,23 +25,33 @@ from commec.utils.dict_utils import deep_update
 
 logger = logging.getLogger(__name__)
 
-class ScreenIOParameters:
+class ScreenIO:
     """
     Container for input settings constructed from arguments to `screen`.
     """
     def __init__(self, args: argparse.Namespace):
-        # Inputs that do no have a package-level default, since they are specific to each run
         self.db_dir = args.database_dir
-        input_fasta = args.fasta_file
-        
+        self.input_fasta_path = args.fasta_file
+
         # Set up output files
-        self.output_prefix = self.get_output_prefix(input_fasta, args.output_prefix)
+        self.output_prefix = self._get_output_prefix(self.input_fasta_path, args.output_prefix)
+        self.nt_path = f"{self.output_prefix}.cleaned.fasta"
+        self.aa_path = f"{self.output_prefix}.faa"
         self.output_screen_file = f"{self.output_prefix}.screen"
         self.tmp_log = f"{self.output_prefix}.log.tmp"
         self.output_json = f"{self.output_prefix}.output.json"
 
-        # Query
-        self.query: Query = Query(args.fasta_file)
+        # Parse paths to input databases (may be from CLI or YAML configuration file)
+        self.db_dir = args.database_dir
+        self.yaml_configuration = {}
+
+        if os.path.exists(self.config.config_yaml_file):
+            self._get_configurations_from_yaml(self.config.config_yaml_file, self.db_dir)
+        else:
+            raise FileNotFoundError(
+                "No configuration yaml found. If using a custom file, check the path is correct: "
+                + self.config.config_yaml_file
+            )
 
         # Get configuration based on defaults and CLI args (including YAML config if supplied)
         self.config = {}
@@ -144,7 +156,7 @@ class ScreenIOParameters:
              if arg in self.config and hasattr(args, arg):
                 self.config[arg] = getattr(args, arg)
 
- def _format_config_paths(self,
+    def _format_config_paths(self,
         db_dir_override: str | os.PathLike = None
     ):
         """
@@ -232,6 +244,38 @@ class ScreenIOParameters:
         with open(output_filepath, "w", encoding="utf-8") as stream_out:
             yaml.safe_dump(self.config, stream_out, default_flow_style=False)
 
+    def _write_clean_fasta(self) -> str:
+        """
+        Write a FASTA in which whitespace (including non-breaking spaces) and 
+        illegal characters are replaced with underscores.
+        """
+        with (
+            open(self.input_fasta_path, "r", encoding="utf-8") as fin,
+            open(self.nt_path, "w", encoding="utf-8") as fout,
+        ):
+            for line in fin:
+                line = line.strip()
+                modified_line = "".join(
+                    "_" if c.isspace() or c == "\xc2\xa0" or c == "#" else c
+                    for c in line
+                )
+                fout.write(f"{modified_line}{os.linesep}")
+
+    def parse_input_fasta(self) -> dict[str, Query]:
+        """
+        Parse queries from FASTA file.
+        """
+        with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
+            queries = {}
+            for record in SeqIO.parse(fasta_file, "fasta"):
+                try:
+                    query = Query(record)
+                    if query.name in queries:
+                        raise ValueError(f"Duplicate sequence identifier found: {query.name}")
+                    queries[query.name] = query
+                except Exception as e:
+                    raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}") from e
+        return queries
 
     def clean(self):
         """
@@ -261,4 +305,8 @@ class ScreenIOParameters:
 
     @property
     def should_do_benign_screening(self) -> bool:
-        return self.should_do_protein_screening or self.should_do_nucleotide_screening
+        return True
+
+
+class IoValidationError(ValueError):
+    """Custom exception for errors when handling input and output with `ScreenIO`."""

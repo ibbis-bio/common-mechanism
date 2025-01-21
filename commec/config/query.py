@@ -1,89 +1,52 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
-"""
-Container class to hold information pertaining to queries from an input fasta file,
-as well as derived information, such as translated sequences, whether or not
-the query was derived from AA or NT.
-"""
-
-import logging
+# Copyright (c) 2021-2025 International Biosecurity and Biosafety Initiative for Science
 import os
+import logging
 import subprocess
+from Bio.SeqRecord import SeqRecord
 
 logger = logging.getLogger(__name__)
 
 
 class Query:
     """
-    Query to screen, based on an input FASTA. Self-calculates AA version.
-    TODO: back translate to NT when given AA too.
+    A query to screen. Contains a sequence record and derived information, such
+    as translated sequences.
+
+    At present, we only support nucleotide queries, though we may add suport for
+    amino acid queries in future.
     """
 
-    def __init__(self, input_fasta_filepath: str):
-        self.input_fasta_path = input_fasta_filepath
-        self.nt_path : str = ""
-        self.aa_path : str = ""
-        self.raw : list[SeqRecord] = []
-        self.non_coding_regions : list[list[int]] = []
+    def __init__(self, seq_record: SeqRecord):
+        Query.validate_sequence_record(seq_record)
+        self.name = seq_record.id
+        self.seq_record = seq_record
 
-    def setup(self, output_prefix : str) -> None:
-        """ 
-        Translate or reverse translate query, to be ready in AA or NT format. 
-        """
-        self.nt_path = self.clean_fasta(output_prefix)
-        self.aa_path = f"{output_prefix}.transeq.faa"
-        self.parse_query_data()
-
-    def translate_query(self) -> None:
-        """ Run command transeq, to translate our input sequences. """
-        command = ["transeq", self.nt_path, self.aa_path, "-frame", "6", "-clean"]
+    def translate(self, input_path, output_path) -> None:
+        """Run command transeq, to translate our input sequences."""
+        command = ["transeq", input_path, output_path, "-frame", "6", "-clean"]
         result = subprocess.run(command)
         if result.returncode != 0:
-            raise RuntimeError(f"Input FASTA {self.nt_path} could not be translated:\n{result.stderr}")
-        
-    def parse_query_data(self) -> None:
-        """
-        Populate a list of query names, and associated sequences, for json formatting purposes.
-        """
-        with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
-                self.raw : list[SeqRecord] = list(SeqIO.parse(fasta_file, "fasta"))
+            raise RuntimeError(
+                f"Input FASTA {input_path} could not be translated:\n{result.stderr}"
+            )
 
-    def clean_fasta(self, out_prefix : str) -> str:
+    @staticmethod
+    def validate_sequence_record(seq_record: SeqRecord) -> None:
         """
-        Write a FASTA in which whitespace (including non-breaking spaces) and 
-        illegal characters are replaced with underscores.
+        Validate record has non-empty sequence and id. Raises QueryError.
         """
-        cleaned_file = f"{out_prefix}.cleaned.fasta"
-        with (
-            open(self.input_fasta_path, "r", encoding="utf-8") as fin,
-            open(cleaned_file, "w", encoding="utf-8") as fout,
-        ):
-            for line in fin:
-                line = line.strip()
-                modified_line = "".join(
-                    "_" if c.isspace() or c == "\xc2\xa0" or c == "#" else c for c in line
-                )
-                fout.write(f"{modified_line}{os.linesep}")
-        return cleaned_file
-    
-    def get_non_coding_regions(self) -> str:
-        """ 
-        Return the concatenation of all non-coding regions as a string,
-        to be appended to a non_coding fasta file.
-        """
-        output : str = ""
-        for start, end in self.non_coding_regions:
-            output += self.raw[start-1:end]
-        return output
+        if not seq_record.id:
+            raise QueryValueError(
+                "Could not initialize query with an empty sequence id. Is input FASTA valid?"
+            )
+
+        if not seq_record.seq:
+            raise QueryValueError(
+                f"Could not initialize query with id {seq_record.id} because sequence was empty."
+                " Is input FASTA valid?"
+            )
 
 
-    def convert_noncoding_index_to_query_index(self, index : int) -> int:
-        """
-        Given an index in non-coding space, calculate the index in query space.
-        """
-        nc_pos : int = 0
-        for start, end in self.non_coding_regions:
-            region_length : int = end - start
-            if index < (nc_pos + region_length):
-                return index - nc_pos + start
-            nc_pos += region_length
+class QueryValueError(ValueError):
+    """Custom exception for errors when validating a `Query`."""
