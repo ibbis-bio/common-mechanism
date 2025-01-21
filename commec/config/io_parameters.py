@@ -59,7 +59,7 @@ class ScreenIO:
 
         self.input_fasta_path = args.fasta_file
 
-        # Outputs
+        # Set up output files
         self.output_prefix = self.get_output_prefix(self.input_fasta_path, args.output_prefix)
         self.nt_path = f"{self.output_prefix}.cleaned.fasta"
         self.aa_path = f"{self.output_prefix}.faa"
@@ -218,16 +218,14 @@ class ScreenIO:
                 )
                 fout.write(f"{modified_line}{os.linesep}")
 
-    def parse_queries(self) -> dict[str, Query]:
+    def parse_input_fasta(self) -> dict[str, Query]:
         """
         Parse queries from FASTA file.
         """
         with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
-            # TODO: make this a static method in Query instead, to avoid a ioparams importing SeqIO?
-            parsed = SeqIO.parse(fasta_file, "fasta")
-            parsed_queries = {record.id: Query(record) for record in parsed}
+            queries = [Query(record) for record in SeqIO.parse(fasta_file, "fasta")]
 
-        return parsed_queries
+        return {query.name: query for query in queries }
 
     def clean(self):
         """

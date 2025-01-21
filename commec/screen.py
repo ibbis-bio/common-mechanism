@@ -227,20 +227,18 @@ class Screen:
         logging.info(" Validating Inputs...")
         self.screen_io.setup()
         self.database_tools: ScreenTools = ScreenTools(self.screen_io)
-        self.queries = self.screen_io.parse_queries()
-        self.screen_io.query.translate_query()
 
         # Add the input contents to the log
         shutil.copyfile(self.screen_io.query.input_fasta_path, self.screen_io.tmp_log)
 
-        # Initialise the json file:
-        for query in self.screen_io.query.raw:
-            self.screen_data.queries.append(QueryData(
-                query.name,
-                len(str(query.seq)),
-                str(query.seq))
-                )
-            
+        self.queries = self.screen_io.parse_input_fasta()
+
+        # Initialize the queries
+        for query in self.queries:
+            query.translate(self.screen_io.nt_path, self.screen_io.aa_path)
+            self.screen_data.queries.append(QueryData(query.name, len(query.seq_record), query.seq_record.seq))
+        
+        # Initialize the version info for all the databases
         self.screen_data.commec_info.biorisk_database_info = self.database_tools.biorisk_hmm.get_version_information()
 
         if self.screen_io.should_do_protein_screening:

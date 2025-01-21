@@ -5,25 +5,22 @@ Container class to hold information pertaining to query from an input fasta file
 """
 import os
 import subprocess
-from Bio import SeqIO, Seq
 from Bio.SeqRecord import SeqRecord
 
 class Query:
     """
-    Query to screen for biorisks and 
-    Query to screen, based on an input FASTA. Self-calculates AA version.
-    TODO: back translate to NT when given AA too.
+    Query to screen.
     """
-    def __init__(self, input_fasta_filepath : str):
-        self.input_fasta_path = input_fasta_filepath
-        self.seq_records : list[SeqRecord] = []
+    def __init__(self, seq_record : SeqRecord):
+        self.name = seq_record.id
+        self.seq_record = seq_record
 
-    def translate_query(self) -> None:
+    def translate(self, input_path, output_path) -> None:
         """ Run command transeq, to translate our input sequences. """
-        command = ["transeq", self.nt_path, self.aa_path, "-frame", "6", "-clean"]
+        command = ["transeq", input_path, output_path, "-frame", "6", "-clean"]
         result = subprocess.run(command)
         if result.returncode != 0:
-            raise RuntimeError(f"Input FASTA {self.nt_path} could not be translated:\n{result.stderr}")
+            raise RuntimeError(f"Input FASTA {input_path} could not be translated:\n{result.stderr}")
 
     def get_non_coding_regions(self) -> str:
         """ 
