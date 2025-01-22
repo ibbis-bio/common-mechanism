@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2021-2025 International Biosecurity and Biosafety Initiative for Science
 import os
-import subprocess
 from Bio import Seq
 from Bio.SeqRecord import SeqRecord
 
@@ -14,19 +13,71 @@ class Query:
     At present, we only support nucleotide queries, though we may add suport for
     amino acid queries in future.
     """
+
     def __init__(self, seq_record: SeqRecord):
         Query.validate_sequence_record(seq_record)
-        self.name = seq_record.id
         self.seq_record = seq_record
+        self.translations: list[QueryTranslation] = []
 
-    def translate(self, input_path, output_path) -> None:
-        """Run command transeq, to translate our input sequences."""
-        command = ["transeq", input_path, output_path, "-frame", "6", "-clean"]
-        result = subprocess.run(command)
-        if result.returncode != 0:
-            raise RuntimeError(
-                f"Input FASTA {input_path} could not be translated:\n{result.stderr}"
+    @property
+    def name(self):
+        return self.seq_record.id
+
+    @property
+    def length(self):
+        return len(self.seq_record.seq)
+
+    @property
+    def sequence(self):
+        return self.seq_record.seq
+
+    def translate(self) -> None:
+        """
+        Get the six-frame translations of the query sequence in all 6 reading frames.
+
+        We follow the same naming format as transeq:
+          * 1, 2, 3: Forward frames starting at positions 0, 1, 2
+          * 4, 5, 6: Reverse frames, starting at positions 0, -1, -2
+
+        Offsets are a little complicated. Taking the 11-nt sequence 'atgtgccatgg' as an example:
+
+            Frame   Pos     Codon split         Translation
+            1       0       atg tgc cat gg      MCH
+            2       1       a tgt gcc atg g     CAM
+            3       2       at gtg cca tgg      VPW
+            4       -0      cc atg gca cat      MAH
+            5       -1      c cat ggc aca t     HGT
+            6       -2      cca tgg cac at      PWH
+
+        As in previous `transeq -clean` command, all stop codons (*) are replaced with (X).
+        """
+        seq_rev = Seq.reverse_complement(self.sequence)
+
+        for i in range(3):
+            # Use integer division to get frame length based on starting offset
+            frame_len = 3 * ((self.length - i) // 3)
+
+            # Forward frame translates from beginning to frame length
+            f_start = i
+            f_end = i + frame_len
+            protein = Seq.translate(self.sequence[f_start:f_end], stop_symbol="X")
+            self.translations.append(
+                QueryTranslation(
+                    sequence=protein, frame=i, nt_start=f_start, nt_end=f_end
+                )
             )
+
+            # Reverse frame is offset from the end of the sequence
+            r_end = self.length - i
+            r_start = r_end - frame_len
+            protein = Seq.translate(seq_rev[r_start:r_end], stop_symbol="X")
+            # I think these indices are wrong actually
+            self.translations.append(
+                QueryTranslation(
+                    sequence=protein, frame=4+i, nt_start=r_start, nt_end=r_end
+                )
+            )
+
 
     @staticmethod
     def validate_sequence_record(seq_record: SeqRecord) -> None:
@@ -44,35 +95,25 @@ class Query:
                 " Is input FASTA valid?"
             )
 
-    def _write_six_frame_translation(self):
-        """
-        Write a file with translations of the query records in all 6 reading frames.
-       
-        Each record is named with the id of the sequence record, followed by "_index", where
-        the frame indexes, following the same format as transeq, are:
-          * _1, _2, _3: Forward frames starting at positions 0, 1, 2
-          * _4, _5, _6: Reverse frames, starting at positions 0, 1, 2
 
-        As in previous `transeq -clean` command, all stop codons (*) are replaced with (X).
-        """
-        with open(self.aa_path, "w", encoding="utf-8") as fout:
-            for record in self.seq_records:
-                seq = str(record.seq)
-                seq_rev = Seq.reverse_complement(seq)
-                seq_len = len(seq)
+class QueryTranslation:
+    """
+    Represents a single frame translation of a nucleotide sequence.
 
-                for i in range(3):
-                    # Use integer division to get frame length 
-                    frame_len = 3 * ((seq_len - i) // 3)
-                    # Forward frame
-                    protein = Seq.translate(seq[i:i + frame_len], stop_symbol="X")
-                    frame = i+1
-                    fout.write(f">{record.id}_{frame}\n{protein}\n")
-                    # Reverse frame
-                    protein = Seq.translate(seq_rev[i:i + frame_len], stop_symbol="X")
-                    rev_frame = i+4
-                    fout.write(f">{record.id}_{rev_frame}\n{protein}\n")
+    Attributes:
+        sequence (str): The translated amino acid sequence
+        frame (int): Frame number (1-6) following transeq convention:
+          * 1, 2, 3: Forward frames starting at positions 0, 1, 2
+          * 4, 5, 6: Reverse frames, starting at positions 0, -1, -2
+        nt_start (int): Start position in the nucleotide sequence (0-based)
+        nt_end (int): End position in the nucleotide sequence (0-based, exclusive)
+    """
+
+    sequence: str
+    frame: int  # 1-6
+    nt_start: int
+    nt_end: int
+
 
 class QueryValueError(ValueError):
     """Custom exception for errors when validating a `Query`."""
-
