@@ -61,6 +61,7 @@ import pandas as pd
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
 from commec.config.screen_io import ScreenIO, ScreenConfig
+from commec.config.query import Query
 from commec.config.screen_tools import ScreenTools
 
 from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
@@ -184,6 +185,7 @@ class Screen:
 
     def __init__(self):
         self.screen_io : ScreenIO = None
+        self.queries : dict[str, Query] = None
         self.database_tools : ScreenTools = None
         self.screen_data : ScreenData = ScreenData()
         self.start_time = time.time()
@@ -231,9 +233,8 @@ class Screen:
         # Add the input contents to the log
         shutil.copyfile(self.screen_io.query.input_fasta_path, self.screen_io.tmp_log)
 
-        self.queries = self.screen_io.parse_input_fasta()
-
         # Initialize the queries
+        self.queries = self.screen_io.parse_input_fasta()
         for query in self.queries:
             query.translate(self.screen_io.nt_path, self.screen_io.aa_path)
             self.screen_data.queries.append(QueryData(query.name, len(query.seq_record), query.seq_record.seq))
