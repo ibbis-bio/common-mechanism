@@ -27,18 +27,16 @@ def database_dir():
         "has_records_with_same_description.fasta",
     ],
 )
-def test_default_parameters(fasta_name, test_data_dir, database_dir):
+def test_default_parameters(fasta_name, test_data_dir, database_dir, tmp_path):
     input_fasta = os.path.join(test_data_dir, fasta_name)
     with patch(
-        "sys.argv", ["test_io_params.py", "-f", input_fasta, "-d", database_dir]
+        "sys.argv",
+        ["test.py", "-f", input_fasta, "-d", database_dir, "-o", str(tmp_path)],
     ):
         parser = argparse.ArgumentParser()
         add_args(parser)
         screen_io = ScreenIO(parser.parse_args())
-
-        # Patch open to avoid actually writing cleaned fastas
-        with patch("builtins.open", new_callable=mock_open):
-            assert screen_io.setup()
+        assert screen_io.setup()
 
 
 @pytest.mark.parametrize(
@@ -49,11 +47,12 @@ def test_default_parameters(fasta_name, test_data_dir, database_dir):
     ],
 )
 def test_parse_input_fasta(
-    fasta_name, expected_record_count, test_data_dir, database_dir
+    fasta_name, expected_record_count, test_data_dir, database_dir, tmp_path
 ):
     input_fasta = os.path.join(test_data_dir, fasta_name)
     with patch(
-        "sys.argv", ["test_io_params.py", "-f", input_fasta, "-d", database_dir]
+        "sys.argv",
+        ["test.py", "-f", input_fasta, "-d", database_dir, "-o", str(tmp_path)],
     ):
         parser = argparse.ArgumentParser()
         add_args(parser)
@@ -72,10 +71,11 @@ def test_parse_input_fasta(
         "has_records_with_same_description.fasta",
     ],
 )
-def test_parse_invalid_input_fasta(fasta_name, test_data_dir, database_dir):
+def test_parse_invalid_input_fasta(fasta_name, test_data_dir, database_dir, tmp_path):
     input_fasta = os.path.join(test_data_dir, fasta_name)
     with patch(
-        "sys.argv", ["test_io_params.py", "-f", input_fasta, "-d", database_dir]
+        "sys.argv",
+        ["test.py", "-f", input_fasta, "-d", database_dir, "-o", str(tmp_path)],
     ):
         parser = argparse.ArgumentParser()
         add_args(parser)
