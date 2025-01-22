@@ -14,7 +14,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from commec.tools.blast_tools import get_high_identity_matches
 from commec.tools.search_handler import SearchHandler
-from commec.config.io_parameters import ScreenIOParameters
+from commec.config.screen_io import ScreenIO
 from commec.config.query import Query
 
 
@@ -129,7 +129,7 @@ def fetch_noncoding_regions(protein_results, query_fasta):
     logging.info("Writing noncoding regions [%s] to: %s", ranges_str, outfile)
     write_nc_sequences(ranges_to_screen, records[0], outfile)
 
-def calculate_noncoding_regions_per_query(protein_results, screen_parameters : ScreenIOParameters):
+def calculate_noncoding_regions_per_query(protein_results, screen_parameters : ScreenIO):
     """
     Fetch noncoding regions > 50bp and write to a new file. 
     However performs this action for many queries.
