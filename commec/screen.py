@@ -372,7 +372,7 @@ class Screen:
         """
         # Only screen nucleotides in noncoding regions
         fetch_noncoding_regions(
-            self.database_tools.regulated_protein.out_file, self.screen_io.query.nt_path
+            self.database_tools.regulated_protein.out_file, self.screen_io.nt_path
         )
 
         noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"

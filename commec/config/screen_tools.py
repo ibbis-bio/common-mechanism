@@ -18,7 +18,7 @@ from commec.tools.hmmer import HmmerHandler
 
 class ScreenTools:
     """
-    Using a set of `ScreenIoParameters`, set up the tools needed to search datbases.
+    Using parameters and filenames in `ScreenIo`, set up the tools needed to search datbases.
     """
 
     def __init__(self, params: ScreenIO):
@@ -51,7 +51,7 @@ class ScreenTools:
         # Database tools for Biorisks / Protein and NT screens / Benign screen:
         self.biorisk_hmm = HmmerHandler(
             config_file["databases"]["biorisk_hmm"]["path"],
-            params.query.aa_path,
+            params.aa_path,
             f"{params.output_prefix}.biorisk.hmmscan",
             threads=params.config.threads,
             force=params.config.force,
@@ -61,7 +61,7 @@ class ScreenTools:
             if params.config.protein_search_tool == "blastx":
                 self.regulated_protein = BlastXHandler(
                     config_file["databases"]["regulated_protein"]["blast"]["path"],
-                    input_file=params.query.nt_path,
+                    input_file=params.nt_path,
                     out_file=f"{params.output_prefix}.nr.blastx",
                     threads=params.config.threads,
                     force=params.config.force,
@@ -69,7 +69,7 @@ class ScreenTools:
             elif params.config.protein_search_tool in ("nr.dmnd", "diamond"):
                 self.regulated_protein = DiamondHandler(
                     config_file["databases"]["regulated_protein"]["diamond"]["path"],
-                    input_file=params.query.nt_path,
+                    input_file=params.nt_path,
                     out_file=f"{params.output_prefix}.nr.dmnd",
                     threads=params.config.threads,
                     force=params.config.force,
@@ -95,21 +95,21 @@ class ScreenTools:
         if params.should_do_benign_screening:
             self.benign_hmm = HmmerHandler(
                 config_file["databases"]["benign"]["hmm"]["path"],
-                input_file=params.query.aa_path,
+                input_file=params.aa_path,
                 out_file=f"{params.output_prefix}.benign.hmmscan",
                 threads=params.config.threads,
                 force=params.config.force,
             )
             self.benign_blastn = BlastNHandler(
                 config_file["databases"]["benign"]["fasta"]["path"],
-                input_file=params.query.nt_path,
+                input_file=params.nt_path,
                 out_file=f"{params.output_prefix}.benign.blastn",
                 threads=params.config.threads,
                 force=params.config.force,
             )
             self.benign_cmscan = CmscanHandler(
                 config_file["databases"]["benign"]["cm"]["path"],
-                input_file=params.query.nt_path,
+                input_file=params.nt_path,
                 out_file=f"{params.output_prefix}.benign.cmscan",
                 threads=params.config.threads,
                 force=params.config.force,
