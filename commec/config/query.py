@@ -1,9 +1,5 @@
-"""
-Container class to hold information pertaining to query from an input fasta file,
- as well as derived information, such as translated sequences and whether or not
- the query was derived from AA or NT.
-"""
-
+#!/usr/bin/env python3
+# Copyright (c) 2021-2025 International Biosecurity and Biosafety Initiative for Science
 import os
 import subprocess
 from Bio.SeqRecord import SeqRecord
@@ -13,10 +9,11 @@ class Query:
     """
     A query to screen. Contains a sequence record and derived information, such
     as translated sequences.
-    
+
     At present, we only support nucleotide queries, though we may add suport for
     amino acid queries in future.
     """
+
     def __init__(self, seq_record: SeqRecord):
         Query.validate_sequence_record(seq_record)
         self.name = seq_record.id
@@ -46,6 +43,7 @@ class Query:
                 f"Could not initialize query with id {seq_record.id} because sequence was empty."
                 " Is input FASTA valid?"
             )
+
 
 class QueryValueError(ValueError):
     """Custom exception for errors when validating a `Query`."""
