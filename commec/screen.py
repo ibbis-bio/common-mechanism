@@ -63,9 +63,9 @@ from commec.utils.json_html_output import generate_html_from_screen_data
 from commec.config.io_parameters import ScreenIOParameters, ScreenConfig
 from commec.config.screen_tools import ScreenTools
 
-from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
-from commec.screeners.check_benign import check_for_benign, update_benign_data_from_database
-from commec.screeners.check_reg_path import (
+from commec.screening.check_biorisk import check_biorisk, update_biorisk_data_from_database
+from commec.screening.check_benign import check_for_benign, update_benign_data_from_database
+from commec.screening.check_reg_path import (
     check_for_regulated_pathogens,
     update_taxonomic_data_from_database
 )
