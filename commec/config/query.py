@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) 2021-2025 International Biosecurity and Biosafety Initiative for Science
 import os
+from dataclasses import dataclass
 from Bio import Seq
 from Bio.SeqRecord import SeqRecord
 
@@ -10,26 +11,32 @@ class Query:
     A query to screen. Contains a sequence record and derived information, such
     as translated sequences.
 
+    Attributes / Properties:
+        sequence (str): the sequence to use as a query
+        name (str): unique name of the query
+        length (int): length of the query sequence
+        translations (list[QueryTranslation]): translations of the query
+
     At present, we only support nucleotide queries, though we may add suport for
     amino acid queries in future.
     """
 
     def __init__(self, seq_record: SeqRecord):
         Query.validate_sequence_record(seq_record)
-        self.seq_record = seq_record
+        self._seq_record = seq_record
         self.translations: list[QueryTranslation] = []
 
     @property
     def name(self):
-        return self.seq_record.id
+        return self._seq_record.id
 
     @property
     def length(self):
-        return len(self.seq_record.seq)
+        return len(self._seq_record.seq)
 
     @property
     def sequence(self):
-        return self.seq_record.seq
+        return self._seq_record.seq
 
     def translate(self) -> None:
         """
@@ -51,6 +58,7 @@ class Query:
 
         As in previous `transeq -clean` command, all stop codons (*) are replaced with (X).
         """
+        self.translations = []
         seq_rev = Seq.reverse_complement(self.sequence)
 
         for i in range(3):
@@ -60,24 +68,28 @@ class Query:
             # Forward frame translates from beginning to frame length
             f_start = i
             f_end = i + frame_len
-            protein = Seq.translate(self.sequence[f_start:f_end], stop_symbol="X")
+            protein = str(Seq.translate(self.sequence[f_start:f_end], stop_symbol="X"))
+            frame = i + 1
             self.translations.append(
                 QueryTranslation(
-                    sequence=protein, frame=i, nt_start=f_start, nt_end=f_end
+                    sequence=protein, frame=frame, nt_start=f_start, nt_end=f_end
                 )
             )
 
             # Reverse frame is offset from the end of the sequence
             r_end = self.length - i
             r_start = r_end - frame_len
-            protein = Seq.translate(seq_rev[r_start:r_end], stop_symbol="X")
+            protein = str(Seq.translate(seq_rev[r_start:r_end], stop_symbol="X"))
+            frame = i + 4
             # I think these indices are wrong actually
             self.translations.append(
                 QueryTranslation(
-                    sequence=protein, frame=4+i, nt_start=r_start, nt_end=r_end
+                    sequence=protein, frame=frame, nt_start=r_start, nt_end=r_end
                 )
             )
-
+        
+        # Sort the list in frame order
+        self.translations = sorted(self.translations, key=lambda x: x.frame)
 
     @staticmethod
     def validate_sequence_record(seq_record: SeqRecord) -> None:
@@ -96,6 +108,7 @@ class Query:
             )
 
 
+@dataclass
 class QueryTranslation:
     """
     Represents a single frame translation of a nucleotide sequence.
@@ -106,11 +119,10 @@ class QueryTranslation:
           * 1, 2, 3: Forward frames starting at positions 0, 1, 2
           * 4, 5, 6: Reverse frames, starting at positions 0, -1, -2
         nt_start (int): Start position in the nucleotide sequence (0-based)
-        nt_end (int): End position in the nucleotide sequence (0-based, exclusive)
+        nt_end (int): End position in the nucleotide sequence (0-based, for slicing)
     """
-
     sequence: str
-    frame: int  # 1-6
+    frame: int
     nt_start: int
     nt_end: int
 
