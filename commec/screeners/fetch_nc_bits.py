@@ -14,7 +14,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from commec.tools.blast_tools import get_high_identity_matches
 from commec.tools.search_handler import SearchHandler
-from commec.config.io_parameters import ScreenIO
+from commec.config.screen_io import ScreenIO
 from commec.config.query import Query
 
 

@@ -60,7 +60,7 @@ import pandas as pd
 
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
-from commec.config.io_parameters import ScreenIO, ScreenConfig
+from commec.config.screen_io import ScreenIO, ScreenConfig
 from commec.config.screen_tools import ScreenTools
 
 from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database

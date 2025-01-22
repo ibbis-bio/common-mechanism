@@ -9,7 +9,7 @@ Sets and alters defaults based on input parameters.
 import logging
 import os
 from typing import Union
-from commec.config.io_parameters import ScreenIO
+from commec.config.screen_io import ScreenIO
 from commec.tools.blastn import BlastNHandler
 from commec.tools.blastx import BlastXHandler
 from commec.tools.diamond import DiamondHandler
