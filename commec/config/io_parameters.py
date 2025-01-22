@@ -60,7 +60,7 @@ class ScreenIO:
         self.input_fasta_path = args.fasta_file
 
         # Set up output files
-        self.output_prefix = self.get_output_prefix(self.input_fasta_path, args.output_prefix)
+        self.output_prefix = self._get_output_prefix(self.input_fasta_path, args.output_prefix)
         self.nt_path = f"{self.output_prefix}.cleaned.fasta"
         self.aa_path = f"{self.output_prefix}.faa"
         self.output_screen_file = f"{self.output_prefix}.screen"
@@ -72,7 +72,7 @@ class ScreenIO:
         self.yaml_configuration = {}
 
         if os.path.exists(self.config.config_yaml_file):
-            self.get_configurations_from_yaml(self.config.config_yaml_file, self.db_dir)
+            self._get_configurations_from_yaml(self.config.config_yaml_file, self.db_dir)
         else:
             raise FileNotFoundError(
                 "No configuration yaml found. If using a custom file, check the path is correct: "
@@ -121,7 +121,34 @@ class ScreenIO:
         self._write_clean_fasta()
         return True
 
-    def get_configurations_from_yaml(
+    def parse_input_fasta(self) -> dict[str, Query]:
+        """
+        Parse queries from FASTA file.
+        """
+        with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
+            queries = [Query(record) for record in SeqIO.parse(fasta_file, "fasta")]
+
+        return {query.name: query for query in queries }
+
+    def clean(self):
+        """
+        Tidy up directories and temporary files after a run.
+        """
+        if self.config.do_cleanup:
+            for pattern in [
+                "reg_path_coords.csv",
+                "*hmmscan",
+                "*blastn",
+                "faa",
+                "*blastx",
+                "*dmnd",
+                "*.tmp",
+            ]:
+                for file in glob.glob(f"{self.output_prefix}.{pattern}"):
+                    if os.path.isfile(file):
+                        os.remove(file)
+
+    def _get_configurations_from_yaml(
         self, config_filepath: str | os.PathLike, db_dir_override: str | os.PathLike = None
     ):
         """
@@ -180,7 +207,7 @@ class ScreenIO:
         self.yaml_configuration = config_from_yaml
 
     @staticmethod
-    def get_output_prefix(input_file, prefix_arg=""):
+    def _get_output_prefix(input_file, prefix_arg=""):
         """
         Returns a prefix that can be used for all output files.
         - If no prefix was given, use the input filename.
@@ -217,33 +244,6 @@ class ScreenIO:
                     for c in line
                 )
                 fout.write(f"{modified_line}{os.linesep}")
-
-    def parse_input_fasta(self) -> dict[str, Query]:
-        """
-        Parse queries from FASTA file.
-        """
-        with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
-            queries = [Query(record) for record in SeqIO.parse(fasta_file, "fasta")]
-
-        return {query.name: query for query in queries }
-
-    def clean(self):
-        """
-        Tidy up directories and temporary files after a run.
-        """
-        if self.config.do_cleanup:
-            for pattern in [
-                "reg_path_coords.csv",
-                "*hmmscan",
-                "*blastn",
-                "faa",
-                "*blastx",
-                "*dmnd",
-                "*.tmp",
-            ]:
-                for file in glob.glob(f"{self.output_prefix}.{pattern}"):
-                    if os.path.isfile(file):
-                        os.remove(file)
 
     @property
     def should_do_protein_screening(self) -> bool:
