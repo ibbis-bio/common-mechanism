@@ -158,15 +158,10 @@ def remove_overlaps(hmmer : pd.DataFrame) -> pd.DataFrame:
 
     This means it can be used on any DataFrame with the q. start and q. end NT headings.
     (Consider moving to a general coordinates tool function?)
+
     """
-    assert "q. start" in hmmer.columns, ("No \"q. start\" heading in HMMER output dataframe being "
-                                         "passed to remove overlaps, ensure that the dataframe has "
-                                         "been processed for converstion to nucleotide coordinates.")
-
-    assert "q. end" in hmmer.columns, ("No \"q. end\" heading in HMMER output dataframe being "
-                                         "passed to remove overlaps, ensure that the dataframe has "
-                                         "been processed for converstion to nucleotide coordinates.")
-
+    # Make sure q. start and q.end nucleotide coordinates are up to date
+    set_query_nt_coordinates(hmmer)
     trimmed_hmmer = hmmer # Direct Assignment, reassigned later with .drop() for deep-copy.
 
     # Ensure all logic is performed per unique Query name.
@@ -195,7 +190,7 @@ def remove_overlaps(hmmer : pd.DataFrame) -> pd.DataFrame:
 
     return trimmed_hmmer
 
-def set_query_coordinates(hmmer : pd.DataFrame):
+def set_query_nt_coordinates(hmmer : pd.DataFrame):
     """
     Add (or recalculate) 'q. start' and 'q. end' columns to the dataframe. For each 
     Recalculate the coordinates of the hmmer database , such that each translated frame

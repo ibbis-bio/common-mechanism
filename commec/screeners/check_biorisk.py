@@ -15,7 +15,6 @@ import pandas as pd
 from commec.tools.hmmer import (
     readhmmer,
     remove_overlaps,
-    set_query_coordinates,
     HmmerHandler,
 )
 from commec.config.json_io import (
@@ -63,8 +62,6 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
     hmmer : pd.DataFrame = readhmmer(search_handle.out_file)
     keep1 = [i for i, x in enumerate(hmmer['E-value']) if x < 1e-20]
     hmmer = hmmer.iloc[keep1,:]
-    # Recalculate hit ranges into query based nucleotide coordinates, and trim overlaps.
-    set_query_coordinates(hmmer, 1)
     hmmer = remove_overlaps(hmmer)
 
 
@@ -172,8 +169,7 @@ def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str)
     keep1 = [i for i, x in enumerate(hmmer["E-value"]) if x < 1e-20]
     hmmer = hmmer.iloc[keep1, :]
 
-    # Recalculate hit ranges into query based nucleotide coordinates, and trim overlaps.
-    set_query_coordinates(hmmer, 1)
+    # Recalculate hit ranges into query based nucleotide coordinates
     hmmer = remove_overlaps(hmmer)
 
     hmmer["description"] = ""

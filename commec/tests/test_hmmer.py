@@ -13,7 +13,7 @@ from pandas.testing import assert_frame_equal
 from commec.tools.hmmer import (
     remove_overlaps,
     get_frame_from_query_name,
-    set_query_coordinates,
+    set_query_nt_coordinates,
 )
 
 # Test the following hmmer configuration:
@@ -115,7 +115,7 @@ def test_set_query_coordinates():
     print("INPUT:")
     print(input_hmmer)
     print(input_hmmer.dtypes)
-    set_query_coordinates(input_hmmer)
+    set_query_nt_coordinates(input_hmmer)
     print("PROCESSED:")
     print(input_hmmer)
     print(input_hmmer.dtypes)
