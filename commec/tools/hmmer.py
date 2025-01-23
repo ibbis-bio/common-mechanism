@@ -10,6 +10,7 @@ import re
 import subprocess
 import pandas as pd
 import itertools
+import warnings
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
 from commec.utils.coordinates import convert_protein_to_nucleotide_coords
 
@@ -118,10 +119,33 @@ def readhmmer(fileh):
     hmmer["ali from"] = pd.to_numeric(hmmer["ali from"])
     hmmer["ali to"] = pd.to_numeric(hmmer["ali to"])
     hmmer["qlen"] = pd.to_numeric(hmmer["qlen"])
-    # Extract the frame information.
-    hmmer["frame"] = hmmer["query name"].str.split('_').str[-1].astype(int)
+    hmmer["frame"] = get_frame_from_query_name(hmmer["query name"])
+    
     return hmmer
 
+def get_frame_from_query_name(query_name_col: pd.DataFrame):
+    """
+    We assume that hmmer queries are named with an '_frame' suffix, since that's how we
+    store translations of nucleotides.
+
+    Frame numbers follow the same naming convention as transeq:
+        * 1, 2, 3: Forward frames starting at positions 0, 1, 2
+        * 4, 5, 6: Reverse frames, starting at positions 0, -1, -2
+    """
+    def extract_frame(name: str) -> int:
+        if '_' not in name:
+            warnings.warn(f"No frame found in '{name}', assuming frame 1")
+            return 1
+        try:
+            frame = int(name.split('_')[-1])
+            if not 1 <= frame <= 6:
+                raise ValueError(f"Frame must be between 1 and 6! Invalid frame number {frame} in '{name}'")
+            return frame
+        except ValueError as e:
+            warnings.warn(f"Could not parse frame from '{name}', assuming frame 1")
+            return 1
+            
+    return query_name_col.apply(extract_frame)
 
 def remove_overlaps(hmmer : pd.DataFrame) -> pd.DataFrame:
     """
@@ -171,8 +195,9 @@ def remove_overlaps(hmmer : pd.DataFrame) -> pd.DataFrame:
 
     return trimmed_hmmer
 
-def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame):
+def set_query_coordinates(hmmer : pd.DataFrame):
     """
+    Add (or recalculate) 'q. start' and 'q. end' columns to the dataframe. For each 
     Recalculate the coordinates of the hmmer database , such that each translated frame
     reverts to original nucleotide coordinates.
     """

@@ -9,7 +9,7 @@ The following behaviour is expected:
 
 import pandas as pd
 import pytest
-from commec.tools.hmmer import remove_overlaps
+from commec.tools.hmmer import remove_overlaps, get_frame_from_query_name
 
 # Test the following hmmer configuration:
 # 10-----------------50 (Largest, should stay.)
@@ -41,7 +41,7 @@ example_hmmer_01_output = pd.DataFrame({
         (example_hmmer_01, example_hmmer_01_output),
     ]
 )
-def test_hmmer_overlaps(
+def test_remove_overlaps(
     input_hmmer : pd.DataFrame,
     expected_output_hmmer : pd.DataFrame
 ):
@@ -57,3 +57,13 @@ def test_hmmer_overlaps(
     print("CORRECT:")
     print(expected_output_hmmer)
     assert trimmed_input.equals(expected_output_hmmer)
+
+
+def test_get_frame_from_query_name():
+    example_hmmer_01_output = pd.DataFrame({
+        "query name": ["one","one", "one", "two"],
+        "q. start": [10, 40, 20, 10],
+        "q. end":   [50, 60, 40, 90],
+        "score":    [3, 5, 6, 2]
+    })
+    get_frame_from_query_name(example_hmmer_01_output["query name"])
