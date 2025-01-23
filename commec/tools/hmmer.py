@@ -65,7 +65,6 @@ class HmmerHandler(SearchHandler):
             )
             tool_info: str = tool_version_result.stdout.splitlines()[1].strip()
             return SearchToolVersion(tool_info, database_info)
-
         except subprocess.CalledProcessError:
             return None
 
