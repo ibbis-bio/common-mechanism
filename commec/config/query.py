@@ -42,9 +42,10 @@ class Query:
         """
         Get the six-frame translations of the query sequence in all 6 reading frames.
 
-        We follow the same naming format as transeq:
-          * 1, 2, 3: Forward frames starting at positions 0, 1, 2
-          * 4, 5, 6: Reverse frames, starting at positions 0, -1, -2
+        Frame numbers follow the same naming convention as transeq:
+            * 1, 2, 3: Forward frames starting at positions 0, 1, 2
+            * 4, 5, 6: Reverse frames, starting at positions 0, -1, -2
+
 
         Offsets are a little complicated. Taking the 11-nt sequence 'atgtgccatgg' as an example:
 
@@ -115,9 +116,7 @@ class QueryTranslation:
 
     Attributes:
         sequence (str): The translated amino acid sequence
-        frame (int): Frame number (1-6) following transeq convention:
-          * 1, 2, 3: Forward frames starting at positions 0, 1, 2
-          * 4, 5, 6: Reverse frames, starting at positions 0, -1, -2
+        frame (int): Frame number following transeq convention (1-3: forward, 4-6: reverse)
         nt_start (int): Start position in the nucleotide sequence (0-based)
         nt_end (int): End position in the nucleotide sequence (0-based, for slicing)
     """
