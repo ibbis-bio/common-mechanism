@@ -295,6 +295,8 @@ class Screen:
             str(self.params.config["threads"]),
         )
 
+        self.params.output_yaml(self.params.input_prefix + "_config.yaml")
+
     def screen_nucleotides(self):
         """
         Call `fetch_nc_bits.py`, search noncoding regions with `blastn` and
