@@ -58,7 +58,7 @@ import sys
 import pandas as pd
 
 from commec.utils.file_utils import file_arg, directory_arg
-from commec.config.io_parameters import ScreenIOParameters, ScreenConfig
+from commec.config.io_parameters import ScreenIOParameters
 from commec.config.screen_tools import ScreenTools
 
 from commec.screeners.check_biorisk import check_biorisk
@@ -73,7 +73,6 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
     Add module arguments to an ArgumentParser object.
     """
-    default_config: ScreenConfig = ScreenConfig()
 
     parser.add_argument(dest="fasta_file", type=file_arg, help="FASTA file to screen")
     parser.add_argument(
@@ -88,8 +87,8 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "-y",
         "--config",
         dest="config_yaml",
-        default=default_config.config_yaml_file,
         help="Configuration for screen run in YAML format, including custom database paths",
+        default="",
     )
     screen_logic_group = parser.add_argument_group("Screen run logic")
     screen_logic_group.add_argument(
@@ -104,7 +103,6 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--protein-search-tool",
         dest="protein_search_tool",
         choices=["blastx", "diamond"],
-        default=default_config.protein_search_tool,
         help="Tool for protein homology search to identify regulated pathogens",
     )
     screen_logic_group.add_argument(
@@ -120,7 +118,6 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--threads",
         dest="threads",
         type=int,
-        default=default_config.threads,
         help="Number of CPU threads to use. Passed to search tools.",
     )
     parallel_group.add_argument(
@@ -128,7 +125,6 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--diamond-jobs",
         dest="diamond_jobs",
         type=int,
-        default=default_config.diamond_jobs,
         help="Diamond-only: number of runs to do in parallel on split Diamond databases",
     )
     output_handling_group = parser.add_argument_group("Output file handling")
@@ -139,6 +135,7 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         dest="output_prefix",
         help="Prefix for output files. Can be a string (interpreted as output basename) or a"
         + " directory (files will be output there, names will be determined from input FASTA)",
+        default = ""
     )
     output_handling_group.add_argument(
         "-c",
@@ -275,7 +272,7 @@ class Screen:
         Call `run_blastx.sh` or `run_diamond.sh` followed by `check_reg_path.py` to add regulated
         pathogen protein screening results to `screen_file`.
         """
-        logging.debug("\t...running %s", self.params.config.protein_search_tool)
+        logging.debug("\t...running %s", self.params.config["protein_search_tool"])
         self.database_tools.regulated_protein.search()
         if not self.database_tools.regulated_protein.check_output():
             raise RuntimeError(
@@ -284,7 +281,7 @@ class Screen:
             )
 
         logging.debug(
-            "\t...checking %s results", self.params.config.protein_search_tool
+            "\t...checking %s results", self.params.config["protein_search_tool"]
         )
         reg_path_coords = f"{self.params.output_prefix}.reg_path_coords.csv"
 
@@ -295,7 +292,7 @@ class Screen:
         check_for_regulated_pathogens(
             self.database_tools.regulated_protein.out_file,
             self.params.db_dir,
-            str(self.params.config.threads),
+            str(self.params.config["threads"]),
         )
 
     def screen_nucleotides(self):
@@ -330,7 +327,7 @@ class Screen:
         check_for_regulated_pathogens(
             self.database_tools.regulated_nt.out_file,
             self.params.db_dir,
-            str(self.params.config.threads),
+            str(self.params.config["threads"]),
         )
 
     def screen_benign(self):
