@@ -231,11 +231,11 @@ class Screen:
         self.database_tools: ScreenTools = ScreenTools(self.screen_io)
 
         # Add the input contents to the log
-        shutil.copyfile(self.screen_io.query.input_fasta_path, self.screen_io.tmp_log)
+        shutil.copyfile(self.screen_io.input_fasta_path, self.screen_io.tmp_log)
 
         # Initialize the queries
         self.queries = self.screen_io.parse_input_fasta()
-        for query in self.queries:
+        for query in self.queries.values():
             query.translate(self.screen_io.nt_path, self.screen_io.aa_path)
             self.screen_data.queries.append(QueryData(query.name, len(query.seq_record), query.seq_record.seq))
         
