@@ -4,7 +4,6 @@ basepair|amino-acid, nucleotide|peptide coordinate systems.
 """
 
 import numpy as np
-# import pandas as pd
 
 def convert_protein_to_nucleotide_coords(frame,
                                          protein_start,

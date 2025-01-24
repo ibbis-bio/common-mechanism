@@ -11,7 +11,18 @@ INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.f
 
 
 def test_translate(tmp_path):
-    """Full test, including file parsing."""
+    """
+        Input sequence: atgtgccatgg
+
+        Translations:
+        Frame   Pos     Codon split         Translation
+        1       0       atg tgc cat gg      MCH
+        2       1       a tgt gcc atg g     CAM
+        3       2       at gtg cca tgg      VPW
+        4       -0      cc atg gca cat      MAH
+        5       -1      c cat ggc aca t     HGT
+        6       -2      cca tgg cac at      PWH
+"""
     # Set up query
     query = Query(SeqRecord(Seq("atgtgccatgg"), id="test"))
 
