@@ -237,23 +237,27 @@ class Screen:
         self.queries = self.screen_io.parse_input_fasta()
         for query in self.queries.values():
             query.translate(self.screen_io.nt_path, self.screen_io.aa_path)
-            self.screen_data.queries.append(QueryData(query.name, len(query.seq_record), str(query.seq_record.seq)))
+            self.screen_data.queries.append(
+                QueryData(query.name, 
+                          len(query.seq_record), 
+                          str(query.seq_record.seq))
+                          )
         
         # Initialize the version info for all the databases
-        self.screen_data.commec_info.biorisk_database_info = self.database_tools.biorisk_hmm.get_version_information()
-
+        _tools = self.database_tools
+        _info = self.screen_data.commec_info
+        _info.biorisk_database_info = _tools.biorisk_hmm.get_version_information()
         if self.screen_io.should_do_protein_screening:
-            self.screen_data.commec_info.protein_database_info = self.database_tools.regulated_protein.get_version_information()
-
+            _info.protein_database_info = _tools.regulated_protein.get_version_information()
         if self.screen_io.should_do_nucleotide_screening:
-            self.screen_data.commec_info.nucleotide_database_info = self.database_tools.regulated_nt.get_version_information()
-
+            _info.nucleotide_database_info = _tools.regulated_nt.get_version_information()
         if self.screen_io.should_do_benign_screening:
-            self.screen_data.commec_info.benign_protein_database_info = self.database_tools.benign_hmm.get_version_information()
-            self.screen_data.commec_info.benign_rna_database_info = self.database_tools.benign_blastn.get_version_information()
-            self.screen_data.commec_info.benign_synbio_database_info = self.database_tools.benign_cmscan.get_version_information()
+            _info.benign_protein_database_info = _tools.benign_hmm.get_version_information()
+            _info.benign_rna_database_info = _tools.benign_blastn.get_version_information()
+            _info.benign_synbio_database_info = _tools.benign_cmscan.get_version_information()
 
-        self.screen_data.commec_info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Store start time.
+        _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def run(self, args : argparse.ArgumentParser):
         """
