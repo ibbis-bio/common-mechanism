@@ -27,16 +27,16 @@ class Query:
         self.translations: list[QueryTranslation] = []
 
     @property
-    def name(self):
-        return self._seq_record.id
+    def name(self) -> str:
+        return str(self._seq_record.id)
 
     @property
-    def length(self):
+    def length(self) -> int:
         return len(self._seq_record.seq)
 
     @property
-    def sequence(self):
-        return self._seq_record.seq
+    def sequence(self) -> str:
+        return str(self._seq_record.seq)
 
     def translate(self) -> None:
         """
@@ -45,7 +45,6 @@ class Query:
         Frame numbers follow the same naming convention as transeq:
             * 1, 2, 3: Forward frames starting at positions 0, 1, 2
             * 4, 5, 6: Reverse frames, starting at positions 0, -1, -2
-
 
         Offsets are a little complicated. Taking the 11-nt sequence 'atgtgccatgg' as an example:
 
@@ -58,6 +57,10 @@ class Query:
             6       -2      cca tgg cac at      PWH
 
         As in previous `transeq -clean` command, all stop codons (*) are replaced with (X).
+        
+        One *difference* from transeq is that we only translate full codons. So the frame 1 in the
+        example above is translated as MCH, rather than MCHG, even though gg will translate to
+        glycine (G) no matter what the subsequent nucleotide is.
         """
         self.translations = []
         seq_rev = Seq.reverse_complement(self.sequence)
@@ -118,7 +121,7 @@ class QueryTranslation:
         sequence (str): The translated amino acid sequence
         frame (int): Frame number following transeq convention (1-3: forward, 4-6: reverse)
         nt_start (int): Start position in the nucleotide sequence (0-based)
-        nt_end (int): End position in the nucleotide sequence (0-based, for slicing)
+        nt_end (int): End position in the nucleotide sequence (0-based, exclusive for slicing)
     """
     sequence: str
     frame: int
