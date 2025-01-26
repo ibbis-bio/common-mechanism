@@ -295,11 +295,10 @@ class Screen:
         self.queries = self.screen_io.parse_input_fasta()
         for query in self.queries.values():
             query.translate(self.screen_io.nt_path, self.screen_io.aa_path)
-            self.screen_data.queries.append(
-                QueryResult(query.name,
-                          len(query.seq_record), 
-                          str(query.seq_record.seq))
-                          )
+            self.screen_data.queries[query.name] = QueryResult(query.original_name,
+                                                    len(query.seq_record),
+                                                    str(query.seq_record.seq))
+                          
         
         # Initialize the version info for all the databases
         _tools = self.database_tools
@@ -521,21 +520,21 @@ class Screen:
         """ Helper function 
         apply a single recommendation to the whole benign step 
         for every query."""
-        for query in self.screen_data.queries:
+        for query in self.screen_data.queries.values():
             query.recommendation.benign_screen = new_recommendation
 
     def reset_protein_recommendations(self, new_recommendation : Recommendation):
         """ Helper function
         apply a single recommendation to the whole protein taxonomy step 
         for every query."""
-        for query in self.screen_data.queries:
+        for query in self.screen_data.queries.values():
             query.recommendation.protein_taxonomy_screen = new_recommendation
 
     def reset_nucleotide_recommendations(self, new_recommendation : Recommendation):
         """ Helper function:
         apply a single recommendation to the whole nucleotide taxonomy step 
         for every query."""
-        for query in self.screen_data.queries:
+        for query in self.screen_data.queries.values():
             query.recommendation.nucleotide_taxonomy_screen = new_recommendation
 
 

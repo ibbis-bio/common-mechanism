@@ -67,7 +67,7 @@ def generate_html_from_screen_data(input_data : ScreenResult, output_file : str)
     figures_html = []
 
     # Render each query as its own Plotly HTML visualisation:
-    for i, query in enumerate(input_data.queries):
+    for i, query in enumerate(input_data.queries.values()):
         fig = go.Figure()
         vertical_stack_count : int = draw_query_to_plot(fig, query)
         update_layout(fig, query, vertical_stack_count)
@@ -208,7 +208,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
     # Keep track of how many vertical stacks this image has.
     n_stacks = 1
 
-    for hit in query_to_draw.hits:
+    for hit in query_to_draw.hits.values():
         for match in hit.ranges:
             # Find the best vertical position to reduce collisions, and fill all space.
             collision_free = False

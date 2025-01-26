@@ -19,11 +19,15 @@ class Query:
 
     def __init__(self, seq_record: SeqRecord):
         Query.validate_sequence_record(seq_record)
-        self.name = seq_record.id
+        self.original_name = seq_record.id
+        self.name = self.create_id(seq_record.id)
         self.seq_record = seq_record
 
     def translate(self, input_path, output_path) -> None:
         """Run command transeq, to translate our input sequences."""
+
+        # TODO: Update line 53-55 of Check_Benign, to ensure that the query filter is using
+        # The correct name, when filtering benign components.
         command = ["transeq", input_path, output_path, "-frame", "6", "-clean"]
         result = subprocess.run(command)
         if result.returncode != 0:
@@ -47,6 +51,13 @@ class Query:
                 " Is input FASTA valid?"
             )
 
+    @staticmethod
+    def create_id(name : str) -> str:
+        """
+        Parse the Fasta SeqRecord string ID into a 25 digit maximum Unique Identification.
+        For internal Commec Screen Use only.
+        """
+        return name[:25] if len(name) > 24 else name
 
 class QueryValueError(ValueError):
     """Custom exception for errors when validating a `Query`."""
