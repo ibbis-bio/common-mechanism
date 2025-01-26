@@ -21,15 +21,14 @@ from commec.tools.hmmer import readhmmer
 from commec.tools.cmscan import CmscanHandler, readcmscan
 from commec.tools.search_handler import SearchHandler
 
-from commec.config.json_io import (
-    ScreenData,
-    HitDescription,
-    QueryData,
-    CommecScreenStep,
-    CommecRecommendation,
-    CommecScreenStepRecommendation,
+from commec.config.result import (
+    ScreenResult,
+    HitResult,
+    QueryResult,
+    ScreenStep,
+    Recommendation,
+    HitRecommendationContainer,
     MatchRange,
-    guess_domain,
     compare
 )
 logger = logging.getLogger(__name__)
@@ -41,7 +40,7 @@ MINIMUM_QUERY_COVERAGE_FRACTION : float = 0.80
 MINIMUM_RNA_BASEPAIR_COVERAGE : int = 50
 MINIMUM_SYNBIO_COVERAGE_FRACTION : float = 0.80
 
-def _update_benign_data_for_query(query : QueryData,
+def _update_benign_data_for_query(query : QueryResult,
                                   benign_protein : pd.DataFrame,
                                   benign_rna : pd.DataFrame,
                                   benign_synbio : pd.DataFrame,
@@ -59,8 +58,8 @@ def _update_benign_data_for_query(query : QueryData,
     # Check every region, of every hit that is a FLAG or WARN, against the Benign screen outcomes.
     for hit in query.hits:
         if hit.recommendation.outcome not in {
-            CommecRecommendation.FLAG,
-            CommecRecommendation.WARN
+            Recommendation.FLAG,
+            Recommendation.WARN
             }:
             continue
 
@@ -109,10 +108,10 @@ def _update_benign_data_for_query(query : QueryData,
                     int(benign_protein_for_query['q. start'][0]), int(benign_protein_for_query['q. end'][0])
                     )
                 ]
-                benign_hit_outcome = HitDescription(
-                        CommecScreenStepRecommendation(
-                            CommecRecommendation.PASS,
-                            CommecScreenStep.BENIGN_PROTEIN
+                benign_hit_outcome = HitResult(
+                        HitRecommendationContainer(
+                            Recommendation.PASS,
+                            ScreenStep.BENIGN_PROTEIN
                         ),
                         benign_hit,
                         benign_hit_description,
@@ -131,10 +130,10 @@ def _update_benign_data_for_query(query : QueryData,
                     int(benign_rna_for_query['q. start'][0]), int(benign_rna_for_query['q. end'][0])
                     )
                 ]
-                benign_hit_outcome = HitDescription(
-                        CommecScreenStepRecommendation(
-                            CommecRecommendation.PASS,
-                            CommecScreenStep.BENIGN_RNA
+                benign_hit_outcome = HitResult(
+                        HitRecommendationContainer(
+                            Recommendation.PASS,
+                            ScreenStep.BENIGN_RNA
                         ),
                         benign_hit,
                         benign_hit_description,
@@ -153,10 +152,10 @@ def _update_benign_data_for_query(query : QueryData,
                     int(benign_synbio_for_query['q. start'][0]), int(benign_synbio_for_query['q. end'][0])
                     )
                 ]
-                benign_hit_outcome = HitDescription(
-                        CommecScreenStepRecommendation(
-                            CommecRecommendation.PASS,
-                            CommecScreenStep.BENIGN_SYNBIO
+                benign_hit_outcome = HitResult(
+                        HitRecommendationContainer(
+                            Recommendation.PASS,
+                            ScreenStep.BENIGN_SYNBIO
                         ),
                         benign_hit,
                         benign_hit_description,
@@ -169,7 +168,7 @@ def _update_benign_data_for_query(query : QueryData,
 def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                      benign_rna_handle : CmscanHandler,
                                      benign_synbio_handle : BlastNHandler,
-                                     data : ScreenData, 
+                                     data : ScreenResult, 
                                      benign_desc : pd.DataFrame):
     """
     Parse the outputs from the protein, rna, and synbio database searches, and populate
@@ -189,7 +188,7 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                       benign_desc)
 
         # Calculate the Benign Screen outcomes for each query.
-        query.recommendation.benign_screen = CommecRecommendation.PASS
+        query.recommendation.benign_screen = Recommendation.PASS
         # If any hits are still warnings, or flags, propagate that.
         for flagged_hit in query.get_flagged_hits():
             query.recommendation.benign_screen = compare(
