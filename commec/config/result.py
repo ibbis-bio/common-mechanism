@@ -274,8 +274,8 @@ class QueryResult:
         # A rare instance where we want our dictionary to be sorted - 
         # So we convert it to a list, and recreate a dictionary - which maintains the order.
         # Thankfully we only do this once per Query at the end.
-        #sorted_items_desc = sorted(self.hits.items(), key=lambda item: item.get_e_value(), reverse=True)
-        #self.hits = dict(sorted_items_desc)
+        sorted_items_desc = sorted(self.hits.items(), key=lambda item: item[1].get_e_value(), reverse=True)
+        self.hits = dict(sorted_items_desc)
         self.recommendation.update_commec_recommendation()
 
 @dataclass
