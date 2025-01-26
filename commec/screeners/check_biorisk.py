@@ -12,25 +12,46 @@ import sys
 import argparse
 import pandas as pd
 from commec.tools.hmmer import readhmmer, trimhmmer, HmmerHandler
-from commec.config.json_io import (
-    ScreenData,
+from commec.config.result import (
+    ScreenResult,
     HitDescription,
     CommecScreenStep,
     CommecRecommendation,
     CommecScreenStepRecommendation,
     MatchRange,
-    guess_domain,
     compare
 )
 
-def update_biorisk_data_from_database(search_handle : HmmerHandler, data : ScreenData):
+def _guess_domain(search_string : str) -> str:
+    """ 
+    Given a string description, try to determine 
+    which domain of life this has come from. Temporary work around
+    until we can retrieve this data directly from biorisk outputs.
+    """
+    def contains(search_string : str, search_terms):
+        for token in search_terms:
+            if search_string.find(token) == -1:
+                continue
+            return True
+        return False
+
+    search_token = search_string.lower()
+    if contains(search_token, ["vir", "capsid", "RNA Polymerase"]):
+        return "Virus"
+    if contains(search_token, ["cillus","bact","coccus","phila","ella","cocci","coli"]):
+        return "Bacteria"
+    if contains(search_token, ["eukary","nucleus","sona","odium","myces"]):
+        return "Eukaryote"
+    return "not assigned"
+
+def update_biorisk_data_from_database(search_handle : HmmerHandler, data : ScreenResult):
     """
     Takes an input database, reads its outputs, and updates the input data to contain
     biorisk hits from the database. Also requires passing of the biorisk annotations CSV file.
     Inputs:
         search : search_handle - The handler which has performed a search on a database.
         biorisk_annotations_csv_file : str - directory/filename of the biorisk annotations provided by Commec.
-        data : ScreenData - The ScreenData to be updated with information from database, interpeted as Biorisks.
+        data : ScreenResult - The ScreenResult to be updated with information from database, interpeted as Biorisks.
     """
     # Check for annocations.csv, as well as whether the 
     logging.debug("Directory: %s", search_handle.db_directory)
@@ -111,7 +132,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
 
             regulation_str : str = "Regulated Gene" if must_flag else "Virulance Factor"
             
-            domain : str = guess_domain(""+str(affected_target)+target_description)
+            domain : str = _guess_domain(""+str(affected_target)+target_description)
             
             new_hit : HitDescription = HitDescription(
                 CommecScreenStepRecommendation(

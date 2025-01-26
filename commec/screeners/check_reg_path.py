@@ -18,8 +18,8 @@ import pandas as pd
 from commec.tools.blast_tools import read_blast, get_taxonomic_labels, get_top_hits
 from commec.tools.blastn import BlastNHandler
 from commec.tools.search_handler import SearchHandler
-from commec.config.json_io import (
-    ScreenData,
+from commec.config.result import (
+    ScreenResult,
     HitDescription,
     CommecScreenStep,
     CommecRecommendation,
@@ -69,7 +69,7 @@ def update_taxonomic_data_from_database(
         benign_taxid_path : str | os.PathLike,
         biorisk_taxid_path : str | os.PathLike,
         taxonomy_directory : str | os.PathLike,
-        data : ScreenData,
+        data : ScreenResult,
         step : CommecScreenStep,
         n_threads : int
         ):

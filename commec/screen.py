@@ -72,13 +72,14 @@ from commec.screeners.check_reg_path import (
 )
 from commec.tools.fetch_nc_bits import fetch_noncoding_regions
 
-from commec.config.json_io import (
-    ScreenData,
+from commec.config.result import (
+    ScreenResult,
     CommecScreenStep,
-    QueryData,
+    QueryResult,
     CommecRecommendation,
-    encode_screen_data_to_json
 )
+
+from commec.config.json_io import encode_screen_data_to_json
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -187,7 +188,7 @@ class Screen:
         self.screen_io : ScreenIO = None
         self.queries : dict[str, Query] = None
         self.database_tools : ScreenTools = None
-        self.screen_data : ScreenData = ScreenData()
+        self.screen_data : ScreenResult = ScreenResult()
         self.start_time = time.time()
 
     def __del__(self):
@@ -238,7 +239,7 @@ class Screen:
         for query in self.queries.values():
             query.translate(self.screen_io.nt_path, self.screen_io.aa_path)
             self.screen_data.queries.append(
-                QueryData(query.name, 
+                QueryResult(query.name,
                           len(query.seq_record), 
                           str(query.seq_record.seq))
                           )

@@ -21,15 +21,14 @@ from commec.tools.hmmer import readhmmer
 from commec.tools.cmscan import CmscanHandler, readcmscan
 from commec.tools.search_handler import SearchHandler
 
-from commec.config.json_io import (
-    ScreenData,
+from commec.config.result import (
+    ScreenResult,
     HitDescription,
-    QueryData,
+    QueryResult,
     CommecScreenStep,
     CommecRecommendation,
     CommecScreenStepRecommendation,
     MatchRange,
-    guess_domain,
     compare
 )
 
@@ -40,7 +39,7 @@ MINIMUM_QUERY_COVERAGE_FRACTION : float = 0.80
 MINIMUM_RNA_BASEPAIR_COVERAGE : int = 50
 MINIMUM_SYNBIO_COVERAGE_FRACTION : float = 0.80
 
-def _update_benign_data_for_query(query : QueryData,
+def _update_benign_data_for_query(query : QueryResult,
                                   benign_protein : pd.DataFrame,
                                   benign_rna : pd.DataFrame,
                                   benign_synbio : pd.DataFrame,
@@ -168,7 +167,7 @@ def _update_benign_data_for_query(query : QueryData,
 def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                      benign_rna_handle : CmscanHandler,
                                      benign_synbio_handle : BlastNHandler,
-                                     data : ScreenData, 
+                                     data : ScreenResult, 
                                      benign_desc : pd.DataFrame):
     """
     Parse the outputs from the protein, rna, and synbio database searches, and populate
