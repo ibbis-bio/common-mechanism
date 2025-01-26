@@ -14,10 +14,10 @@ import pandas as pd
 from commec.tools.hmmer import readhmmer, trimhmmer, HmmerHandler
 from commec.config.result import (
     ScreenResult,
-    HitDescription,
-    CommecScreenStep,
-    CommecRecommendation,
-    CommecScreenStepRecommendation,
+    HitResult,
+    ScreenStep,
+    Recommendation,
+    HitRecommendationContainer,
     MatchRange,
     compare
 )
@@ -69,7 +69,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
         return
 
     for query in data.queries:
-        query.recommendation.biorisk_screen = CommecRecommendation.PASS
+        query.recommendation.biorisk_screen = Recommendation.PASS
 
     if not search_handle.has_hits(search_handle.out_file):
         return 0
@@ -97,7 +97,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
     unique_queries = hmmer['query name'].unique()
     for affected_query in unique_queries:
 
-        biorisk_overall : CommecRecommendation = CommecRecommendation.PASS
+        biorisk_overall : Recommendation = Recommendation.PASS
 
         query_data = data.get_query(affected_query)
         if not query_data:
@@ -121,11 +121,11 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
                 )
                 match_ranges.append(match_range)
 
-            target_recommendation : CommecRecommendation = CommecRecommendation.FLAG if must_flag > 0 else CommecRecommendation.WARN
+            target_recommendation : Recommendation = Recommendation.FLAG if must_flag > 0 else Recommendation.WARN
 
             biorisk_overall = compare(target_recommendation, biorisk_overall)
 
-            hit_data : HitDescription = query_data.get_hit(affected_target)
+            hit_data : HitResult = query_data.get_hit(affected_target)
             if hit_data:
                 hit_data.ranges.extend(match_ranges)
                 continue
@@ -134,10 +134,10 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
             
             domain : str = _guess_domain(""+str(affected_target)+target_description)
             
-            new_hit : HitDescription = HitDescription(
-                CommecScreenStepRecommendation(
+            new_hit : HitResult = HitResult(
+                HitRecommendationContainer(
                     target_recommendation,
-                    CommecScreenStep.BIORISK
+                    ScreenStep.BIORISK
                 ),
                 affected_target,
                 target_description,

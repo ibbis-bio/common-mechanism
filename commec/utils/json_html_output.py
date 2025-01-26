@@ -14,8 +14,8 @@ from commec.config.json_io import get_screen_data_from_json
 from commec.config.result import (
     ScreenResult,
     QueryResult,
-    HitDescription,
-    CommecScreenStep,
+    HitResult,
+    ScreenStep,
 )
 
 class CommecPalette():
@@ -43,17 +43,17 @@ class CommecPalette():
     rgba_YELLOW = 'rgba(241,80,36,255)'
     rgba_RED = 'rgba(207,27,81,255)'
 
-def color_from_hit(hit : HitDescription) -> CommecPalette:
+def color_from_hit(hit : HitResult) -> CommecPalette:
     """ Convert a Screen step into an associated Colour."""
-    if hit.recommendation.from_step == CommecScreenStep.BIORISK:
+    if hit.recommendation.from_step == ScreenStep.BIORISK:
         return CommecPalette.RED
-    if (hit.recommendation.from_step == CommecScreenStep.BENIGN_PROTEIN or
-        hit.recommendation.from_step == CommecScreenStep.BENIGN_RNA or
-        hit.recommendation.from_step == CommecScreenStep.BENIGN_SYNBIO):
+    if (hit.recommendation.from_step == ScreenStep.BENIGN_PROTEIN or
+        hit.recommendation.from_step == ScreenStep.BENIGN_RNA or
+        hit.recommendation.from_step == ScreenStep.BENIGN_SYNBIO):
         return CommecPalette.LT_BLUE
-    if hit.recommendation.from_step == CommecScreenStep.TAXONOMY_AA:
+    if hit.recommendation.from_step == ScreenStep.TAXONOMY_AA:
         return CommecPalette.ORANGE
-    if hit.recommendation.from_step == CommecScreenStep.TAXONOMY_NT:
+    if hit.recommendation.from_step == ScreenStep.TAXONOMY_NT:
         return CommecPalette.YELLOW
     return CommecPalette.DK_BLUE
 
@@ -126,7 +126,7 @@ def update_layout(fig, query_to_draw : QueryResult, stacks):
         'bargap': 0.01,
     })
 
-def generate_outcome_string(query : QueryResult, hit : HitDescription) -> str:
+def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
     """
     Takes a Query, and associated hit, and formats a human readable output string,
     handling associated construction logic.

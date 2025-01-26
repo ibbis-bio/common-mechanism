@@ -23,11 +23,11 @@ from commec.tools.search_handler import SearchHandler
 
 from commec.config.result import (
     ScreenResult,
-    HitDescription,
+    HitResult,
     QueryResult,
-    CommecScreenStep,
-    CommecRecommendation,
-    CommecScreenStepRecommendation,
+    ScreenStep,
+    Recommendation,
+    HitRecommendationContainer,
     MatchRange,
     compare
 )
@@ -57,8 +57,8 @@ def _update_benign_data_for_query(query : QueryResult,
     # Check every region, of every hit that is a FLAG or WARN, against the Benign screen outcomes.
     for hit in query.hits:
         if hit.recommendation.outcome not in {
-            CommecRecommendation.FLAG,
-            CommecRecommendation.WARN
+            Recommendation.FLAG,
+            Recommendation.WARN
             }:
             continue
 
@@ -107,10 +107,10 @@ def _update_benign_data_for_query(query : QueryResult,
                     int(benign_protein_for_query['q. start'][0]), int(benign_protein_for_query['q. end'][0])
                     )
                 ]
-                benign_hit_outcome = HitDescription(
-                        CommecScreenStepRecommendation(
-                            CommecRecommendation.PASS,
-                            CommecScreenStep.BENIGN_PROTEIN
+                benign_hit_outcome = HitResult(
+                        HitRecommendationContainer(
+                            Recommendation.PASS,
+                            ScreenStep.BENIGN_PROTEIN
                         ),
                         benign_hit,
                         benign_hit_description,
@@ -129,10 +129,10 @@ def _update_benign_data_for_query(query : QueryResult,
                     int(benign_rna_for_query['q. start'][0]), int(benign_rna_for_query['q. end'][0])
                     )
                 ]
-                benign_hit_outcome = HitDescription(
-                        CommecScreenStepRecommendation(
-                            CommecRecommendation.PASS,
-                            CommecScreenStep.BENIGN_RNA
+                benign_hit_outcome = HitResult(
+                        HitRecommendationContainer(
+                            Recommendation.PASS,
+                            ScreenStep.BENIGN_RNA
                         ),
                         benign_hit,
                         benign_hit_description,
@@ -151,10 +151,10 @@ def _update_benign_data_for_query(query : QueryResult,
                     int(benign_synbio_for_query['q. start'][0]), int(benign_synbio_for_query['q. end'][0])
                     )
                 ]
-                benign_hit_outcome = HitDescription(
-                        CommecScreenStepRecommendation(
-                            CommecRecommendation.PASS,
-                            CommecScreenStep.BENIGN_SYNBIO
+                benign_hit_outcome = HitResult(
+                        HitRecommendationContainer(
+                            Recommendation.PASS,
+                            ScreenStep.BENIGN_SYNBIO
                         ),
                         benign_hit,
                         benign_hit_description,
@@ -187,7 +187,7 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                       benign_desc)
 
         # Calculate the Benign Screen outcomes for each query.
-        query.recommendation.benign_screen = CommecRecommendation.PASS
+        query.recommendation.benign_screen = Recommendation.PASS
         # If any hits are still warnings, or flags, propagate that.
         for flagged_hit in query.get_flagged_hits():
             query.recommendation.benign_screen = compare(

@@ -26,11 +26,10 @@ def test_screendata():
                 query="Query1",
                 length=10,
                 sequence="ABCDEFGHIJ",
-                recommendation = CommecRecommendationContainer(),
-                summary_info = CommecSummaryStatistics(),
+                recommendation = QueryRecommendationContainer(),
                 hits = [
-                    HitDescription(
-                        recommendation=CommecScreenStepRecommendation(CommecRecommendation.WARN, CommecScreenStep.BIORISK),
+                    HitResult(
+                        recommendation=HitRecommendationContainer(Recommendation.WARN, ScreenStep.BIORISK),
                         name="ImportantProtein1",
                         annotations = {"domain" : ["Bacteria"]},
                         ranges = [
@@ -105,18 +104,18 @@ def test_erroneous_info(tmp_path, test_screendata):
     )
 
 def test_recommendation_ordering():
-    assert CommecRecommendation.PASS.importance < CommecRecommendation.FLAG.importance
-    assert compare(CommecRecommendation.PASS, CommecRecommendation.FLAG) == CommecRecommendation.FLAG
+    assert Recommendation.PASS.importance < Recommendation.FLAG.importance
+    assert compare(Recommendation.PASS, Recommendation.FLAG) == Recommendation.FLAG
 
 def test_adding_data_to_existing():
     """
     Tests to ensure the mutability of writing to queries is working as expected.
     """
     def write_info(input_query : QueryResult):
-        input_query.recommendation.biorisk_screen = CommecRecommendation.PASS
+        input_query.recommendation.biorisk_screen = Recommendation.PASS
     
     new_screen_data = ScreenResult()
-    new_screen_data.queries.append(QueryResult("test01", 10, "ATGCATGCAT", CommecRecommendation.FLAG))
+    new_screen_data.queries.append(QueryResult("test01", 10, "ATGCATGCAT", Recommendation.FLAG))
     write_query = new_screen_data.get_query("test01")
     write_info(write_query)
-    assert new_screen_data.queries[0].recommendation.biorisk_screen == CommecRecommendation.PASS
+    assert new_screen_data.queries[0].recommendation.biorisk_screen == Recommendation.PASS
