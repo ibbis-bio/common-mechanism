@@ -53,6 +53,10 @@ def _check_inputs(
     if not os.path.exists(biorisk_taxid_path):
         logging.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
         return False
+    
+    if not os.path.exists(taxonomy_directory):
+        logging.error("\t...taxonomy directory %s does not exist\n", taxonomy_directory)
+        return False
 
     if search_handle.is_empty(search_handle.out_file):
         logging.info("\tERROR: Homology search has failed\n")
@@ -94,10 +98,10 @@ def update_taxonomic_data_from_database(
 
     # The default is to pass, its up to the data to over-write this.
     if step == ScreenStep.TAXONOMY_AA:
-        for query in data.queries:
+        for query in data.queries.values():
             query.recommendation.protein_taxonomy_screen = Recommendation.PASS
     if step == ScreenStep.TAXONOMY_NT:
-        for query in data.queries:
+        for query in data.queries.values():
             query.recommendation.nucleotide_taxonomy_screen = Recommendation.PASS
 
     blast = read_blast(search_handle.out_file)
