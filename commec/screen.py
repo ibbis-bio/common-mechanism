@@ -72,13 +72,14 @@ from commec.screeners.check_reg_path import (
 )
 from commec.tools.fetch_nc_bits import fetch_noncoding_regions
 
-from commec.config.json_io import (
-    ScreenData,
-    CommecScreenStep,
-    QueryData,
-    CommecRecommendation,
-    encode_screen_data_to_json
+from commec.config.result import (
+    ScreenResult,
+    ScreenStep,
+    QueryResult,
+    Recommendation,
 )
+
+from commec.config.json_io import encode_screen_data_to_json
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -237,7 +238,7 @@ class Screen:
         self.screen_io : ScreenIO = None
         self.queries : dict[str, Query] = None
         self.database_tools : ScreenTools = None
-        self.screen_data : ScreenData = ScreenData()
+        self.screen_data : ScreenResult = ScreenResult()
         self.start_time = time.time()
 
     def __del__(self):
@@ -295,7 +296,7 @@ class Screen:
         for query in self.queries.values():
             query.translate(self.screen_io.nt_path, self.screen_io.aa_path)
             self.screen_data.queries.append(
-                QueryData(query.name, 
+                QueryResult(query.name,
                           len(query.seq_record), 
                           str(query.seq_record.seq))
                           )
@@ -343,7 +344,7 @@ class Screen:
             )
         else:
             logging.info(" SKIPPING STEP 2: Protein search")
-            self.reset_protein_recommendations(CommecRecommendation.SKIP)
+            self.reset_protein_recommendations(Recommendation.SKIP)
 
         # Taxonomy screen (Nucleotide)
         if self.params.should_do_nucleotide_screening:
@@ -355,7 +356,7 @@ class Screen:
             )
         else:
             logging.info(" SKIPPING STEP 3: Nucleotide search")
-            self.reset_nucleotide_recommendations(CommecRecommendation.SKIP)
+            self.reset_nucleotide_recommendations(Recommendation.SKIP)
 
         # Benign Screen
         if self.params.should_do_benign_screening:
@@ -369,7 +370,7 @@ class Screen:
             )
         else:
             logging.info(" SKIPPING STEP 4: Benign search")
-            self.reset_benign_recommendations(CommecRecommendation.SKIP)
+            self.reset_benign_recommendations(Recommendation.SKIP)
 
         logger.info(
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -397,7 +398,7 @@ class Screen:
         logger.debug("\t...running %s", self.params.config["protein_search_tool"])
         self.database_tools.regulated_protein.search()
         if not self.database_tools.regulated_protein.check_output():
-            self.reset_protein_recommendations(CommecRecommendation.ERROR)
+            self.reset_protein_recommendations(Recommendation.ERROR)
             raise RuntimeError(
                 "ERROR: Expected protein search output not created: "
                 + self.database_tools.regulated_protein.out_file
@@ -423,7 +424,7 @@ class Screen:
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
                                             self.screen_data,
-                                            CommecScreenStep.TAXONOMY_AA,
+                                            ScreenStep.TAXONOMY_AA,
                                             self.screen_io.config.threads)
 
 
@@ -445,7 +446,7 @@ class Screen:
             logger.debug(
                 "\t...skipping nucleotide search since no noncoding regions fetched"
             )
-            self.reset_nucleotide_recommendations(CommecRecommendation.SKIP)
+            self.reset_nucleotide_recommendations(Recommendation.SKIP)
             return
 
         # Only run new blastn search if there are no previous results
@@ -453,7 +454,7 @@ class Screen:
             self.database_tools.regulated_nt.search()
 
         if not self.database_tools.regulated_nt.check_output():
-            self.reset_nucleotide_recommendations(CommecRecommendation.ERROR)
+            self.reset_nucleotide_recommendations(Recommendation.ERROR)
             raise RuntimeError(
                 "ERROR: Expected nucleotide search output not created: "
                 + self.database_tools.regulated_nt.out_file
@@ -473,7 +474,7 @@ class Screen:
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
                                             self.screen_data,
-                                            CommecScreenStep.TAXONOMY_NT,
+                                            ScreenStep.TAXONOMY_NT,
                                             self.screen_io.config.threads)
 
     def screen_benign(self):
@@ -484,7 +485,7 @@ class Screen:
         sample_name = self.screen_io.output_prefix
         if not os.path.exists(sample_name + ".reg_path_coords.csv"):
             logging.info("\t...no regulated regions to clear\n")
-            self.reset_benign_recommendations(CommecRecommendation.SKIP)
+            self.reset_benign_recommendations(Recommendation.SKIP)
             return
 
         logging.debug("\t...running benign hmmscan")
@@ -502,7 +503,7 @@ class Screen:
 
         if coords.shape[0] == 0:
             logging.info("\t...no regulated regions to clear\n")
-            self.reset_benign_recommendations(CommecRecommendation.SKIP)
+            self.reset_benign_recommendations(Recommendation.SKIP)
             return
 
         logging.debug("\t...checking benign scan results")
@@ -516,21 +517,21 @@ class Screen:
             benign_desc
         )
 
-    def reset_benign_recommendations(self, new_recommendation : CommecRecommendation):
+    def reset_benign_recommendations(self, new_recommendation : Recommendation):
         """ Helper function 
         apply a single recommendation to the whole benign step 
         for every query."""
         for query in self.screen_data.queries:
             query.recommendation.benign_screen = new_recommendation
 
-    def reset_protein_recommendations(self, new_recommendation : CommecRecommendation):
+    def reset_protein_recommendations(self, new_recommendation : Recommendation):
         """ Helper function
         apply a single recommendation to the whole protein taxonomy step 
         for every query."""
         for query in self.screen_data.queries:
             query.recommendation.protein_taxonomy_screen = new_recommendation
 
-    def reset_nucleotide_recommendations(self, new_recommendation : CommecRecommendation):
+    def reset_nucleotide_recommendations(self, new_recommendation : Recommendation):
         """ Helper function:
         apply a single recommendation to the whole nucleotide taxonomy step 
         for every query."""
