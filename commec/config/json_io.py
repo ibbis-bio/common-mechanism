@@ -87,6 +87,22 @@ def dict_to_dataclass(cls: Type, data: Dict[str, Any]) -> Any:
                 filtered_data[field_name] = field_value
                 continue
 
+            # Check if the field is a dict of dataclasses
+            if get_origin(field_type) is dict:
+                _key_type, value_type = get_args(field_type)
+
+                # Handle dicts of dataclasses
+                if is_dataclass(value_type):
+                    filtered_data[field_name] = {
+                        key: dict_to_dataclass(value_type, value) if isinstance(value, dict) else value
+                        for key, value in field_value.items()
+                        if isinstance(value, (dict, value_type))
+                    }
+                    continue
+
+                filtered_data[field_name] = field_value
+                continue
+
             # Handle custom StrEnums
             if issubclass(field_type, StrEnum):
                 try:

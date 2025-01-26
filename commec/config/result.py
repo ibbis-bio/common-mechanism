@@ -21,10 +21,10 @@
     The Query's recommendation is the result of parsing all hitResults recommendations.
     
     ScreenResult:
-        [QueryResults]
-            recommendation
-            [HitResults]:
-                recommendation
+        [QueryResult]
+            recommendation (per query)
+            [HitResult]:
+                recommendation (per hit)
 '''
 
 from dataclasses import dataclass, asdict, field
@@ -32,11 +32,13 @@ from typing import List, Iterator, Tuple
 from enum import StrEnum
 from importlib.metadata import version, PackageNotFoundError
 from commec.tools.search_handler import SearchToolVersion
+from commec.config.query import Query
 
 try:
     COMMEC_VERSION = version("commec")
 except PackageNotFoundError:
     COMMEC_VERSION = "error"
+
 # Seperate versioning for the output JSON.
 JSON_COMMEC_FORMAT_VERSION = "0.1"
 
@@ -78,7 +80,9 @@ class Recommendation(StrEnum):
         return self
 
 def compare(a : Recommendation, b : Recommendation):
-    """ Compare two recommendations, return the most important one. """
+    """ 
+    Compare two recommendations, return the most important one. 
+    """
     if a.importance > b.importance:
         return a
     return b
@@ -118,6 +122,7 @@ class MatchRange:
     # TODO: Add frame, as QueryStart and QueryEnd should be in Frame0 NT coords.
 
     def query_length(self):
+        """ Returns the length in Nucleotides of this range. """
         return abs(self.query_start - self.query_end)
 
     def __hash__(self):
@@ -161,18 +166,16 @@ class QueryRecommendationContainer:
     Summarises the recommendations across all hits for a single query.
     """
     commec_recommendation : Recommendation = Recommendation.NULL
+
     biorisk_screen : Recommendation = Recommendation.NULL
     protein_taxonomy_screen : Recommendation = Recommendation.NULL
     nucleotide_taxonomy_screen : Recommendation = Recommendation.NULL
     benign_screen : Recommendation = Recommendation.NULL
 
-    def update_commec_recommendation(self, list_of_hits : list[HitResult]):
+    def update_commec_recommendation(self):
         """
-        Parses the current state of the json,
-        and updates the global commec recommendation.
-
-        TODO: Consider the value of iterating over all HitResults (provided as input)
-        and updating things with stricter logic.
+        Parses the current state of the QueryRecommendationContainer,
+        and updates the commec recommendation.
         """
         if self.benign_screen in {Recommendation.CLEARED_FLAG,
                                   Recommendation.CLEARED_WARN,
@@ -197,12 +200,12 @@ class QueryRecommendationContainer:
             self.nucleotide_taxonomy_screen == Recommendation.WARN):
             self.commec_recommendation = Recommendation.WARN
             return
+
         # At the moment we only get here when biorisk screen is just run.
         # this will set the global recommend to pass or error, after biorisk is done.
         # We will need earlier checks to maintain the error status of future steps however.
         if self.commec_recommendation == Recommendation.NULL:
             self.commec_recommendation = self.biorisk_screen
-
 
 @dataclass
 class QueryResult:
@@ -213,25 +216,20 @@ class QueryResult:
     length : int = 0
     sequence : str = ""
     recommendation : QueryRecommendationContainer = field(default_factory=QueryRecommendationContainer)
-    hits : list[HitResult] = field(default_factory=list)
+    hits : dict[str, HitResult] = field(default_factory=dict)
 
     def get_hit(self, match_name : str) -> HitResult:
-        """
-        Searches to see if a match already exists, and returns it, so that it can be modified.
-        """
-        for hit in self.hits:
-            if hit.name == match_name:
-                return hit
-        return None
-    
+        """ Wrapper for get logic. """
+        return self.hits.get(match_name)
+
     def add_new_hit_information(self, new_hit : HitResult) -> bool:
         """
         Adds a Hit Description to this query, but only adds if the hit is unique, or has a new range.
-        Returns True if the hit was not unique, but added to another hit.
+        Returns True if the hit was not unique, but added unique info to the hit.
         """
-        existing_hit = self.get_hit(new_hit.name)
+        existing_hit = self.hits.get(new_hit.name)
         if not existing_hit:
-            self.hits.append(new_hit)
+            self.hits[new_hit.name] = new_hit
             return False
     
         hits_is_updated : bool = False
@@ -255,7 +253,7 @@ class QueryResult:
         """
         flagged_and_warnings_data = [
         flagged_hit
-        for flagged_hit in self.hits if flagged_hit.recommendation.outcome in
+        for flagged_hit in self.hits.values() if flagged_hit.recommendation.outcome in
         {Recommendation.WARN, Recommendation.FLAG}
         ]
         return flagged_and_warnings_data
@@ -264,14 +262,17 @@ class QueryResult:
         """
         Call this before exporting to file.
         Sorts the hits based on E-values,
-        TODO: Sorts the ranges based on position/E-value (to be confirmed)
         Updates the commec recommendation based on all hits recommendations.
         """
-        self.hits.sort(key = lambda hit: hit.get_e_value())
-        self.recommendation.update_commec_recommendation(self.hits)
+        # A rare instance where we want our dictionary to be sorted
+        # So we convert it to a list, and recreate a dictionary - which maintains the order.
+        # Thankfully we only do this once per Query at the end.
+        sorted_items_desc = sorted(self.hits.items(), key=lambda item: item[1].get_e_value(), reverse=True)
+        self.hits = dict(sorted_items_desc)
+        self.recommendation.update_commec_recommendation()
 
 @dataclass
-class CommecRunInformation:
+class ScreenRunInfo:
     '''Container dataclass to hold general run information for a commec screen '''
     commec_version : str = str(COMMEC_VERSION)
     json_output_version : str = JSON_COMMEC_FORMAT_VERSION
@@ -289,8 +290,8 @@ class ScreenResult:
     '''
     Root dataclass to hold all data related to the screening of an individual query by commec.
     '''
-    commec_info : CommecRunInformation = field(default_factory = CommecRunInformation)
-    queries : list[QueryResult] = field(default_factory=list)
+    commec_info : ScreenRunInfo = field(default_factory = ScreenRunInfo)
+    queries : dict[str, QueryResult] = field(default_factory=dict)
 
     def format(self):
         ''' Format this ScreenResult as a json string to pass to a standard out if desired.'''
@@ -298,40 +299,33 @@ class ScreenResult:
 
     def get_query(self, query_name : str) -> QueryResult:
         """
-        Searches for a query, such that it can be updated or read from.
+        Wrapper for Query get logic.
         """
-        search_term = query_name
-        # Some tools append _X where X is reading frame. Get rid of it for the moment...
-        if search_term[-2] == "_":
-            search_term = query_name[:-2]
-
-        for data in self.queries:
-            if data.query == search_term:
-                return data
-        return None
+        search_term = Query.create_id(query_name) # Not needed when ID's are used instead of names.
+        return self.queries.get(search_term)
 
     def update(self):
         """
         Propagate update to all children dataclasses.
         """
-        for query in self.queries:
+        for query in self.queries.values():
             query.update()
 
     def regions(self) -> Iterator[Tuple[QueryResult, HitResult, MatchRange]]:
         """
-        Helper function, Iterates through all queries, hits, and regions in the ScreenResult object.
+        Helper function, iterates through all queries, hits, and regions in the ScreenResult object.
         Yields tuples of (query, hit, region).
         """
-        for query in self.queries:
-            for hit in query.hits:
+        for query in self.queries.values():
+            for hit in query.hits.values():
                 for region in hit.ranges:
                     yield query, hit, region
 
-    def hits(self) -> Iterator[Tuple[QueryResult, HitResult, MatchRange]]:
+    def hits(self) -> Iterator[Tuple[QueryResult, HitResult]]:
         """
-        helper function, Iterates through all queries, and hits in the ScreenResult object.
+        Helper function, iterates through all queries and hits in the ScreenResult object.
         Yields tuples of (query, hit).
         """
-        for query in self.queries:
-            for hit in query.hits:
+        for query in self.queries.values():
+            for hit in query.hits.values():
                 yield query, hit
