@@ -68,7 +68,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
         logging.error("\t...ERROR: biorisk search results empty\n")
         return
 
-    for query in data.queries:
+    for query in data.queries.values():
         query.recommendation.biorisk_screen = Recommendation.PASS
 
     if not search_handle.has_hits(search_handle.out_file):
@@ -144,7 +144,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
                 match_ranges,
                 {"domain" : [domain],"regulated":[regulation_str]},
             )
-            query_data.hits.append(new_hit)
+            query_data.hits[affected_target] = new_hit
 
         # Update the recommendation for this query for biorisk.
         query_data.recommendation.biorisk_screen = biorisk_overall
