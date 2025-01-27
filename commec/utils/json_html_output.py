@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 import pandas as pd
 from mako.template import Template
 
-from commec.config.json_io import (
+from commec.io.json_io import (
     get_screen_data_from_json,
     ScreenData,
     QueryData,

@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 import textwrap
 from Bio import SeqIO
-from commec.screeners.fetch_nc_bits import (
+from commec.screening.fetch_nc_bits import (
     get_ranges_with_no_hits,
     write_nc_sequences,
     fetch_noncoding_regions,

@@ -21,7 +21,7 @@ from commec.tools.hmmer import readhmmer
 from commec.tools.cmscan import CmscanHandler, readcmscan
 from commec.tools.search_handler import SearchHandler
 
-from commec.config.json_io import (
+from commec.io.json_io import (
     ScreenData,
     HitDescription,
     QueryData,

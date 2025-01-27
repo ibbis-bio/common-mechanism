@@ -17,7 +17,7 @@ import tarfile
 import yaml
 from yaml.parser import ParserError
 
-from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
+from commec.io.constants import DEFAULT_CONFIG_YAML_PATH
 
 DESCRIPTION = """Helper script for downloading the databases
  required for running the Common Mechanism Screen"""

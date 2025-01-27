@@ -18,7 +18,7 @@ import pandas as pd
 from commec.tools.blast_tools import read_blast, get_taxonomic_labels, get_top_hits
 from commec.tools.blastn import BlastNHandler
 from commec.tools.search_handler import SearchHandler
-from commec.config.json_io import (
+from commec.io.json_io import (
     ScreenData,
     HitDescription,
     CommecScreenStep,

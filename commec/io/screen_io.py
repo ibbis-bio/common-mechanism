@@ -126,9 +126,16 @@ class ScreenIO:
         Parse queries from FASTA file.
         """
         with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
-            queries = [Query(record) for record in SeqIO.parse(fasta_file, "fasta")]
-
-        return {query.name: query for query in queries }
+            queries = {}
+            for record in SeqIO.parse(fasta_file, "fasta"):
+                try:
+                    query = Query(record)
+                    if query.name in queries:
+                        raise ValueError(f"Duplicate sequence identifier found: {query.name}")
+                    queries[query.name] = query
+                except Exception as e:
+                    raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}") from e
+        return queries
 
     def clean(self):
         """
@@ -256,3 +263,7 @@ class ScreenIO:
     @property
     def should_do_benign_screening(self) -> bool:
         return True
+
+
+class IoValidationError(ValueError):
+    """Custom exception for errors when handling input and output with `ScreenIO`."""

@@ -12,7 +12,7 @@ import sys
 import argparse
 import pandas as pd
 from commec.tools.hmmer import readhmmer, trimhmmer, HmmerHandler
-from commec.config.json_io import (
+from commec.io.json_io import (
     ScreenData,
     HitDescription,
     CommecScreenStep,

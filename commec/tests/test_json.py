@@ -1,5 +1,5 @@
 import pytest
-from commec.config.json_io import *
+from commec.io.json_io import *
 from commec.tools.search_handler import SearchToolVersion
 from dataclasses import asdict
 
