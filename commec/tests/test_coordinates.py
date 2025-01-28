@@ -1,6 +1,7 @@
+import numpy as np
 import pandas as pd
 import pytest
-from pandas.testing import assert_frame_equal
+
 from commec.utils.coordinates import (
     convert_aa_to_nt_coordinates,
     _convert_single_aa_coordinate_to_nt,
@@ -43,8 +44,8 @@ def test_convert_aa_to_nt_coords_dataframe():
         }
     )
 
-    nt_start_expected = pd.Series([4, 2, 15, 7, 2, 9])
-    nt_end_expected = pd.Series([15, 16, 20, 21, 13, 17])
+    nt_start_expected = np.array([4, 2, 15, 7, 2, 9])
+    nt_end_expected = np.array([15, 16, 20, 21, 13, 17])
 
     nt_start, nt_end = convert_aa_to_nt_coordinates(
         input_coords["frame"],
@@ -52,8 +53,8 @@ def test_convert_aa_to_nt_coords_dataframe():
         input_coords["ali to"],
         input_coords["qlen"],
     )
-    assert_frame_equal(nt_start_expected, nt_start)
-    assert_frame_equal(nt_end_expected, nt_end)
+    np.array_equal(nt_start_expected, nt_start)
+    np.array_equal(nt_end_expected, nt_end)
 
 
 def test_convert_single_aa_coordinate_to_nt():

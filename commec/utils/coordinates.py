@@ -4,25 +4,23 @@ basepair|amino-acid, nucleotide|peptide coordinate systems.
 """
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 
-def convert_aa_to_nt_coordinates(
-    frame: int | pd.Series,
-    aa_start: int | pd.Series,
-    aa_end: int | pd.Series,
-    seq_length: int | pd.Series,
-):
+def _convert_single_aa_coordinate_to_nt(
+    frame: int, aa_start: int, aa_end: int, seq_length: int
+) -> tuple[int, int]:
     """
-    Convert protein coordinates to nucleotide coordinates considering the reading frame.
+    Convert protein coordinates to nucleotide coordinates, considering the reading frame.
 
     Parameters:
         frame: Reading frame (1-6), numbered following the same naming convention as transeq:
             * 1, 2, 3: Forward frames starting at positions 0, 1, 2
             * 4, 5, 6: Reverse frames, starting at positions 0, -1, -2
-        protein_start (int, or [int]): Start position in protein coordinates, counting from 1.
-        protein_end (int, or [int]): End position in protein coordinates, counting from 1.
-        seq_length (int): Length of the original nucleotide sequence.
+        protein_start: Start position in protein coordinates, counting from 1.
+        protein_end: End position in protein coordinates, counting from 1.
+        seq_length: Length of the original nucleotide sequence.
 
     Returns:
         tuple: (nucleotide_start, nucleotide_end)
@@ -53,45 +51,6 @@ def convert_aa_to_nt_coordinates(
 
     Query coordinates are w.r.t. to the original query sequence, not its reverse complement.
     """
-    aa_start = np.asarray(aa_start)
-    aa_end = np.asarray(aa_end)
-    frame = np.asarray(frame)
-    seq_length = np.asarray(seq_length)
-
-    frame_is_forward = frame <= 3
-
-    # We assume that codons are split the same way in the forward and reverse frames, so offsets
-    # are calculated from the start in the forward frames, and from the end in the reverse frames.
-    #
-    # For example: Frame 1 = atg tgc cat gg, offset 0 from the start
-    #              Frame 4 = cc atg gca cat, offset 2 from the end
-    frame_offset = np.where(frame_is_forward, frame - 1, (seq_length - (frame - 4)) % 3)
-
-    # For the starting nt coordinate:
-    #   Forward: count from 1 to the start of the aa_start codon
-    #   Reverse: count from end to aa_end, accounting for offset
-    #            don't subtract since the *end* of the reversed codon = the start in nt
-    nt_start = np.where(
-        frame_is_forward,
-        1 + frame_offset + (aa_start - 1) * 3,
-        1 + seq_length - frame_offset - (aa_end * 3),
-    )
-
-    # For the ending nt coordinate:
-    #   Forward: start to aa_end, accounting for offset
-    #   Reverse: end to aa_start, accounting for offset
-    nt_end = np.where(
-        frame_is_forward,
-        frame_offset + (aa_end * 3),
-        seq_length - frame_offset - (aa_start - 1) * 3,
-    )
-
-    return nt_start, nt_end
-
-
-def _convert_single_aa_coordinate_to_nt(
-    frame: int, aa_start: int, aa_end: int, seq_length: int
-) -> tuple[int, int]:
     frame_is_forward = frame <= 3
 
     # We assume that codons are split the same way in the forward and reverse frames, so offsets
@@ -114,3 +73,41 @@ def _convert_single_aa_coordinate_to_nt(
         nt_end = seq_length - frame_offset - (aa_start - 1) * 3
 
     return nt_start, nt_end
+
+
+_vectorized_convert_aa_coordinate_to_nt = np.vectorize(
+    _convert_single_aa_coordinate_to_nt
+)
+
+
+def convert_aa_to_nt_coordinates(
+    frame: int | pd.Series,
+    aa_start: int | pd.Series,
+    aa_end: int | pd.Series,
+    seq_length: int | pd.Series,
+) -> tuple[int | npt.NDArray[np.int64], int | npt.NDArray[np.int64]]:
+    """
+    Convert protein coordinates to nucleotide coordinates considering the reading frame.
+    The nucleotide coordinates are all 1-indexed, inclusive, and w.r.t. to the original
+    query sequence, not its reverse complement.
+
+    Parameters:
+        frame: Reading frame (1-6), numbered following the same naming convention as transeq:
+            * 1, 2, 3: Forward frames starting at positions 0, 1, 2
+            * 4, 5, 6: Reverse frames, starting at positions 0, -1, -2
+        protein_start: Start position in protein coordinates, counting from 1.
+        protein_end: End position in protein coordinates, counting from 1.
+        seq_length: Length of the original nucleotide sequence.
+
+    Returns:
+        tuple: (nucleotide_start, nucleotide_end)
+    """
+    if isinstance(frame, (int, np.integer)):
+        return _convert_single_aa_coordinate_to_nt(frame, aa_start, aa_end, seq_length)
+
+    frame = np.asarray(frame)
+    aa_start = np.asarray(aa_start)
+    aa_end = np.asarray(aa_end)
+    seq_length = np.asarray(seq_length)
+
+    return _vectorized_convert_aa_coordinate_to_nt(frame, aa_start, aa_end, seq_length)
