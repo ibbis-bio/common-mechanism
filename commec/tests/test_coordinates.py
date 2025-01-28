@@ -1,7 +1,10 @@
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
-from commec.utils.coordinates import convert_aa_to_nt_coordinates
+from commec.utils.coordinates import (
+    convert_aa_to_nt_coordinates,
+    _convert_single_aa_coordinate_to_nt,
+)
 
 
 def test_convert_aa_to_nt_coords_dataframe():
@@ -13,14 +16,14 @@ def test_convert_aa_to_nt_coords_dataframe():
         2       1       a tgt gcc atg gat gtg cca tgg       CAMDVPW
         3       2       at gtg cca tgg atg tgc cat gg       VPWMCH
         4       -0      c cat ggc aca tcc atg gca cat       HGTSMAH
-        5       -1      cca tgg cac atc cat ggc aca t       PWHIHGT       
+        5       -1      cca tgg cac atc cat ggc aca t       PWHIHGT
         6       -2      cc atg gca cat cca tgg cac at       MAHPWH
 
     Then consider 6 alignments, one to each of the reading frames, including the
     coordinates given for the Alignment (a.) and Query (q.), noting that all
     coordinates are 1-indexed and *inclusive* (be careful with splicing!):
 
-        Frame   Match   nt start    nt end  a. start   a. end   q. start    q.end  
+        Frame   Match   nt start    nt end  a. start   a. end   q. start    q.end
         1       CHGC    tgc         tgt     2          5        4           15
         2       CAMDV   tgt         gtg     1          5        2           16
         3       CH      tgc         cat     5          6        15          20
@@ -53,9 +56,32 @@ def test_convert_aa_to_nt_coords_dataframe():
     assert_frame_equal(nt_end_expected, nt_end)
 
 
-def test_convert_aa_to_nt_coords_ints():
-    nt_start, nt_end = convert_aa_to_nt_coordinates(
-        frame=5, aa_start=4, aa_end=7, seq_length=22
+def test_convert_single_aa_coordinate_to_nt():
+    """
+    Show how the length of the nt sequence has an impact on coordinate conversion
+    within a single frame. 
+    """
+    frame = 5
+    aa_start = 2
+    aa_end = 4
+
+    # A 15 nt sequence, with the 1-base offset of frame 5, translates to only 4 aas
+    nt_start, nt_end = _convert_single_aa_coordinate_to_nt(
+        frame, aa_start, aa_end, seq_length=15
     )
-    assert nt_start == 1
-    assert nt_end == 12
+    assert nt_start == 2
+    assert nt_end == 10
+
+    # At 16 and 17 nt, the sequence translates to 5 aas, so the coordinates are different
+    nt_start, nt_end = _convert_single_aa_coordinate_to_nt(
+        frame, aa_start, aa_end, seq_length=16
+    )
+    assert nt_start == 5
+    assert nt_end == 13
+
+    nt_start, nt_end = _convert_single_aa_coordinate_to_nt(
+        frame, aa_start, aa_end, seq_length=17
+    )
+    assert nt_start == 5
+    assert nt_end == 13
+ 

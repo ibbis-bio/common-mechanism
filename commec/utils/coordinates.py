@@ -1,15 +1,18 @@
 """
-Helper functions associated with the handling of 
+Helper functions associated with the handling of
 basepair|amino-acid, nucleotide|peptide coordinate systems.
 """
 
 import numpy as np
 import pandas as pd
 
-def convert_aa_to_nt_coordinates(frame: int | pd.Series,
-                                         aa_start: int | pd.Series,
-                                         aa_end: int | pd.Series,
-                                         seq_length: int | pd.Series):
+
+def convert_aa_to_nt_coordinates(
+    frame: int | pd.Series,
+    aa_start: int | pd.Series,
+    aa_end: int | pd.Series,
+    seq_length: int | pd.Series,
+):
     """
     Convert protein coordinates to nucleotide coordinates considering the reading frame.
 
@@ -33,14 +36,14 @@ def convert_aa_to_nt_coordinates(frame: int | pd.Series,
         2       1       a tgt gcc atg gat gtg cca tgg       CAMDVPW
         3       2       at gtg cca tgg atg tgc cat gg       VPWMCH
         4       -0      c cat ggc aca tcc atg gca cat       HGTSMAH
-        5       -1      cca tgg cac atc cat ggc aca t       PWHIHGT       
+        5       -1      cca tgg cac atc cat ggc aca t       PWHIHGT
         6       -2      cc atg gca cat cca tgg cac at       MAHPWH
 
     Then consider 6 alignments, one to each of the reading frames, including the
     coordinates given for the Alignment (a.) and Query (q.), noting that all
     coordinates are 1-indexed and *inclusive* (be careful with splicing!):
 
-        Frame   Match   nt start    nt end  a. start   a. end   q. start    q.end  
+        Frame   Match   nt start    nt end  a. start   a. end   q. start    q.end
         1       CHGC    tgc         tgt     2          5        4           15
         2       CAMDV   tgt         gtg     1          5        2           16
         3       CH      tgc         cat     5          6        15          20
@@ -68,15 +71,46 @@ def convert_aa_to_nt_coordinates(frame: int | pd.Series,
     #   Forward: count from 1 to the start of the aa_start codon
     #   Reverse: count from end to aa_end, accounting for offset
     #            don't subtract since the *end* of the reversed codon = the start in nt
-    nt_start = np.where(frame_is_forward,
-                        1 + frame_offset + (aa_start - 1) * 3,
-                        1 + seq_length - frame_offset - (aa_end * 3))
+    nt_start = np.where(
+        frame_is_forward,
+        1 + frame_offset + (aa_start - 1) * 3,
+        1 + seq_length - frame_offset - (aa_end * 3),
+    )
 
     # For the ending nt coordinate:
     #   Forward: start to aa_end, accounting for offset
     #   Reverse: end to aa_start, accounting for offset
-    nt_end = np.where(frame_is_forward,
-                      frame_offset + (aa_end * 3),
-                      seq_length - frame_offset - (aa_start - 1) * 3)
-   
+    nt_end = np.where(
+        frame_is_forward,
+        frame_offset + (aa_end * 3),
+        seq_length - frame_offset - (aa_start - 1) * 3,
+    )
+
+    return nt_start, nt_end
+
+
+def _convert_single_aa_coordinate_to_nt(
+    frame: int, aa_start: int, aa_end: int, seq_length: int
+) -> tuple[int, int]:
+    frame_is_forward = frame <= 3
+
+    # We assume that codons are split the same way in the forward and reverse frames, so offsets
+    # are calculated from the start in the forward frames, and from the end in the reverse frames.
+    #
+    # For example: Frame 1 = atg tgc cat gg, offset 0 from the start
+    #              Frame 4 = cc atg gca cat, offset 2 from the end
+    frame_offset = frame - 1 if frame_is_forward else (seq_length - (frame - 4)) % 3
+
+    if frame_is_forward:
+        # Count from 1 to the start of the aa_start codon (hence aa_start - 1)
+        nt_start = 1 + frame_offset + (aa_start - 1) * 3
+        # Count from starting offset to the end of the aa_end codon
+        nt_end = frame_offset + (aa_end * 3)
+    else:
+        # Count from length to the end of the aa_end codon
+        # (the *end* of the reversed codon = the start in nt)
+        nt_start = 1 + seq_length - frame_offset - (aa_end * 3)
+        # Count from the end of the sequence to the start of the aa_start codon
+        nt_end = seq_length - frame_offset - (aa_start - 1) * 3
+
     return nt_start, nt_end
