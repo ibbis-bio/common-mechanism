@@ -24,10 +24,11 @@ class Query:
     def __init__(self, seq_record: SeqRecord):
         Query.validate_sequence_record(seq_record)
         self._seq_record = seq_record
+        self.name = self.create_id(seq_record.original_name)
         self.translations: list[QueryTranslation] = []
 
     @property
-    def name(self) -> str:
+    def original_name(self) -> str:
         return str(self._seq_record.id)
 
     @property
@@ -91,7 +92,9 @@ class Query:
                     sequence=protein, frame=frame, nt_start=r_start, nt_end=r_end
                 )
             )
-        
+
+        # TODO: Update line 53-55 of Check_Benign, to ensure that the query filter is using
+        # The correct name, when filtering benign components.
         # Sort the list in frame order
         self.translations = sorted(self.translations, key=lambda x: x.frame)
 
@@ -111,6 +114,13 @@ class Query:
                 " Is input FASTA valid?"
             )
 
+    @staticmethod
+    def create_id(name : str) -> str:
+        """
+        Parse the Fasta SeqRecord string ID into a 25 digit maximum Unique Identification.
+        For internal Commec Screen Use only.
+        """
+        return name[:25] if len(name) > 24 else name
 
 @dataclass
 class QueryTranslation:

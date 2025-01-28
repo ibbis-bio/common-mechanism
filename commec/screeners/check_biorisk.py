@@ -17,25 +17,47 @@ from commec.tools.hmmer import (
     remove_overlaps,
     HmmerHandler,
 )
-from commec.config.json_io import (
-    ScreenData,
-    HitDescription,
-    CommecScreenStep,
-    CommecRecommendation,
-    CommecScreenStepRecommendation,
+from commec.config.result import (
+    ScreenResult,
+    HitResult,
+    ScreenStep,
+    Recommendation,
+    HitRecommendationContainer,
     MatchRange,
-    guess_domain,
     compare
 )
 
-def update_biorisk_data_from_database(search_handle : HmmerHandler, data : ScreenData):
+
+def _guess_domain(search_string : str) -> str:
+    """ 
+    Given a string description, try to determine 
+    which domain of life this has come from. Temporary work around
+    until we can retrieve this data directly from biorisk outputs.
+    """
+    def contains(search_string : str, search_terms):
+        for token in search_terms:
+            if search_string.find(token) == -1:
+                continue
+            return True
+        return False
+
+    search_token = search_string.lower()
+    if contains(search_token, ["vir", "capsid", "RNA Polymerase"]):
+        return "Virus"
+    if contains(search_token, ["cillus","bact","coccus","phila","ella","cocci","coli"]):
+        return "Bacteria"
+    if contains(search_token, ["eukary","nucleus","sona","odium","myces"]):
+        return "Eukaryote"
+    return "not assigned"
+
+def update_biorisk_data_from_database(search_handle : HmmerHandler, data : ScreenResult):
     """
     Takes an input database, reads its outputs, and updates the input data to contain
     biorisk hits from the database. Also requires passing of the biorisk annotations CSV file.
     Inputs:
         search : search_handle - The handler which has performed a search on a database.
         biorisk_annotations_csv_file : str - directory/filename of the biorisk annotations provided by Commec.
-        data : ScreenData - The ScreenData to be updated with information from database, interpeted as Biorisks.
+        data : ScreenResult - The ScreenResult to be updated with information from database, interpeted as Biorisks.
     """
     # Check for annocations.csv, as well as whether the 
     logging.debug("Directory: %s", search_handle.db_directory)
@@ -52,8 +74,8 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
         logging.error("\t...ERROR: biorisk search results empty\n")
         return
 
-    for query in data.queries:
-        query.recommendation.biorisk_screen = CommecRecommendation.PASS
+    for query in data.queries.values():
+        query.recommendation.biorisk_screen = Recommendation.PASS
 
     if not search_handle.has_hits(search_handle.out_file):
         return 0
@@ -82,7 +104,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
     unique_queries = hmmer['query name'].unique()
     for affected_query in unique_queries:
 
-        biorisk_overall : CommecRecommendation = CommecRecommendation.PASS
+        biorisk_overall : Recommendation = Recommendation.PASS
 
         query_data = data.get_query(affected_query)
         if not query_data:
@@ -106,30 +128,30 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
                 )
                 match_ranges.append(match_range)
 
-            target_recommendation : CommecRecommendation = CommecRecommendation.FLAG if must_flag > 0 else CommecRecommendation.WARN
+            target_recommendation : Recommendation = Recommendation.FLAG if must_flag > 0 else Recommendation.WARN
 
             biorisk_overall = compare(target_recommendation, biorisk_overall)
 
-            hit_data : HitDescription = query_data.get_hit(affected_target)
+            hit_data : HitResult = query_data.get_hit(affected_target)
             if hit_data:
                 hit_data.ranges.extend(match_ranges)
                 continue
 
             regulation_str : str = "Regulated Gene" if must_flag else "Virulance Factor"
-
-            domain : str = guess_domain(""+str(affected_target)+target_description)
-
-            new_hit : HitDescription = HitDescription(
-                CommecScreenStepRecommendation(
+            
+            domain : str = _guess_domain(""+str(affected_target)+target_description)
+            
+            new_hit : HitResult = HitResult(
+                HitRecommendationContainer(
                     target_recommendation,
-                    CommecScreenStep.BIORISK
+                    ScreenStep.BIORISK
                 ),
                 affected_target,
                 target_description,
                 match_ranges,
                 {"domain" : [domain],"regulated":[regulation_str]},
             )
-            query_data.hits.append(new_hit)
+            query_data.hits[affected_target] = new_hit
 
         # Update the recommendation for this query for biorisk.
         query_data.recommendation.biorisk_screen = biorisk_overall
