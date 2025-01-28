@@ -6,7 +6,7 @@ basepair|amino-acid, nucleotide|peptide coordinate systems.
 import numpy as np
 import pandas as pd
 
-def convert_protein_to_nucleotide_coords(frame: int | pd.Series,
+def convert_aa_to_nt_coordinates(frame: int | pd.Series,
                                          aa_start: int | pd.Series,
                                          aa_end: int | pd.Series,
                                          seq_length: int | pd.Series):
@@ -28,7 +28,7 @@ def convert_protein_to_nucleotide_coords(frame: int | pd.Series,
 
     Consider the 22nt sequence atgtgccatggatgtgccatgg. We get these translations:
 
-        Frame   Pos     Codon split                         Translation
+        Frame   Pos     nt with codon split                 Translation
         1       0       atg tgc cat gga tgt gcc atg g       MCHGCAM
         2       1       a tgt gcc atg gat gtg cca tgg       CAMDVPW
         3       2       at gtg cca tgg atg tgc cat gg       VPWMCH
@@ -37,18 +37,18 @@ def convert_protein_to_nucleotide_coords(frame: int | pd.Series,
         6       -2      cc atg gca cat cca tgg cac at       MAHPWH
 
     Then consider 6 alignments, one to each of the reading frames, including the
-    coordinates given for the Alignment (a.) and Query (q.), noting that query
-    coordinates are 0-indexed, and alignment coordinates are 1-indexed, and all
-    are *inclusive* (which means be careful with splicing!):
+    coordinates given for the Alignment (a.) and Query (q.), noting that all
+    coordinates are 1-indexed and *inclusive* (be careful with splicing!):
 
-        Frame   Match   a. start   a. end   q. start    q.end  
-        1       CHGC    2          5        3           15
-        2       CAMDV   1          5        1           15
-        3       CH      5          6        14          19
-        4       HGTSM   1          5        6           20
-        5       IHGT    4          7        1           12
-        6       AHP     2          4        8           16
+        Frame   Match   nt start    nt end  a. start   a. end   q. start    q.end  
+        1       CHGC    tgc         tgt     2          5        4           15
+        2       CAMDV   tgt         gtg     1          5        2           16
+        3       CH      tgc         cat     5          6        15          20
+        4       HGTSM   cat         atg     1          5        7           21
+        5       IHGT    atc         ata     4          7        2           13
+        6       AHP     gca         cat     2          4        9           17
 
+    Query coordinates are w.r.t. to the original query sequence, not its reverse complement.
     """
     aa_start = np.asarray(aa_start)
     aa_end = np.asarray(aa_end)
@@ -65,23 +65,18 @@ def convert_protein_to_nucleotide_coords(frame: int | pd.Series,
     frame_offset = np.where(frame_is_forward, frame - 1, (seq_length - (frame - 4)) % 3)
 
     # For the starting nt coordinate:
-    #   Forward: count from the start to aa_start, accounting for offset
-    #            subtract 1 since we want the *start* of the first codon
+    #   Forward: count from 1 to the start of the aa_start codon
     #   Reverse: count from end to aa_end, accounting for offset
     #            don't subtract since the *end* of the reversed codon = the start in nt
     nt_start = np.where(frame_is_forward,
-                        frame_offset + (aa_start - 1) * 3,
-                        seq_length - frame_offset - (aa_end * 3))
+                        1 + frame_offset + (aa_start - 1) * 3,
+                        1 + seq_length - frame_offset - (aa_end * 3))
 
     # For the ending nt coordinate:
     #   Forward: start to aa_end, accounting for offset
     #   Reverse: end to aa_start, accounting for offset
     nt_end = np.where(frame_is_forward,
-                      frame_offset + (aa_end - 1) * 3,
-                      seq_length - frame_offset - (aa_start * 3))
+                      frame_offset + (aa_end * 3),
+                      seq_length - frame_offset - (aa_start - 1) * 3)
    
-    # Convert to back to 1-based coordinates for reporting.
-    nt_start += 1
-    nt_end += 1
-
     return nt_start, nt_end

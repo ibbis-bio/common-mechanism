@@ -12,7 +12,7 @@ import pandas as pd
 import itertools
 import warnings
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
-from commec.utils.coordinates import convert_protein_to_nucleotide_coords
+from commec.utils.coordinates import convert_aa_to_nt_coordinates
 
 
 class HmmerHandler(SearchHandler):
@@ -196,7 +196,7 @@ def set_query_nt_coordinates(hmmer : pd.DataFrame):
     Recalculate the coordinates of the hmmer database , such that each translated frame
     reverts to original nucleotide coordinates.
     """
-    query_start, query_end = convert_protein_to_nucleotide_coords(
+    query_start, query_end = convert_aa_to_nt_coordinates(
         hmmer["frame"],
         hmmer["ali from"],
         hmmer["ali to"],
