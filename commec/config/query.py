@@ -24,7 +24,7 @@ class Query:
     def __init__(self, seq_record: SeqRecord):
         Query.validate_sequence_record(seq_record)
         self._seq_record = seq_record
-        self.name = self.create_id(seq_record.original_name)
+        self.name = self.create_id(self.original_name)
         self.translations: list[QueryTranslation] = []
 
     @property
