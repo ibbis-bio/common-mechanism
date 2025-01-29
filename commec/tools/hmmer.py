@@ -138,7 +138,7 @@ def get_frame_from_query_name(query_name_col: pd.DataFrame):
             if not 1 <= frame <= 6:
                 raise ValueError(f"Frame must be between 1 and 6! Invalid frame number {frame} in '{name}'")
             return frame
-        except ValueError:
+        except (ValueError, IndexError):
             warnings.warn(f"Could not parse frame from '{name}', assuming frame 1")
             return 1
             
