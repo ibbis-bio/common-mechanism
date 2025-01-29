@@ -66,30 +66,26 @@ class Query:
         self.translations = []
         seq_rev = Seq.reverse_complement(self.sequence)
 
-        for i in range(3):
-            # Use integer division to get frame length based on starting offset
-            frame_len = 3 * ((self.length - i) // 3)
-
-            # Forward frame translates from beginning to frame length
-            f_start = i
-            f_end = i + frame_len
+        # Frames use offset 0, 1, 2
+        for offset in range(3):
+            frame_len =  self._get_frame_length(offset)
+            
+            # Forward frame is offset from the start of the sequence
+            f_start = offset
+            f_end = offset + frame_len
             protein = str(Seq.translate(self.sequence[f_start:f_end], stop_symbol="X"))
-            frame = i + 1
             self.translations.append(
                 QueryTranslation(
-                    sequence=protein, frame=frame, nt_start=f_start, nt_end=f_end
+                    sequence=protein, frame=offset + 1
                 )
             )
-
             # Reverse frame is offset from the end of the sequence
-            r_end = self.length - i
-            r_start = r_end - frame_len
+            r_start = self.length - offset - frame_len
+            r_end = self.length - offset
             protein = str(Seq.translate(seq_rev[r_start:r_end], stop_symbol="X"))
-            frame = i + 4
-            # I think these indices are wrong actually
             self.translations.append(
                 QueryTranslation(
-                    sequence=protein, frame=frame, nt_start=r_start, nt_end=r_end
+                    sequence=protein, frame=offset + 4
                 )
             )
 
@@ -97,6 +93,13 @@ class Query:
         # The correct name, when filtering benign components.
         # Sort the list in frame order
         self.translations = sorted(self.translations, key=lambda x: x.frame)
+
+    def _get_frame_length(self, frame_offset: int) -> int:
+        """
+        Get total length of nt sequence that will be translated based on frame offset.
+        """
+        # Use integer division to get frame length based on starting offset
+        return 3 * ((self.length - frame_offset) // 3)
 
     @staticmethod
     def validate_sequence_record(seq_record: SeqRecord) -> None:
@@ -130,14 +133,9 @@ class QueryTranslation:
     Attributes:
         sequence (str): The translated amino acid sequence
         frame (int): Frame number following transeq convention (1-3: forward, 4-6: reverse)
-        nt_start (int): Start position in the nucleotide sequence (0-based)
-        nt_end (int): End position in the nucleotide sequence (0-based, exclusive for slicing)
     """
     sequence: str
     frame: int
-    nt_start: int
-    nt_end: int
-
 
 class QueryValueError(ValueError):
     """Custom exception for errors when validating a `Query`."""
