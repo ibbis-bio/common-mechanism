@@ -25,8 +25,8 @@ from commec.config.result import (
     HitResult,
     QueryResult,
     ScreenStep,
-    Recommendation,
-    HitRecommendationContainer,
+    ScreenStatus,
+    HitScreenStatus,
     MatchRange,
     compare
 )
@@ -59,9 +59,9 @@ def _update_benign_data_for_query(query : QueryResult,
 
     # Check every region, of every hit that is a FLAG or WARN, against the Benign screen outcomes.
     for hit in query.hits.values():
-        if hit.recommendation.outcome not in {
-            Recommendation.FLAG,
-            Recommendation.WARN
+        if hit.recommendation.status not in {
+            ScreenStatus.FLAG,
+            ScreenStatus.WARN
             }:
             continue
 
@@ -111,8 +111,8 @@ def _update_benign_data_for_query(query : QueryResult,
                     )
                 ]
                 benign_hit_outcome = HitResult(
-                        HitRecommendationContainer(
-                            Recommendation.PASS,
+                        HitScreenStatus(
+                            ScreenStatus.PASS,
                             ScreenStep.BENIGN_PROTEIN
                         ),
                         benign_hit,
@@ -120,7 +120,7 @@ def _update_benign_data_for_query(query : QueryResult,
                         match_ranges,
                     )
                 new_benign_hits.append(benign_hit_outcome)
-                hit.recommendation.outcome = hit.recommendation.outcome.clear()
+                hit.recommendation.status = hit.recommendation.status.clear()
 
             if not benign_rna_for_query.empty:
                 benign_hit = benign_rna_for_query["subject title"][0]
@@ -133,8 +133,8 @@ def _update_benign_data_for_query(query : QueryResult,
                     )
                 ]
                 benign_hit_outcome = HitResult(
-                        HitRecommendationContainer(
-                            Recommendation.PASS,
+                        HitScreenStatus(
+                            ScreenStatus.PASS,
                             ScreenStep.BENIGN_RNA
                         ),
                         benign_hit,
@@ -142,7 +142,7 @@ def _update_benign_data_for_query(query : QueryResult,
                         match_ranges,
                     )
                 new_benign_hits.append(benign_hit_outcome)
-                hit.recommendation.outcome = hit.recommendation.outcome.clear()
+                hit.recommendation.status = hit.recommendation.status.clear()
 
             if not benign_synbio_for_query.empty:
                 benign_hit = benign_synbio_for_query["subject title"][0]
@@ -155,8 +155,8 @@ def _update_benign_data_for_query(query : QueryResult,
                     )
                 ]
                 benign_hit_outcome = HitResult(
-                        HitRecommendationContainer(
-                            Recommendation.PASS,
+                        HitScreenStatus(
+                            ScreenStatus.PASS,
                             ScreenStep.BENIGN_SYNBIO
                         ),
                         benign_hit,
@@ -164,7 +164,7 @@ def _update_benign_data_for_query(query : QueryResult,
                         match_ranges,
                     )
                 new_benign_hits.append(benign_hit_outcome)
-                hit.recommendation.outcome = hit.recommendation.outcome.clear()
+                hit.recommendation.status = hit.recommendation.status.clear()
 
     # We cannot alter the hits dictionary whilst iterating,
     # So we add everything afterwards.
@@ -195,12 +195,12 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                       benign_desc)
 
         # Calculate the Benign Screen outcomes for each query.
-        query.recommendation.benign_screen = Recommendation.PASS
+        query.recommendation.benign_status = ScreenStatus.PASS
         # If any hits are still warnings, or flags, propagate that.
         for flagged_hit in query.get_flagged_hits():
-            query.recommendation.benign_screen = compare(
-                flagged_hit.recommendation.outcome,
-                query.recommendation.benign_screen
+            query.recommendation.benign_status = compare(
+                flagged_hit.recommendation.status,
+                query.recommendation.benign_status
                 )
 
 def _trim_to_coords(data : pd.DataFrame, coords, region):

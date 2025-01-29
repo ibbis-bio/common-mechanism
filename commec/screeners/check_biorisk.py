@@ -16,8 +16,8 @@ from commec.config.result import (
     ScreenResult,
     HitResult,
     ScreenStep,
-    Recommendation,
-    HitRecommendationContainer,
+    ScreenStatus,
+    HitScreenStatus,
     MatchRange,
     compare
 )
@@ -69,7 +69,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
         return
 
     for query in data.queries.values():
-        query.recommendation.biorisk_screen = Recommendation.PASS
+        query.recommendation.biorisk_status = ScreenStatus.PASS
 
     if not search_handle.has_hits(search_handle.out_file):
         return 0
@@ -97,7 +97,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
     unique_queries = hmmer['query name'].unique()
     for affected_query in unique_queries:
 
-        biorisk_overall : Recommendation = Recommendation.PASS
+        biorisk_overall : ScreenStatus = ScreenStatus.PASS
 
         query_data = data.get_query(affected_query)
         if not query_data:
@@ -121,7 +121,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
                 )
                 match_ranges.append(match_range)
 
-            target_recommendation : Recommendation = Recommendation.FLAG if must_flag > 0 else Recommendation.WARN
+            target_recommendation : ScreenStatus = ScreenStatus.FLAG if must_flag > 0 else ScreenStatus.WARN
 
             biorisk_overall = compare(target_recommendation, biorisk_overall)
 
@@ -135,7 +135,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
             domain : str = _guess_domain(""+str(affected_target)+target_description)
             
             new_hit : HitResult = HitResult(
-                HitRecommendationContainer(
+                HitScreenStatus(
                     target_recommendation,
                     ScreenStep.BIORISK
                 ),
@@ -147,7 +147,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
             query_data.hits[affected_target] = new_hit
 
         # Update the recommendation for this query for biorisk.
-        query_data.recommendation.biorisk_screen = biorisk_overall
+        query_data.recommendation.biorisk_status = biorisk_overall
 
 def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str):
     """

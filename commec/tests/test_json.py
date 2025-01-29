@@ -27,11 +27,11 @@ def test_screendata():
                 query="Query1",
                 length=10,
                 sequence="ABCDEFGHIJ",
-                recommendation = QueryRecommendationContainer(),
+                recommendation = QueryScreenStatus(),
                 hits = {
                     "ImportantProtein1":
                     HitResult(
-                        recommendation=HitRecommendationContainer(Recommendation.WARN, ScreenStep.BIORISK),
+                        recommendation=HitScreenStatus(ScreenStatus.WARN, ScreenStep.BIORISK),
                         name="ImportantProtein1",
                         annotations = {"domain" : ["Bacteria"]},
                         ranges = [
@@ -106,18 +106,18 @@ def test_erroneous_info(tmp_path, test_screendata):
     )
 
 def test_recommendation_ordering():
-    assert Recommendation.PASS.importance < Recommendation.FLAG.importance
-    assert compare(Recommendation.PASS, Recommendation.FLAG) == Recommendation.FLAG
+    assert ScreenStatus.PASS.importance < ScreenStatus.FLAG.importance
+    assert compare(ScreenStatus.PASS, ScreenStatus.FLAG) == ScreenStatus.FLAG
 
 def test_adding_data_to_existing():
     """
     Tests to ensure the mutability of writing to queries is working as expected.
     """
     def write_info(input_query : QueryResult):
-        input_query.recommendation.biorisk_screen = Recommendation.PASS
+        input_query.recommendation.biorisk_status = ScreenStatus.PASS
     
     new_screen_data = ScreenResult()
-    new_screen_data.queries["test01"] = QueryResult("test01", 10, "ATGCATGCAT", Recommendation.FLAG)
+    new_screen_data.queries["test01"] = QueryResult("test01", 10, "ATGCATGCAT", ScreenStatus.FLAG)
     write_query = new_screen_data.get_query("test01")
     write_info(write_query)
-    assert new_screen_data.queries["test01"].recommendation.biorisk_screen == Recommendation.PASS
+    assert new_screen_data.queries["test01"].recommendation.biorisk_status == ScreenStatus.PASS
