@@ -50,42 +50,39 @@ def _guess_domain(search_string : str) -> str:
         return "Eukaryote"
     return "not assigned"
 
-def update_biorisk_data_from_database(search_handle : HmmerHandler, data : ScreenResult):
+def update_biorisk_data_from_database(search_handler : HmmerHandler, data : ScreenResult):
     """
     Takes an input database, reads its outputs, and updates the input data to contain
     biorisk hits from the database. Also requires passing of the biorisk annotations CSV file.
     Inputs:
         search : search_handle - The handler which has performed a search on a database.
-        biorisk_annotations_csv_file : str - directory/filename of the biorisk annotations provided by Commec.
         data : ScreenResult - The ScreenResult to be updated with information from database, interpeted as Biorisks.
     """
     # Check for annocations.csv, as well as whether the 
-    logging.debug("Directory: %s", search_handle.db_directory)
-    logging.debug("Directory/file: %s", search_handle.db_file)
-    #logging.debug("Directory/file: %s", search_handle.db_file)
-    hmm_folder_csv = os.path.join(search_handle.db_directory,"biorisk_annotations.csv")
+    logging.debug("Directory: %s", search_handler.db_directory)
+    logging.debug("Directory/file: %s", search_handler.db_file)
+    hmm_folder_csv = os.path.join(search_handler.db_directory,"biorisk_annotations.csv")
     if not os.path.exists(hmm_folder_csv):
         logging.error("\t...biorisk_annotations.csv does not exist\n %s", hmm_folder_csv)
         return
-    if not search_handle.check_output():
-        logging.error("\t...database output file does not exist\n %s", search_handle.out_file)
+    if not search_handler.check_output():
+        logging.error("\t...database output file does not exist\n %s", search_handler.out_file)
         return
-    if search_handle.is_empty(search_handle.out_file):
+    if search_handler.is_empty(search_handler.out_file):
         logging.error("\t...ERROR: biorisk search results empty\n")
         return
 
     for query in data.queries.values():
         query.recommendation.biorisk_screen = Recommendation.PASS
 
-    if not search_handle.has_hits(search_handle.out_file):
+    if not search_handler.has_hits(search_handler.out_file):
         return 0
 
     # Read in Output, and parse.
-    hmmer : pd.DataFrame = readhmmer(search_handle.out_file)
+    hmmer : pd.DataFrame = readhmmer(search_handler.out_file)
     keep1 = [i for i, x in enumerate(hmmer['E-value']) if x < 1e-20]
     hmmer = hmmer.iloc[keep1,:]
     hmmer = remove_overlaps(hmmer)
-
 
     # Read in annotations.
     lookup : pd.DataFrame = pd.read_csv(hmm_folder_csv)
