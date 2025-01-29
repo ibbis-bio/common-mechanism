@@ -28,6 +28,36 @@ def test_get_frame_length():
     assert 15 == query._get_frame_length(frame_offset=1)
     assert 12 == query._get_frame_length(frame_offset=2)
 
+def test_translate_to_file(tmp_path):
+    query = Query(SeqRecord(Seq("atgtgccatgg"), id="test"))
+
+    expected_output = textwrap.dedent(
+        """\
+        >test_1
+        MCH
+        >test_2
+        CAM
+        >test_3
+        VPW
+        >test_4
+        MAH
+        >test_5
+        HGT
+        >test_6
+        PWH
+        """
+    )
+
+    aa_output = tmp_path / "test_translated.faa"
+
+    query.translate(aa_output)
+
+    # Check if the output file exists
+    assert aa_output.exists()
+
+    actual_output = aa_output.read_text()
+    assert expected_output.strip() == actual_output.strip()
+
 
 def test_translate():
     """
@@ -54,7 +84,7 @@ def test_translate():
         QueryTranslation(frame=6, sequence="PWH"),
     ]
 
-    query.translate()
+    query._translate()
     assert expected_translations == query.translations
 
     # 15nt query
@@ -78,5 +108,5 @@ def test_translate():
         QueryTranslation(frame=6, sequence="AIRC"),
     ]
 
-    query.translate()
+    query._translate()
     assert expected_translations == query.translations
