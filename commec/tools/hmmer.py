@@ -133,15 +133,12 @@ def get_frame_from_query_name(query_name_col: pd.DataFrame):
         * 4, 5, 6: Reverse frames, starting at positions 0, -1, -2
     """
     def extract_frame(name: str) -> int:
-        if '_' not in name:
-            warnings.warn(f"No frame found in '{name}', assuming frame 1")
-            return 1
         try:
-            frame = int(name.split('_')[-1])
+            frame = int(name[-1])
             if not 1 <= frame <= 6:
                 raise ValueError(f"Frame must be between 1 and 6! Invalid frame number {frame} in '{name}'")
             return frame
-        except ValueError as e:
+        except ValueError:
             warnings.warn(f"Could not parse frame from '{name}', assuming frame 1")
             return 1
             
@@ -196,6 +193,9 @@ def set_query_nt_coordinates(hmmer : pd.DataFrame):
     Recalculate the coordinates of the hmmer database , such that each translated frame
     reverts to original nucleotide coordinates.
     """
+    if 'frame' not in hmmer.columns:
+        hmmer["frame"] = get_frame_from_query_name(hmmer['query name'])
+
     query_start, query_end = convert_aa_to_nt_coordinates(
         hmmer["frame"],
         hmmer["ali from"],
