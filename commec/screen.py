@@ -64,7 +64,7 @@ from commec.config.screen_io import ScreenIO, ScreenConfig
 from commec.config.query import Query
 from commec.config.screen_tools import ScreenTools
 
-from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
+from commec.screeners.check_biorisk import check_biorisk, parse_biorisk_hits
 from commec.screeners.check_benign import check_for_benign, update_benign_data_from_database
 from commec.screeners.check_reg_path import (
     check_for_regulated_pathogens,
@@ -327,7 +327,7 @@ class Screen:
             self.database_tools.biorisk_hmm.out_file,
             self.database_tools.biorisk_hmm.db_directory
         )
-        update_biorisk_data_from_database(self.database_tools.biorisk_hmm, self.screen_data)
+        parse_biorisk_hits(self.database_tools.biorisk_hmm, self.screen_data)
 
     def screen_proteins(self):
         """

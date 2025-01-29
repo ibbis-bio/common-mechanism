@@ -3,10 +3,10 @@
 '''
    Set of containers for storing information important to screen
     outputs. Information is stored as a structure of dataclasses, and are
-    converted between the dataclass / dict / json_file as required (using json.py module). 
+    converted between the dataclass / dict / json_file as required (using json.py module).
 
-    The "annotations" dictionary, present in the HitResult, 
-    contains non-structured information, and is populated with differing information 
+    The "annotations" dictionary, present in the HitResult,
+    contains non-structured information, and is populated with differing information
     under differing keys depending on which step the information
     is derived (Biorisk, Taxonomy etc)
 
@@ -19,7 +19,7 @@
     which are made up of hits.
     Each hit derives from a Step, and has an associated recommendation.
     The Query's recommendation is the result of parsing all hitResults recommendations.
-    
+
     ScreenResult:
         [QueryResult]
             recommendation (per query)
@@ -80,8 +80,8 @@ class Recommendation(StrEnum):
         return self
 
 def compare(a : Recommendation, b : Recommendation):
-    """ 
-    Compare two recommendations, return the most important one. 
+    """
+    Compare two recommendations, return the most important one.
     """
     if a.importance > b.importance:
         return a
@@ -100,7 +100,7 @@ class ScreenStep(StrEnum):
 
 @dataclass
 class HitRecommendationContainer:
-    """ 
+    """
     Summarises the recommendation and step for a single Hit.
     Pairs a recommendation with a Screening step.
     """
@@ -143,7 +143,7 @@ class MatchRange:
 
 @dataclass
 class HitResult:
-    """ 
+    """
     Container for all information regarding a single hit with a range(s), to a single query.
     A Hit is any outcome from any step during Commec Screening, which can be mapped onto the Query.
     """
@@ -231,12 +231,12 @@ class QueryResult:
         if not existing_hit:
             self.hits[new_hit.name] = new_hit
             return False
-    
+
         hits_is_updated : bool = False
         for new_region in new_hit.ranges:
             is_unique_region = True
             for existing_region in existing_hit.ranges:
-                if (new_region.query_start == existing_region.query_start and 
+                if (new_region.query_start == existing_region.query_start and
                     new_region.query_end == existing_region.query_end):
                     is_unique_region = False
             if is_unique_region:
@@ -296,6 +296,24 @@ class ScreenResult:
     def format(self):
         ''' Format this ScreenResult as a json string to pass to a standard out if desired.'''
         return str(asdict(self))
+
+    def set_recommendation(self, step : ScreenStep, recommendation: Recommendation):
+        """
+        Set the recommendation for a specific screen step for all queries.
+        """
+        # Map ScreenStep to the corresponding attribute in QueryRecommendationContainer
+        step_to_field = {
+            ScreenStep.BIORISK: 'biorisk_screen',
+            ScreenStep.TAXONOMY_NT: 'nucleotide_taxonomy_screen',
+            ScreenStep.TAXONOMY_AA: 'protein_taxonomy_screen',
+            ScreenStep.BENIGN_PROTEIN: 'benign_screen',
+            ScreenStep.BENIGN_RNA: 'benign_screen',
+            ScreenStep.BENIGN_SYNBIO: 'benign_screen'
+        }
+        field_name = step_to_field.get(step)
+
+        for query in self.queries.values():
+            setattr(query.recommendation, field_name, recommendation)
 
     def get_query(self, query_name : str) -> QueryResult:
         """

@@ -29,8 +29,8 @@ from commec.config.result import (
 
 
 def _guess_domain(search_string : str) -> str:
-    """ 
-    Given a string description, try to determine 
+    """
+    Given a string description, try to determine
     which domain of life this has come from. Temporary work around
     until we can retrieve this data directly from biorisk outputs.
     """
@@ -50,33 +50,35 @@ def _guess_domain(search_string : str) -> str:
         return "Eukaryote"
     return "not assigned"
 
-def update_biorisk_data_from_database(search_handler : HmmerHandler, data : ScreenResult):
+def parse_biorisk_hits(search_handler : HmmerHandler, result : ScreenResult):
     """
-    Takes an input database, reads its outputs, and updates the input data to contain
-    biorisk hits from the database. Also requires passing of the biorisk annotations CSV file.
+    Parse the outputs of a biorisk search and update screen results.
+
     Inputs:
-        search : search_handle - The handler which has performed a search on a database.
-        data : ScreenResult - The ScreenResult to be updated with information from database, interpeted as Biorisks.
+        search_handler: The handler which has performed a biorisk search.
+        result : ScreenResult to be updated with information from biorisk search.
     """
-    # Check for annocations.csv, as well as whether the 
-    logging.debug("Directory: %s", search_handler.db_directory)
-    logging.debug("Directory/file: %s", search_handler.db_file)
-    hmm_folder_csv = os.path.join(search_handler.db_directory,"biorisk_annotations.csv")
-    if not os.path.exists(hmm_folder_csv):
-        logging.error("\t...biorisk_annotations.csv does not exist\n %s", hmm_folder_csv)
+
+    # Read annotations CSV
+    annotations_csv = os.path.join(search_handler.db_directory,"biorisk_annotations.csv")
+    if not os.path.exists(annotations_csv):
+        logging.error("\t...biorisk_annotations.csv does not exist\n %s", annotations_csv)
         return
+
+    # Confirm that search succeeded
     if not search_handler.check_output():
-        logging.error("\t...database output file does not exist\n %s", search_handler.out_file)
+        logging.error("\t...biorisk screening output doesn't exist:\n %s", search_handler.out_file)
+        result.set_recommendation(ScreenStep.BIORISK, Recommendation.ERROR)
         return
     if search_handler.is_empty(search_handler.out_file):
         logging.error("\t...ERROR: biorisk search results empty\n")
+        result.set_recommendation(ScreenStep.BIORISK, Recommendation.ERROR)
         return
 
-    for query in data.queries.values():
-        query.recommendation.biorisk_screen = Recommendation.PASS
+    result.set_recommendation(ScreenStep.BIORISK, Recommendation.PASS)
 
     if not search_handler.has_hits(search_handler.out_file):
-        return 0
+        return
 
     # Read in Output, and parse.
     hmmer : pd.DataFrame = readhmmer(search_handler.out_file)
@@ -85,7 +87,7 @@ def update_biorisk_data_from_database(search_handler : HmmerHandler, data : Scre
     hmmer = remove_overlaps(hmmer)
 
     # Read in annotations.
-    lookup : pd.DataFrame = pd.read_csv(hmm_folder_csv)
+    lookup : pd.DataFrame = pd.read_csv(annotations_csv)
     lookup.fillna(False, inplace=True)
 
     # Append description, and must_flag columns from annotations:
@@ -103,7 +105,7 @@ def update_biorisk_data_from_database(search_handler : HmmerHandler, data : Scre
 
         biorisk_overall : Recommendation = Recommendation.PASS
 
-        query_data = data.get_query(affected_query)
+        query_data = result.get_query(affected_query)
         if not query_data:
             logging.error("Query during hmmscan could not be found! [%s]", affected_query)
             continue
@@ -135,9 +137,9 @@ def update_biorisk_data_from_database(search_handler : HmmerHandler, data : Scre
                 continue
 
             regulation_str : str = "Regulated Gene" if must_flag else "Virulance Factor"
-            
+
             domain : str = _guess_domain(""+str(affected_target)+target_description)
-            
+
             new_hit : HitResult = HitResult(
                 HitRecommendationContainer(
                     target_recommendation,
