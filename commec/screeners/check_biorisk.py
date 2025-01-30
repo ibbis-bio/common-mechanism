@@ -131,7 +131,7 @@ def parse_biorisk_hits(search_handler : HmmerHandler, result : ScreenResult):
                 )
                 match_ranges.append(match_range)
 
-            target_recommendation = Recommendation.FLAG if must_flag > 0 else Recommendation.WARN
+            target_recommendation : Recommendation = Recommendation.FLAG if must_flag > 0 else Recommendation.WARN
 
             biorisk_overall = compare(target_recommendation, biorisk_overall)
 
@@ -140,8 +140,8 @@ def parse_biorisk_hits(search_handler : HmmerHandler, result : ScreenResult):
                 hit_data.ranges.extend(match_ranges)
                 continue
 
-            regulation_str = "Regulated Gene" if must_flag else "Virulence Factor"
-            domain = _guess_domain(""+str(target_name)+target_description)
+            regulation_str : str = "Regulated Gene" if must_flag else "Virulence Factor"
+            domain : str = _guess_domain("" + str(target_name) + target_description)
 
             new_hit : HitResult = HitResult(
                 HitRecommendationContainer(
@@ -222,35 +222,24 @@ def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str)
         return
 
     if sum(hmmer["Must flag"]) > 0:
-        for region in hmmer.index[hmmer["Must flag"] != 0]:
-            if hmmer["ali from"][region] > hmmer["qlen"][region]:
-                hmmer["ali from"][region] = divmod(hmmer["ali from"][region], hmmer["qlen"][region])[0]
-                hmmer["ali to"][region] = divmod(hmmer["ali to"][region], hmmer["qlen"][region])[0]
-            logging.info(
-                "\t\t --> Biorisks: Regulated gene in bases "
-                + str(hmmer["q. start"][region])
-                + " to "
-                + str(hmmer["q. end"][region])
-                + ": FLAG\n\t\t     Gene: "
-                + ", ".join(set(hmmer["description"][hmmer["Must flag"] == True]))
-                + "\n"
-            )
-
+        for region in hmmer.index[hmmer['Must flag'] != 0]:
+            if hmmer['ali from'][region] > hmmer['qlen'][region]:
+                hmmer['ali from'][region] = divmod(hmmer['ali from'][region], hmmer['qlen'][region])[0]
+                hmmer['ali to'][region] = divmod(hmmer['ali to'][region], hmmer['qlen'][region])[0]
+            logging.info("\t\t --> Biorisks: Regulated gene in bases " + str(hmmer['ali from'][region]) +
+                            " to " + str(hmmer['ali to'][region]) + 
+                            ": FLAG\n\t\t     Gene: " + 
+                            ", ".join(set(hmmer['description'][hmmer['Must flag'] == True])) + "\n")
     else:
         logging.info("\t\t --> Biorisks: Regulated genes not found, PASS\n")
         return 0
 
-    if sum(hmmer["Must flag"]) != hmmer.shape[0]:
-        for region in hmmer.index[hmmer["Must flag"] == 0]:
-            logging.info(
-                "\t\t --> Virulence factor found in bases "
-                + str(hmmer["q. start"][region])
-                + " to "
-                + str(hmmer["q. end"][region])
-                + ", WARNING\n\t\t     Gene: "
-                + ", ".join(set(hmmer["description"][hmmer["Must flag"] == False]))
-                + "\n"
-            )
+    if sum(hmmer['Must flag']) != hmmer.shape[0]:
+        for region in hmmer.index[hmmer['Must flag'] == 0]:
+            logging.info("\t\t --> Virulence factor found in bases " + str(hmmer['ali from'][region]) +
+                                " to " + str(hmmer['ali to'][region]) +
+                                ", WARNING\n\t\t     Gene: " +
+                                ", ".join(set(hmmer['description'][hmmer['Must flag'] == False])) + "\n")
 
     return 0
 
@@ -260,23 +249,12 @@ def main():
     Wrapper for parsing arguments direction to check_biorisk if called as main.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-i",
-        "--input",
-        dest="in_file",
-        required=True,
-        help="Input file - hmmscan output file",
-    )
-    parser.add_argument(
-        "-d",
-        "--database",
-        dest="db",
-        required=True,
-        help="HMM folder (must contain biorisk_annotations.csv)",
-    )
-    parser.add_argument(
-        "-o", "--out", dest="output_json", required=True, help="output_json_filepath"
-    )
+    parser.add_argument("-i","--input", dest="in_file",
+        required=True, help="Input file - hmmscan output file")
+    parser.add_argument("-d","--database", dest="db",
+        required=True, help="HMM folder (must contain biorisk_annotations.csv)")
+    parser.add_argument("-o","--out", dest="output_json",
+        required=True,help="output_json_filepath")
     args = parser.parse_args()
 
     # Set up logging

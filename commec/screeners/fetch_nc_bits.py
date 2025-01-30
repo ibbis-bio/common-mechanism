@@ -143,6 +143,7 @@ def calculate_noncoding_regions_per_query(protein_results, screen_parameters : S
     query_col = "query acc."
     nc_sequences = []
 
+    # TODO: update this logic; definitely based on old query structure
     for record in screen_parameters.query.seq_records:
         protein_matches_for_query = protein_matches[protein_matches[query_col] == record.name]
 
