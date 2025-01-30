@@ -99,7 +99,7 @@ def update_layout(fig, query_to_draw : QueryResult, stacks):
     fig.update_layout({
         # General layout properties
         'height': figure_base_height + (figure_stack_height * stacks),
-        'title': f"{query_to_draw.recommendation.commec_recommendation} :"
+        'title': f"{query_to_draw.recommendation.screen_status} :"
                  f" {query_to_draw.query}  ({query_to_draw.length} b.p.)",
         'barmode': 'overlay',
         'template': 'plotly_white',
@@ -198,7 +198,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
     graph_data = [
         {"label": query_to_draw.query[:25], 
          "label_verbose": query_to_draw.query, 
-         "outcome" : f"Commec Recommendation for this query: {query_to_draw.recommendation.commec_recommendation}",
+         "outcome" : f"Commec Recommendation for this query: {query_to_draw.recommendation.screen_status}",
          "outcome_verbose":"",
          "start": 0, "stop": query_to_draw.length, 
          "color" : CommecPalette.DK_BLUE, 
@@ -229,7 +229,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
                 {
                     "label" : hit.description[:25] + "...",
                     "label_verbose" : hit.description[:],
-                    "outcome" : f"{hit.recommendation.outcome} from {hit.recommendation.from_step}",
+                    "outcome" : f"{hit.recommendation.status} from {hit.recommendation.from_step}",
                     "outcome_verbose" : generate_outcome_string(query_to_draw, hit),
                     "start" : match.query_start,
                     "stop" : match.query_end,
