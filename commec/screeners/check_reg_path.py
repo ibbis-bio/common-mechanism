@@ -23,8 +23,8 @@ from commec.config.result import (
     ScreenResult,
     HitResult,
     ScreenStep,
-    Recommendation,
-    HitRecommendationContainer,
+    ScreenStatus,
+    HitScreenStatus,
     MatchRange,
     compare
 )
@@ -100,10 +100,10 @@ def update_taxonomic_data_from_database(
     # The default is to pass, its up to the data to over-write this.
     if step == ScreenStep.TAXONOMY_AA:
         for query in data.queries.values():
-            query.recommendation.protein_taxonomy_screen = Recommendation.PASS
+            query.recommendation.protein_taxonomy_status = ScreenStatus.PASS
     if step == ScreenStep.TAXONOMY_NT:
         for query in data.queries.values():
-            query.recommendation.nucleotide_taxonomy_screen = Recommendation.PASS
+            query.recommendation.nucleotide_taxonomy_status = ScreenStatus.PASS
 
     blast = read_blast(search_handle.out_file)
     blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)
@@ -190,7 +190,7 @@ def update_taxonomic_data_from_database(
                 non_reg_taxids = list(set(non_reg_taxids))
                 match_ranges = list(set(match_ranges))
 
-                recommendation : Recommendation = Recommendation.FLAG
+                recommendation : ScreenStatus = ScreenStatus.FLAG
 
                 # TODO: Currently, we recapitulate old behaviour,
                 # # " no top hit exclusive to a regulated pathogen: PASS" 
@@ -199,16 +199,16 @@ def update_taxonomic_data_from_database(
                 # the point is, this is where you do it.
 
                 if len(non_reg_taxids) > 0:
-                    recommendation = Recommendation.PASS
+                    recommendation = ScreenStatus.PASS
 
                 # Update the query level recommendation of this step.
                 if step == ScreenStep.TAXONOMY_AA:
-                    query_write.recommendation.protein_taxonomy_screen = compare(
-                        query_write.recommendation.protein_taxonomy_screen,
+                    query_write.recommendation.protein_taxonomy_status = compare(
+                        query_write.recommendation.protein_taxonomy_status,
                         recommendation)
                 if step == ScreenStep.TAXONOMY_NT:
-                    query_write.recommendation.nucleotide_taxonomy_screen = compare(
-                        query_write.recommendation.nucleotide_taxonomy_screen,
+                    query_write.recommendation.nucleotide_taxonomy_status = compare(
+                        query_write.recommendation.nucleotide_taxonomy_status,
                         recommendation)
 
                 regulation_dict = {"number_of_regulated_taxids" : str(len(reg_taxids)),
@@ -222,7 +222,7 @@ def update_taxonomic_data_from_database(
 
                 # Append our hit information to Screen data.
                 new_hit = HitResult(
-                    HitRecommendationContainer(
+                    HitScreenStatus(
                         recommendation,
                         step
                     ),
@@ -237,7 +237,7 @@ def update_taxonomic_data_from_database(
                     if write_hit:
                         write_hit.annotations["domain"] = domains # Always overwrite, better than our guess from biorisk.
                         write_hit.annotations["regulation"].append(regulation_dict)
-                        write_hit.recommendation.outcome = compare(write_hit.recommendation.outcome, recommendation)
+                        write_hit.recommendation.status = compare(write_hit.recommendation.status, recommendation)
 
 def main():
     parser = argparse.ArgumentParser()
