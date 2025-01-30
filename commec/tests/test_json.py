@@ -24,8 +24,8 @@ def test_screendata():
         queries= {
             "Query1":
             QueryResult(
-                query="Query1",
-                length=10,
+                query_name="Query1",
+                query_length=10,
                 sequence="ABCDEFGHIJ",
                 recommendation = QueryRecommendationContainer(),
                 hits = {

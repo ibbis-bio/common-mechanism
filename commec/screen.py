@@ -64,11 +64,11 @@ from commec.config.screen_io import ScreenIO, ScreenConfig
 from commec.config.query import Query
 from commec.config.screen_tools import ScreenTools
 
-from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
-from commec.screeners.check_benign import check_for_benign, update_benign_data_from_database
+from commec.screeners.check_biorisk import check_biorisk, parse_biorisk_hits
+from commec.screeners.check_benign import check_for_benign, parse_benign_hits
 from commec.screeners.check_reg_path import (
     check_for_regulated_pathogens,
-    update_taxonomic_data_from_database
+    parse_taxonomy_hits
 )
 from commec.tools.fetch_nc_bits import fetch_noncoding_regions
 
@@ -237,10 +237,10 @@ class Screen:
         # Initialize the queries
         self.queries = self.screen_io.parse_input_fasta()
         for query in self.queries.values():
-            query.translate(self.screen_io.nt_path, self.screen_io.aa_path)
-            self.screen_data.queries[query.name] = QueryResult(query.original_name,
-                                                    len(query.seq_record),
-                                                    str(query.seq_record.seq))
+            query.translate(self.screen_io.aa_path)
+            self.screen_data.queries[query.name] = QueryResult(
+                query.name, query.length, query.sequence
+            )
                           
         
         # Initialize the version info for all the databases
@@ -316,8 +316,6 @@ class Screen:
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
 
-
-
     def screen_biorisks(self):
         """
         Call hmmscan` and `check_biorisk.py` to add biorisk results to `screen_file`.
@@ -329,7 +327,7 @@ class Screen:
             self.database_tools.biorisk_hmm.out_file,
             self.database_tools.biorisk_hmm.db_directory
         )
-        update_biorisk_data_from_database(self.database_tools.biorisk_hmm, self.screen_data)
+        parse_biorisk_hits(self.database_tools.biorisk_hmm, self.screen_data)
 
     def screen_proteins(self):
         """
@@ -360,7 +358,7 @@ class Screen:
             str(self.screen_io.config.threads),
         )
 
-        update_taxonomic_data_from_database(self.database_tools.regulated_protein,
+        parse_taxonomy_hits(self.database_tools.regulated_protein,
                                             self.database_tools.benign_taxid_path,
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
@@ -408,7 +406,7 @@ class Screen:
             self.screen_io.db_dir,
             str(self.screen_io.config.threads),
         )
-        update_taxonomic_data_from_database(self.database_tools.regulated_nt,
+        parse_taxonomy_hits(self.database_tools.regulated_nt,
                                             self.database_tools.benign_taxid_path,
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
@@ -451,7 +449,7 @@ class Screen:
         # in future parse, and grab from search handler instead.
         check_for_benign(sample_name, coords, benign_desc)
 
-        update_benign_data_from_database(
+        parse_benign_hits(
             self.database_tools.benign_hmm,
             self.database_tools.benign_cmscan,
             self.database_tools.benign_blastn,

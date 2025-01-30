@@ -6,10 +6,14 @@ Additional methods for reading hmmscan output, readhmmer, which returns a pandas
 Instantiate a HmmerHandler, with input local database, input fasta, and output file.
 Throws if inputs are invalid. Creates a temporary log file, which is deleted on completion.
 """
+
 import re
 import subprocess
 import pandas as pd
+import itertools
+import warnings
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
+from commec.utils.coordinates import convert_aa_to_nt_coordinates
 
 
 class HmmerHandler(SearchHandler):
@@ -63,7 +67,6 @@ class HmmerHandler(SearchHandler):
             )
             tool_info: str = tool_version_result.stdout.splitlines()[1].strip()
             return SearchToolVersion(tool_info, database_info)
-
         except subprocess.CalledProcessError:
             return None
 
@@ -117,32 +120,96 @@ def readhmmer(fileh):
     hmmer["ali from"] = pd.to_numeric(hmmer["ali from"])
     hmmer["ali to"] = pd.to_numeric(hmmer["ali to"])
     hmmer["qlen"] = pd.to_numeric(hmmer["qlen"])
+    hmmer["frame"] = get_frame_from_query_name(hmmer["query name"])
+
     return hmmer
 
-def trimhmmer(hmmer):
-    """
-    Trim hmmer files.
 
-    Don't forget this is a report on 6-frame translations so coordinates will be complicated.
+def get_frame_from_query_name(query_name_col: pd.DataFrame):
     """
-    # rank hits by bitscore
-    hmmer = hmmer.sort_values(by=["score"], ascending=False)
-    #     hmmer = hmmer.drop_duplicates(subset=['query acc.', 'q. start', 'q. end'], keep='first', ignore_index=True)
+    We assume that hmmer queries are named with an '_frame' suffix, since that's how we
+    store translations of nucleotides.
 
-    hmmer2 = hmmer
-    # only keep  top ranked hits that don't overlap
+    Frame numbers follow the same naming convention as transeq:
+        * 1, 2, 3: Forward frames starting at positions 0, 1, 2
+        * 4, 5, 6: Reverse frames, starting at positions 0, -1, -2
+    """
+
+    def extract_frame(name: str) -> int:
+        try:
+            frame = int(name[-1])
+            if not 1 <= frame <= 6:
+                raise ValueError(
+                    f"Frame must be between 1 and 6! Invalid frame number {frame} in '{name}'"
+                )
+            return frame
+        except (ValueError, IndexError):
+            warnings.warn(f"Could not parse frame from '{name}', assuming frame 1")
+            return 1
+
+    return query_name_col.apply(extract_frame)
+
+
+def remove_overlaps(hmmer: pd.DataFrame) -> pd.DataFrame:
+    """
+    Trims verbosity of a HMMER output, by removing weaker hits which are
+    encompassed in their extent by higher scoring hits.
+
+    Note, works to trim nucleotide coordinates relative to the query,
+    not ali from and ali to from the HMMER itself.
+
+    This means it can be used on any DataFrame with the q. start and q. end NT headings.
+    (Consider moving to a general coordinates tool function?)
+
+    """
+    # Make sure q. start and q.end nucleotide coordinates are up to date
+    set_query_nt_coordinates(hmmer)
+    trimmed_hmmer = (
+        hmmer  # Direct Assignment, reassigned later with .drop() for deep-copy.
+    )
+
+    # Ensure all logic is performed per unique Query name.
     for query in hmmer["query name"].unique():
-        df = hmmer[hmmer["query name"] == query]
-        for i in df.index:
-            for j in df.index[(i + 1) :]:
-                if (
-                    df.loc[i, "ali from"] <= df.loc[j, "ali from"]
-                    and df.loc[i, "ali to"] >= df.loc[j, "ali to"]
-                ) | (
-                    df.loc[i, "ali from"] >= df.loc[j, "ali from"]
-                    and df.loc[i, "ali to"] <= df.loc[j, "ali to"]
-                ):
-                    if j in hmmer2.index:
-                        hmmer2 = hmmer2.drop([j])
-        hmmer2 = hmmer2.reset_index(drop=True)
-    return hmmer2
+        hmmer_for_query = hmmer[hmmer["query name"] == query]
+        sorted_values = hmmer_for_query.sort_values(by=["score"], ascending=False)
+
+        for i, j in itertools.combinations(sorted_values.index, 2):
+            # If J is encapsulated:
+            if (
+                sorted_values.loc[i, "q. start"] <= sorted_values.loc[j, "q. start"]
+                and sorted_values.loc[i, "q. end"] >= sorted_values.loc[j, "q. end"]
+                and sorted_values.loc[i, "score"] >= sorted_values.loc[j, "score"]
+            ):
+                if j in trimmed_hmmer.index:
+                    trimmed_hmmer = trimmed_hmmer.drop([j])
+                    continue
+            # If I is encapsulated:
+            if (
+                sorted_values.loc[i, "q. start"] >= sorted_values.loc[j, "q. start"]
+                and sorted_values.loc[i, "q. end"] <= sorted_values.loc[j, "q. end"]
+                and sorted_values.loc[i, "score"] <= sorted_values.loc[j, "score"]
+            ):
+                if i in trimmed_hmmer.index:
+                    trimmed_hmmer = trimmed_hmmer.drop([i])
+
+    # Tidy the output indices.
+    trimmed_hmmer = trimmed_hmmer.reset_index(drop=True)
+
+    return trimmed_hmmer
+
+
+def set_query_nt_coordinates(hmmer: pd.DataFrame):
+    """
+    Add (or recalculate) 'q. start' and 'q. end' columns to the dataframe. For each
+    Recalculate the coordinates of the hmmer database , such that each translated frame
+    reverts to original nucleotide coordinates.
+    """
+    if "frame" not in hmmer.columns:
+        hmmer["frame"] = get_frame_from_query_name(hmmer["query name"])
+
+    query_start, query_end = convert_aa_to_nt_coordinates(
+        hmmer["frame"], hmmer["ali from"], hmmer["ali to"], hmmer["nt len"]
+    )
+
+    hmmer["q. start"] = pd.Series(query_start, dtype="int64")
+    hmmer["q. end"] = pd.Series(query_end, dtype="int64")
