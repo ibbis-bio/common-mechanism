@@ -162,16 +162,10 @@ def _get_nt_len_from_query(hmmer: pd.DataFrame, result: ScreenResult) -> pd.Seri
     query is found, use qlen * 3 (may lead to off-by-1 or off-by-2 errors depending on frames)
     """
     matched_queries = hmmer['query name'].apply(result.get_query)
-    return matched_queries.where(
-        matched_queries.notna(),
-        hmmer['qlen'] * 3
-    ).apply(lambda x: getattr(x, 'query_length', x))
-    # matched_queries = hmmer['query name'].apply(result.get_query)
-    # is_matched = matched_queries.notna()
-    # # Use the query length where matches were found
-    # hmmer.loc[is_matched, 'nt len'] = matched_queries[is_matched].apply(lambda x: x.query_length)
-    # # If no match, use qlen * 3
-    # hmmer.loc[~is_matched, 'nt len'] = hmmer.loc[~is_matched, 'qlen'] * 3
+    # Get query length where matches were found
+    lengths = matched_queries.apply(lambda x: getattr(x, 'query_length', None))
+    # If no match, use qlen * 3
+    return lengths.where(lengths.notna(), hmmer['qlen'] * 3)
 
 def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str):
     """

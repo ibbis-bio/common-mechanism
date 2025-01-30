@@ -44,26 +44,23 @@ expected_hmmer = pd.DataFrame(
 )
 
 # Second test - two hits with equal scores
-hmmer_with_equal_overlaps = pd.DataFrame({
-    "query name": ["one", "one"],
-    "q. start": [10, 10],
-    "q. end": [50, 50],
-    "score": [5, 5]
-})
-expected_hmmer_with_equal = pd.DataFrame({
-    "query name": ["one"],
-    "q. start": [10],
-    "q. end": [50],
-    "score": [5]
-})
+hmmer_with_equal_overlaps = pd.DataFrame(
+    {
+        "query name": ["one", "one"],
+        "q. start": [10, 10],
+        "q. end": [50, 50],
+        "score": [5, 5],
+    }
+)
+expected_hmmer_with_equal = pd.DataFrame(
+    {"query name": ["one"], "q. start": [10], "q. end": [50], "score": [5]}
+)
 
 # Third test - only a single hit
-hmmer_with_single_hit = pd.DataFrame({
-    "query name": ["one"],
-    "q. start": [10],
-    "q. end": [50],
-    "score": [5]
-})
+hmmer_with_single_hit = pd.DataFrame(
+    {"query name": ["one"], "q. start": [10], "q. end": [50], "score": [5]}
+)
+
 
 @pytest.mark.parametrize(
     "input_hmmer, expected_output_hmmer",
@@ -122,9 +119,10 @@ def test_set_query_coordinates():
             "frame": [1, 2, 3, 4, 5, 6, 6],
             "ali from": [1, 2, 3, 1, 2, 3, 4],
             "ali to": [4, 5, 6, 4, 5, 6, 4],
-            "qlen": [10, 10, 10, 10, 10, 10, 10],
+            "qlen": [10, 9, 9, 10, 9, 9, 9],
+            "nt len": [30, 30, 30, 30, 30, 30, 30],
         }
-    ) # TODO: qlen should be as it was, but add seq_len
+    )
 
     hmmer_with_query_coords = pd.DataFrame(
         {
@@ -132,7 +130,8 @@ def test_set_query_coordinates():
             "frame": [1, 2, 3, 4, 5, 6, 6],
             "ali from": [1, 2, 3, 1, 2, 3, 4],
             "ali to": [4, 5, 6, 4, 5, 6, 4],
-            "qlen": [10, 10, 10, 10, 10, 10, 10],
+            "qlen": [10, 9, 9, 10, 9, 9, 9],
+            "nt len": [30, 30, 30, 30, 30, 30, 30],
             "q. start": [1, 5, 9, 19, 14, 12, 18],
             "q. end": [12, 16, 20, 30, 25, 23, 20],
         }
