@@ -11,7 +11,7 @@ import os
 import sys
 import argparse
 import pandas as pd
-from commec.tools.hmmer import readhmmer, trimhmmer, HmmerHandler
+from commec.tools.hmmer import readhmmer, remove_overlaps, recalculate_hmmer_query_coordinates, HmmerHandler
 from commec.config.result import (
     ScreenResult,
     HitResult,
@@ -78,7 +78,9 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
     hmmer : pd.DataFrame = readhmmer(search_handle.out_file)
     keep1 = [i for i, x in enumerate(hmmer['E-value']) if x < 1e-20]
     hmmer = hmmer.iloc[keep1,:]
-    hmmer = trimhmmer(hmmer)
+    
+    recalculate_hmmer_query_coordinates(hmmer)
+    hmmer = remove_overlaps(hmmer)
 
     # Read in annotations.
     lookup : pd.DataFrame = pd.read_csv(hmm_folder_csv)
@@ -180,11 +182,16 @@ def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str)
         return 0
 
     hmmer = readhmmer(hmmscan_input_file)
-    keep1 = [i for i, x in enumerate(hmmer['E-value']) if x < 1e-20]
-    hmmer = hmmer.iloc[keep1,:]
-    hmmer = trimhmmer(hmmer)
-    hmmer['description'] = ''
-    hmmer['Must flag'] = False
+
+    keep1 = [i for i, x in enumerate(hmmer["E-value"]) if x < 1e-20]
+    hmmer = hmmer.iloc[keep1, :]
+
+    # Recalculate hit ranges into query based nucleotide coordinates, and trim overlaps.
+    recalculate_hmmer_query_coordinates(hmmer)
+    hmmer = remove_overlaps(hmmer)
+
+    hmmer["description"] = ""
+    hmmer["Must flag"] = False
     hmmer = hmmer.reset_index(drop=True)
 
     for model in range(hmmer.shape[0]):
@@ -194,29 +201,42 @@ def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str)
 
     if hmmer.shape[0] == 0:
         logging.info("\t\t --> Biorisks: no significant hits detected, PASS\n")
-        return 0
-    
-    if sum(hmmer['Must flag']) == 0:
+        return
+
+    if sum(hmmer["Must flag"]) > 0:
+        for region in hmmer.index[hmmer["Must flag"] != 0]:
+            if hmmer["ali from"][region] > hmmer["qlen"][region]:
+                hmmer["ali from"][region] = divmod(
+                    hmmer["ali from"][region], hmmer["qlen"][region]
+                )[0]
+                hmmer["ali to"][region] = divmod(
+                    hmmer["ali to"][region], hmmer["qlen"][region]
+                )[0]
+            logging.info(
+                "\t\t --> Biorisks: Regulated gene in bases "
+                + str(hmmer["q. start"][region])
+                + " to "
+                + str(hmmer["q. end"][region])
+                + ": FLAG\n\t\t     Gene: "
+                + ", ".join(set(hmmer["description"][hmmer["Must flag"] == True]))
+                + "\n"
+            )
+
+    else:
         logging.info("\t\t --> Biorisks: Regulated genes not found, PASS\n")
         return 0
 
-    if sum(hmmer['Must flag']) > 0:
-        for region in hmmer.index[hmmer['Must flag'] != 0]:
-            if hmmer['ali from'][region] > hmmer['qlen'][region]:
-                hmmer['ali from'][region] = divmod(hmmer['ali from'][region], hmmer['qlen'][region])[0]
-                hmmer['ali to'][region] = divmod(hmmer['ali to'][region], hmmer['qlen'][region])[0]
-
-            logging.info("\t\t --> Biorisks: Regulated gene in bases " + str(hmmer['ali from'][region]) +
-                            " to " + str(hmmer['ali to'][region]) + 
-                            ": FLAG\n\t\t     Gene: " + 
-                            ", ".join(set(hmmer['description'][hmmer['Must flag'] == True])) + "\n")
-
-    if sum(hmmer['Must flag']) != hmmer.shape[0]:
-        for region in hmmer.index[hmmer['Must flag'] == 0]:
-            logging.info("\t\t --> Virulence factor found in bases " + str(hmmer['ali from'][region]) +
-                                " to " + str(hmmer['ali to'][region]) +
-                                ", WARNING\n\t\t     Gene: " +
-                                ", ".join(set(hmmer['description'][hmmer['Must flag'] == False])) + "\n")
+    if sum(hmmer["Must flag"]) != hmmer.shape[0]:
+        for region in hmmer.index[hmmer["Must flag"] == 0]:
+            logging.info(
+                "\t\t --> Virulence factor found in bases "
+                + str(hmmer["q. start"][region])
+                + " to "
+                + str(hmmer["q. end"][region])
+                + ", WARNING\n\t\t     Gene: "
+                + ", ".join(set(hmmer["description"][hmmer["Must flag"] == False]))
+                + "\n"
+            )
 
     return 0
 
