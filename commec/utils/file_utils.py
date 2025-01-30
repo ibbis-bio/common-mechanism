@@ -7,7 +7,6 @@ Static functions useful for dealing with common file parsing tasks.
 import argparse
 import os
 
-
 # Below go to config parameters.
 @staticmethod
 def directory_arg(path):
@@ -15,7 +14,6 @@ def directory_arg(path):
     if not os.path.isdir(path):
         raise argparse.ArgumentTypeError(f"{path} is not a valid directory path")
     return path
-
 
 @staticmethod
 def file_arg(path):

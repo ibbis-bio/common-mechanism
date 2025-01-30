@@ -2,7 +2,6 @@
 Unit test for ensuring that the databases are being called without errors.
 Will fail if databases have not been installed as expected, with correct versions.
 """
-
 import os
 import pytest
 from commec.tools.diamond import DiamondHandler

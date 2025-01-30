@@ -21,7 +21,6 @@ class SearchToolVersion:
 class DatabaseValidationError(Exception):
     """Custom exception for database validation errors."""
 
-
 class SearchHandler(ABC):
     """
     Abstract class defining tool interface including a database directory / file to search, an input
@@ -97,6 +96,12 @@ class SearchHandler(ABC):
         """
         Use a tool to search the input query against a database.
         Should be implemented by all subclasses to perform the actual search against the database.
+        """
+
+    @abstractmethod
+    def read_output(self):
+        """
+        Returns the output of the handler in the form of a pandas dataframe.
         """
 
     @abstractmethod

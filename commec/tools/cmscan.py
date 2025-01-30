@@ -26,6 +26,21 @@ class CmscanHandler(SearchHandler):
             self.input_file,
         ]
         self.run_as_subprocess(command, self.temp_log_file)
+    
+    def read_output(self):
+        output_dataframe = readcmscan(self.out_file)
+        # Standardize the output column names to be like blast:
+        output_dataframe = output_dataframe.rename(columns={
+            "seq from": "q. start",
+            "seq to": "q. end",
+            "coverage": "q. coverage",
+            "target name": "subject title",
+            "mdl from": "s. start",
+            "mdl to" : "s. end",
+            'E-value': "evalue",
+        })
+        return output_dataframe
+ 
 
     def get_version_information(self) -> SearchToolVersion:
         try:
@@ -33,7 +48,7 @@ class CmscanHandler(SearchHandler):
             with open(self.db_file, "r", encoding="utf-8") as file:
                 for line in file:
                     if line.startswith("INFERNAL1/a"):
-                        database_info = line.split("[", maxsplit=1)
+                        database_info = line.strip()
                         continue
                     # Early exit if data has been found
                     if database_info:

@@ -1,57 +1,60 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
-"""
-Container class to hold information pertaining to queries from an input fasta file,
-as well as derived information, such as translated sequences, whether or not
-the query was derived from AA or NT.
-"""
-
+# Copyright (c) 2021-2025 International Biosecurity and Biosafety Initiative for Science
 import os
 import subprocess
+from Bio.SeqRecord import SeqRecord
 
 
 class Query:
     """
-    Query to screen, based on an input FASTA. Self-calculates AA version.
-    Future direction to back translate to NT when given AA too.
+    A query to screen. Contains a sequence record and derived information, such
+    as translated sequences.
+
+    At present, we only support nucleotide queries, though we may add suport for
+    amino acid queries in future.
     """
 
-    def __init__(self, input_fasta_filepath: str):
-        self.input_fasta_path = input_fasta_filepath
-        self.nt_path: str = ""
-        self.aa_path: str = ""
+    def __init__(self, seq_record: SeqRecord):
+        Query.validate_sequence_record(seq_record)
+        self.original_name = seq_record.id
+        self.name = self.create_id(seq_record.id)
+        self.seq_record = seq_record
 
-    def setup(self, output_prefix: str):
-        """
-        Translate or reverse translate query, to be ready in AA or NT format.
-        """
-        self.nt_path = self.get_cleaned_fasta(output_prefix)
-        self.aa_path = f"{output_prefix}.transeq.faa"
-
-    def translate_query(self):
+    def translate(self, input_path, output_path) -> None:
         """Run command transeq, to translate our input sequences."""
-        command = ["transeq", self.nt_path, self.aa_path, "-frame", "6", "-clean"]
-        result = subprocess.run(command, check=True)
+
+        # TODO: Update line 53-55 of Check_Benign, to ensure that the query filter is using
+        # The correct name, when filtering benign components.
+        command = ["transeq", input_path, output_path, "-frame", "6", "-clean"]
+        result = subprocess.run(command)
         if result.returncode != 0:
             raise RuntimeError(
-                "Input FASTA {fasta_to_screen} could not be translated:\n{result.stderr}"
+                f"Input FASTA {input_path} could not be translated:\n{result.stderr}"
             )
 
-    def get_cleaned_fasta(self, out_prefix):
+    @staticmethod
+    def validate_sequence_record(seq_record: SeqRecord) -> None:
         """
-        Return a FASTA where whitespace (including non-breaking spaces) and illegal characters are
-        replaced with underscores.
+        Validate record has non-empty sequence and id. Raises QueryError.
         """
-        cleaned_file = f"{out_prefix}.cleaned.fasta"
-        with (
-            open(self.input_fasta_path, "r", encoding="utf-8") as fin,
-            open(cleaned_file, "w", encoding="utf-8") as fout,
-        ):
-            for line in fin:
-                line = line.strip()
-                modified_line = "".join(
-                    "_" if c.isspace() or c == "\xc2\xa0" or c == "#" else c
-                    for c in line
-                )
-                fout.write(f"{modified_line}{os.linesep}")
-        return cleaned_file
+        if not seq_record.id:
+            raise QueryValueError(
+                "Could not initialize query with an empty sequence id. Is input FASTA valid?"
+            )
+
+        if not seq_record.seq:
+            raise QueryValueError(
+                f"Could not initialize query with id {seq_record.id} because sequence was empty."
+                " Is input FASTA valid?"
+            )
+
+    @staticmethod
+    def create_id(name : str) -> str:
+        """
+        Parse the Fasta SeqRecord string ID into a 25 digit maximum Unique Identification.
+        For internal Commec Screen Use only.
+        """
+        return name[:25] if len(name) > 24 else name
+
+class QueryValueError(ValueError):
+    """Custom exception for errors when validating a `Query`."""

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Interactive Plotly Figures</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column; /* Changed to column to stack figures vertically */
+            height: 100vh;
+            overflow: auto; /* Enable scrolling for the container */
+        }
+
+        .figure {
+            padding: 10px;
+            margin-bottom: 20px; /* Space between figures */
+        }
+
+        .figure:nth-child(even) {
+            background-color: #f0f0f0; /* Light grey background for even figures */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        % for fig_html in figures_html:
+            <div class="figure">
+                ${fig_html | n}
+            </div>
+        % endfor
+    </div>
+</body>
+</html>

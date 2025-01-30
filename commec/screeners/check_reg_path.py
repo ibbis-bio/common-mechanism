@@ -17,9 +17,226 @@ import textwrap
 import pandas as pd
 from commec.tools.blast_tools import read_blast, get_taxonomic_labels, get_top_hits
 from commec.tools.blastn import BlastNHandler
+from commec.tools.search_handler import SearchHandler
+from commec.config.result import (
+    ScreenResult,
+    HitResult,
+    ScreenStep,
+    Recommendation,
+    HitRecommendationContainer,
+    MatchRange,
+    compare
+)
 
 pd.set_option("display.max_colwidth", 10000)
 
+
+def _check_inputs(
+        search_handle : SearchHandler,
+        benign_taxid_path : str | os.PathLike,
+        biorisk_taxid_path : str | os.PathLike,
+        taxonomy_directory : str | os.PathLike
+        ):
+    """ 
+    Simply check for the existance of files, 
+    returns True if it is safe to continue. 
+    """
+    # check input files
+    if not search_handle.check_output():
+        logging.info("\t...ERROR: Taxonomic search results empty\n %s", search_handle.out_file)
+        return False
+
+    if not os.path.exists(benign_taxid_path):
+        logging.error("\t...benign db file %s does not exist\n", benign_taxid_path)
+        return False
+
+    if not os.path.exists(biorisk_taxid_path):
+        logging.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
+        return False
+    
+    if not os.path.exists(taxonomy_directory):
+        logging.error("\t...taxonomy directory %s does not exist\n", taxonomy_directory)
+        return False
+
+    if search_handle.is_empty(search_handle.out_file):
+        logging.info("\tERROR: Homology search has failed\n")
+        return False
+
+    if not search_handle.has_hits(search_handle.out_file):
+        logging.info("\t...no hits\n")
+        return False
+    
+    return True
+
+def update_taxonomic_data_from_database(
+        search_handle : SearchHandler,
+        benign_taxid_path : str | os.PathLike,
+        biorisk_taxid_path : str | os.PathLike,
+        taxonomy_directory : str | os.PathLike,
+        data : ScreenResult,
+        step : ScreenStep,
+        n_threads : int
+        ):
+    """
+    Given a Taxonomic database screen output, update the screen data appropriately.
+        search_handle : The handle of the search tool used to screen taxonomic data.
+        benign/biorisk_handlers : Only used to determine the location of taxid related information
+        taxonomy_directory : The location of taxonomy.
+        data : the Screen data object, to be updated.
+        step : Which taxonomic step this is (Nucleotide, Protein, etc)
+        n_threads : maximum number of available threads for allocation.
+    """
+    logging.debug("Acquiring Taxonomic Data for JSON output:")
+
+    if not _check_inputs(search_handle, benign_taxid_path, 
+                         biorisk_taxid_path, taxonomy_directory):
+        return 1
+
+    # Read in lists of regulated and benign tax ids
+    vax_taxids = pd.read_csv(benign_taxid_path, header=None).squeeze().astype(str).tolist()
+    reg_taxids = pd.read_csv(biorisk_taxid_path, header=None).squeeze().astype(str).tolist()
+
+    # The default is to pass, its up to the data to over-write this.
+    if step == ScreenStep.TAXONOMY_AA:
+        for query in data.queries.values():
+            query.recommendation.protein_taxonomy_screen = Recommendation.PASS
+    if step == ScreenStep.TAXONOMY_NT:
+        for query in data.queries.values():
+            query.recommendation.nucleotide_taxonomy_screen = Recommendation.PASS
+
+    blast = read_blast(search_handle.out_file)
+    blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)
+    blast = blast[blast["species"] != ""]  # ignore submissions made above the species level
+
+    # label each base with the top matching hit, but include different taxids attributed to same hit
+    top_hits = get_top_hits(blast)
+
+    if top_hits["regulated"].sum() == 0:
+        logging.info("\t...no regulated hits\n")
+        return 0
+
+    # if ANY of the trimmed hits are regulated
+    with pd.option_context('display.max_rows', None,
+                    'display.max_columns', None,
+                    'display.precision', 3,
+                    ):
+
+        unique_queries = top_hits['query acc.'].unique()
+
+        for query in unique_queries:
+            query_write = data.get_query(query)
+            if not query_write:
+                logging.debug("Query during %s could not be found! [%s]", str(step), query)
+                continue
+
+            unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
+            unique_query_data.dropna(subset = ['species'])
+            regulated_only_data = unique_query_data[unique_query_data["regulated"] == True]
+            regulated_hits = regulated_only_data['subject acc.'].unique()
+
+            for hit in regulated_hits:
+                regulated_hit_data : pd.DataFrame = regulated_only_data[regulated_only_data["subject acc."] == hit]
+                hit_description = regulated_hit_data['subject title'].values[0]
+
+                n_regulated_bacteria = 0
+                n_regulated_virus = 0
+                n_regulated_eukaryote = 0
+                
+                reg_taxids = [] # Regulated Taxonomy IDS
+                non_reg_taxids = [] # Non-regulated Taxonomy IDS.
+                reg_species = [] # List of species
+                domains = [] # List of domains.
+                match_ranges = [] # Ranges where hit matches query.
+
+                for _, region in regulated_hit_data.iterrows():
+                    match_range = MatchRange(
+                        float(region['evalue']),
+                        int(region['s. start']), int(region['s. end']),
+                        int(region['q. start']), int(region['q. end'])
+                    )
+                    match_ranges.append(match_range)
+
+                    # Filter shared_site based on 'q. start' or 'q. end' (Previously only shared starts were used)
+                    shared_site = top_hits[(top_hits['q. start'] == region['q. start']) | (top_hits['q. end'] == region['q. end'])]
+
+                    # Filter for regulated and non-regulated entries
+                    regulated = shared_site[shared_site["regulated"] == True]
+                    non_regulated = shared_site[shared_site["regulated"] == False]
+
+                    # Count domain information.
+                    domain = region['superkingdom']
+                    if domain == "Viruses":
+                        n_regulated_virus += 1
+                    if domain == "Bacteria":
+                        n_regulated_bacteria +=1
+                    if domain == "Eukaryota":
+                        n_regulated_eukaryote+=1
+                    domains.append(domain)
+
+                    # Collect unique species from both regulated and non-regulated
+                    reg_species.extend(regulated["species"])
+                    # JSON serialization requires int, not np.int64, hence the map()
+                    reg_taxids.extend(map(str, regulated["subject tax ids"]))
+                    non_reg_taxids.extend(map(str, non_regulated["subject tax ids"]))
+
+                    # These are the old values, now we simply count the size of the regulated, and non_regulated taxid arrays.
+                    #n_reg += (top_hits["regulated"][top_hits['q. start'] == region['q. start']] != False).sum()
+                    #n_total += len(top_hits["regulated"][top_hits['q. start'] == region['q. start']])
+
+                # Uniquefy.
+                reg_species = list(set(reg_species))
+                reg_taxids = list(set(reg_taxids))
+                non_reg_taxids = list(set(non_reg_taxids))
+                match_ranges = list(set(match_ranges))
+
+                recommendation : Recommendation = Recommendation.FLAG
+
+                # TODO: Currently, we recapitulate old behaviour,
+                # # " no top hit exclusive to a regulated pathogen: PASS" 
+                #  however in the future:
+                # if all hits are in the same genus n_reg > 0, and n_total > n_reg, WARN, or other logic.
+                # the point is, this is where you do it.
+
+                if len(non_reg_taxids) > 0:
+                    recommendation = Recommendation.PASS
+
+                # Update the query level recommendation of this step.
+                if step == ScreenStep.TAXONOMY_AA:
+                    query_write.recommendation.protein_taxonomy_screen = compare(
+                        query_write.recommendation.protein_taxonomy_screen,
+                        recommendation)
+                if step == ScreenStep.TAXONOMY_NT:
+                    query_write.recommendation.nucleotide_taxonomy_screen = compare(
+                        query_write.recommendation.nucleotide_taxonomy_screen,
+                        recommendation)
+
+                regulation_dict = {"number_of_regulated_taxids" : str(len(reg_taxids)),
+                                   "number_of_unregulated_taxids" : str(len(non_reg_taxids)),
+                                   "regulated_eukaryotes": str(n_regulated_eukaryote),
+                                   "regulated_bacteria": str(n_regulated_bacteria),
+                                   "regulated_viruses": str(n_regulated_virus),
+                                   "regulated_taxids": reg_taxids,
+                                   "non_regulated_taxids" : non_reg_taxids,
+                                   "regulated_species" : reg_species}
+
+                # Append our hit information to Screen data.
+                new_hit = HitResult(
+                    HitRecommendationContainer(
+                        recommendation,
+                        step
+                    ),
+                    hit,
+                    hit_description,
+                    match_ranges,
+                    {"domain" : [domain],"regulation":[regulation_dict]},
+                )
+
+                if query_write.add_new_hit_information(new_hit):
+                    write_hit = query_write.get_hit(hit)
+                    if write_hit:
+                        write_hit.annotations["domain"] = domains # Always overwrite, better than our guess from biorisk.
+                        write_hit.annotations["regulation"].append(regulation_dict)
+                        write_hit.recommendation.outcome = compare(write_hit.recommendation.outcome, recommendation)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -54,7 +271,6 @@ def main():
 
     exit_code = check_for_regulated_pathogens(args.in_file, args.db, args.threads)
     sys.exit(exit_code)
-
 
 def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_threads: int):
     """
