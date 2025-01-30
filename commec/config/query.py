@@ -11,12 +11,6 @@ class Query:
     A query to screen. Contains a sequence record and derived information, such
     as translated sequences.
 
-    Attributes / Properties:
-        sequence (str): the sequence to use as a query
-        name (str): unique name of the query
-        length (int): length of the query sequence
-        translations (list[QueryTranslation]): translations of the query
-
     At present, we only support nucleotide queries, though we may add suport for
     amino acid queries in future.
     """

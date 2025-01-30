@@ -12,12 +12,7 @@ import os
 import sys
 import argparse
 import pandas as pd
-from commec.config.constants import BIORISK_E_VALUE_THRESHOLD
-from commec.tools.hmmer import (
-    readhmmer,
-    remove_overlaps,
-    HmmerHandler,
-)
+from commec.tools.hmmer import readhmmer, remove_overlaps, HmmerHandler
 from commec.config.result import (
     ScreenResult,
     HitResult,
@@ -28,6 +23,8 @@ from commec.config.result import (
     compare
 )
 
+# Constants determining Commec's sensitivity for biorisk screen.
+BIORISK_E_VALUE_CUTOFF : float = 1e-20
 
 def _guess_domain(search_string : str) -> str:
     """
@@ -59,6 +56,9 @@ def parse_biorisk_hits(search_handler : HmmerHandler, result : ScreenResult):
         search_handler: The handler which has performed a biorisk search.
         result : ScreenResult to be updated with information from biorisk search.
     """
+    # Check for annocations.csv, as well as whether the 
+    logging.debug("Directory: %s", search_handler.db_directory)
+    logging.debug("Directory/file: %s", search_handler.db_file)
 
     # Read annotations CSV
     annotations_csv = os.path.join(search_handler.db_directory,"biorisk_annotations.csv")
@@ -84,7 +84,7 @@ def parse_biorisk_hits(search_handler : HmmerHandler, result : ScreenResult):
 
     # Read and parse outputs
     hmmer : pd.DataFrame = readhmmer(search_handler.out_file)
-    keep1 = [i for i, x in enumerate(hmmer['E-value']) if x < BIORISK_E_VALUE_THRESHOLD]
+    keep1 = [i for i, x in enumerate(hmmer['E-value']) if x < BIORISK_E_VALUE_CUTOFF]
     hmmer = hmmer.iloc[keep1,:]
 
     # Remove overlapping hits
@@ -202,24 +202,18 @@ def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str)
         return 1
 
     hmmer = readhmmer(hmmscan_input_file)
-
-    keep1 = [i for i, x in enumerate(hmmer["E-value"]) if x < BIORISK_E_VALUE_THRESHOLD]
+    keep1 = [i for i, x in enumerate(hmmer["E-value"]) if x < BIORISK_E_VALUE_CUTOFF]
     hmmer = hmmer.iloc[keep1, :]
 
     # Recalculate hit ranges into query based nucleotide coordinates
     hmmer["nt len"] = _get_nt_len_from_query(hmmer)
     hmmer = remove_overlaps(hmmer)
-
     hmmer["description"] = ""
     hmmer["Must flag"] = False
     hmmer = hmmer.reset_index(drop=True)
 
     for model in range(hmmer.shape[0]):
-        name_index = [
-            i
-            for i, x in enumerate([lookup["ID"] == hmmer["target name"][model]][0])
-            if x
-        ]
+        name_index = [i for i, x in enumerate([lookup['ID'] == hmmer['target name'][model]][0]) if x]
         hmmer.loc[model, "description"] = lookup.iloc[name_index[0], 1]
         hmmer.loc[model, "Must flag"] = lookup.iloc[name_index[0], 2]
 
@@ -230,12 +224,8 @@ def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str)
     if sum(hmmer["Must flag"]) > 0:
         for region in hmmer.index[hmmer["Must flag"] != 0]:
             if hmmer["ali from"][region] > hmmer["qlen"][region]:
-                hmmer["ali from"][region] = divmod(
-                    hmmer["ali from"][region], hmmer["qlen"][region]
-                )[0]
-                hmmer["ali to"][region] = divmod(
-                    hmmer["ali to"][region], hmmer["qlen"][region]
-                )[0]
+                hmmer["ali from"][region] = divmod(hmmer["ali from"][region], hmmer["qlen"][region])[0]
+                hmmer["ali to"][region] = divmod(hmmer["ali to"][region], hmmer["qlen"][region])[0]
             logging.info(
                 "\t\t --> Biorisks: Regulated gene in bases "
                 + str(hmmer["q. start"][region])
