@@ -87,6 +87,7 @@ def parse_biorisk_hits(search_handler : HmmerHandler, result : ScreenResult):
     keep1 = [i for i, x in enumerate(hmmer['E-value']) if x < BIORISK_E_VALUE_THRESHOLD]
     hmmer = hmmer.iloc[keep1,:]
 
+    # Remove overlapping hits
     hmmer['nt len'] = _get_nt_len_from_query(hmmer, result)
     hmmer = remove_overlaps(hmmer)
 
@@ -156,11 +157,14 @@ def parse_biorisk_hits(search_handler : HmmerHandler, result : ScreenResult):
 
         query_result.set_recommendation(ScreenStep.BIORISK, biorisk_overall)
 
-def _get_nt_len_from_query(hmmer: pd.DataFrame, result: ScreenResult) -> pd.Series:
+def _get_nt_len_from_query(hmmer: pd.DataFrame, result: ScreenResult | None = None) -> pd.Series:
     """
     Get a Series of nucleotide lengths of original (i.e. untranslated) queries. If no matching
     query is found, use qlen * 3 (may lead to off-by-1 or off-by-2 errors depending on frames)
     """
+    if result is None:
+        return hmmer['qlen'] * 3
+
     matched_queries = hmmer['query name'].apply(result.get_query)
     # Get query length where matches were found
     lengths = matched_queries.apply(lambda x: getattr(x, 'query_length', None))
@@ -199,10 +203,11 @@ def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str)
 
     hmmer = readhmmer(hmmscan_input_file)
 
-    keep1 = [i for i, x in enumerate(hmmer["E-value"]) if x < 1e-20]
+    keep1 = [i for i, x in enumerate(hmmer["E-value"]) if x < BIORISK_E_VALUE_THRESHOLD]
     hmmer = hmmer.iloc[keep1, :]
 
     # Recalculate hit ranges into query based nucleotide coordinates
+    hmmer["nt len"] = _get_nt_len_from_query(hmmer)
     hmmer = remove_overlaps(hmmer)
 
     hmmer["description"] = ""

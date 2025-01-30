@@ -3,6 +3,7 @@ import pytest
 
 
 from commec.screeners.check_biorisk import _get_nt_len_from_query
+from commec.config.result import ScreenResult
 
 def test_get_nt_len_from_query():
     df = pd.DataFrame({
@@ -20,3 +21,12 @@ def test_get_nt_len_from_query():
     
     lengths = _get_nt_len_from_query(df, MockScreenResult())
     assert lengths.tolist() == [150, 600, 150]
+
+def test_get_nt_len_empty_result():
+    df = pd.DataFrame({
+        'query name': ['query1', 'query2', 'query1'],
+        'qlen': [100, 200, 197]
+    })
+    
+    lengths = _get_nt_len_from_query(df)
+    assert lengths.tolist() == [300, 600, 591]
