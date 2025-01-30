@@ -259,7 +259,9 @@ class QueryResult:
             ScreenStep.BENIGN_SYNBIO: 'benign_screen'
         }
         field_name = step_to_field.get(step)
-        setattr(self.recommendation, field_name, recommendation)
+        current = getattr(self.recommendation, field_name)
+        new_rec = compare(current, recommendation)
+        setattr(self.recommendation, field_name, new_rec)
 
     def get_flagged_hits(self) -> List[HitResult]:
         """

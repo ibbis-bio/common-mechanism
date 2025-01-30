@@ -65,7 +65,7 @@ from commec.config.query import Query
 from commec.config.screen_tools import ScreenTools
 
 from commec.screeners.check_biorisk import check_biorisk, parse_biorisk_hits
-from commec.screeners.check_benign import check_for_benign, update_benign_data_from_database
+from commec.screeners.check_benign import check_for_benign, parse_benign_hits
 from commec.screeners.check_reg_path import (
     check_for_regulated_pathogens,
     update_taxonomic_data_from_database
@@ -449,7 +449,7 @@ class Screen:
         # in future parse, and grab from search handler instead.
         check_for_benign(sample_name, coords, benign_desc)
 
-        update_benign_data_from_database(
+        parse_benign_hits(
             self.database_tools.benign_hmm,
             self.database_tools.benign_cmscan,
             self.database_tools.benign_blastn,

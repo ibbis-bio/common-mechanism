@@ -171,23 +171,22 @@ def _update_benign_data_for_query(query : QueryResult,
     for benign_addition in new_benign_hits:
         query.add_new_hit_information(benign_addition)
 
-
-def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
-                                     benign_rna_handle : CmscanHandler,
-                                     benign_synbio_handle : BlastNHandler,
-                                     data : ScreenResult, 
-                                     benign_desc : pd.DataFrame):
+def parse_benign_hits(benign_protein_handler : HmmerHandler,
+                      benign_rna_handler : CmscanHandler,
+                      benign_synbio_handler : BlastNHandler,
+                      result : ScreenResult, 
+                      benign_desc : pd.DataFrame):
     """
-    Parse the outputs from the protein, rna, and synbio database searches, and populate
-    the benign hits into a Screen dataset. Marks those hits that are cleared for benign
-    as cleared if benign screen passes them.
+    Parse the outputs of the benign protein, rna and synbio searches, and update
+    screen results. Warning and flag hits may be marked as cleared if they overlap
+    sufficiently with benign hits.
     """
     # Reading empty outcomes should result in empty DataFrames, not errors.
-    benign_protein_screen_data = benign_protein_handle.read_output()
-    benign_rna_screen_data = benign_rna_handle.read_output()
-    benign_synbio_screen_data = benign_synbio_handle.read_output()
+    benign_protein_screen_data = benign_protein_handler.read_output()
+    benign_rna_screen_data = benign_rna_handler.read_output()
+    benign_synbio_screen_data = benign_synbio_handler.read_output()
 
-    for query in data.queries.values():
+    for query in result.queries.values():
         _update_benign_data_for_query(query,
                                       benign_protein_screen_data,
                                       benign_rna_screen_data,
@@ -195,13 +194,14 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                       benign_desc)
 
         # Calculate the Benign Screen outcomes for each query.
-        query.recommendation.benign_screen = Recommendation.PASS
+        query.set_recommendation(ScreenStep.BENIGN_PROTEIN, Recommendation.PASS)
+
         # If any hits are still warnings, or flags, propagate that.
         for flagged_hit in query.get_flagged_hits():
-            query.recommendation.benign_screen = compare(
+            query.set_recommendation(
+                ScreenStep.BENIGN_PROTEIN,
                 flagged_hit.recommendation.outcome,
-                query.recommendation.benign_screen
-                )
+            )
 
 def _trim_to_coords(data : pd.DataFrame, coords, region):
     datatrim = data[
