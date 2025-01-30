@@ -24,6 +24,8 @@ class Query:
     def __init__(self, seq_record: SeqRecord):
         Query.validate_sequence_record(seq_record)
         self._seq_record = seq_record
+        # TODO: Update line 53-55 of Check_Benign, to ensure that the query filter is using
+        # The correct name, when filtering benign components.
         self.name = self.create_id(self.original_name)
         self.translations: list[QueryTranslation] = []
 
@@ -96,8 +98,6 @@ class Query:
                 QueryTranslation(sequence=protein, frame=offset + 4)
             )
 
-        # TODO: Update line 53-55 of Check_Benign, to ensure that the query filter is using
-        # The correct name, when filtering benign components.
         # Sort the list in frame order
         self.translations = sorted(self.translations, key=lambda x: x.frame)
 
