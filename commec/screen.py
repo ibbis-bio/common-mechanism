@@ -68,7 +68,7 @@ from commec.screeners.check_biorisk import check_biorisk, parse_biorisk_hits
 from commec.screeners.check_benign import check_for_benign, parse_benign_hits
 from commec.screeners.check_reg_path import (
     check_for_regulated_pathogens,
-    update_taxonomic_data_from_database
+    parse_taxonomy_hits
 )
 from commec.tools.fetch_nc_bits import fetch_noncoding_regions
 
@@ -358,7 +358,7 @@ class Screen:
             str(self.screen_io.config.threads),
         )
 
-        update_taxonomic_data_from_database(self.database_tools.regulated_protein,
+        parse_taxonomy_hits(self.database_tools.regulated_protein,
                                             self.database_tools.benign_taxid_path,
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
@@ -406,7 +406,7 @@ class Screen:
             self.screen_io.db_dir,
             str(self.screen_io.config.threads),
         )
-        update_taxonomic_data_from_database(self.database_tools.regulated_nt,
+        parse_taxonomy_hits(self.database_tools.regulated_nt,
                                             self.database_tools.benign_taxid_path,
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,

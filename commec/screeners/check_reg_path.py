@@ -32,18 +32,16 @@ pd.set_option("display.max_colwidth", 10000)
 
 
 def _check_inputs(
-        search_handle : SearchHandler,
+        search_handler : SearchHandler,
         benign_taxid_path : str | os.PathLike,
         biorisk_taxid_path : str | os.PathLike,
         taxonomy_directory : str | os.PathLike
         ):
     """ 
-    Simply check for the existance of files, 
-    returns True if it is safe to continue. 
+    Check for the existence of output and data files, returning return True if safe to continue. 
     """
-    # check input files
-    if not search_handle.check_output():
-        logging.info("\t...ERROR: Taxonomic search results empty\n %s", search_handle.out_file)
+    if not search_handler.check_output():
+        logging.info("\t...ERROR: Taxonomic search results empty\n %s", search_handler.out_file)
         return False
 
     if not os.path.exists(benign_taxid_path):
@@ -58,22 +56,22 @@ def _check_inputs(
         logging.error("\t...taxonomy directory %s does not exist\n", taxonomy_directory)
         return False
 
-    if search_handle.is_empty(search_handle.out_file):
+    if search_handler.is_empty(search_handler.out_file):
         logging.info("\tERROR: Homology search has failed\n")
         return False
 
-    if not search_handle.has_hits(search_handle.out_file):
+    if not search_handler.has_hits(search_handler.out_file):
         logging.info("\t...no hits\n")
         return False
     
     return True
 
-def update_taxonomic_data_from_database(
-        search_handle : SearchHandler,
+def parse_taxonomy_hits(
+        search_handler : SearchHandler,
         benign_taxid_path : str | os.PathLike,
         biorisk_taxid_path : str | os.PathLike,
         taxonomy_directory : str | os.PathLike,
-        data : ScreenResult,
+        result : ScreenResult,
         step : ScreenStep,
         n_threads : int
         ):
@@ -88,7 +86,7 @@ def update_taxonomic_data_from_database(
     """
     logging.debug("Acquiring Taxonomic Data for JSON output:")
 
-    if not _check_inputs(search_handle, benign_taxid_path, 
+    if not _check_inputs(search_handler, benign_taxid_path, 
                          biorisk_taxid_path, taxonomy_directory):
         return 1
 
@@ -97,14 +95,10 @@ def update_taxonomic_data_from_database(
     reg_taxids = pd.read_csv(biorisk_taxid_path, header=None).squeeze().astype(str).tolist()
 
     # The default is to pass, its up to the data to over-write this.
-    if step == ScreenStep.TAXONOMY_AA:
-        for query in data.queries.values():
-            query.recommendation.protein_taxonomy_screen = Recommendation.PASS
-    if step == ScreenStep.TAXONOMY_NT:
-        for query in data.queries.values():
-            query.recommendation.nucleotide_taxonomy_screen = Recommendation.PASS
+    for query in result.queries.values():
+        query.set_recommendation(step, Recommendation.PASS)
 
-    blast = read_blast(search_handle.out_file)
+    blast = read_blast(search_handler.out_file)
     blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)
     blast = blast[blast["species"] != ""]  # ignore submissions made above the species level
 
@@ -124,7 +118,7 @@ def update_taxonomic_data_from_database(
         unique_queries = top_hits['query acc.'].unique()
 
         for query in unique_queries:
-            query_write = data.get_query(query)
+            query_write = result.get_query(query)
             if not query_write:
                 logging.debug("Query during %s could not be found! [%s]", str(step), query)
                 continue
@@ -201,14 +195,7 @@ def update_taxonomic_data_from_database(
                     recommendation = Recommendation.PASS
 
                 # Update the query level recommendation of this step.
-                if step == ScreenStep.TAXONOMY_AA:
-                    query_write.recommendation.protein_taxonomy_screen = compare(
-                        query_write.recommendation.protein_taxonomy_screen,
-                        recommendation)
-                if step == ScreenStep.TAXONOMY_NT:
-                    query_write.recommendation.nucleotide_taxonomy_screen = compare(
-                        query_write.recommendation.nucleotide_taxonomy_screen,
-                        recommendation)
+                query_write.set_recommendation(step, recommendation)
 
                 regulation_dict = {"number_of_regulated_taxids" : str(len(reg_taxids)),
                                    "number_of_unregulated_taxids" : str(len(non_reg_taxids)),
