@@ -12,6 +12,7 @@ import os
 import sys
 import argparse
 import pandas as pd
+from commec.config.constants import BIORISK_E_VALUE_THRESHOLD
 from commec.tools.hmmer import (
     readhmmer,
     remove_overlaps,
@@ -77,16 +78,19 @@ def parse_biorisk_hits(search_handler : HmmerHandler, result : ScreenResult):
 
     result.set_recommendation(ScreenStep.BIORISK, Recommendation.PASS)
 
+    # If there are no hits, everything passes, and we can just return
     if not search_handler.has_hits(search_handler.out_file):
         return
 
-    # Read in Output, and parse.
+    # Read and parse outputs
     hmmer : pd.DataFrame = readhmmer(search_handler.out_file)
-    keep1 = [i for i, x in enumerate(hmmer['E-value']) if x < 1e-20]
+    keep1 = [i for i, x in enumerate(hmmer['E-value']) if x < BIORISK_E_VALUE_THRESHOLD]
     hmmer = hmmer.iloc[keep1,:]
+    
+    hmmer['nt len'] = _get_nt_len_from_query(hmmer, result)
     hmmer = remove_overlaps(hmmer)
 
-    # Read in annotations.
+    # Read annotations
     lookup : pd.DataFrame = pd.read_csv(annotations_csv)
     lookup.fillna(False, inplace=True)
 

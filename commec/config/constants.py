@@ -4,3 +4,5 @@
 import os
 
 DEFAULT_CONFIG_YAML_PATH = os.path.join(os.path.dirname(__file__),"commec-config.yaml")
+
+BIORISK_E_VALUE_THRESHOLD = 1e-20
