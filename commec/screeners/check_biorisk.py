@@ -86,7 +86,7 @@ def parse_biorisk_hits(search_handler : HmmerHandler, result : ScreenResult):
     hmmer : pd.DataFrame = readhmmer(search_handler.out_file)
     keep1 = [i for i, x in enumerate(hmmer['E-value']) if x < BIORISK_E_VALUE_THRESHOLD]
     hmmer = hmmer.iloc[keep1,:]
-    
+
     hmmer['nt len'] = _get_nt_len_from_query(hmmer, result)
     hmmer = remove_overlaps(hmmer)
 
@@ -103,23 +103,22 @@ def parse_biorisk_hits(search_handler : HmmerHandler, result : ScreenResult):
         hmmer.loc[model, 'description'] = lookup.iloc[name_index[0], 1]
         hmmer.loc[model, 'Must flag'] = lookup.iloc[name_index[0], 2]
 
-    # Update the data state to capture the outputs from biorisk search:
-    unique_queries = hmmer['query name'].unique()
-    for affected_query in unique_queries:
-
+    # Update the results to capture the biorisk outputs
+    queries_with_hits = hmmer['query name'].unique()
+    for query_name in queries_with_hits:
         biorisk_overall : Recommendation = Recommendation.PASS
 
-        query_data = result.get_query(affected_query)
-        if not query_data:
-            logging.error("Query during hmmscan could not be found! [%s]", affected_query)
+        query_result = result.get_query(query_name)
+        if not query_result:
+            logging.error("Could not find query matching query name in hmmscan output: [%s]", query_name)
             continue
 
         # Grab a list of unique queries, and targets for iteration.
-        unique_query_data : pd.DataFrame = hmmer[hmmer['query name'] == affected_query]
+        unique_query_data : pd.DataFrame = hmmer[hmmer['query name'] == query_name]
         unique_targets = unique_query_data['target name'].unique()
 
-        for affected_target in unique_targets:
-            unique_target_data : pd.DataFrame = unique_query_data[unique_query_data['target name'] == affected_target]
+        for target_name in unique_targets:
+            unique_target_data : pd.DataFrame = unique_query_data[unique_query_data['target name'] == target_name]
             target_description = ", ".join(set(unique_target_data['description'])) # First should be unique.
             must_flag = unique_target_data['Must flag'].iloc[0] # First should be unique.
             match_ranges = []
@@ -131,33 +130,48 @@ def parse_biorisk_hits(search_handler : HmmerHandler, result : ScreenResult):
                 )
                 match_ranges.append(match_range)
 
-            target_recommendation : Recommendation = Recommendation.FLAG if must_flag > 0 else Recommendation.WARN
+            target_recommendation = Recommendation.FLAG if must_flag > 0 else Recommendation.WARN
 
             biorisk_overall = compare(target_recommendation, biorisk_overall)
 
-            hit_data : HitResult = query_data.get_hit(affected_target)
+            hit_data : HitResult = query_result.get_hit(target_name)
             if hit_data:
                 hit_data.ranges.extend(match_ranges)
                 continue
 
-            regulation_str : str = "Regulated Gene" if must_flag else "Virulance Factor"
-
-            domain : str = _guess_domain(""+str(affected_target)+target_description)
+            regulation_str = "Regulated Gene" if must_flag else "Virulence Factor"
+            domain = _guess_domain(""+str(target_name)+target_description)
 
             new_hit : HitResult = HitResult(
                 HitRecommendationContainer(
                     target_recommendation,
                     ScreenStep.BIORISK
                 ),
-                affected_target,
+                target_name,
                 target_description,
                 match_ranges,
                 {"domain" : [domain],"regulated":[regulation_str]},
             )
-            query_data.hits[affected_target] = new_hit
+            query_result.hits[target_name] = new_hit
 
-        # Update the recommendation for this query for biorisk.
-        query_data.recommendation.biorisk_screen = biorisk_overall
+        query_result.set_recommendation(ScreenStep.BIORISK, biorisk_overall)
+
+def _get_nt_len_from_query(hmmer: pd.DataFrame, result: ScreenResult) -> pd.Series:
+    """
+    Get a Series of nucleotide lengths of original (i.e. untranslated) queries. If no matching
+    query is found, use qlen * 3 (may lead to off-by-1 or off-by-2 errors depending on frames)
+    """
+    matched_queries = hmmer['query name'].apply(result.get_query)
+    return matched_queries.where(
+        matched_queries.notna(),
+        hmmer['qlen'] * 3
+    ).apply(lambda x: getattr(x, 'query_length', x))
+    # matched_queries = hmmer['query name'].apply(result.get_query)
+    # is_matched = matched_queries.notna()
+    # # Use the query length where matches were found
+    # hmmer.loc[is_matched, 'nt len'] = matched_queries[is_matched].apply(lambda x: x.query_length)
+    # # If no match, use qlen * 3
+    # hmmer.loc[~is_matched, 'nt len'] = hmmer.loc[~is_matched, 'qlen'] * 3
 
 def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str):
     """

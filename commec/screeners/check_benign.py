@@ -50,9 +50,9 @@ def _update_benign_data_for_query(query : QueryResult,
     """
     # We only care about the benign data for this query.
     # TODO: This will require updating when the Query unique ID is used for creation of cleaned fasta.
-    benign_protein_for_query = benign_protein[benign_protein["query name"] == query.query]
-    benign_rna_for_query = benign_rna[benign_rna["query name"] == query.query]
-    benign_synbio_for_query = benign_synbio[benign_synbio["query acc."] == query.query]
+    benign_protein_for_query = benign_protein[benign_protein["query name"] == query.query_name]
+    benign_rna_for_query = benign_rna[benign_rna["query name"] == query.query_name]
+    benign_synbio_for_query = benign_synbio[benign_synbio["query acc."] == query.query_name]
 
 
     new_benign_hits = []

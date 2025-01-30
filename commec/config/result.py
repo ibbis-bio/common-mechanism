@@ -212,8 +212,8 @@ class QueryResult:
     '''
     Container to hold screening result data pertinant to a single Query
     '''
-    query : str = ""
-    length : int = 0
+    query_name : str = ""
+    query_length : int = 0
     sequence : str = ""
     recommendation : QueryRecommendationContainer = field(default_factory=QueryRecommendationContainer)
     hits : dict[str, HitResult] = field(default_factory=dict)
@@ -245,6 +245,21 @@ class QueryResult:
 
         return hits_is_updated
 
+    def set_recommendation(self, step : ScreenStep, recommendation: Recommendation):
+        """
+        Set the query recommendation for a specific screen step.
+        """
+        # Map ScreenStep to the corresponding attribute in QueryRecommendationContainer
+        step_to_field = {
+            ScreenStep.BIORISK: 'biorisk_screen',
+            ScreenStep.TAXONOMY_NT: 'nucleotide_taxonomy_screen',
+            ScreenStep.TAXONOMY_AA: 'protein_taxonomy_screen',
+            ScreenStep.BENIGN_PROTEIN: 'benign_screen',
+            ScreenStep.BENIGN_RNA: 'benign_screen',
+            ScreenStep.BENIGN_SYNBIO: 'benign_screen'
+        }
+        field_name = step_to_field.get(step)
+        setattr(self.recommendation, field_name, recommendation)
 
     def get_flagged_hits(self) -> List[HitResult]:
         """
@@ -301,26 +316,28 @@ class ScreenResult:
         """
         Set the recommendation for a specific screen step for all queries.
         """
-        # Map ScreenStep to the corresponding attribute in QueryRecommendationContainer
-        step_to_field = {
-            ScreenStep.BIORISK: 'biorisk_screen',
-            ScreenStep.TAXONOMY_NT: 'nucleotide_taxonomy_screen',
-            ScreenStep.TAXONOMY_AA: 'protein_taxonomy_screen',
-            ScreenStep.BENIGN_PROTEIN: 'benign_screen',
-            ScreenStep.BENIGN_RNA: 'benign_screen',
-            ScreenStep.BENIGN_SYNBIO: 'benign_screen'
-        }
-        field_name = step_to_field.get(step)
-
         for query in self.queries.values():
-            setattr(query.recommendation, field_name, recommendation)
+            query.set_recommendation(step, recommendation)
 
-    def get_query(self, query_name : str) -> QueryResult:
+    def get_query(self, query_name_to_search : str) -> QueryResult | None:
         """
-        Wrapper for Query get logic.
+        Get the QueryResult that matches the given query name.
+        First tries exact match, then falls back to longest matching prefix if needed.
         """
-        search_term = Query.create_id(query_name) # Not needed when ID's are used instead of names.
-        return self.queries.get(search_term)
+        exact_match = self.queries.get(query_name_to_search)
+        if exact_match:
+            return exact_match
+    
+        # If no exact match, find the longest query name contained within the search name, since
+        # prefixes or suffixes might have been added by a search tool
+        best_match_name = None
+        longest_match = 0
+        for query_name in self.queries:
+            if (query_name in query_name_to_search and len(query_name > longest_match)):
+                best_match_name = query_name
+                longest_match = len(query_name)
+
+        return self.queries.get(best_match_name)
 
     def update(self):
         """

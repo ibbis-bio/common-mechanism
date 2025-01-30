@@ -100,7 +100,7 @@ def update_layout(fig, query_to_draw : QueryResult, stacks):
         # General layout properties
         'height': figure_base_height + (figure_stack_height * stacks),
         'title': f"{query_to_draw.recommendation.commec_recommendation} :"
-                 f" {query_to_draw.query}  ({query_to_draw.length} b.p.)",
+                 f" {query_to_draw.query_name}  ({query_to_draw.query_length} b.p.)",
         'barmode': 'overlay',
         'template': 'plotly_white',
         'plot_bgcolor': 'rgba(0,0,0,0)',  # Transparent plot area
@@ -196,11 +196,11 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
     """
     # Interpret the QueryResult into bars for the plot.
     graph_data = [
-        {"label": query_to_draw.query[:25], 
-         "label_verbose": query_to_draw.query, 
+        {"label": query_to_draw.query_name[:25], 
+         "label_verbose": query_to_draw.query_name, 
          "outcome" : f"Commec Recommendation for this query: {query_to_draw.recommendation.commec_recommendation}",
          "outcome_verbose":"",
-         "start": 0, "stop": query_to_draw.length, 
+         "start": 0, "stop": query_to_draw.query_length, 
          "color" : CommecPalette.DK_BLUE, 
          "stack" : 0},
     ]
