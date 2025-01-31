@@ -58,34 +58,33 @@ class ScreenStatus(StrEnum):
     FLAG = "Flag"
     ERROR = "Error"
 
-    descriptions = {
-        NULL: (
-            "Status not initialized due to an error, interrupt,"
-            " or other unexpected outcome"
-        ),
-        SKIP: (
-            "Screening step intentionally skipped (e.g. skipping taxonomy screen in FAST mode,"
-            " skipping benign screen when there are no flags to clear)"
-        ),
-        PASS: "Query was not flagged in this screening step; biosecurity review may not be needed",
-        CLEARED_WARN: (
-            "Warning was cleared, since query region was identified as benign"
-            " (e.g. housekeeping gene, common synbio part)"),
-        CLEARED_FLAG: (
-            "Flag was cleared, since query region was identified as benign"
-            " (e.g. housekeeping gene, common synbio part)"),
-        WARN: (
-            "Possible sequence of concern identified, but with low confidence"
-            "(e.g. virulence factors or proteins shared among regulated and non-regulated organisms)"
-        ),
-        FLAG: "Query contains sequence of concern and requires additional biosecurity review",
-        ERROR: "An error occured and this step failed to run",
-    }
-
     @property
     def description(self) -> str:
         """Return a plaintext description of the status"""
-        return self.descriptions[self]
+        descriptions = {
+            ScreenStatus.NULL: (
+                "Status not initialized due to an error, interrupt,"
+                " or other unexpected outcome"
+            ),
+            ScreenStatus.SKIP: (
+                "Screening step intentionally skipped (e.g. skipping taxonomy screen in FAST mode,"
+                " skipping benign screen when there are no flags to clear)"
+            ),
+            ScreenStatus.PASS: "Query was not flagged in this screening step; biosecurity review may not be needed",
+            ScreenStatus.CLEARED_WARN: (
+                "Warning was cleared, since query region was identified as benign"
+                " (e.g. housekeeping gene, common synbio part)"),
+            ScreenStatus.CLEARED_FLAG: (
+                "Flag was cleared, since query region was identified as benign"
+                " (e.g. housekeeping gene, common synbio part)"),
+            ScreenStatus.WARN: (
+                "Possible sequence of concern identified, but with low confidence"
+                "(e.g. virulence factors or proteins shared among regulated and non-regulated organisms)"
+            ),
+            ScreenStatus.FLAG: "Query contains sequence of concern and requires additional biosecurity review",
+            ScreenStatus.ERROR: "An error occured and this step failed to run",
+        }
+        return descriptions[self]
 
     @property
     def importance(self):
