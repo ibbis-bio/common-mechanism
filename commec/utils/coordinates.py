@@ -30,6 +30,8 @@ def convert_protein_to_nucleotide_coords(frame,
     frame = np.asarray(frame)
     seq_length = np.asarray(seq_length)
 
+    reverse_offset = seq_length % 3
+
     # Initialize arrays for nucleotide start and end
     nucleotide_start = np.zeros_like(protein_start, dtype=np.int32)
     nucleotide_end = np.zeros_like(protein_end, dtype=np.int32)
@@ -45,13 +47,15 @@ def convert_protein_to_nucleotide_coords(frame,
     nuc_start_reverse = (protein_start[reverse_mask] * 3) + (reverse_frame - 1)
     nuc_end_reverse = (protein_end[reverse_mask] * 3) + 2 + (reverse_frame - 1)
 
-    nucleotide_start[reverse_mask] = seq_length[reverse_mask] - nuc_end_reverse - 1
-    nucleotide_end[reverse_mask] = seq_length[reverse_mask] - nuc_start_reverse - 1
+    nucleotide_start[reverse_mask] = seq_length[reverse_mask] - nuc_end_reverse - 1 - reverse_offset[reverse_mask]
+    nucleotide_end[reverse_mask] = seq_length[reverse_mask] - nuc_start_reverse - 1 - reverse_offset[reverse_mask]
 
     # Frames 2,3, 5,6, have 1 less qlen, thus require a codon offset. But only for reverse frames.
-    qlen_reverse_mask = frame > 4
-    nucleotide_start[qlen_reverse_mask] += 3
-    nucleotide_end[qlen_reverse_mask] += 3
+    # We are now using exact nt_qlen, so this may no longer be necessary...
+    #  ... but we MAY need offsets depending on %3 the length.
+    # qlen_reverse_mask = frame > 4
+    # nucleotide_start[qlen_reverse_mask] += 3
+    # nucleotide_end[qlen_reverse_mask] += 3
 
     # Convert to back to 1-based coordinates for reporting.
     nucleotide_start += 1

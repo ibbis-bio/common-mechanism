@@ -10,6 +10,7 @@ import re
 import subprocess
 import pandas as pd
 import itertools
+from commec.config.query import Query
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
 from commec.utils.coordinates import convert_protein_to_nucleotide_coords
 
@@ -180,7 +181,12 @@ def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame):
         hmmer["frame"],
         hmmer["ali from"],
         hmmer["ali to"],
-        hmmer["qlen"]*3) #TODO: Update this to the scalar for each query, else risk off-by-1 NT reporting.
+        hmmer["nt_qlen"])
 
     hmmer["q. start"] = pd.Series(query_start, dtype="int64")
     hmmer["q. end"] = pd.Series(query_end, dtype="int64")
+
+def append_nt_querylength_info(hmmer : pd.DataFrame, queries : dict[str, Query]):
+    """ Take the hmmer output, and add a series of the true nt length based on query name."""
+    #hmmer["nt_qlen"] = pd.Series(len(queries[hmmer["query name"]].seq_record.seq), dtype = "int64")
+    hmmer["nt_qlen"] = [len(queries[q].seq_record.seq) for q in hmmer["query name"]]
