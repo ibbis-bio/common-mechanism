@@ -19,6 +19,7 @@ from commec.config.screen_tools import ScreenIOParameters
 from commec.tools.blast_tools import read_blast, get_taxonomic_labels, get_top_hits
 from commec.tools.blastn import BlastNHandler
 from commec.tools.search_handler import SearchHandler
+from commec.config.query import Query
 from commec.config.result import (
     ScreenResult,
     HitResult,
@@ -75,6 +76,7 @@ def update_taxonomic_data_from_database(
         biorisk_taxid_path : str | os.PathLike,
         taxonomy_directory : str | os.PathLike,
         data : ScreenResult,
+        queries : dict[str, Query],
         step : ScreenStep,
         n_threads : int
         ):
@@ -155,6 +157,12 @@ def update_taxonomic_data_from_database(
                         int(region['s. start']), int(region['s. end']),
                         int(region['q. start']), int(region['q. end'])
                     )
+
+                    # Convert from non-coding to nt query coordinates if we're doing a NT taxonomy step.
+                    if step == ScreenStep.TAXONOMY_NT:
+                        match_range.query_start = queries[query].nc_to_nt_query_coords(match_range.query_start)
+                        match_range.query_end = queries[query].nc_to_nt_query_coords(match_range.query_end)
+
                     match_ranges.append(match_range)
 
                     # Filter shared_site based on 'q. start' or 'q. end' (Previously only shared starts were used)

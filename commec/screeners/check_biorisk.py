@@ -11,7 +11,8 @@ import os
 import sys
 import argparse
 import pandas as pd
-from commec.tools.hmmer import readhmmer, remove_overlaps, recalculate_hmmer_query_coordinates, HmmerHandler
+from commec.tools.hmmer import readhmmer, remove_overlaps, recalculate_hmmer_query_coordinates, append_nt_querylength_info, HmmerHandler
+from commec.config.query import Query
 from commec.config.result import (
     ScreenResult,
     HitResult,
@@ -44,7 +45,7 @@ def _guess_domain(search_string : str) -> str:
         return "Eukaryote"
     return "not assigned"
 
-def update_biorisk_data_from_database(search_handle : HmmerHandler, data : ScreenResult):
+def update_biorisk_data_from_database(search_handle : HmmerHandler, data : ScreenResult, queries : dict[str, Query]):
     """
     Takes an input database, reads its outputs, and updates the input data to contain
     biorisk hits from the database. Also requires passing of the biorisk annotations CSV file.
@@ -79,6 +80,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
     keep1 = [i for i, x in enumerate(hmmer['E-value']) if x < 1e-20]
     hmmer = hmmer.iloc[keep1,:]
     
+    append_nt_querylength_info(hmmer, queries)
     recalculate_hmmer_query_coordinates(hmmer)
     hmmer = remove_overlaps(hmmer)
 
@@ -151,8 +153,10 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
         # Update the recommendation for this query for biorisk.
         query_data.recommendation.biorisk_status = biorisk_overall
 
-def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str, output_json : str):
+def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str, queries : dict[str,Query]):
     """
+    LEGACY .screen output content.
+
     Checks an HMM scan output, and parses it for biorisks, according to those found in the biorisk_annotations.csv.
     INPUTS:
         - hmmscan_input_file - the file output from hmmscan, containing information about potential hits.
@@ -189,6 +193,7 @@ def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str,
     hmmer = hmmer.iloc[keep1, :]
 
     # Recalculate hit ranges into query based nucleotide coordinates, and trim overlaps.
+    append_nt_querylength_info(hmmer, queries)
     recalculate_hmmer_query_coordinates(hmmer)
     hmmer = remove_overlaps(hmmer)
 
