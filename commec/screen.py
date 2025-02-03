@@ -406,9 +406,9 @@ class Screen:
                 "ERROR: Expected nucleotide search output not created: "
                 + self.database_tools.regulated_nt.out_file
             )
-
-        # Convert all NC coordinates to NC coordinates.
-
+        
+        # Note: Currently noncoding coordinataes are converted within update_taxonomic_data_from_database,
+        # It may be prudent to instead explictly convert them in the output file itself, or during import.
 
         logging.debug("\t...checking blastn results")
         check_for_regulated_pathogens(
@@ -421,6 +421,7 @@ class Screen:
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
                                             self.screen_data,
+                                            self.queries,
                                             ScreenStep.TAXONOMY_NT,
                                             self.screen_io.config.threads)
 
