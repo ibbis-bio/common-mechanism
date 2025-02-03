@@ -24,17 +24,17 @@ def convert_protein_to_nucleotide_coords(frame,
     tuple: (nucleotide_start, nucleotide_end)
     """
     # Convert protein coordinates to 0-based, for calculation.
-    protein_start = np.asarray(protein_start) - 1
-    protein_end = np.asarray(protein_end) - 1
-    frame = np.asarray(frame)
-    seq_length = np.asarray(seq_length)
+    protein_start = np.asarray(protein_start, dtype=np.int64) - 1
+    protein_end = np.asarray(protein_end, dtype=np.int64) - 1
+    frame = np.asarray(frame, dtype=np.int64)
+    seq_length = np.asarray(seq_length, dtype=np.int64)
 
     # Reverse frame offsets, for when total length not divisible into codons.
     reverse_offset = seq_length % 3
 
     # Initialize arrays for nucleotide start and end
-    nucleotide_start = np.zeros_like(protein_start, dtype=np.int32)
-    nucleotide_end = np.zeros_like(protein_end, dtype=np.int32)
+    nucleotide_start = np.zeros_like(protein_start, dtype=np.int64)
+    nucleotide_end = np.zeros_like(protein_end, dtype=np.int64)
 
     # Forward frames (1, 2, 3)
     forward_mask = frame <= 3
