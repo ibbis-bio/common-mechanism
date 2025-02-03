@@ -72,7 +72,10 @@ from commec.screeners.check_reg_path import (
     update_taxonomic_data_from_database
 )
 
-from commec.tools.fetch_nc_bits import fetch_noncoding_regions, calculate_noncoding_regions_per_query
+from commec.tools.fetch_nc_bits import (
+    fetch_noncoding_regions, 
+    calculate_noncoding_regions_per_query
+)
 
 from commec.config.result import (
     ScreenResult,
