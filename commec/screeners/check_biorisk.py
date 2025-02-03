@@ -8,8 +8,6 @@ Usage:
 """
 import logging
 import os
-import sys
-import argparse
 import pandas as pd
 from commec.tools.hmmer import readhmmer, remove_overlaps, recalculate_hmmer_query_coordinates, append_nt_querylength_info, HmmerHandler
 from commec.config.query import Query
