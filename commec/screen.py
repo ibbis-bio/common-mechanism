@@ -56,6 +56,7 @@ import logging
 import os
 import sys
 import pandas as pd
+from Bio import SeqIO
 
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.logging import setup_console_logging, setup_file_logging, set_log_level
@@ -70,7 +71,8 @@ from commec.screeners.check_reg_path import (
     check_for_regulated_pathogens,
     update_taxonomic_data_from_database
 )
-from commec.tools.fetch_nc_bits import fetch_noncoding_regions
+
+from commec.tools.fetch_nc_bits import fetch_noncoding_regions, calculate_noncoding_regions_per_query
 
 from commec.config.result import (
     ScreenResult,
@@ -384,10 +386,12 @@ class Screen:
         logger.debug("\t...running hmmscan")
         self.database_tools.biorisk_hmm.search()
         logging.debug("\t...checking hmmscan results")
-        check_biorisk(self.database_tools.biorisk_hmm.out_file,
-                      self.database_tools.biorisk_hmm.db_directory,
-                      self.params.output_json)
-        update_biorisk_data_from_database(self.database_tools.biorisk_hmm, self.screen_data)
+        check_biorisk(
+            self.database_tools.biorisk_hmm.out_file,
+            self.database_tools.biorisk_hmm.db_directory,
+            self.queries
+        )
+        update_biorisk_data_from_database(self.database_tools.biorisk_hmm, self.screen_data, self.queries)
 
     def screen_proteins(self):
         """
@@ -423,6 +427,7 @@ class Screen:
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
                                             self.screen_data,
+                                            self.queries,
                                             ScreenStep.TAXONOMY_AA,
                                             self.screen_io.config.threads)
 
@@ -438,8 +443,11 @@ class Screen:
             self.database_tools.regulated_protein.out_file, self.screen_io.nt_path
         )
 
-        noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"
+        noncoding_fasta = calculate_noncoding_regions_per_query(
+            self.database_tools.regulated_protein.out_file,
+            self.queries)
 
+        #noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"
 
         if not os.path.isfile(noncoding_fasta):
             logger.debug(
@@ -458,7 +466,9 @@ class Screen:
                 "ERROR: Expected nucleotide search output not created: "
                 + self.database_tools.regulated_nt.out_file
             )
-
+        
+        # Note: Currently noncoding coordinataes are converted within update_taxonomic_data_from_database,
+        # It may be prudent to instead explictly convert them in the output file itself, or during import.
 
         logging.debug("\t...checking blastn results")
         check_for_regulated_pathogens(
@@ -473,6 +483,7 @@ class Screen:
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
                                             self.screen_data,
+                                            self.queries,
                                             ScreenStep.TAXONOMY_NT,
                                             self.screen_io.config.threads)
 
@@ -513,6 +524,7 @@ class Screen:
             self.database_tools.benign_cmscan,
             self.database_tools.benign_blastn,
             self.screen_data,
+            self.queries,
             benign_desc
         )
 
