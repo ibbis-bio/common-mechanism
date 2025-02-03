@@ -121,7 +121,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
                 match_range = MatchRange(
                     float(region['E-value']),
                     int(region['hmm from']), int(region['hmm to']),
-                    int(region['ali from']), int(region['ali to'])
+                    int(region['q. start']), int(region['q. end'])
                 )
                 match_ranges.append(match_range)
 

@@ -181,15 +181,19 @@ def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame):
     assert "nt_qlen" in hmmer.columns, ("No \"nt_qlen\" heading in HMMER output dataframe being "
                                          "passed to calculate nt coordinates, ensure that the dataframe has "
                                          "been processed to include nucleotide query length data.")
-    
-    query_start, query_end = convert_protein_to_nucleotide_coords(
-        hmmer["frame"],
-        hmmer["ali from"],
-        hmmer["ali to"],
-        hmmer["nt_qlen"])
+        
+    #hmmer.reset_index(drop=True)
 
-    hmmer["q. start"] = pd.Series(query_start, dtype="int64")
-    hmmer["q. end"] = pd.Series(query_end, dtype="int64")
+    hmmer["q. start"], hmmer["q. end"] = convert_protein_to_nucleotide_coords(
+        hmmer["frame"].to_numpy(),
+        hmmer["ali from"].to_numpy(),
+        hmmer["ali to"].to_numpy(),
+        hmmer["nt_qlen"].to_numpy())
+
+    #hmmer["q. start"] = pd.Series(query_start, dtype="int64")
+    #hmmer["q. end"] = pd.Series(query_end, dtype="int64")
+
+    #print(hmmer[["ali from", "ali to", "nt_qlen", "q. start", "q. end", "frame"]].to_string())
 
 def append_nt_querylength_info(hmmer : pd.DataFrame, queries : dict[str, Query]):
     """ Take the hmmer output, and add a series of the true nt length based on query name."""
