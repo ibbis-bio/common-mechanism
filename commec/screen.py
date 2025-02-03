@@ -297,10 +297,11 @@ class Screen:
         self.queries = self.screen_io.parse_input_fasta()
         for query in self.queries.values():
             query.translate(self.screen_io.nt_path, self.screen_io.aa_path)
-            self.screen_data.queries[query.name] = QueryResult(query.original_name,
-                                                    len(query.seq_record),
-                                                    str(query.seq_record.seq))
-                          
+            qr = QueryResult(query.original_name,
+                                 len(query.seq_record),
+                                 str(query.seq_record.seq))
+            self.screen_data.queries[query.name] = qr
+            query.result_handle = qr
         
         # Initialize the version info for all the databases
         _tools = self.database_tools
@@ -523,7 +524,6 @@ class Screen:
             self.database_tools.benign_hmm,
             self.database_tools.benign_cmscan,
             self.database_tools.benign_blastn,
-            self.screen_data,
             self.queries,
             benign_desc
         )

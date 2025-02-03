@@ -26,13 +26,12 @@ Set of containers for storing information important to screen
          [HitResult]:
              recommendation (per hit)
 """
-
+import re
 from dataclasses import dataclass, asdict, field
 from typing import List, Iterator, Tuple
 from enum import StrEnum
 from importlib.metadata import version, PackageNotFoundError
 from commec.tools.search_handler import SearchToolVersion
-from commec.config.query import Query
 
 try:
     COMMEC_VERSION = version("commec")
@@ -369,9 +368,10 @@ class ScreenResult:
         """
         Wrapper for Query get logic.
         """
-        search_term = Query.create_id(
-            query_name
-        )  # Not needed when ID's are used instead of names.
+        search_term = query_name
+        if re.search(r'_[1-6]$', query_name):  # Check if string ends with _1 to _6
+            search_term = query_name[:-2]  # Remove last two characters
+
         return self.queries.get(search_term)
 
     def update(self):
