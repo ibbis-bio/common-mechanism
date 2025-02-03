@@ -31,6 +31,12 @@ def _get_ranges_with_no_hits(input_df : pd.DataFrame):
         f"Existing columns: {', '.join(input_df.columns)}"
     )
 
+    assert "query length" in input_df.columns, (
+        "Column \"query length\" does not exist for get_ranges_with_no_hits().\n"
+        f"Existing columns: {', '.join(input_df.columns)}"
+    )
+
+    assert not input_df.empty, "Input dataframe for get_ranges_with_no_hits() is empty."
 
     unique_hits = input_df.drop_duplicates(subset=["q. start", "q. end"])
     hit_ranges = unique_hits[["q. start", "q. end"]].values.tolist()
@@ -143,7 +149,7 @@ def _set_no_coding_regions(query : Query):
     query.non_coding_regions.append((0, len(query.seq_record.seq) - 1))
 
 def calculate_noncoding_regions_per_query(
-        protein_results : pd.DataFrame,
+        protein_results : str,
         queries : dict[str, Query]
         ):
     """
@@ -162,35 +168,34 @@ def calculate_noncoding_regions_per_query(
     nc_sequences = []
 
     for query in queries.values():
-        record = query.seq_record
-        protein_matches_for_query = protein_matches[protein_matches[query_col] == record.name]
+        #record = query.seq_record
+        protein_matches_for_query = protein_matches[protein_matches[query_col] == query.name]
 
-        if protein_matches_for_query.empty():
-            logging.info("No protein hits found for %s, screening entire sequence.", record.name)
+        if protein_matches_for_query.empty:
+            logging.info("No protein hits found for %s, screening entire sequence.", query.name)
             _set_no_coding_regions(query)
             continue
 
-        logging.info("Protein hits found for %s, fetching nt regions not covered by a 90%% ID hit or better", record.name)
+        logging.info("Protein hits found for %s, fetching nt regions not covered by a 90%% ID hit or better", query.name)
 
         ranges_to_screen = _get_ranges_with_no_hits(protein_matches_for_query)
         # if the entire sequence, save regions <50 bases, is covered with protein, skip nt scan
         if not ranges_to_screen:
-            logging.info("\t\t --> no noncoding regions >= 50 bases found for %s, skipping nt scan for this query\n", record.name)
-            query.non_coding_regions.append([]) # Append an empty array for this query.
+            logging.info("\t\t --> no noncoding regions >= 50 bases found for %s, skipping nt scan for this query\n", query.name)
             continue
 
         # Update the list of start and end non-coding tuples for query.
-        query.non_coding_regions = ranges_to_screen
+        query.non_coding_regions.extend(ranges_to_screen)
 
         ranges_str = ", ".join(f"{start}-{end}" for start, end in ranges_to_screen)
         logging.info("Writing noncoding regions [%s] to: %s", ranges_str, outfile)
 
-        for start, stop in enumerate(ranges_to_screen):
+        for start, stop in ranges_to_screen:
             # subtract 1 just from `start` to adjust to 0-based index and capture full range
-            sequence = record.seq[int(start) - 1 : int(stop)]
+            sequence = query.seq_record.seq[int(start) - 1 : int(stop)]
             # when parsed from a FASTA file, description includes the id:
             # https://biopython.org/docs/latest/Tutorial/chapter_seq_annot.html#seqrecord-objects-from-fasta-files
-            nc_sequences.append(f">{record.name} {start}-{stop}\n{sequence}\n")
+            nc_sequences.append(f">{query.name} {start}-{stop}\n{sequence}\n")
 
     with open(outfile, "w", encoding="utf-8") as output_file:
         output_file.writelines(nc_sequences)

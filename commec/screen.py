@@ -368,6 +368,7 @@ class Screen:
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
                                             self.screen_data,
+                                            self.queries,
                                             ScreenStep.TAXONOMY_AA,
                                             self.screen_io.config.threads)
 
@@ -384,7 +385,7 @@ class Screen:
         )
 
         noncoding_fasta = calculate_noncoding_regions_per_query(
-            self.database_tools.regulated_protein.read_output(), 
+            self.database_tools.regulated_protein.out_file,
             self.queries)
 
         #noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"
