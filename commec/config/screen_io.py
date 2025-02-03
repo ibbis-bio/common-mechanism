@@ -144,13 +144,7 @@ class ScreenIO:
             except Exception as e:
                 raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}") from e
 
-        # Rewrite the cleaned.fasta with unique names.
-        print("DEBUG RECORDS: ")
-        for r in records:
-            print(r)
-
         with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
-            print("Writing ", fasta_file)
             SeqIO.write(records, fasta_file, "fasta")
 
         return queries
