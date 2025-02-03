@@ -34,12 +34,12 @@ from commec.config.result import (
 
 # Constants determining Commec's sensitivity for benign screen.
 BENIGN_PROTEIN_EVALUE_CUTOFF : float = 1e-20
-MINIMUM_PEPTIDE_COVERAGE : int = 50 # Consider the implications of whether coverage in this context represents the translated aa, or bp count.
+MINIMUM_PEPTIDE_COVERAGE : int = 50
 MINIMUM_QUERY_COVERAGE_FRACTION : float = 0.80
 MINIMUM_RNA_BASEPAIR_COVERAGE : int = 50
 MINIMUM_SYNBIO_COVERAGE_FRACTION : float = 0.80
 
-def _update_benign_data_for_query(query : QueryResult,
+def _update_benign_data_for_query(query : Query,
                                   benign_protein : pd.DataFrame,
                                   benign_rna : pd.DataFrame,
                                   benign_synbio : pd.DataFrame,
@@ -51,15 +51,15 @@ def _update_benign_data_for_query(query : QueryResult,
     """
     # We only care about the benign data for this query.
     # TODO: This will require updating when the Query unique ID is used for creation of cleaned fasta.
-    benign_protein_for_query = benign_protein[benign_protein["query name"] == query.query]
-    benign_rna_for_query = benign_rna[benign_rna["query name"] == query.query]
-    benign_synbio_for_query = benign_synbio[benign_synbio["query acc."] == query.query]
+    benign_protein_for_query = benign_protein[benign_protein["query name"] == query.name]
+    benign_rna_for_query = benign_rna[benign_rna["query name"] == query.name]
+    benign_synbio_for_query = benign_synbio[benign_synbio["query acc."] == query.name]
 
 
     new_benign_hits = []
 
     # Check every region, of every hit that is a FLAG or WARN, against the Benign screen outcomes.
-    for hit in query.hits.values():
+    for hit in query.result_handle.hits.values():
         if hit.recommendation.status not in {
             ScreenStatus.FLAG,
             ScreenStatus.WARN
@@ -170,14 +170,13 @@ def _update_benign_data_for_query(query : QueryResult,
     # We cannot alter the hits dictionary whilst iterating,
     # So we add everything afterwards.
     for benign_addition in new_benign_hits:
-        query.add_new_hit_information(benign_addition)
+        query.result_handle.add_new_hit_information(benign_addition)
 
 
 def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                      benign_rna_handle : CmscanHandler,
                                      benign_synbio_handle : BlastNHandler,
-                                     data : ScreenResult,
-                                     input_query_data : dict[str, Query],
+                                     queries : dict[str,Query],
                                      benign_desc : pd.DataFrame):
     """
     Parse the outputs from the protein, rna, and synbio database searches, and populate
@@ -186,13 +185,13 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
     """
     # Reading empty outcomes should result in empty DataFrames, not errors.
     benign_protein_screen_data = benign_protein_handle.read_output()
-    append_nt_querylength_info(benign_protein_screen_data, input_query_data)
+    append_nt_querylength_info(benign_protein_screen_data, queries)
     recalculate_hmmer_query_coordinates(benign_protein_screen_data)
 
     benign_rna_screen_data = benign_rna_handle.read_output()
     benign_synbio_screen_data = benign_synbio_handle.read_output()
 
-    for query in data.queries.values():
+    for query in queries.values():
         _update_benign_data_for_query(query,
                                       benign_protein_screen_data,
                                       benign_rna_screen_data,
@@ -200,12 +199,12 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                       benign_desc)
 
         # Calculate the Benign Screen outcomes for each query.
-        query.recommendation.benign_status = ScreenStatus.PASS
+        query.result_handle.recommendation.benign_status = ScreenStatus.PASS
         # If any hits are still warnings, or flags, propagate that.
-        for flagged_hit in query.get_flagged_hits():
-            query.recommendation.benign_status = compare(
+        for flagged_hit in query.result_handle.get_flagged_hits():
+            query.result_handle.recommendation.benign_status = compare(
                 flagged_hit.recommendation.status,
-                query.recommendation.benign_status
+                query.result_handle.recommendation.benign_status
                 )
 
 def _trim_to_coords(data : pd.DataFrame, coords, region):

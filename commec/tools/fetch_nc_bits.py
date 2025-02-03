@@ -59,7 +59,8 @@ def _get_ranges_with_no_hits(input_df : pd.DataFrame):
             nc_ranges.append((nc_start, nc_end))
 
     # Include the end if the last hit ends more than 50 bp before the end
-    query_length = input_df["query length"][0]
+    print("DEBUG\n", input_df["query length"])
+    query_length = input_df["query length"].iloc[0]
     if query_length - hit_ranges[-1][1] >= 50:
         nc_ranges.append((hit_ranges[-1][1] + 1, int(query_length)))
 

@@ -27,7 +27,7 @@ class BlastHandler(SearchHandler):
 
     def read_output(self):
         output_dataframe = []
-        if self.has_hits():
+        if self.has_hits(self.out_file):
             output_dataframe = read_blast(self.out_file)
         return output_dataframe
 

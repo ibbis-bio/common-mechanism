@@ -3,7 +3,7 @@
 
 import subprocess
 from Bio.SeqRecord import SeqRecord
-
+from commec.config.result import QueryResult
 
 class Query:
     """
@@ -20,6 +20,7 @@ class Query:
         self.name = self.create_id(seq_record.id)
         self.seq_record = seq_record
         self.non_coding_regions : list[tuple[int, int]] = []
+        self.result_handle : QueryResult = None
 
     def translate(self, input_path, output_path) -> None:
         """Run command transeq, to translate our input sequences."""
