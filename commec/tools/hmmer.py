@@ -33,8 +33,8 @@ class HmmerHandler(SearchHandler):
         output_dataframe = readhmmer(self.out_file)
         # Standardize the output column names to be like blast:
         output_dataframe = output_dataframe.rename(columns={
-            "ali from": "q. start",
-            "ali to": "q. end",
+            #"ali from": "q. start",
+            #"ali to": "q. end",
             "coverage": "q. coverage",
             "target name": "subject title",
             "qlen":"query length",
@@ -176,6 +176,11 @@ def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame):
     Recalculate the coordinates of the hmmer database , such that each translated frame
     reverts to original nucleotide coordinates.
     """
+
+    assert "nt_qlen" in hmmer.columns, ("No \"nt_qlen\" heading in HMMER output dataframe being "
+                                         "passed to calculate nt coordinates, ensure that the dataframe has "
+                                         "been processed to include nucleotide query length data.")
+    
     query_start, query_end = convert_protein_to_nucleotide_coords(
         hmmer["frame"],
         hmmer["ali from"],
@@ -188,4 +193,4 @@ def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame):
 def append_nt_querylength_info(hmmer : pd.DataFrame, queries : dict[str, Query]):
     """ Take the hmmer output, and add a series of the true nt length based on query name."""
     #hmmer["nt_qlen"] = pd.Series(len(queries[hmmer["query name"]].seq_record.seq), dtype = "int64")
-    hmmer["nt_qlen"] = [len(queries[q].seq_record.seq) for q in hmmer["query name"]]
+    hmmer["nt_qlen"] = [len(queries[q[:-2]].seq_record.seq) for q in hmmer["query name"]]
