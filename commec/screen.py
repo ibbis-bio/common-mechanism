@@ -57,6 +57,7 @@ import os
 import shutil
 import sys
 import pandas as pd
+from Bio import SeqIO
 
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
@@ -71,8 +72,7 @@ from commec.screeners.check_reg_path import (
     update_taxonomic_data_from_database
 )
 
-from commec.tools.fetch_nc_bits import fetch_noncoding_regions
-from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
+from commec.tools.fetch_nc_bits import fetch_noncoding_regions, calculate_noncoding_regions_per_query
 
 from commec.config.result import (
     ScreenResult,
@@ -383,10 +383,11 @@ class Screen:
             self.database_tools.regulated_protein.out_file, self.screen_io.nt_path
         )
 
-        calculate_noncoding_regions_per_query()
+        noncoding_fasta = calculate_noncoding_regions_per_query(
+            self.database_tools.regulated_protein.read_output(), 
+            self.queries)
 
-        noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"
-
+        #noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"
 
         if not os.path.isfile(noncoding_fasta):
             logging.debug(
@@ -405,6 +406,8 @@ class Screen:
                 "ERROR: Expected nucleotide search output not created: "
                 + self.database_tools.regulated_nt.out_file
             )
+
+        # Convert all NC coordinates to NC coordinates.
 
 
         logging.debug("\t...checking blastn results")
