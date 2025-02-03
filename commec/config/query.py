@@ -61,17 +61,14 @@ class Query:
             return name
         
         tokens = name.split("_")
-        max_token = 0
-        total_size = 0
-
-        for i, token in enumerate(tokens):
-            if total_size + 1 + len(token) < 26:
-                max_token = i
-                total_size += 1 + len(token)
-            else:
+        output = ""
+        for i in range(len(tokens)):
+            testname = "_".join(tokens[:i])
+            if len(testname) > 25:
                 break
+            output = testname
         
-        return "_".join(tokens[:max_token])
+        return output
     
 
     def get_non_coding_regions(self) -> str:
