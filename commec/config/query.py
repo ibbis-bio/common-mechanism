@@ -32,7 +32,7 @@ class Query:
         # TODO: Update line 53-55 of Check_Benign, to ensure that the query filter is using
         # The correct name, when filtering benign components.
         command = ["transeq", input_path, output_path, "-frame", "6", "-clean"]
-        result = subprocess.run(command)
+        result = subprocess.run(command, check = True,  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if result.returncode != 0:
             raise RuntimeError(
                 f"Input FASTA {input_path} could not be translated:\n{result.stderr}"
@@ -58,9 +58,24 @@ class Query:
     def create_id(name : str) -> str:
         """
         Parse the Fasta SeqRecord string ID into a 25 digit maximum Unique Identification.
+        12345_123_THIS_UNIQUE_12345LONGLONG
         For internal Commec Screen Use only.
         """
-        return name[:25] if len(name) > 24 else name
+        if len(name) < 26:
+            return name
+        
+        tokens = name.split("_")
+        max_token = 0
+        total_size = 0
+
+        for i, token in enumerate(tokens):
+            if total_size + 1 + len(token) < 26:
+                max_token = i
+                total_size += 1 + len(token)
+            else:
+                break
+        
+        return "_".join(tokens[:max_token])
     
 
     def get_non_coding_regions(self) -> str:
