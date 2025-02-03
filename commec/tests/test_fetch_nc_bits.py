@@ -5,8 +5,8 @@ import pytest
 import textwrap
 from Bio import SeqIO
 from commec.screeners.fetch_nc_bits import (
-    get_ranges_with_no_hits,
-    write_nc_sequences,
+    _get_ranges_with_no_hits,
+    _write_nc_sequences,
     fetch_noncoding_regions,
 )
 
@@ -19,11 +19,11 @@ from commec.screeners.fetch_nc_bits import (
         # One protein hit, < 50bp nocoding regions on the ends
         ([(50, 251)], []),
         # One protein hit, > 50bp nocoding regions on the ends
-        ([(51, 250)], [[1, 50], [251, 300]]),
+        ([(51, 250)], [(1, 50), (251, 300)]),
         # Three protein hits, one noncoding region >50bp
         (
             [(1, 40), (140, 265), (300, 349)],
-            [[41, 139]],
+            [(41, 139)],
         ),
     ],
 )
@@ -42,7 +42,7 @@ def test_get_ranges_with_no_hits(hits, nc_ranges):
         return df.reset_index(drop=True)  # This adds a numeric index
 
     blast_df = _create_mock_blast_df_from(hits)
-    assert get_ranges_with_no_hits(blast_df) == nc_ranges
+    assert _get_ranges_with_no_hits(blast_df) == nc_ranges
 
 
 def test_write_nc_sequences(tmp_path):
@@ -55,7 +55,7 @@ def test_write_nc_sequences(tmp_path):
     nc_ranges = [[5, 59], [91, 170]]
     outfile = tmp_path / "output.fasta"
 
-    write_nc_sequences(nc_ranges, record, outfile)
+    _write_nc_sequences(nc_ranges, record, outfile)
 
     content = outfile.read_text()
     assert f">{desc} 5-59\n{seq[4:59]}\n" in content
