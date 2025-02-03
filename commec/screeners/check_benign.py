@@ -17,8 +17,9 @@ import pandas as pd
 from commec.tools.blastn import BlastNHandler  # For has_hits.
 from commec.tools.hmmer import HmmerHandler
 from commec.tools.blast_tools import get_top_hits, read_blast
-from commec.tools.hmmer import readhmmer
+from commec.tools.hmmer import readhmmer, recalculate_hmmer_query_coordinates, append_nt_querylength_info
 from commec.tools.cmscan import CmscanHandler, readcmscan
+from commec.config.query import Query
 
 from commec.config.result import (
     ScreenResult,
@@ -175,7 +176,8 @@ def _update_benign_data_for_query(query : QueryResult,
 def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                      benign_rna_handle : CmscanHandler,
                                      benign_synbio_handle : BlastNHandler,
-                                     data : ScreenResult, 
+                                     data : ScreenResult,
+                                     input_query_data : dict[str, Query],
                                      benign_desc : pd.DataFrame):
     """
     Parse the outputs from the protein, rna, and synbio database searches, and populate
@@ -184,6 +186,9 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
     """
     # Reading empty outcomes should result in empty DataFrames, not errors.
     benign_protein_screen_data = benign_protein_handle.read_output()
+    append_nt_querylength_info(benign_protein_screen_data, input_query_data)
+    recalculate_hmmer_query_coordinates(benign_protein_screen_data)
+
     benign_rna_screen_data = benign_rna_handle.read_output()
     benign_synbio_screen_data = benign_synbio_handle.read_output()
 

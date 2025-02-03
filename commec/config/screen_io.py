@@ -125,16 +125,34 @@ class ScreenIO:
         """
         Parse queries from FASTA file.
         """
+        records = []
+
         with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
             queries = {}
-            for record in SeqIO.parse(fasta_file, "fasta"):
-                try:
-                    query = Query(record)
-                    if query.name in queries:
-                        raise ValueError(f"Duplicate sequence identifier found: {query.name}")
-                    queries[query.name] = query
-                except Exception as e:
-                    raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}") from e
+            records = list(SeqIO.parse(fasta_file, "fasta"))
+
+        for record in records:
+            try:
+                query = Query(record)
+                if query.name in queries:
+                    raise ValueError(f"Duplicate sequence identifier found: {query.name}")
+                queries[query.name] = query
+                # Override the original cleaned fasta, with updated names.
+                record.id = query.name
+                record.name = ""
+                record.description = ""
+            except Exception as e:
+                raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}") from e
+
+        # Rewrite the cleaned.fasta with unique names.
+        print("DEBUG RECORDS: ")
+        for r in records:
+            print(r)
+
+        with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
+            print("Writing ", fasta_file)
+            SeqIO.write(records, fasta_file, "fasta")
+
         return queries
 
     def clean(self):

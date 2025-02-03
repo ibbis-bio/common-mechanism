@@ -154,6 +154,7 @@ def update_taxonomic_data_from_database(
                         int(region['s. start']), int(region['s. end']),
                         int(region['q. start']), int(region['q. end'])
                     )
+
                     match_ranges.append(match_range)
 
                     # Filter shared_site based on 'q. start' or 'q. end' (Previously only shared starts were used)

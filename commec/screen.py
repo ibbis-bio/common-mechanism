@@ -70,7 +70,9 @@ from commec.screeners.check_reg_path import (
     check_for_regulated_pathogens,
     update_taxonomic_data_from_database
 )
+
 from commec.tools.fetch_nc_bits import fetch_noncoding_regions
+from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 
 from commec.config.result import (
     ScreenResult,
@@ -327,9 +329,10 @@ class Screen:
         logging.debug("\t...checking hmmscan results")
         check_biorisk(
             self.database_tools.biorisk_hmm.out_file,
-            self.database_tools.biorisk_hmm.db_directory
+            self.database_tools.biorisk_hmm.db_directory,
+            self.queries
         )
-        update_biorisk_data_from_database(self.database_tools.biorisk_hmm, self.screen_data)
+        update_biorisk_data_from_database(self.database_tools.biorisk_hmm, self.screen_data, self.queries)
 
     def screen_proteins(self):
         """
@@ -379,6 +382,8 @@ class Screen:
         fetch_noncoding_regions(
             self.database_tools.regulated_protein.out_file, self.screen_io.nt_path
         )
+
+        calculate_noncoding_regions_per_query()
 
         noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"
 
@@ -456,6 +461,7 @@ class Screen:
             self.database_tools.benign_cmscan,
             self.database_tools.benign_blastn,
             self.screen_data,
+            self.queries,
             benign_desc
         )
 
