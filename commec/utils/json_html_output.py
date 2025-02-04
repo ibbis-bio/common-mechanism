@@ -27,7 +27,7 @@ class CommecPalette():
     LT_BLUE = [66,155,185]
     ORANGE = [241,80,36]
     # Yellow and Red are not official Commec colours.
-    YELLOW = [241,80,36]
+    YELLOW = [241,168,29]
     RED = [207,27,81]
 
     @staticmethod
@@ -200,7 +200,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
          "label_verbose": query_to_draw.query, 
          "outcome" : f"Commec Recommendation for this query: {query_to_draw.recommendation.screen_status}",
          "outcome_verbose":"",
-         "start": 0, "stop": query_to_draw.length, 
+         "start": 1, "stop": query_to_draw.length, 
          "color" : CommecPalette.DK_BLUE, 
          "stack" : 0},
     ]

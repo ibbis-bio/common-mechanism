@@ -149,32 +149,20 @@ def get_taxonomic_labels(
     blast["genus"] = ""
     blast["species"] = ""
 
+    lin = _get_lineages(blast[TAXIDS_COL], db_path, threads)
+
     blast = blast[blast[TAXIDS_COL] != TAXID_SYNTHETIC_CONSTRUCTS]
     blast = blast[blast[TAXIDS_COL] != TAXID_VECTORS]
     blast = blast.reset_index(drop=True)
 
-    lin = _get_lineages(blast[TAXIDS_COL], db_path, threads)
-
-    try:
-        a = t["FullLineage"].str.split(";")[0]
-        b = t["FullLineageTaxIDs"].str.split(";")[0]
-        c = t["FullLineageRanks"].str.split(";")[0]
-    except AttributeError:
-        logging.error("The Blast database used has not returned any Lineage information!")
-        return blast
-
-    for x in range(0, blast.shape[0]):  # for each hit taxID
-        # fetch the full lineage for that taxID
-        # go through each taxonomy level and check for regulated taxIDs
-        tax_lin = pd.DataFrame(
-            list(
-                zip(
-                    t["FullLineage"].str.split(";")[x],
-                    t["FullLineageTaxIDs"].str.split(";")[x],
-                    t["FullLineageRanks"].str.split(";")[x],
-                )
-            ),
-            columns=["Lineage", "TaxID", "Rank"],
+    # Check if any rows will be removed due to not finding a valid lineage for them
+    rows_to_remove = blast[~blast[TAXIDS_COL].isin(lin["TaxID"])]
+    if not rows_to_remove.empty:
+        logging.warning(
+            "Removing %i rows from BLAST results due to invalid taxID(s): %s"
+            " - check that taxonomy and protein databases are up to date!",
+            len(rows_to_remove),
+            ", ".join(map(str, rows_to_remove[TAXIDS_COL].unique())),
         )
     # Filter to only those rows which have a matching taxonomic lineage
     blast = blast[blast[TAXIDS_COL].isin(lin["TaxID"])]

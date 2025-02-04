@@ -30,6 +30,7 @@ import re
 from dataclasses import dataclass, asdict, field
 from typing import List, Iterator, Tuple
 from enum import StrEnum
+import pandas as pd
 from importlib.metadata import version, PackageNotFoundError
 from commec.tools.search_handler import SearchToolVersion
 
