@@ -48,10 +48,10 @@ class BlastNHandler(BlastHandler):
     def _search(self):
         command = [
             self.blastcall,
-            "-query",
-            self.input_file,
             "-db",
             self.db_file,
+            "-query",
+            self.input_file,
             "-out",
             self.out_file,
         ]

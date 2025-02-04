@@ -151,26 +151,32 @@ def fetch_noncoding_regions(protein_results, query_fasta):
     _write_nc_sequences(ranges_to_screen, records[0], outfile)
 
 def _set_no_coding_regions(query : Query):
-    query.non_coding_regions.append((0, len(query.seq_record.seq) - 1))
+    query.non_coding_regions.append((1, len(query.seq_record.seq)))
 
 def calculate_noncoding_regions_per_query(
         protein_results : str,
         queries : dict[str, Query]
         ):
     """
-    Fetch noncoding regions > 50bp for every query, and write to a new file.
-    Updates the Query dictionary to include non-coding meta-data.
+    Fetch noncoding regions > 50bp for every query, and
+    updates the Query dictionary to include non-coding meta-data.
 
-    Returns the filepath to the new non-coding fasta file.
+    Does NOT write the non-coding dictionary.
     """
-    outfile = re.sub(".nr.*", "", protein_results) + ".noncoding.fasta"
 
     logging.info("Checking protein hits in: %s", protein_results)
+    nc_sequences = []
+
+    if not SearchHandler.has_hits(protein_results):
+        logging.info("No protein hits found, screening entire sequence.")
+        for query in queries.values():
+            _set_no_coding_regions(query)
+            nc_sequences.append(query.get_non_coding_regions_as_fasta())
+        return nc_sequences
 
     protein_matches = get_high_identity_matches(protein_results)
 
     query_col = "query acc."
-    nc_sequences = []
 
     for query in queries.values():
         #record = query.seq_record
@@ -179,6 +185,7 @@ def calculate_noncoding_regions_per_query(
         if protein_matches_for_query.empty:
             logging.info("No protein hits found for %s, screening entire sequence.", query.name)
             _set_no_coding_regions(query)
+            nc_sequences.append(query.get_non_coding_regions_as_fasta())
             continue
 
         logging.info("Protein hits found for %s, fetching nt regions not covered by a 90%% ID hit or better", query.name)
@@ -193,19 +200,8 @@ def calculate_noncoding_regions_per_query(
         query.non_coding_regions.extend(ranges_to_screen)
 
         ranges_str = ", ".join(f"{start}-{end}" for start, end in ranges_to_screen)
-        logging.info("Writing noncoding regions [%s] to: %s", ranges_str, outfile)
+        logging.info("Identified noncoding regions [%s]", ranges_str)
 
-        for start, stop in ranges_to_screen:
-            # subtract 1 just from `start` to adjust to 0-based index and capture full range
-            sequence = query.seq_record.seq[int(start) - 1 : int(stop)]
-            # when parsed from a FASTA file, description includes the id:
-            # https://biopython.org/docs/latest/Tutorial/chapter_seq_annot.html#seqrecord-objects-from-fasta-files
-            nc_sequences.append(f">{query.name} {start}-{stop}\n{sequence}\n")
-
-    with open(outfile, "w", encoding="utf-8") as output_file:
-        output_file.writelines(nc_sequences)
-
-    return outfile
 
 def main():
     '''

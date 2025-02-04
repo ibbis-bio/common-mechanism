@@ -21,6 +21,7 @@ example_hmmer_01 = pd.DataFrame({
     "nt_qlen":     [31, 31, 31, 31, 31, 31]
 })
 
+# Logically, we would expect this to match Fwd and Rev all frame AA to NT coordinates:
 # 1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
 # [  1  ]  [  2  ]  [  3  ] [   4  ] [   5  ] [   6  ] [   7  ] [   8  ] [   9  ] [  10  ]
 #    [  1  ]  [  2  ]  [  3  ] [   4  ] [   5  ] [   6  ] [   7  ] [   8  ] [   9  ] [  10  ]
@@ -29,8 +30,18 @@ example_hmmer_01 = pd.DataFrame({
 #       [  9  ]  [  8  ] [   7  ] [   6  ] [   5  ] [   4  ] [   3  ] [   2  ] [   1  ]
 #    [  9  ]  [  8  ] [   7  ] [   6  ] [   5  ] [   4  ] [   3  ] [   2  ] [   1  ] [  -1  ]
 
+# However, HMMER Biorisk behaves like the following 
+#(According to testing with BBa_I766605 YopH-EE under medium constitutive promotor, and reverse complements.)
+# 1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
+# [  1  ]  [  2  ]  [  3  ] [   4  ] [   5  ] [   6  ] [   7  ] [   8  ] [   9  ] [  10  ]
+#    [  1  ]  [  2  ]  [  3  ] [   4  ] [   5  ] [   6  ] [   7  ] [   8  ] [   9  ] [  10  ]
+#       [  1  ]  [  2  ]  [  3  ] [   4  ] [   5  ] [   6  ] [   7  ] [   8  ] [   9  ]
+#       [  10 ]  [  9  ]  [  8  ] [   7  ] [   6  ] [   5  ] [   4  ] [   3  ] [   2  ] [   1  ]
+#             [  9  ]  [  8  ] [   7  ] [   6  ] [   5  ] [   4  ] [   3  ] [   2  ] [   1  ]
+#          [  9  ]  [  8  ] [   7  ] [   6  ] [   5  ] [   4  ] [   3  ] [   2  ] [   1  ] [  -1  ]
+
 # Example DataFrame
-example_hmmer_01_output = pd.DataFrame({
+original_expected_output = pd.DataFrame({
     "query name": ["F1","F2","F3","R1","R2", "R3"],
     "frame":    [1,2,3,4,5,6],
     "ali from": [1, 2, 3, 1, 2, 3],
@@ -38,6 +49,17 @@ example_hmmer_01_output = pd.DataFrame({
     "nt_qlen":  [31, 31, 31, 31, 31, 31],
     "q. start": [ 1,  5,  9,  19,  15, 11],
     "q. end":   [12, 16, 20,  30,  26, 22]
+})
+
+# Example DataFrame which matches biorisk hmmer outputs:
+example_hmmer_01_output = pd.DataFrame({
+    "query name": ["F1","F2","F3","R1","R2", "R3"],
+    "frame":    [1,2,3,4,5,6],
+    "ali from": [1, 2, 3, 1, 2, 3],
+    "ali to":   [4, 5, 6, 4, 5, 6],
+    "nt_qlen":  [31, 31, 31, 31, 31, 31],
+    "q. start": [ 1,  5,  9,  21,  17, 13],
+    "q. end":   [12, 16, 20,  32,  28, 24]
 })
 
 @pytest.mark.parametrize(
