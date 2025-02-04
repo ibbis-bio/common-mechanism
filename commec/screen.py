@@ -384,22 +384,24 @@ class Screen:
         noncoding regions (i.e. that would not be found with protein search).
         """
         # Only screen nucleotides in noncoding regions
-        fetch_noncoding_regions(
-            self.database_tools.regulated_protein.out_file, self.screen_io.nt_path
-        )
+        #fetch_noncoding_regions(
+        #    self.database_tools.regulated_protein.out_file, self.screen_io.nt_path
+        #)
 
-        noncoding_fasta = calculate_noncoding_regions_per_query(
+        nc_fasta_sequences = calculate_noncoding_regions_per_query(
             self.database_tools.regulated_protein.out_file,
             self.queries)
-
-        #noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"
-
-        if not os.path.isfile(noncoding_fasta):
+        
+        if len(nc_fasta_sequences) == 0:
             logging.debug(
                 "\t...skipping nucleotide search since no noncoding regions fetched"
             )
             self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
             return
+
+        noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"
+        with open(noncoding_fasta, "w", encoding="utf-8") as output_file:
+            output_file.writelines(nc_fasta_sequences)
 
         # Only run new blastn search if there are no previous results
         if not self.database_tools.regulated_nt.check_output():

@@ -53,9 +53,10 @@ class Query:
     @staticmethod
     def create_id(name : str) -> str:
         """
-        Parse the Fasta SeqRecord string ID into a 25 digit maximum Unique Identification.
-        12345_123_THIS_UNIQUE_12345LONGLONG
+        Parse the Fasta SeqRecord string ID into 
+        a 25 digit maximum Unique Identification.
         For internal Commec Screen Use only.
+        Original Fasta name IDs are used during JSON output.
         """
         if len(name) < 26:
             return name
@@ -77,8 +78,9 @@ class Query:
         to be appended to a non_coding fasta file.
         """
         output : str = ""
-        for start, end in self.non_coding_regions:
-            output += self.seq_record.seq[start-1:end]
+        print(self.seq_record.seq)
+        for start, stop in self.non_coding_regions:
+            output+=f">{self.name} {start}-{stop}\n{self.seq_record.seq[int(start): int(stop)]}\n"
         return output
 
     def nc_to_nt_query_coords(self, index : int) -> int:

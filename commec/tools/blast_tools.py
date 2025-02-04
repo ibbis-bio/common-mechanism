@@ -140,11 +140,11 @@ def get_taxonomic_labels(
     blast["genus"] = ""
     blast["species"] = ""
 
+    lin = _get_lineages(blast[TAXIDS_COL], db_path, threads)
+
     blast = blast[blast[TAXIDS_COL] != TAXID_SYNTHETIC_CONSTRUCTS]
     blast = blast[blast[TAXIDS_COL] != TAXID_VECTORS]
     blast = blast.reset_index(drop=True)
-
-    lin = _get_lineages(blast[TAXIDS_COL], db_path, threads)
 
     # Check if any rows will be removed due to not finding a valid lineage for them
     rows_to_remove = blast[~blast[TAXIDS_COL].isin(lin["TaxID"])]

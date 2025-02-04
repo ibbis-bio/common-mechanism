@@ -116,7 +116,11 @@ def update_taxonomic_data_from_database(
     if top_hits["regulated"].sum() == 0:
         logging.info("\t...no regulated hits\n")
         return 0
-
+    
+    # The non-coding fasta appends (start, stop) info to the filenames. This counters that.
+    if step == ScreenStep.TAXONOMY_NT:
+        top_hits["query acc."] = top_hits["query acc."].str.split(" ").str[0]
+    
     # if ANY of the trimmed hits are regulated
     with pd.option_context('display.max_rows', None,
                     'display.max_columns', None,
@@ -124,7 +128,6 @@ def update_taxonomic_data_from_database(
                     ):
 
         unique_queries = top_hits['query acc.'].unique()
-
         for query in unique_queries:
             query_write = data.get_query(query)
             if not query_write:
