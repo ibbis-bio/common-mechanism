@@ -23,7 +23,7 @@ class Query:
         self.original_name = seq_record.id
         self.name = self.create_id(seq_record.id)
         self.seq_record = seq_record
-        self.non_coding_regions : list[tuple[int, int]] = []
+        self.non_coding_regions : list[tuple[int, int]] = [] # 1 based coordinates for Non-Coding Regions.
         self.result_handle : QueryResult = None
 
     def translate(self, input_path, output_path) -> None:
@@ -57,9 +57,10 @@ class Query:
     @staticmethod
     def create_id(name : str) -> str:
         """
-        Parse the Fasta SeqRecord string ID into a 25 digit maximum Unique Identification.
-        12345_123_THIS_UNIQUE_12345LONGLONG
+        Parse the Fasta SeqRecord string ID into 
+        a 25 digit maximum Unique Identification.
         For internal Commec Screen Use only.
+        Original Fasta name IDs are used during JSON output.
         """
         if len(name) < 26:
             return name
@@ -75,32 +76,38 @@ class Query:
         return output
     
 
-    def get_non_coding_regions(self) -> str:
+    def get_non_coding_regions_as_fasta(self) -> str:
         """ 
         Return the concatenation of all non-coding regions as a string,
         to be appended to a non_coding fasta file.
         """
-        output : str = ""
-        for start, end in self.non_coding_regions:
-            output += self.seq_record.seq[start-1:end]
-        return output
+        if len(self.non_coding_regions) == 0:
+            return ""
+        heading : str = f">{self.name}"
+        sequence : str = ""
+        for start, stop in self.non_coding_regions:
+            heading+=f" ({start}-{stop})"
+            sequence+=f"{self.seq_record.seq[int(start)-1: int(stop)]}"
+        return f"{heading}\n{sequence}\n"
 
     def nc_to_nt_query_coords(self, index : int) -> int:
         """
         Given an index in non-coding coordinates,
         calculate the nucleotide index in query coordinates.
         """
-        nc_pos : int = 0
+        nc_pos : int = 1
         for start, end in self.non_coding_regions:
             region_length : int = end - start
-            if index < (nc_pos + region_length):
+            if (index <= (nc_pos + region_length) and
+                index >= nc_pos):
                 return index - nc_pos + start
-            nc_pos += region_length
+
+            nc_pos += region_length + 1
 
         # index was out put bounds of non-coding list of tuples:
         raise QueryValueError(
-            f"Non-coding index provided  ({index}) "
-             "which is out-of-bounds for any known NC start-end tuple."
+            f"Non-coding index provided  ({index}) for {self.name}"
+            f"which is out-of-bounds for any known NC start-end tuple: {self.non_coding_regions}"
             )
 
 class QueryValueError(ValueError):
