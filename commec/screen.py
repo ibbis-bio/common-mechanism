@@ -66,14 +66,14 @@ from commec.config.query import Query
 from commec.config.screen_tools import ScreenTools
 
 from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
-from commec.screeners.check_benign import check_for_benign, update_benign_data_from_database
+from commec.screeners.check_benign import update_benign_data_from_database
 from commec.screeners.check_reg_path import (
     check_for_regulated_pathogens,
     update_taxonomic_data_from_database
 )
 
 from commec.tools.fetch_nc_bits import (
-    fetch_noncoding_regions, 
+    fetch_noncoding_regions,
     calculate_noncoding_regions_per_query
 )
 
@@ -259,7 +259,9 @@ class Screen:
         self.screen_data.update()
         encode_screen_data_to_json(self.screen_data, self.screen_io.output_json)
         generate_html_from_screen_data(self.screen_data, self.screen_io.output_prefix+"_summary")
-        self.screen_io.clean()
+        
+        if self.screen_io.config.do_cleanup:
+            self.screen_io.clean()
 
     def setup(self, args: argparse.ArgumentParser):
         """Instantiates and validates parameters, and databases, ready for a run."""
@@ -420,11 +422,11 @@ class Screen:
         if os.path.isfile(reg_path_coords):
             os.remove(reg_path_coords)
 
-        check_for_regulated_pathogens(
-            self.database_tools.regulated_protein.out_file,
-            self.screen_io.db_dir,
-            str(self.screen_io.config.threads),
-        )
+        #check_for_regulated_pathogens(
+        #    self.database_tools.regulated_protein.out_file,
+        #    self.screen_io.db_dir,
+        #    str(self.screen_io.config.threads),
+        #)
 
         update_taxonomic_data_from_database(self.database_tools.regulated_protein,
                                             self.database_tools.benign_taxid_path,
@@ -443,26 +445,35 @@ class Screen:
         noncoding regions (i.e. that would not be found with protein search).
         """
         # Only screen nucleotides in noncoding regions
-        fetch_noncoding_regions(
-            self.database_tools.regulated_protein.out_file, self.screen_io.nt_path
-        )
+        #fetch_noncoding_regions(
+        #    self.database_tools.regulated_protein.out_file, self.screen_io.nt_path
+        #)
 
-        noncoding_fasta = calculate_noncoding_regions_per_query(
+        # Calculate non-coding information for each Query.
+        calculate_noncoding_regions_per_query(
             self.database_tools.regulated_protein.out_file,
             self.queries)
-
-        #noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"
-
-        if not os.path.isfile(noncoding_fasta):
-            logger.debug(
+        
+        # Generate the non-coding fasta.
+        nc_fasta_sequences = ""
+        for query in self.queries.values():
+            nc_fasta_sequences += query.get_non_coding_regions_as_fasta()
+        
+        # Skip if there is no non-coding information.
+        if nc_fasta_sequences == "":
+            logging.debug(
                 "\t...skipping nucleotide search since no noncoding regions fetched"
             )
             self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
             return
 
+        # Create a non-coding fasta file.
+        noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"
+        with open(noncoding_fasta, "w", encoding="utf-8") as output_file:
+            output_file.writelines(nc_fasta_sequences)
+
         # Only run new blastn search if there are no previous results
-        if not self.database_tools.regulated_nt.check_output():
-            self.database_tools.regulated_nt.search()
+        self.database_tools.regulated_nt.search()
 
         if not self.database_tools.regulated_nt.check_output():
             self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
@@ -471,7 +482,7 @@ class Screen:
                 + self.database_tools.regulated_nt.out_file
             )
         
-        # Note: Currently noncoding coordinataes are converted within update_taxonomic_data_from_database,
+        # Note: Currently noncoding coo rdinataes are converted within update_taxonomic_data_from_database,
         # It may be prudent to instead explictly convert them in the output file itself, or during import.
 
         logging.debug("\t...checking blastn results")
@@ -482,6 +493,7 @@ class Screen:
             self.params.config["databases"]["taxonomy"]["regulated_taxids"],
             self.params.config["threads"]
         )
+
         update_taxonomic_data_from_database(self.database_tools.regulated_nt,
                                             self.database_tools.benign_taxid_path,
                                             self.database_tools.biorisk_taxid_path,
@@ -496,32 +508,32 @@ class Screen:
         Call `hmmscan`, `blastn`, and `cmscan` and then pass results
         to `check_benign.py` to identify regions that can be cleared.
         """
-        sample_name = self.screen_io.output_prefix
-        if not os.path.exists(sample_name + ".reg_path_coords.csv"):
+        # Start by checking if there are any hits that require clearing...
+        hits_to_clear : bool = False
+        for _query, hit in self.screen_data.hits():
+            if hit.recommendation.status in {ScreenStatus.WARN, ScreenStatus.FLAG}:
+                hits_to_clear = True
+                break
+
+        if not hits_to_clear:
             logging.info("\t...no regulated regions to clear\n")
             self.reset_benign_recommendations(ScreenStatus.SKIP)
             return
 
-        logging.debug("\t...running benign hmmscan")
+        # Run the benign tools:
+        logging.info("\t...running benign hmmscan")
         self.database_tools.benign_hmm.search()
-        logging.debug("\t...running benign blastn")
+        logging.info("\t...running benign blastn")
         self.database_tools.benign_blastn.search()
-        logging.debug("\t...running benign cmscan")
+        logging.info("\t...running benign cmscan")
         self.database_tools.benign_cmscan.search()
 
-        coords = pd.read_csv(sample_name + ".reg_path_coords.csv")
+
+        # Update Screen Data with benign outputs.
         benign_desc = pd.read_csv(
             self.database_tools.benign_hmm.db_directory + "/benign_annotations.tsv",
             sep="\t",
         )
-
-        if coords.shape[0] == 0:
-            logging.info("\t...no regulated regions to clear\n")
-            self.reset_benign_recommendations(ScreenStatus.SKIP)
-            return
-
-        logging.debug("\t...checking benign scan results")
-        check_for_benign(sample_name, coords, benign_desc)
 
         update_benign_data_from_database(
             self.database_tools.benign_hmm,
