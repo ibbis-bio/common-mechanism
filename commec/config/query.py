@@ -19,7 +19,7 @@ class Query:
         self.original_name = seq_record.id
         self.name = self.create_id(seq_record.id)
         self.seq_record = seq_record
-        self.non_coding_regions : list[tuple[int, int]] = []
+        self.non_coding_regions : list[tuple[int, int]] = [] # 1 based coordinates for Non-Coding Regions.
         self.result_handle : QueryResult = None
 
     def translate(self, input_path, output_path) -> None:
@@ -72,16 +72,19 @@ class Query:
         return output
     
 
-    def get_non_coding_regions(self) -> str:
+    def get_non_coding_regions_as_fasta(self) -> str:
         """ 
         Return the concatenation of all non-coding regions as a string,
         to be appended to a non_coding fasta file.
         """
-        output : str = ""
-        print(self.seq_record.seq)
+        if len(self.non_coding_regions) == 0:
+            return ""
+        heading : str = f">{self.name}"
+        sequence : str = ""
         for start, stop in self.non_coding_regions:
-            output+=f">{self.name} {start}-{stop}\n{self.seq_record.seq[int(start): int(stop)]}\n"
-        return output
+            heading+=f" ({start}-{stop})"
+            sequence+=f"{self.seq_record.seq[int(start)-1: int(stop)]}"
+        return f"{heading}\n{sequence}"
 
     def nc_to_nt_query_coords(self, index : int) -> int:
         """

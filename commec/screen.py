@@ -361,11 +361,11 @@ class Screen:
         if os.path.isfile(reg_path_coords):
             os.remove(reg_path_coords)
 
-        check_for_regulated_pathogens(
-            self.database_tools.regulated_protein.out_file,
-            self.screen_io.db_dir,
-            str(self.screen_io.config.threads),
-        )
+        #check_for_regulated_pathogens(
+        #    self.database_tools.regulated_protein.out_file,
+        #    self.screen_io.db_dir,
+        #    str(self.screen_io.config.threads),
+        #)
 
         update_taxonomic_data_from_database(self.database_tools.regulated_protein,
                                             self.database_tools.benign_taxid_path,
@@ -388,17 +388,25 @@ class Screen:
         #    self.database_tools.regulated_protein.out_file, self.screen_io.nt_path
         #)
 
-        nc_fasta_sequences = calculate_noncoding_regions_per_query(
+        # Calculate non-coding information for each Query.
+        calculate_noncoding_regions_per_query(
             self.database_tools.regulated_protein.out_file,
             self.queries)
         
-        if len(nc_fasta_sequences) == 0:
+        # Generate the non-coding fasta.
+        nc_fasta_sequences = ""
+        for query in self.queries.values():
+            nc_fasta_sequences += query.get_non_coding_regions_as_fasta()
+        
+        # Skip if there is no non-coding information.
+        if nc_fasta_sequences == "":
             logging.debug(
                 "\t...skipping nucleotide search since no noncoding regions fetched"
             )
             self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
             return
 
+        # Create a non-coding fasta file.
         noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"
         with open(noncoding_fasta, "w", encoding="utf-8") as output_file:
             output_file.writelines(nc_fasta_sequences)
@@ -414,7 +422,7 @@ class Screen:
                 + self.database_tools.regulated_nt.out_file
             )
         
-        # Note: Currently noncoding coordinataes are converted within update_taxonomic_data_from_database,
+        # Note: Currently noncoding coo rdinataes are converted within update_taxonomic_data_from_database,
         # It may be prudent to instead explictly convert them in the output file itself, or during import.
 
         logging.debug("\t...checking blastn results")
@@ -423,6 +431,7 @@ class Screen:
             self.screen_io.db_dir,
             str(self.screen_io.config.threads),
         )
+
         update_taxonomic_data_from_database(self.database_tools.regulated_nt,
                                             self.database_tools.benign_taxid_path,
                                             self.database_tools.biorisk_taxid_path,
