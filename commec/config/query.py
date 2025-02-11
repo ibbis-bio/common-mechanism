@@ -91,10 +91,11 @@ class Query:
         Given an index in non-coding coordinates,
         calculate the nucleotide index in query coordinates.
         """
-        nc_pos : int = 0
+        nc_pos : int = 1
         for start, end in self.non_coding_regions:
             region_length : int = end - start
-            if index < (nc_pos + region_length):
+            if (index < (nc_pos + region_length) and 
+                index >= nc_pos):
                 return index - nc_pos + start
             nc_pos += region_length
 

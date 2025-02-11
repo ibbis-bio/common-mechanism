@@ -27,7 +27,7 @@ def non_coding_regions():
     Uses the same lengths as in seq_record() to compute (start, end) values.
     """
     regions = [
-        (0, 50),       # First 'a' region
+        (1, 50),       # First 'a' region
         (70, 100),     # Second 'a' region (starts after first coding region)
         (130, 150)     # Third 'a' region (starts after second coding region)
     ]
@@ -43,6 +43,7 @@ def test_cases():
     The input is a sequence coordinate, and the expected output is its transformed coordinate.
     """
     return [
+        (1, 1),
         (10, 10),
         (49, 49),
         (50, 70),
@@ -66,6 +67,13 @@ def test_coordinate_conversion(seq_record, non_coding_regions, test_cases):
     # Test Failure out of bounds.
     try:
         _x = test_query.nc_to_nt_query_coords(test_cases[-1][0]+1)
+        assert False
+    except QueryValueError:
+        assert True
+
+    # Test Failure out of bounds.
+    try:
+        _x = test_query.nc_to_nt_query_coords(0)
         assert False
     except QueryValueError:
         assert True
