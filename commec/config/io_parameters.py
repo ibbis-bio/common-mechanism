@@ -20,6 +20,20 @@ from yaml.parser import ParserError
 from commec.config.query import Query
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 
+SCREEN_ARGS = {
+    "database_dir"       : ("-d", "--databases"),
+    "config_yaml"        : ("-y", "--config"),
+    "fast_mode"          : ("-f", "--fast"),
+    "protein_search_tool": ("-p", "--protein-search-tool"),
+    "skip_nt_search"     : ("-n", "--skip-nt"),
+    "threads"            : ("-t", "--threads"),
+    "diamond_jobs"       : ("-j", "--diamond-jobs"),
+    "output_prefix"      : ("-o", "--output"),
+    "cleanup"            : ("-c", "--cleanup"),
+    "force"              : ("-F", "--force"),
+    "resume"             : ("-R", "--resume"),
+}
+
 class ScreenIOParameters:
     """
     Container for input settings constructed from arguments to `screen`.
@@ -112,10 +126,12 @@ class ScreenIOParameters:
 
     def _update_config_from_cli(self, args: argparse.ArgumentParser):
         """ Maps any CLI, that can update the yaml configuration dictionary, and does so."""
-        # Filter to include only explicitly provided arguments
-        explicit_args = {k: v for k, v in vars(args).items() if f"--{k.replace('_', '-')}" in sys.argv}
 
-        # Map argparse keys to YAML config keys, some are the same, and can be ignored.
+        # Compare argv to args, to see what was actually passed in CLI:
+        known_commands = {k: v for k, v in vars(args).items() if SCREEN_ARGS.get(k)}
+        explicit_args = {k: v for k, v in known_commands.items() if SCREEN_ARGS[k][0] in sys.argv or SCREEN_ARGS[k][1] in sys.argv}
+
+        # Map argparse keys to YAML config keys, many are the same, and can be ignored.
         new_key_names = {
             "fast_mode" : "in_fast_mode",
             "cleanup" : "do_cleanup",
@@ -125,7 +141,9 @@ class ScreenIOParameters:
 
         # Update the configuration dictionary
         for key, value in renamed_args.items():
-            self.config[key] = value
+            # Ensures only true yaml default values are overwritten:
+            if key in self.config:
+                self.config[key] = value
 
 
     def _lazy_update_from_yaml(self, config_filepath: str | os.PathLike) -> None:

@@ -58,7 +58,7 @@ import sys
 import pandas as pd
 
 from commec.utils.file_utils import file_arg, directory_arg
-from commec.config.io_parameters import ScreenIOParameters
+from commec.config.io_parameters import ScreenIOParameters, SCREEN_ARGS
 from commec.config.screen_tools import ScreenTools
 
 from commec.screeners.check_biorisk import check_biorisk
@@ -76,53 +76,53 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
     parser.add_argument(dest="fasta_file", type=file_arg, help="FASTA file to screen")
     parser.add_argument(
-        "-d",
-        "--databases",
+        SCREEN_ARGS["database_dir"][0],
+        SCREEN_ARGS["database_dir"][1],
         dest="database_dir",
         type=directory_arg,
         default=None,
         help="Path to directory containing reference databases (e.g. taxonomy, protein, HMM)",
     )
     parser.add_argument(
-        "-y",
-        "--config",
+        SCREEN_ARGS["config_yaml"][0],
+        SCREEN_ARGS["config_yaml"][1],
         dest="config_yaml",
         help="Configuration for screen run in YAML format, including custom database paths",
         default="",
     )
     screen_logic_group = parser.add_argument_group("Screen run logic")
     screen_logic_group.add_argument(
-        "-f",
-        "--fast",
+        SCREEN_ARGS["fast_mode"][0],
+        SCREEN_ARGS["fast_mode"][1],
         dest="fast_mode",
         action="store_true",
         help="Run in fast mode and skip protein and nucleotide homology search",
     )
     screen_logic_group.add_argument(
-        "-p",
-        "--protein-search-tool",
+        SCREEN_ARGS["protein_search_tool"][0],
+        SCREEN_ARGS["protein_search_tool"][1],
         dest="protein_search_tool",
         choices=["blastx", "diamond"],
         help="Tool for protein homology search to identify regulated pathogens",
     )
     screen_logic_group.add_argument(
-        "-n",
-        "--skip-nt",
+        SCREEN_ARGS["skip_nt_search"][0],
+        SCREEN_ARGS["skip_nt_search"][1],
         dest="skip_nt_search",
         action="store_true",
         help="Skip nucleotide search (regulated pathogens will only be identified based on protein hits)",
     )
     parallel_group = parser.add_argument_group("Parallelisation")
     parallel_group.add_argument(
-        "-t",
-        "--threads",
+        SCREEN_ARGS["threads"][0],
+        SCREEN_ARGS["threads"][1],
         dest="threads",
         type=int,
         help="Number of CPU threads to use. Passed to search tools.",
     )
     parallel_group.add_argument(
-        "-j",
-        "--diamond-jobs",
+        SCREEN_ARGS["diamond_jobs"][0],
+        SCREEN_ARGS["diamond_jobs"][1],
         dest="diamond_jobs",
         type=int,
         help="Diamond-only: number of runs to do in parallel on split Diamond databases",
@@ -130,30 +130,30 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     output_handling_group = parser.add_argument_group("Output file handling")
     output_exclusive_group = output_handling_group.add_mutually_exclusive_group()
     output_handling_group.add_argument(
-        "-o",
-        "--output",
+        SCREEN_ARGS["output_prefix"][0],
+        SCREEN_ARGS["output_prefix"][1],
         dest="output_prefix",
         help="Prefix for output files. Can be a string (interpreted as output basename) or a"
         + " directory (files will be output there, names will be determined from input FASTA)",
         default = ""
     )
     output_handling_group.add_argument(
-        "-c",
-        "--cleanup",
+        SCREEN_ARGS["cleanup"][0],
+        SCREEN_ARGS["cleanup"][1],
         dest="cleanup",
         action="store_true",
         help="Delete intermediate output files for this Screen run",
     )
     output_exclusive_group.add_argument(
-        "-F",
-        "--force",
+        SCREEN_ARGS["force"][0],
+        SCREEN_ARGS["force"][1],
         dest="force",
         action="store_true",
         help="Overwrite any pre-existing output for this Screen run (cannot be used with --resume)",
     )
     output_exclusive_group.add_argument(
-        "-R",
-        "--resume",
+        SCREEN_ARGS["resume"][0],
+        SCREEN_ARGS["resume"][1],
         dest="resume",
         action="store_true",
         help="Re-use any pre-existing output for this Screen run (cannot be used with --force)",
@@ -206,6 +206,8 @@ class Screen:
         """
         # Perform setup steps.
         self.setup(args)
+
+        self.params.output_yaml(self.params.input_prefix + "_config.yaml")
 
         # Biorisk screen
         logging.info(">> STEP 1: Checking for biorisk genes...")
@@ -294,8 +296,6 @@ class Screen:
             self.params.db_dir,
             str(self.params.config["threads"]),
         )
-
-        self.params.output_yaml(self.params.input_prefix + "_config.yaml")
 
     def screen_nucleotides(self):
         """
