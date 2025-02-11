@@ -4,7 +4,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - python=3.12
+  - python>=3.10
   # Runtime Python dependencies
   - biopython
   - numpy
@@ -12,15 +12,11 @@ dependencies:
   - pytaxonkit
   - pyyaml
   # Runtime non-Python dependencies
-  - bedtools
   - blast
-  - emboss
   - diamond>=2.1
+  - emboss
   - hmmer
   - infernal
-  - parallel
-  - perl-list-moreutils
-  - taxonkit
   # Development dependencies
   - pip
   - pytest

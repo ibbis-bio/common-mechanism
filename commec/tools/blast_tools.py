@@ -9,7 +9,7 @@ Also contains the abstract base class for blastX/N/Diamond database search handl
 import os
 import logging
 import glob
-from typing import List, Union, BinaryIO, TextIO
+from typing import BinaryIO, TextIO
 import pytaxonkit
 import pandas as pd
 import numpy as np
@@ -32,8 +32,8 @@ class BlastHandler(SearchHandler):
         """
         if not os.path.isdir(self.db_directory):
             raise DatabaseValidationError(
-                f"Mandatory screening database directory not found: {self.db_directory}."
-                " Screening directory can be set via --databases option or --config yaml."
+                f"No screening database directory found at: {self.db_directory}."
+                " Directory path can be set via --databases option or --config yaml."
             )
 
         # Search for files of provided prefix.
@@ -44,7 +44,7 @@ class BlastHandler(SearchHandler):
         files = glob.glob(search_file)
         if len(files) == 0:
             raise DatabaseValidationError(
-                f"Mandatory screening files not found. No files matched search: {filename}*"
+                f"Screening files not found. No files matched search: {filename}*"
                 " File location can be set via --databases option or --config yaml."
             )
 
@@ -104,8 +104,8 @@ def _get_lineages(taxids, db_path: str | os.PathLike, threads: int):
 
 def get_taxonomic_labels(
     blast: pd.DataFrame,
-    regulated_taxids: List[str],
-    vaccine_taxids: List[str],
+    regulated_taxids: list[str],
+    vaccine_taxids: list[str],
     db_path: str | os.PathLike,
     threads: int,
 ):
@@ -190,7 +190,7 @@ def get_taxonomic_labels(
     return blast
 
 
-def read_blast(blast_file: Union[str, os.PathLike, BinaryIO, TextIO]) -> pd.DataFrame:
+def read_blast(blast_file: str | os.PathLike | BinaryIO | TextIO) -> pd.DataFrame:
     """
     Read in BLAST/DIAMOND files and pre-format the data frame with essential info
     """
