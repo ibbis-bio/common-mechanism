@@ -117,18 +117,9 @@ class ScreenIOParameters:
 
         # Map argparse keys to YAML config keys, some are the same, and can be ignored.
         new_key_names = {
-            #"threads" : "threads",
-            #"protein_search_tool" : "protein_search_tool",
             "fast_mode" : "in_fast_mode",
-            #"skip_nt_search" : "skip_nt_search",
             "cleanup" : "do_cleanup",
-            #"diamond_jobs" : "diamond_jobs",
-            #"force" : "force",
-            #"resume" : "resume",
         }
-
-        # Ignored CLI commands: database, config_yaml, and output_prefix.
-
         # Rename arguments based on the Config.yaml mapping
         renamed_args = {new_key_names.get(k, k): v for k, v in explicit_args.items()}
 
