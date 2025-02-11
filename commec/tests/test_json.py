@@ -1,14 +1,15 @@
 import pytest
-from commec.config.json_io import *
-from commec.tools.search_handler import SearchToolVersion
 from dataclasses import asdict
+from commec.config.json_io import *
+from commec.config.result import *
+from commec.tools.search_handler import SearchToolVersion
 
 @pytest.fixture
 def test_screendata():
-    '''Fixture to provide the ScreenData for testing.'''
-    return ScreenData(
+    '''Fixture to provide the ScreenResult for testing.'''
+    return ScreenResult(
         #recommendation="PASS",
-        commec_info = CommecRunInformation(
+        commec_info = ScreenRunInfo(
             commec_version="0.1.2",
             json_output_version=JSON_COMMEC_FORMAT_VERSION,
             biorisk_database_info=SearchToolVersion("HMM 0.0.0","DB 0.0.0"),
@@ -20,16 +21,17 @@ def test_screendata():
             time_taken="00:00:00:00",
             date_run="1.1.2024",
         ),
-        queries= [
-            QueryData(
+        queries= {
+            "Query1":
+            QueryResult(
                 query="Query1",
                 length=10,
                 sequence="ABCDEFGHIJ",
-                recommendation = CommecRecommendationContainer(),
-                summary_info = CommecSummaryStatistics(),
-                hits = [
-                    HitDescription(
-                        recommendation=CommecScreenStepRecommendation(CommecRecommendation.WARN, CommecScreenStep.BIORISK),
+                recommendation = QueryScreenStatus(),
+                hits = {
+                    "ImportantProtein1":
+                    HitResult(
+                        recommendation=HitScreenStatus(ScreenStatus.WARN, ScreenStep.BIORISK),
                         name="ImportantProtein1",
                         annotations = {"domain" : ["Bacteria"]},
                         ranges = [
@@ -42,19 +44,19 @@ def test_screendata():
                             )
                         ]
                     )
-                ]
+                }
             )
-        ],
+        },
     )
 
 @pytest.fixture
 def empty_screendata():
-    '''Fixture to provide the ScreenData for testing.'''
-    return ScreenData()
+    '''Fixture to provide the ScreenResult for testing.'''
+    return ScreenResult()
 
 @pytest.mark.parametrize("test_data_fixture",["test_screendata", "empty_screendata"])
 def test_json_io(tmp_path, request, test_data_fixture):
-    ''' Test to ensure that read/write for JSON ScreenData I/O is working correctly.'''
+    ''' Test to ensure that read/write for JSON ScreenResult I/O is working correctly.'''
     test_data = request.getfixturevalue(test_data_fixture)
     json_filename1 = tmp_path / "testread1.json"
     json_filename2 = tmp_path / "testread2.json"
@@ -78,7 +80,7 @@ def test_json_io(tmp_path, request, test_data_fixture):
     )
 
 def test_erroneous_info(tmp_path, test_screendata):
-    ''' Test to ensure that read/write for JSON ScreenData I/O is working correctly.'''
+    ''' Test to ensure that read/write for JSON ScreenResult I/O is working correctly.'''
     test_data = test_screendata
     json_filename3 = tmp_path / "testread3.json"
     json_filename4 = tmp_path / "testread4.json"
@@ -89,9 +91,9 @@ def test_erroneous_info(tmp_path, test_screendata):
     # Add erroneous information
     test_data_dict = asdict(test_data_retrieved)
     test_data_dict["ExtraStuff1"] = "ExtraBitStuff1"
-    test_data_dict["queries"][0]["ExtraStuff2"] = "ExtraBitStuff2"
-    test_data_dict["queries"][0]["hits"][0]["ranges"].append("ExtraStuff3")
-    test_data_dict["queries"][0]["hits"][0]["ranges"].append({"ExtraDictStuff4" : 9999})
+    test_data_dict["queries"]["Query1"]["ExtraStuff2"] = "ExtraBitStuff2"
+    test_data_dict["queries"]["Query1"]["hits"]["ImportantProtein1"]["ranges"].append("ExtraStuff3")
+    test_data_dict["queries"]["Query1"]["hits"]["ImportantProtein1"]["ranges"].append({"ExtraDictStuff4" : 9999})
     test_data_dict2 = encode_dict_to_screen_data(test_data_dict)
     encode_screen_data_to_json(test_data_dict2, json_filename4)
     test_data_retrieved = get_screen_data_from_json(json_filename4)
@@ -104,18 +106,18 @@ def test_erroneous_info(tmp_path, test_screendata):
     )
 
 def test_recommendation_ordering():
-    assert CommecRecommendation.PASS.importance < CommecRecommendation.FLAG.importance
-    assert compare(CommecRecommendation.PASS, CommecRecommendation.FLAG) == CommecRecommendation.FLAG
+    assert ScreenStatus.PASS.importance < ScreenStatus.FLAG.importance
+    assert compare(ScreenStatus.PASS, ScreenStatus.FLAG) == ScreenStatus.FLAG
 
 def test_adding_data_to_existing():
     """
     Tests to ensure the mutability of writing to queries is working as expected.
     """
-    def write_info(input_query : QueryData):
-        input_query.recommendation.biorisk_screen = CommecRecommendation.PASS
+    def write_info(input_query : QueryResult):
+        input_query.recommendation.biorisk_status = ScreenStatus.PASS
     
-    new_screen_data = ScreenData()
-    new_screen_data.queries.append(QueryData("test01", 10, "ATGCATGCAT", CommecRecommendation.FLAG))
+    new_screen_data = ScreenResult()
+    new_screen_data.queries["test01"] = QueryResult("test01", 10, "ATGCATGCAT", ScreenStatus.FLAG)
     write_query = new_screen_data.get_query("test01")
     write_info(write_query)
-    assert new_screen_data.queries[0].recommendation.biorisk_screen == CommecRecommendation.PASS
+    assert new_screen_data.queries["test01"].recommendation.biorisk_status == ScreenStatus.PASS

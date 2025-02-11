@@ -57,6 +57,7 @@ import os
 import shutil
 import sys
 import pandas as pd
+from Bio import SeqIO
 
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.benchmark import (
@@ -66,7 +67,8 @@ from commec.utils.benchmark import (
     benchmark_write_log
 )
 from commec.utils.json_html_output import generate_html_from_screen_data
-from commec.config.io_parameters import ScreenIOParameters, ScreenConfig
+from commec.config.screen_io import ScreenIO, ScreenConfig
+from commec.config.query import Query
 from commec.config.screen_tools import ScreenTools
 
 from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
@@ -75,16 +77,22 @@ from commec.screeners.check_reg_path import (
     check_for_regulated_pathogens,
     update_taxonomic_data_from_database
 )
-from commec.tools.fetch_nc_bits import fetch_noncoding_regions
+
 from dev_scripts.benchmark_visualisation import visualize_data as create_benchmark_visual
 
-from commec.config.json_io import (
-    ScreenData,
-    CommecScreenStep,
-    QueryData,
-    CommecRecommendation,
-    encode_screen_data_to_json
+from commec.tools.fetch_nc_bits import (
+    fetch_noncoding_regions, 
+    calculate_noncoding_regions_per_query
 )
+
+from commec.config.result import (
+    ScreenResult,
+    ScreenStep,
+    QueryResult,
+    ScreenStatus,
+)
+
+from commec.config.json_io import encode_screen_data_to_json
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -197,9 +205,10 @@ class Screen:
     """
 
     def __init__(self):
-        self.params : ScreenIOParameters = None
+        self.screen_io : ScreenIO = None
+        self.queries : dict[str, Query] = None
         self.database_tools : ScreenTools = None
-        self.screen_data : ScreenData = ScreenData()
+        self.screen_data : ScreenResult = ScreenResult()
         self.start_time = time.time()
 
     def __del__(self):
@@ -213,19 +222,19 @@ class Screen:
         minutes, seconds = divmod(rem, 60)
         self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
         self.screen_data.update()
-        encode_screen_data_to_json(self.screen_data, self.params.output_json)
-        generate_html_from_screen_data(self.screen_data, self.params.output_prefix+"_summary")
+        encode_screen_data_to_json(self.screen_data, self.screen_io.output_json)
+        generate_html_from_screen_data(self.screen_data, self.screen_io.output_prefix+"_summary")
 
-        if self.params.config.benchmark:
+        if self.screen_io.config.benchmark:
             benchmark_write_log()
-            create_benchmark_visual(self.params.output_prefix+".bm")
+            create_benchmark_visual(self.screen_io.output_prefix+".bm")
 
-        self.params.clean()
+        self.screen_io.clean()
 
     def setup(self, args: argparse.ArgumentParser):
         """Instantiates and validates parameters, and databases, ready for a run."""
-        self.params: ScreenIOParameters = ScreenIOParameters(args)
-        self.params.setup()
+        self.screen_io: ScreenIO = ScreenIO(args)
+        self.screen_io.setup()
 
         # Set up logging
         logging.basicConfig(
@@ -233,51 +242,53 @@ class Screen:
             format="%(message)s",
             handlers=[
                 logging.StreamHandler(),
-                logging.FileHandler(self.params.output_screen_file, "a"),
-                logging.FileHandler(self.params.tmp_log, "a"),
+                logging.FileHandler(self.screen_io.output_screen_file, "a"),
+                logging.FileHandler(self.screen_io.tmp_log, "a"),
             ],
         )
         logging.basicConfig(
             level=logging.DEBUG,
             format="%(message)s",
-            handlers=[logging.FileHandler(self.params.tmp_log, "a")],
+            handlers=[logging.FileHandler(self.screen_io.tmp_log, "a")],
         )
 
         logging.info(" Validating Inputs...")
-        self.params.setup()
-        self.database_tools: ScreenTools = ScreenTools(self.params)
-        self.params.query.translate_query()
+        self.screen_io.setup()
+        self.database_tools: ScreenTools = ScreenTools(self.screen_io)
 
         # Add the input contents to the log
-        shutil.copyfile(self.params.query.input_fasta_path, self.params.tmp_log)
+        shutil.copyfile(self.screen_io.input_fasta_path, self.screen_io.tmp_log)
 
-        # Initialise the json file:
-        for query in self.params.query.raw:
-            self.screen_data.queries.append(QueryData(
-                query.name,
-                len(str(query.seq)),
-                str(query.seq))
-                )
-            
-        self.screen_data.commec_info.biorisk_database_info = self.database_tools.biorisk_hmm.get_version_information()
+        # Initialize the queries
+        self.queries = self.screen_io.parse_input_fasta()
+        for query in self.queries.values():
+            query.translate(self.screen_io.nt_path, self.screen_io.aa_path)
+            qr = QueryResult(query.original_name,
+                                 len(query.seq_record),
+                                 str(query.seq_record.seq))
+            self.screen_data.queries[query.name] = qr
+            query.result_handle = qr
+        
+        # Initialize the version info for all the databases
+        _tools = self.database_tools
+        _info = self.screen_data.commec_info
+        _info.biorisk_database_info = _tools.biorisk_hmm.get_version_information()
+        if self.screen_io.should_do_protein_screening:
+            _info.protein_database_info = _tools.regulated_protein.get_version_information()
+        if self.screen_io.should_do_nucleotide_screening:
+            _info.nucleotide_database_info = _tools.regulated_nt.get_version_information()
+        if self.screen_io.should_do_benign_screening:
+            _info.benign_protein_database_info = _tools.benign_hmm.get_version_information()
+            _info.benign_rna_database_info = _tools.benign_blastn.get_version_information()
+            _info.benign_synbio_database_info = _tools.benign_cmscan.get_version_information()
 
-        if self.params.should_do_protein_screening:
-            self.screen_data.commec_info.protein_database_info = self.database_tools.regulated_protein.get_version_information()
-
-        if self.params.should_do_nucleotide_screening:
-            self.screen_data.commec_info.nucleotide_database_info = self.database_tools.regulated_nt.get_version_information()
-
-        if self.params.should_do_benign_screening:
-            self.screen_data.commec_info.benign_protein_database_info = self.database_tools.benign_hmm.get_version_information()
-            self.screen_data.commec_info.benign_rna_database_info = self.database_tools.benign_blastn.get_version_information()
-            self.screen_data.commec_info.benign_synbio_database_info = self.database_tools.benign_cmscan.get_version_information()
-
-        self.screen_data.commec_info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Store start time.
+        _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Benchmarking init
-        benchmark_set_logging(self.params.config.benchmark)
-        if self.params.config.benchmark:
-            benchmark_set_log_file_name(self.params.output_prefix + ".bm")
+        benchmark_set_logging(self.screen_io.config.benchmark)
+        if self.screen_io.config.benchmark:
+            benchmark_set_log_file_name(self.screen_io.output_prefix + ".bm")
 
     def run(self, args : argparse.ArgumentParser):
         """
@@ -295,7 +306,7 @@ class Screen:
         )
 
         # Taxonomy screen (Protein)
-        if self.params.should_do_protein_screening:
+        if self.screen_io.should_do_protein_screening:
             logging.info(" >> STEP 2: Checking regulated pathogen proteins...")
             self.screen_proteins()
             logging.info(
@@ -304,10 +315,10 @@ class Screen:
             )
         else:
             logging.info(" SKIPPING STEP 2: Protein search")
-            self.update_protein_recommendations(CommecRecommendation.SKIP)
+            self.reset_protein_recommendations(ScreenStatus.SKIP)
 
         # Taxonomy screen (Nucleotide)
-        if self.params.should_do_nucleotide_screening:
+        if self.screen_io.should_do_nucleotide_screening:
             logging.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
             self.screen_nucleotides()
             logging.info(
@@ -316,10 +327,10 @@ class Screen:
             )
         else:
             logging.info(" SKIPPING STEP 3: Nucleotide search")
-            self.update_nucleotide_recommendations(CommecRecommendation.SKIP)
+            self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
 
         # Benign Screen
-        if self.params.should_do_benign_screening:
+        if self.screen_io.should_do_benign_screening:
             logging.info(
                 ">> STEP 4: Checking any pathogen regions for benign components..."
             )
@@ -330,7 +341,7 @@ class Screen:
             )
         else:
             logging.info(" SKIPPING STEP 4: Benign search")
-            self.update_benign_recommendations(CommecRecommendation.SKIP)
+            self.reset_benign_recommendations(ScreenStatus.SKIP)
 
         logging.info(
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -346,9 +357,10 @@ class Screen:
         logging.debug("\t...checking hmmscan results")
         check_biorisk(
             self.database_tools.biorisk_hmm.out_file,
-            self.database_tools.biorisk_hmm.db_directory
+            self.database_tools.biorisk_hmm.db_directory,
+            self.queries
         )
-        update_biorisk_data_from_database(self.database_tools.biorisk_hmm, self.screen_data)
+        update_biorisk_data_from_database(self.database_tools.biorisk_hmm, self.screen_data, self.queries)
 
     @benchmark
     def screen_proteins(self):
@@ -356,37 +368,38 @@ class Screen:
         Call `run_blastx.sh` or `run_diamond.sh` followed by `check_reg_path.py` to add regulated
         pathogen protein screening results to `screen_file`.
         """
-        logging.debug("\t...running %s", self.params.config.protein_search_tool)
+        logging.debug("\t...running %s", self.screen_io.config.protein_search_tool)
         self.database_tools.regulated_protein.search()
         if not self.database_tools.regulated_protein.check_output():
-            self.update_protein_recommendations(CommecRecommendation.ERROR)
+            self.reset_protein_recommendations(ScreenStatus.ERROR)
             raise RuntimeError(
                 "ERROR: Expected protein search output not created: "
                 + self.database_tools.regulated_protein.out_file
             )
 
         logging.debug(
-            "\t...checking %s results", self.params.config.protein_search_tool
+            "\t...checking %s results", self.screen_io.config.protein_search_tool
         )
-        reg_path_coords = f"{self.params.output_prefix}.reg_path_coords.csv"
+        reg_path_coords = f"{self.screen_io.output_prefix}.reg_path_coords.csv"
 
         # Delete any previous check_reg_path results for this search
         if os.path.isfile(reg_path_coords):
             os.remove(reg_path_coords)
 
-        check_for_regulated_pathogens(
-            self.database_tools.regulated_protein.out_file,
-            self.params.db_dir,
-            str(self.params.config.threads),
-        )
+        #check_for_regulated_pathogens(
+        #    self.database_tools.regulated_protein.out_file,
+        #    self.screen_io.db_dir,
+        #    str(self.screen_io.config.threads),
+        #)
 
         update_taxonomic_data_from_database(self.database_tools.regulated_protein,
                                             self.database_tools.benign_taxid_path,
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
                                             self.screen_data,
-                                            CommecScreenStep.TAXONOMY_AA,
-                                            self.params.config.threads)
+                                            self.queries,
+                                            ScreenStep.TAXONOMY_AA,
+                                            self.screen_io.config.threads)
 
     @benchmark
     def screen_nucleotides(self):
@@ -396,45 +409,62 @@ class Screen:
         noncoding regions (i.e. that would not be found with protein search).
         """
         # Only screen nucleotides in noncoding regions
-        fetch_noncoding_regions(
-            self.database_tools.regulated_protein.out_file, self.params.query.nt_path
-        )
+        #fetch_noncoding_regions(
+        #    self.database_tools.regulated_protein.out_file, self.screen_io.nt_path
+        #)
 
-        noncoding_fasta = f"{self.params.output_prefix}.noncoding.fasta"
-
-
-        if not os.path.isfile(noncoding_fasta):
+        # Calculate non-coding information for each Query.
+        calculate_noncoding_regions_per_query(
+            self.database_tools.regulated_protein.out_file,
+            self.queries)
+        
+        # Generate the non-coding fasta.
+        nc_fasta_sequences = ""
+        for query in self.queries.values():
+            nc_fasta_sequences += query.get_non_coding_regions_as_fasta()
+        
+        # Skip if there is no non-coding information.
+        if nc_fasta_sequences == "":
             logging.debug(
                 "\t...skipping nucleotide search since no noncoding regions fetched"
             )
-            self.update_nucleotide_recommendations(CommecRecommendation.SKIP)
+            self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
             return
+
+        # Create a non-coding fasta file.
+        noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"
+        with open(noncoding_fasta, "w", encoding="utf-8") as output_file:
+            output_file.writelines(nc_fasta_sequences)
 
         # Only run new blastn search if there are no previous results
         if not self.database_tools.regulated_nt.check_output():
             self.database_tools.regulated_nt.search()
 
         if not self.database_tools.regulated_nt.check_output():
-            self.update_nucleotide_recommendations(CommecRecommendation.ERROR)
+            self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
             raise RuntimeError(
                 "ERROR: Expected nucleotide search output not created: "
                 + self.database_tools.regulated_nt.out_file
             )
-
+        
+        # Note: Currently noncoding coo rdinataes are converted within update_taxonomic_data_from_database,
+        # It may be prudent to instead explictly convert them in the output file itself, or during import.
 
         logging.debug("\t...checking blastn results")
         check_for_regulated_pathogens(
             self.database_tools.regulated_nt.out_file,
-            self.params.db_dir,
-            str(self.params.config.threads),
+            self.screen_io.db_dir,
+            str(self.screen_io.config.threads),
         )
+
         update_taxonomic_data_from_database(self.database_tools.regulated_nt,
                                             self.database_tools.benign_taxid_path,
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
                                             self.screen_data,
-                                            CommecScreenStep.TAXONOMY_NT,
-                                            self.params.config.threads)
+                                            self.queries,
+                                            ScreenStep.TAXONOMY_NT,
+                                            self.screen_io.config.threads)
 
     @benchmark
     def screen_benign(self):
@@ -442,10 +472,10 @@ class Screen:
         Call `hmmscan`, `blastn`, and `cmscan` and then pass results
         to `check_benign.py` to identify regions that can be cleared.
         """
-        sample_name = self.params.output_prefix
+        sample_name = self.screen_io.output_prefix
         if not os.path.exists(sample_name + ".reg_path_coords.csv"):
             logging.info("\t...no regulated regions to clear\n")
-            self.update_benign_recommendations(CommecRecommendation.SKIP)
+            self.reset_benign_recommendations(ScreenStatus.SKIP)
             return
 
         logging.debug("\t...running benign hmmscan")
@@ -463,7 +493,7 @@ class Screen:
 
         if coords.shape[0] == 0:
             logging.info("\t...no regulated regions to clear\n")
-            self.update_benign_recommendations(CommecRecommendation.SKIP)
+            self.reset_benign_recommendations(ScreenStatus.SKIP)
             return
 
         logging.debug("\t...checking benign scan results")
@@ -476,24 +506,30 @@ class Screen:
             self.database_tools.benign_hmm,
             self.database_tools.benign_cmscan,
             self.database_tools.benign_blastn,
-            self.screen_data,
+            self.queries,
             benign_desc
         )
 
-    def update_benign_recommendations(self, new_recommendation : CommecRecommendation):
-        """ Helper function, to apply a single recommendation to the whole benign step."""
-        for query in self.screen_data.queries:
-            query.recommendation.benign_screen = new_recommendation
+    def reset_benign_recommendations(self, new_recommendation : ScreenStatus):
+        """ Helper function 
+        apply a single recommendation to the whole benign step 
+        for every query."""
+        for query in self.screen_data.queries.values():
+            query.recommendation.benign_status = new_recommendation
 
-    def update_protein_recommendations(self, new_recommendation : CommecRecommendation):
-        """ Helper function, to apply a single recommendation to the whole protein taxonomy step."""
-        for query in self.screen_data.queries:
-            query.recommendation.protein_taxonomy_screen = new_recommendation
+    def reset_protein_recommendations(self, new_recommendation : ScreenStatus):
+        """ Helper function
+        apply a single recommendation to the whole protein taxonomy step 
+        for every query."""
+        for query in self.screen_data.queries.values():
+            query.recommendation.protein_taxonomy_status = new_recommendation
 
-    def update_nucleotide_recommendations(self, new_recommendation : CommecRecommendation):
-        """ Helper function, to apply a single recommendation to the whole nucleotide taxonomy step."""
-        for query in self.screen_data.queries:
-            query.recommendation.nucleotide_taxonomy_screen = new_recommendation
+    def reset_nucleotide_recommendations(self, new_recommendation : ScreenStatus):
+        """ Helper function:
+        apply a single recommendation to the whole nucleotide taxonomy step 
+        for every query."""
+        for query in self.screen_data.queries.values():
+            query.recommendation.nucleotide_taxonomy_status = new_recommendation
 
 
 def run(args: argparse.ArgumentParser):

@@ -1,5 +1,5 @@
 """
-Used to convert a json object created from Commec Screen, or a ScreenData object,
+Used to convert a json object created from Commec Screen, or a ScreenResult object,
 into a visual HTML representation of the Commec output. Which can be embedded into
 any other HTML document as appropriate.
 """
@@ -10,12 +10,12 @@ import plotly.graph_objects as go
 import pandas as pd
 from mako.template import Template
 
-from commec.config.json_io import (
-    get_screen_data_from_json,
-    ScreenData,
-    QueryData,
-    HitDescription,
-    CommecScreenStep,
+from commec.config.json_io import get_screen_data_from_json
+from commec.config.result import (
+    ScreenResult,
+    QueryResult,
+    HitResult,
+    ScreenStep,
 )
 
 class CommecPalette():
@@ -43,23 +43,23 @@ class CommecPalette():
     rgba_YELLOW = 'rgba(241,80,36,255)'
     rgba_RED = 'rgba(207,27,81,255)'
 
-def color_from_hit(hit : HitDescription) -> CommecPalette:
+def color_from_hit(hit : HitResult) -> CommecPalette:
     """ Convert a Screen step into an associated Colour."""
-    if hit.recommendation.from_step == CommecScreenStep.BIORISK:
+    if hit.recommendation.from_step == ScreenStep.BIORISK:
         return CommecPalette.RED
-    if (hit.recommendation.from_step == CommecScreenStep.BENIGN_PROTEIN or
-        hit.recommendation.from_step == CommecScreenStep.BENIGN_RNA or
-        hit.recommendation.from_step == CommecScreenStep.BENIGN_SYNBIO):
+    if (hit.recommendation.from_step == ScreenStep.BENIGN_PROTEIN or
+        hit.recommendation.from_step == ScreenStep.BENIGN_RNA or
+        hit.recommendation.from_step == ScreenStep.BENIGN_SYNBIO):
         return CommecPalette.LT_BLUE
-    if hit.recommendation.from_step == CommecScreenStep.TAXONOMY_AA:
+    if hit.recommendation.from_step == ScreenStep.TAXONOMY_AA:
         return CommecPalette.ORANGE
-    if hit.recommendation.from_step == CommecScreenStep.TAXONOMY_NT:
+    if hit.recommendation.from_step == ScreenStep.TAXONOMY_NT:
         return CommecPalette.YELLOW
     return CommecPalette.DK_BLUE
 
-def generate_html_from_screen_data(input_data : ScreenData, output_file : str):
+def generate_html_from_screen_data(input_data : ScreenResult, output_file : str):
     """
-    Interpret the ScreenData from Commec Screen output as a visualisation, in 
+    Interpret the ScreenResult from Commec Screen output as a visualisation, in 
     the form on an HTML output.
     If Commec Screen handled multiple Queries, then they are combined in the HTML output.
     """
@@ -67,7 +67,7 @@ def generate_html_from_screen_data(input_data : ScreenData, output_file : str):
     figures_html = []
 
     # Render each query as its own Plotly HTML visualisation:
-    for i, query in enumerate(input_data.queries):
+    for i, query in enumerate(input_data.queries.values()):
         fig = go.Figure()
         vertical_stack_count : int = draw_query_to_plot(fig, query)
         update_layout(fig, query, vertical_stack_count)
@@ -85,7 +85,7 @@ def generate_html_from_screen_data(input_data : ScreenData, output_file : str):
         output_file.write(rendered_html)
 
 
-def update_layout(fig, query_to_draw : QueryData, stacks):
+def update_layout(fig, query_to_draw : QueryResult, stacks):
     """ 
     Applies some default settings to the plotly figure,
     also adjusts the figure height based on the number of vertically stacking bars.
@@ -99,7 +99,7 @@ def update_layout(fig, query_to_draw : QueryData, stacks):
     fig.update_layout({
         # General layout properties
         'height': figure_base_height + (figure_stack_height * stacks),
-        'title': f"{query_to_draw.recommendation.commec_recommendation} :"
+        'title': f"{query_to_draw.recommendation.screen_status} :"
                  f" {query_to_draw.query}  ({query_to_draw.length} b.p.)",
         'barmode': 'overlay',
         'template': 'plotly_white',
@@ -126,7 +126,7 @@ def update_layout(fig, query_to_draw : QueryData, stacks):
         'bargap': 0.01,
     })
 
-def generate_outcome_string(query : QueryData, hit : HitDescription) -> str:
+def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
     """
     Takes a Query, and associated hit, and formats a human readable output string,
     handling associated construction logic.
@@ -190,15 +190,15 @@ def generate_outcome_string(query : QueryData, hit : HitDescription) -> str:
             #Best match to regulated viruses. 2 best match hits to nucleotides found in 1 species, 2 with regulated pathogen taxId in lineage (Influenza A)
         return "No Annotations."
 
-def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
+def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
     """ 
     Write the data from a single query into the figure for plotly. 
     """
-    # Interpret the QueryData into bars for the plot.
+    # Interpret the QueryResult into bars for the plot.
     graph_data = [
         {"label": query_to_draw.query[:25], 
          "label_verbose": query_to_draw.query, 
-         "outcome" : f"Commec Recommendation for this query: {query_to_draw.recommendation.commec_recommendation}",
+         "outcome" : f"Commec Recommendation for this query: {query_to_draw.recommendation.screen_status}",
          "outcome_verbose":"",
          "start": 0, "stop": query_to_draw.length, 
          "color" : CommecPalette.DK_BLUE, 
@@ -208,7 +208,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
     # Keep track of how many vertical stacks this image has.
     n_stacks = 1
 
-    for hit in query_to_draw.hits:
+    for hit in query_to_draw.hits.values():
         for match in hit.ranges:
             # Find the best vertical position to reduce collisions, and fill all space.
             collision_free = False
@@ -229,7 +229,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryData):
                 {
                     "label" : hit.description[:25] + "...",
                     "label_verbose" : hit.description[:],
-                    "outcome" : f"{hit.recommendation.outcome} from {hit.recommendation.from_step}",
+                    "outcome" : f"{hit.recommendation.status} from {hit.recommendation.from_step}",
                     "outcome_verbose" : generate_outcome_string(query_to_draw, hit),
                     "start" : match.query_start,
                     "stop" : match.query_end,
@@ -304,7 +304,7 @@ def generate_html_from_screen_json(input_file : str, output_file : str):
     """ 
     Wrapper for input filepath, rather than screen data object.
     """
-    input_data : ScreenData = get_screen_data_from_json(input_file)
+    input_data : ScreenResult = get_screen_data_from_json(input_file)
     generate_html_from_screen_data(input_data, output_file)
 
 def main():

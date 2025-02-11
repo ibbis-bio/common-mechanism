@@ -28,7 +28,9 @@ class BlastHandler(SearchHandler):
     """
 
     def read_output(self):
-        output_dataframe = read_blast(self.out_file)
+        output_dataframe = []
+        if self.has_hits(self.out_file):
+            output_dataframe = read_blast(self.out_file)
         return output_dataframe
 
     def _validate_db(self):
@@ -141,11 +143,11 @@ def get_taxonomic_labels(
     blast["genus"] = ""
     blast["species"] = ""
 
+    lin = _get_lineages(blast[TAXIDS_COL], db_path, threads)
+
     blast = blast[blast[TAXIDS_COL] != TAXID_SYNTHETIC_CONSTRUCTS]
     blast = blast[blast[TAXIDS_COL] != TAXID_VECTORS]
     blast = blast.reset_index(drop=True)
-
-    lin = _get_lineages(blast[TAXIDS_COL], db_path, threads)
 
     # Check if any rows will be removed due to not finding a valid lineage for them
     rows_to_remove = blast[~blast[TAXIDS_COL].isin(lin["TaxID"])]
