@@ -169,7 +169,7 @@ class SearchHandler(ABC):
         """
         Run a command using subprocess.run, piping stdout and stderr to `out_file`.
         """
-        logging.debug("SUBPROCESS: %s", " ".join(command))
+        logging.debug("SUBPROCESS: \n%s"," ".join(command))
 
         with open(out_file, "a", encoding="utf-8") as f:
             result = subprocess.run(
