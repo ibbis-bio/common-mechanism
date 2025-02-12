@@ -84,7 +84,7 @@ class Query:
         for start, stop in self.non_coding_regions:
             heading+=f" ({start}-{stop})"
             sequence+=f"{self.seq_record.seq[int(start)-1: int(stop)]}"
-        return f"{heading}\n{sequence}"
+        return f"{heading}\n{sequence}\n"
 
     def nc_to_nt_query_coords(self, index : int) -> int:
         """
@@ -101,7 +101,7 @@ class Query:
 
         # index was out put bounds of non-coding list of tuples:
         raise QueryValueError(
-            f"Non-coding index provided  ({index}) "
+            f"Non-coding index provided  ({index}) for {self.name}"
              "which is out-of-bounds for any known NC start-end tuple."
             )
 

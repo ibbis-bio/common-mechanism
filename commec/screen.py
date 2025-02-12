@@ -229,7 +229,8 @@ class Screen:
             benchmark_write_log()
             create_benchmark_visual(self.screen_io.output_prefix+".bm")
 
-        self.screen_io.clean()
+        if self.screen_io.config.do_cleanup:
+            self.screen_io.clean()
 
     def setup(self, args: argparse.ArgumentParser):
         """Instantiates and validates parameters, and databases, ready for a run."""
@@ -421,7 +422,7 @@ class Screen:
         # Generate the non-coding fasta.
         nc_fasta_sequences = ""
         for query in self.queries.values():
-            nc_fasta_sequences += f"{query.get_non_coding_regions_as_fasta()}\n"
+            nc_fasta_sequences += query.get_non_coding_regions_as_fasta()
         
         # Skip if there is no non-coding information.
         if nc_fasta_sequences == "":
@@ -437,8 +438,7 @@ class Screen:
             output_file.writelines(nc_fasta_sequences)
 
         # Only run new blastn search if there are no previous results
-        if not self.database_tools.regulated_nt.check_output():
-            self.database_tools.regulated_nt.search()
+        self.database_tools.regulated_nt.search()
 
         if not self.database_tools.regulated_nt.check_output():
             self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
