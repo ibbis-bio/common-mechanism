@@ -121,8 +121,6 @@ def update_taxonomic_data_from_database(
     if step == ScreenStep.TAXONOMY_NT:
         top_hits["query acc."] = top_hits["query acc."].str.split(" ").str[0]
     
-    print("TopHitSize: ", len(top_hits["query acc."]))
-
     # if ANY of the trimmed hits are regulated
     with pd.option_context('display.max_rows', None,
                     'display.max_columns', None,
@@ -137,11 +135,8 @@ def update_taxonomic_data_from_database(
                 continue
 
             unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
-            print("QueryData Size: ", len(unique_query_data["query acc."]))
-
             unique_query_data.dropna(subset = ['species'])
             regulated_only_data = unique_query_data[unique_query_data["regulated"] == True]
-            print("RegulatedQD Size: ", len(regulated_only_data["query acc."]))
             regulated_hits = regulated_only_data['subject acc.'].unique()
 
             for hit in regulated_hits:
