@@ -396,7 +396,7 @@ class Screen:
         # Generate the non-coding fasta.
         nc_fasta_sequences = ""
         for query in self.queries.values():
-            nc_fasta_sequences += query.get_non_coding_regions_as_fasta()
+            nc_fasta_sequences += f"{query.get_non_coding_regions_as_fasta()}\n"
         
         # Skip if there is no non-coding information.
         if nc_fasta_sequences == "":
