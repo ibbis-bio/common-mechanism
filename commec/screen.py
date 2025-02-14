@@ -66,14 +66,14 @@ from commec.config.query import Query
 from commec.config.screen_tools import ScreenTools
 
 from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
-from commec.screeners.check_benign import check_for_benign, update_benign_data_from_database
+from commec.screeners.check_benign import update_benign_data_from_database
 from commec.screeners.check_reg_path import (
     check_for_regulated_pathogens,
     update_taxonomic_data_from_database
 )
 
 from commec.tools.fetch_nc_bits import (
-    fetch_noncoding_regions, 
+    fetch_noncoding_regions,
     calculate_noncoding_regions_per_query
 )
 
@@ -447,35 +447,32 @@ class Screen:
         Call `hmmscan`, `blastn`, and `cmscan` and then pass results
         to `check_benign.py` to identify regions that can be cleared.
         """
-        sample_name = self.screen_io.output_prefix
-        if not os.path.exists(sample_name + ".reg_path_coords.csv"):
+        # Start by checking if there are any hits that require clearing...
+        hits_to_clear : bool = False
+        for _query, hit in self.screen_data.hits():
+            if hit.recommendation.status in {ScreenStatus.WARN, ScreenStatus.FLAG}:
+                hits_to_clear = True
+                break
+
+        if not hits_to_clear:
             logging.info("\t...no regulated regions to clear\n")
             self.reset_benign_recommendations(ScreenStatus.SKIP)
             return
 
-        logging.debug("\t...running benign hmmscan")
+        # Run the benign tools:
+        logging.info("\t...running benign hmmscan")
         self.database_tools.benign_hmm.search()
-        logging.debug("\t...running benign blastn")
+        logging.info("\t...running benign blastn")
         self.database_tools.benign_blastn.search()
-        logging.debug("\t...running benign cmscan")
+        logging.info("\t...running benign cmscan")
         self.database_tools.benign_cmscan.search()
 
-        coords = pd.read_csv(sample_name + ".reg_path_coords.csv")
+
+        # Update Screen Data with benign outputs.
         benign_desc = pd.read_csv(
             self.database_tools.benign_hmm.db_directory + "/benign_annotations.tsv",
             sep="\t",
         )
-
-        if coords.shape[0] == 0:
-            logging.info("\t...no regulated regions to clear\n")
-            self.reset_benign_recommendations(ScreenStatus.SKIP)
-            return
-
-        logging.debug("\t...checking benign scan results")
-
-        # Note currently check_for_benign hard codes .benign.hmmscan,
-        # in future parse, and grab from search handler instead.
-        check_for_benign(sample_name, coords, benign_desc)
 
         update_benign_data_from_database(
             self.database_tools.benign_hmm,
