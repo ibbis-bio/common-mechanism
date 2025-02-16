@@ -28,13 +28,18 @@ def non_coding_regions():
     """
     regions = [
         (1, 50),       # First 'a' region
-        (70, 100),     # Second 'a' region (starts after first coding region)
-        (130, 150)     # Third 'a' region (starts after second coding region)
+        (71, 100),     # Second 'a' region (starts after first coding region)
+        (131, 150)     # Third 'a' region (starts after second coding region)
     ]
     return regions
 
-# NT COORDS: 0 - 49    50 - 69 70 - 99 100 - 129   130 - 149
-# NC COORDS: 0 - 49            50 - 79              80 - 99
+# 0 based coordinates:
+# NT COORDS: 0 - 49    50 - 69   70 - 99   100 - 129   130 - 149
+# NC COORDS: 0 - 49              50 - 79                80 -  99
+
+# 1 based coordinates:
+# NT COORDS: 1 - 50    51 - 70   71 - 100   101 - 130   131 - 150
+# NC COORDS: 1 - 50              51 -  80                81 - 100
 
 @pytest.fixture
 def test_cases():
@@ -45,11 +50,12 @@ def test_cases():
     return [
         (1, 1),
         (10, 10),
-        (49, 49),
-        (50, 70),
-        (79, 99),
-        (80, 130),
+        (50, 50),
+        (51, 71),
+        (80, 100),
+        (81, 131),
         (99, 149),
+        (100, 150),
     ]
 
 def test_coordinate_conversion(seq_record, non_coding_regions, test_cases):
