@@ -27,7 +27,7 @@ class CommecPalette():
     LT_BLUE = [66,155,185]
     ORANGE = [241,80,36]
     # Yellow and Red are not official Commec colours.
-    YELLOW = [241,80,36]
+    YELLOW = [241,168,29]
     RED = [207,27,81]
 
     @staticmethod

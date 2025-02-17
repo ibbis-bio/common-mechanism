@@ -47,8 +47,8 @@ def convert_protein_to_nucleotide_coords(frame,
     nuc_start_reverse = (protein_start[reverse_mask] * 3) + (reverse_frame - 1)
     nuc_end_reverse = (protein_end[reverse_mask] * 3) + 2 + (reverse_frame - 1)
 
-    nucleotide_start[reverse_mask] = seq_length[reverse_mask] - nuc_end_reverse - 1 - reverse_offset[reverse_mask]
-    nucleotide_end[reverse_mask] = seq_length[reverse_mask] - nuc_start_reverse - 1 - reverse_offset[reverse_mask]
+    nucleotide_start[reverse_mask] = seq_length[reverse_mask] - nuc_end_reverse - 1 + reverse_offset[reverse_mask]
+    nucleotide_end[reverse_mask] = seq_length[reverse_mask] - nuc_start_reverse - 1 + reverse_offset[reverse_mask]
 
     # Convert to back to 1-based coordinates for reporting.
     nucleotide_start += 1
