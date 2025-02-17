@@ -25,8 +25,7 @@ class ScreenIOParameters:
     Container for input settings constructed from arguments to `screen`.
     """
     def __init__(self, args: argparse.Namespace):
-        # Non-yaml Inputs
-        cli_config_yaml_filepath=args.config_yaml.strip()
+        # Inputs that do no have a package-level default, since they are specific to each run
         self.db_dir = args.database_dir
         input_fasta = args.fasta_file
         output_prefix = args.output_prefix
@@ -43,32 +42,10 @@ class ScreenIOParameters:
         # Query
         self.query: Query = Query(args.fasta_file)
 
-        # Configuration initialisation:
+        # Get configuration based on defaults and CLI args (including YAML config if supplied)
         self.config = {}
-
-        # Initialize config with package defaults:
-        default_config_resource = importlib.resources.files("commec").joinpath(DEFAULT_CONFIG_YAML_PATH)
-        if default_config_resource.exists():
-            self._lazy_update_from_yaml(str(default_config_resource))
-        else:
-            raise FileNotFoundError(
-                f"No default yaml found. Expected at {DEFAULT_CONFIG_YAML_PATH}"
-                )
-            
-        # Override configuration with provided yaml:
-        if os.path.exists(cli_config_yaml_filepath):
-            self._lazy_update_from_yaml(cli_config_yaml_filepath)
-
-        # TODO: Consider looking for additional config yaml if none provided at /database/
+        self._read_config(args)
         
-        # Override config with CLI.
-        # (If the database directory is provided via CLI, 
-        #  use it to override base paths.)
-        self._update_config_from_cli(args)
-
-        # Propagate base paths of the configuration:
-        self._finalize_config(self.db_dir)
-
         # Check whether a .screen output file already exists.
         if os.path.exists(self.output_screen_file) and not (
             self.config["force"] or self.config["resume"]):
@@ -109,33 +86,38 @@ class ScreenIOParameters:
         self.query.setup(self.input_prefix)
         return True
 
-
-    def _update_config_from_cli(self, args: argparse.Namespace):
-        """ 
-        Maps any CLI, that can update the yaml 
-        configuration dictionary, and does so.
+    def _read_config(self, args: argparse.Namespace):
         """
+        Get the configuration for this screen run.
 
-        assert (hasattr(args, "user_specified_args"), 
-        "Incorrect argument parser used for Commec Screen.")
+        Configuration is read from multiple sources, which can override each other, according
+        to the following hierarchy:
 
-        explicit_args = {k: v for k, v in vars(args).items() if k in args.user_specified_args}
-        # Map argparse keys to YAML config keys, many are the same, and can be ignored.
-        new_key_names = {
-            "fast_mode" : "in_fast_mode",
-            "cleanup" : "do_cleanup",
-        }
-        # Rename arguments based on the Config.yaml mapping
-        renamed_args = {new_key_names.get(k, k): v for k, v in explicit_args.items()}
+            0. (Lowest-priority) defaults from package-level YAML configuration
+            1. Contents of a user-defined YAML file provided using the --config argument
+            2. (highest-priority) Configuration provided directly as CLI arguments
+        """
+        # Read package-level configuration defaults
+        default_yaml = importlib.resources.files("commec").joinpath(DEFAULT_CONFIG_YAML_PATH)
+        if default_yaml.exists():
+            self._lazy_update_config_from_yaml(str(default_yaml))
+        else:
+            raise FileNotFoundError(
+                f"No default yaml found. Expected at {DEFAULT_CONFIG_YAML_PATH}"
+                )
 
-        # Update the configuration dictionary
-        for key, value in renamed_args.items():
-            # Ensures only true yaml default values are overwritten:
-            if key in self.config:
-                self.config[key] = value
+        # Override configuration with any in user-provided YAML file
+        cli_config_yaml=args.config_yaml.strip()
+        if os.path.exists(cli_config_yaml):
+            self._lazy_update_config_from_yaml(cli_config_yaml)
 
+        # Override configuration with any user-provided CLI arguments
+        self._update_config_from_cli(args)
 
-    def _lazy_update_from_yaml(self, config_filepath: str | os.PathLike) -> None:
+        # Update paths in configuration using appropriate string substitution
+        self._format_config_paths(self.db_dir)
+
+    def _lazy_update_config_from_yaml(self, config_filepath: str | os.PathLike) -> None:
         """
         Loads a yaml file as a dictionary into the Config dictionary.
         The load is done lazily - and basepaths are not parsed and replaced throughout.
@@ -149,8 +131,22 @@ class ScreenIOParameters:
         assert isinstance(raw_config_from_yaml, dict), "Loaded configuration file (yaml) did not result in a Dictionary!"
         self.config.update(raw_config_from_yaml)
 
+    def _update_config_from_cli(self, args: argparse.Namespace):
+        """ 
+        Override YAML configuration based on arguments given in the command line.
+        Need to reference `user_specified_args` because CLI defaults should not override YAML.
+        """
+        if not hasattr(args, "user_specified_args"):
+            raise ValueError(
+                "Missing required 'user_specified_args' in arguments namespace. "
+            )
 
-    def _finalize_config(self,
+        # Update the YAML default values in the configuration dictionary
+        for arg in args.user_specified_args:
+             if arg in self.config and hasattr(args, arg):
+                self.config[arg] = getattr(args, arg)
+
+    def _format_config_paths(self,
         db_dir_override: str | os.PathLike = None
     ):
         """
