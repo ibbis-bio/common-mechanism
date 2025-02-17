@@ -58,7 +58,7 @@ import sys
 import pandas as pd
 
 from commec.utils.file_utils import file_arg, directory_arg
-from commec.config.io_parameters import ScreenIOParameters, SCREEN_ARGS
+from commec.config.io_parameters import ScreenIOParameters
 from commec.config.screen_tools import ScreenTools
 
 from commec.screeners.check_biorisk import check_biorisk
@@ -68,6 +68,45 @@ from commec.screeners.fetch_nc_bits import fetch_noncoding_regions
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
+class ScreenArgumentParser(argparse.ArgumentParser):
+    """
+    Argument parser that returns a `user_specified_args` namespace item, 
+    which helps selectively override other configuration (e.g. provided via YAML)
+    i.e. for only when it has explicitly been used as an argument in CLI.
+
+    Importantly, this iterates over all sub-parsers too, required for the 
+    cli entry point of Commec. However to do this we access various private 
+    parser attributes - which is naughty - but its better than writing our own argsparse.
+    """
+    def parse_args(self, args=None, namespace=None):     
+        # Get argument strings; in most cases, args and sys.argv[1:] will be the same
+        cli_strings = args if args is not None else sys.argv[1:]
+        user_specified_args = set()
+
+        def collect_user_actions(parser : ScreenArgumentParser):
+            """ 
+            Recursively collect all actions, including subparsers. 
+            _actions has every argument provide to the parser, and
+            has every SubParserActions instances.
+            """
+            for action in parser._actions:
+                if isinstance(action, argparse._SubParsersAction):
+                    # Recurse into each subparser
+                    for _sub_name, subparser in action.choices.items():
+                        collect_user_actions(subparser)
+                else:
+                    for arg_string in action.option_strings:
+                        #print("Testing:", arg_string)
+                        if arg_string in cli_strings:
+                            #print("added!")
+                            user_specified_args.add(action.dest)
+
+        # Collect arguments from main parser and all subparsers
+        collect_user_actions(self)
+        
+        ns = super().parse_args(args, namespace)
+        setattr(ns,"user_specified_args", user_specified_args)
+        return ns
 
 def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
@@ -76,53 +115,53 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
     parser.add_argument(dest="fasta_file", type=file_arg, help="FASTA file to screen")
     parser.add_argument(
-        SCREEN_ARGS["database_dir"][0],
-        SCREEN_ARGS["database_dir"][1],
+        "-d",
+        "--databases",
         dest="database_dir",
         type=directory_arg,
         default=None,
         help="Path to directory containing reference databases (e.g. taxonomy, protein, HMM)",
     )
     parser.add_argument(
-        SCREEN_ARGS["config_yaml"][0],
-        SCREEN_ARGS["config_yaml"][1],
+        "-y",
+        "--config",
         dest="config_yaml",
         help="Configuration for screen run in YAML format, including custom database paths",
         default="",
     )
     screen_logic_group = parser.add_argument_group("Screen run logic")
     screen_logic_group.add_argument(
-        SCREEN_ARGS["fast_mode"][0],
-        SCREEN_ARGS["fast_mode"][1],
+        "-f",
+        "--fast",
         dest="fast_mode",
         action="store_true",
         help="Run in fast mode and skip protein and nucleotide homology search",
     )
     screen_logic_group.add_argument(
-        SCREEN_ARGS["protein_search_tool"][0],
-        SCREEN_ARGS["protein_search_tool"][1],
+        "-p",
+        "-protein-search-tool",
         dest="protein_search_tool",
         choices=["blastx", "diamond"],
         help="Tool for protein homology search to identify regulated pathogens",
     )
     screen_logic_group.add_argument(
-        SCREEN_ARGS["skip_nt_search"][0],
-        SCREEN_ARGS["skip_nt_search"][1],
+        "-n",
+        "--skip-nt",
         dest="skip_nt_search",
         action="store_true",
         help="Skip nucleotide search (regulated pathogens will only be identified based on protein hits)",
     )
     parallel_group = parser.add_argument_group("Parallelisation")
     parallel_group.add_argument(
-        SCREEN_ARGS["threads"][0],
-        SCREEN_ARGS["threads"][1],
+        "-t",
+        "--threads",
         dest="threads",
         type=int,
         help="Number of CPU threads to use. Passed to search tools.",
     )
     parallel_group.add_argument(
-        SCREEN_ARGS["diamond_jobs"][0],
-        SCREEN_ARGS["diamond_jobs"][1],
+        "-j",
+        "--diamond-jobs",
         dest="diamond_jobs",
         type=int,
         help="Diamond-only: number of runs to do in parallel on split Diamond databases",
@@ -130,30 +169,30 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     output_handling_group = parser.add_argument_group("Output file handling")
     output_exclusive_group = output_handling_group.add_mutually_exclusive_group()
     output_handling_group.add_argument(
-        SCREEN_ARGS["output_prefix"][0],
-        SCREEN_ARGS["output_prefix"][1],
+        "-o",
+        "--output",
         dest="output_prefix",
         help="Prefix for output files. Can be a string (interpreted as output basename) or a"
         + " directory (files will be output there, names will be determined from input FASTA)",
         default = ""
     )
     output_handling_group.add_argument(
-        SCREEN_ARGS["cleanup"][0],
-        SCREEN_ARGS["cleanup"][1],
+        "-c",
+        "--cleanup",
         dest="cleanup",
         action="store_true",
         help="Delete intermediate output files for this Screen run",
     )
     output_exclusive_group.add_argument(
-        SCREEN_ARGS["force"][0],
-        SCREEN_ARGS["force"][1],
+        "-F",
+        "--force",
         dest="force",
         action="store_true",
         help="Overwrite any pre-existing output for this Screen run (cannot be used with --resume)",
     )
     output_exclusive_group.add_argument(
-        SCREEN_ARGS["resume"][0],
-        SCREEN_ARGS["resume"][1],
+        "-R",
+        "--resume",
         dest="resume",
         action="store_true",
         help="Re-use any pre-existing output for this Screen run (cannot be used with --force)",
@@ -172,7 +211,7 @@ class Screen:
         self.database_tools: ScreenTools = None
         self.scripts_dir: str = os.path.dirname(__file__)  # Legacy.
 
-    def setup(self, args: argparse.ArgumentParser):
+    def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
         self.params: ScreenIOParameters = ScreenIOParameters(args)
 
@@ -200,7 +239,7 @@ class Screen:
         # Add the input contents to the log
         shutil.copyfile(self.params.query.input_fasta_path, self.params.tmp_log)
 
-    def run(self, args: argparse.ArgumentParser):
+    def run(self, args: argparse.Namespace):
         """
         Wrapper so that args be parsed in main() or commec.py interface.
         """
@@ -365,8 +404,7 @@ class Screen:
         # in future parse, and grab from search handler instead.
         check_for_benign(sample_name, coords, benign_desc)
 
-
-def run(args: argparse.ArgumentParser):
+def run(args: argparse.Namespace):
     """
     Entry point from commec main. Passes args to Screen object, and runs.
     """
@@ -378,7 +416,7 @@ def main():
     """
     Main function. Passes args to Screen object, which then runs.
     """
-    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser = ScreenArgumentParser(description=DESCRIPTION)
     add_args(parser)
     args = parser.parse_args()
     run(args)

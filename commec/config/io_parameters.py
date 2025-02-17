@@ -20,25 +20,11 @@ from yaml.parser import ParserError
 from commec.config.query import Query
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 
-SCREEN_ARGS = {
-    "database_dir"       : ("-d", "--databases"),
-    "config_yaml"        : ("-y", "--config"),
-    "fast_mode"          : ("-f", "--fast"),
-    "protein_search_tool": ("-p", "--protein-search-tool"),
-    "skip_nt_search"     : ("-n", "--skip-nt"),
-    "threads"            : ("-t", "--threads"),
-    "diamond_jobs"       : ("-j", "--diamond-jobs"),
-    "output_prefix"      : ("-o", "--output"),
-    "cleanup"            : ("-c", "--cleanup"),
-    "force"              : ("-F", "--force"),
-    "resume"             : ("-R", "--resume"),
-}
-
 class ScreenIOParameters:
     """
     Container for input settings constructed from arguments to `screen`.
     """
-    def __init__(self, args: argparse.ArgumentParser):
+    def __init__(self, args: argparse.Namespace):
         # Non-yaml Inputs
         cli_config_yaml_filepath=args.config_yaml.strip()
         self.db_dir = args.database_dir
@@ -124,13 +110,16 @@ class ScreenIOParameters:
         return True
 
 
-    def _update_config_from_cli(self, args: argparse.ArgumentParser):
-        """ Maps any CLI, that can update the yaml configuration dictionary, and does so."""
+    def _update_config_from_cli(self, args: argparse.Namespace):
+        """ 
+        Maps any CLI, that can update the yaml 
+        configuration dictionary, and does so.
+        """
 
-        # Compare argv to args, to see what was actually passed in CLI:
-        known_commands = {k: v for k, v in vars(args).items() if SCREEN_ARGS.get(k)}
-        explicit_args = {k: v for k, v in known_commands.items() if SCREEN_ARGS[k][0] in sys.argv or SCREEN_ARGS[k][1] in sys.argv}
+        assert (hasattr(args, "user_specified_args"), 
+        "Incorrect argument parser used for Commec Screen.")
 
+        explicit_args = {k: v for k, v in vars(args).items() if k in args.user_specified_args}
         # Map argparse keys to YAML config keys, many are the same, and can be ignored.
         new_key_names = {
             "fast_mode" : "in_fast_mode",
@@ -301,4 +290,4 @@ class ScreenIOParameters:
 
     @property
     def should_do_benign_screening(self) -> bool:
-        return True# 
+        return True
