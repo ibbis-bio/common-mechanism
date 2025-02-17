@@ -105,8 +105,9 @@ def test_cli_override(tmp_path, expected_defaults, custom_yaml_config):
         INPUT_QUERY,
         "--config",
         str(user_config_path),
-        "-F", # fast mode
+        "-f", # fast mode
         "--skip-nt", # skip nt search
+        "-c", # do_cleanup
         "-d",
         str(tmp_path)
     ]
@@ -119,6 +120,7 @@ def test_cli_override(tmp_path, expected_defaults, custom_yaml_config):
     # Override defaults with user YAML
     expected_defaults.update(custom_yaml_config)
     expected_defaults["skip_nt_search"] = True
+    expected_defaults["do_cleanup"] = True
     db_str_to_override = expected_defaults["base_paths"]["default"]
 
     def recursive_override(dictionary, str_to_override, override_str):
