@@ -133,7 +133,7 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     screen_logic_group.add_argument(
         "-f",
         "--fast",
-        dest="fast_mode",
+        dest="in_fast_mode",
         action="store_true",
         help="Run in fast mode and skip protein and nucleotide homology search",
     )
@@ -179,7 +179,7 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     output_handling_group.add_argument(
         "-c",
         "--cleanup",
-        dest="cleanup",
+        dest="do_cleanup",
         action="store_true",
         help="Delete intermediate output files for this Screen run",
     )
