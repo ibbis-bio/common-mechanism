@@ -9,6 +9,7 @@ import argparse
 import plotly.graph_objects as go
 import pandas as pd
 from mako.template import Template
+import importlib
 
 from commec.config.json_io import get_screen_data_from_json
 from commec.config.result import (
@@ -76,7 +77,8 @@ def generate_html_from_screen_data(input_data : ScreenResult, output_file : str)
         figures_html.append(html)
 
     # Construct the composite HTML
-    template = Template(filename="commec/utils/template.html")
+    template_path = str(importlib.resources.files("commec").joinpath("utils").joinpath("template.html"))
+    template = Template(filename = template_path)
     rendered_html = template.render(figures_html=figures_html)
 
     # Save the combined HTML output
