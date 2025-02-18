@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
 """
-Defines the `ScreenIOParameters` class and associated dataclasses.
+Defines the `ScreenIO` class and associated dataclasses.
 Objects responsible for parsing and interpreting user input for
 the screen workflow of commec.
 """
@@ -205,7 +205,7 @@ class ScreenIO:
                 pass
 
     @staticmethod
-    def get_output_prefix(input_file: str | os.PathLike, prefix_arg="") -> str:
+    def _get_output_prefix(input_file: str | os.PathLike, prefix_arg="") -> str:
         """
         Returns a prefix that can be used for all output files.
 
