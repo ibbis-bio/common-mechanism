@@ -39,7 +39,7 @@ def encode_screen_data_to_json(input_screendata: ScreenResult,
     except TypeError as e:
         print("Error outputting JSON:", e)
         print(input_screendata)
-        
+
 def encode_dict_to_screen_data(input_dict : dict) -> ScreenResult:
     ''' Converts a dictionary into a ScreenResult object,
     any keys within the dictionary not part of the ScreenResult format are lost.
@@ -80,8 +80,8 @@ def dict_to_dataclass(cls: Type, data: Dict[str, Any]) -> Any:
                     filtered_data[field_name] = [
                         dict_to_dataclass(item_type, item) for item in field_value
                             if isinstance(item, dict)
-                            and any(key in {f.name for f in fields(item_type)} for key in item.keys())
-                            or isinstance(item, item_type)]
+                            and any(key in {f.name for f in fields(item_type)}
+                            for key in item.keys()) or isinstance(item, item_type)]
                     continue
 
                 filtered_data[field_name] = field_value
@@ -94,8 +94,8 @@ def dict_to_dataclass(cls: Type, data: Dict[str, Any]) -> Any:
                 # Handle dicts of dataclasses
                 if is_dataclass(value_type):
                     filtered_data[field_name] = {
-                        key: dict_to_dataclass(value_type, value) if isinstance(value, dict) else value
-                        for key, value in field_value.items()
+                        key: dict_to_dataclass(value_type, value) if isinstance(value, dict)
+                        else value for key, value in field_value.items()
                         if isinstance(value, (dict, value_type))
                     }
                     continue
@@ -108,7 +108,8 @@ def dict_to_dataclass(cls: Type, data: Dict[str, Any]) -> Any:
                 try:
                     filtered_data[field_name] = field_type(field_value)
                 except ValueError:
-                    print(f"Invalid value '{field_value}' for field '{field_name}' of type {field_type}.")
+                    print(f"Invalid value '{field_value}' for "
+                          f"field '{field_name}' of type {field_type}.")
                 continue
 
             # Handle other field types
