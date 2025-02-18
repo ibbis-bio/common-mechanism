@@ -53,34 +53,26 @@ import argparse
 import datetime
 import time
 import logging
-import os
 import shutil
 import sys
+import traceback
 import pandas as pd
-from Bio import SeqIO
 
-from commec.utils.file_utils import file_arg, directory_arg
-from commec.utils.json_html_output import generate_html_from_screen_data
 from commec.config.io_parameters import ScreenIOParameters
 from commec.config.query import Query
 from commec.config.screen_tools import ScreenTools
-
-from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
-from commec.screeners.check_benign import update_benign_data_from_database
-from commec.screeners.check_reg_path import (
-    check_for_regulated_pathogens,
-    update_taxonomic_data_from_database
-)
-
-from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
-
 from commec.config.result import (
     ScreenResult,
     ScreenStep,
     QueryResult,
     ScreenStatus,
 )
-
+from commec.utils.file_utils import file_arg, directory_arg
+from commec.utils.json_html_output import generate_html_from_screen_data
+from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
+from commec.screeners.check_benign import update_benign_data_from_database
+from commec.screeners.check_reg_path import update_taxonomic_data_from_database
+from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.config.json_io import encode_screen_data_to_json
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
@@ -228,12 +220,13 @@ class Screen:
         self.database_tools : ScreenTools = None
         self.screen_data : ScreenResult = ScreenResult()
         self.start_time = time.time()
+        self.success = False
 
     def __del__(self):
         """ 
         Before we are finished, we attempt to write a JSON and HTML output.
         Doing this in the destructor means that sometimes this will complete
-        successfully, despite exceptions.
+        successfully, despite exceptions, and premature exits.
         """
         time_taken = (time.time() - self.start_time)
         hours, rem = divmod(time_taken, 3600)
@@ -241,10 +234,12 @@ class Screen:
         self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
         self.screen_data.update()
         encode_screen_data_to_json(self.screen_data, self.params.output_json)
-        generate_html_from_screen_data(self.screen_data, self.params.output_prefix+"_summary")
-        
-        if self.params.config["do_cleanup"]:
-            self.params.clean()
+
+        # Only output the HTML, and cleanup if this was a successful run:
+        if self.success:
+            generate_html_from_screen_data(self.screen_data, self.params.output_prefix+"_summary")
+            if self.params.config["do_cleanup"]:
+                self.params.clean()
 
     def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
@@ -306,51 +301,70 @@ class Screen:
         """
         # Perform setup steps.
         self.setup(args)
-
         self.params.output_yaml(self.params.input_prefix + "_config.yaml")
 
         # Biorisk screen
-        logging.info(">> STEP 1: Checking for biorisk genes...")
-        self.screen_biorisks()
-        logging.info(
-            " STEP 1 completed at %s",
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        )
+        try:
+            logging.info(">> STEP 1: Checking for biorisk genes...")
+            self.screen_biorisks()
+            logging.info(
+                " STEP 1 completed at %s",
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            )
+        except Exception as e:
+            logging.info(" ERROR STEP 1: Biorisk search failed due to an error:\n %s", str(e))
+            logging.info(" Traceback:\n%s", traceback.format_exc())
+            self.reset_biorisk_recommendations(ScreenStatus.ERROR)
 
         # Taxonomy screen (Protein)
         if self.params.should_do_protein_screening:
-            logging.info(" >> STEP 2: Checking regulated pathogen proteins...")
-            self.screen_proteins()
-            logging.info(
-                " STEP 2 completed at %s",
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            )
+            try:
+                logging.info(" >> STEP 2: Checking regulated pathogen proteins...")
+                self.screen_proteins()
+                logging.info(
+                    " STEP 2 completed at %s",
+                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                )
+            except Exception as e:
+                logging.info(" ERROR STEP 2: Protein search failed due to an error:\n %s", str(e))
+                logging.info(" Traceback:\n%s", traceback.format_exc())
+                self.reset_protein_recommendations(ScreenStatus.ERROR)
         else:
             logging.info(" SKIPPING STEP 2: Protein search")
             self.reset_protein_recommendations(ScreenStatus.SKIP)
 
         # Taxonomy screen (Nucleotide)
         if self.params.should_do_nucleotide_screening:
-            logging.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
-            self.screen_nucleotides()
-            logging.info(
-                " STEP 3 completed at %s",
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            )
+            try:
+                logging.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
+                self.screen_nucleotides()
+                logging.info(
+                    " STEP 3 completed at %s",
+                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                )
+            except Exception as e:
+                logging.info(" ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
+                logging.info(" Traceback:\n%s", traceback.format_exc())
+                self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
         else:
             logging.info(" SKIPPING STEP 3: Nucleotide search")
             self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
 
         # Benign Screen
         if self.params.should_do_benign_screening:
-            logging.info(
-                ">> STEP 4: Checking any pathogen regions for benign components..."
-            )
-            self.screen_benign()
-            logging.info(
-                ">> STEP 4 completed at %s",
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            )
+            try:
+                logging.info(
+                    ">> STEP 4: Checking any pathogen regions for benign components..."
+                )
+                self.screen_benign()
+                logging.info(
+                    ">> STEP 4 completed at %s",
+                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                )
+            except Exception as e:
+                logging.info(" ERROR STEP 4: Benign search failed due to an error:\n %s", str(e))
+                logging.info(" Traceback:\n%s", traceback.format_exc())
+                self.reset_benign_recommendations(ScreenStatus.ERROR)
         else:
             logging.info(" SKIPPING STEP 4: Benign search")
             self.reset_benign_recommendations(ScreenStatus.SKIP)
@@ -358,6 +372,7 @@ class Screen:
         logging.info(
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
+        self.success = True
 
 
     def screen_biorisks(self):
@@ -391,17 +406,6 @@ class Screen:
         logging.debug(
             "\t...checking %s results", self.params.config["protein_search_tool"]
         )
-        #reg_path_coords = f"{self.params.output_prefix}.reg_path_coords.csv"
-
-        # Delete any previous check_reg_path results for this search
-        #if os.path.isfile(reg_path_coords):
-        #    os.remove(reg_path_coords)
-
-        #check_for_regulated_pathogens(
-        #    self.database_tools.regulated_protein.out_file,
-        #    self.params.db_dir,
-        #    str(self.params.config.threads),
-        #)
 
         update_taxonomic_data_from_database(self.database_tools.regulated_protein,
                                             self.database_tools.benign_taxid_path,
@@ -415,14 +419,12 @@ class Screen:
 
     def screen_nucleotides(self):
         """
+        Screen Nucleotides only in regions determined to be non-coding.
+
         Call `fetch_nc_bits.py`, search noncoding regions with `blastn` and
         then `check_reg_path.py` to screen regulated pathogen nucleotides in
         noncoding regions (i.e. that would not be found with protein search).
         """
-        # Only screen nucleotides in noncoding regions
-        #fetch_noncoding_regions(
-        #    self.database_tools.regulated_protein.out_file, self.screen_io.nt_path
-        #)
 
         # Calculate non-coding information for each Query.
         calculate_noncoding_regions_per_query(
@@ -456,16 +458,7 @@ class Screen:
                 + self.database_tools.regulated_nt.out_file
             )
         
-        # Note: Currently noncoding coo rdinataes are converted within update_taxonomic_data_from_database,
-        # It may be prudent to instead explictly convert them in the output file itself, or during import.
-
-        logging.debug("\t...checking blastn results")
-        #check_for_regulated_pathogens(
-        #    self.database_tools.regulated_nt.out_file,
-        #    self.params.db_dir,
-        #    str(self.params.config["threads"]),
-        #)
-
+        # Note: Currently noncoding coordinates are converted within update_taxonomic_data_from_database,
         update_taxonomic_data_from_database(self.database_tools.regulated_nt,
                                             self.database_tools.benign_taxid_path,
                                             self.database_tools.biorisk_taxid_path,
@@ -514,6 +507,13 @@ class Screen:
             self.queries,
             benign_desc
         )
+
+    def reset_biorisk_recommendations(self, new_recommendation : ScreenStatus):
+        """ Helper function 
+        apply a single recommendation to the whole benign step 
+        for every query."""
+        for query in self.screen_data.queries.values():
+            query.recommendation.biorisk_status = new_recommendation
 
     def reset_benign_recommendations(self, new_recommendation : ScreenStatus):
         """ Helper function 
