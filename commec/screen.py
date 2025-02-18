@@ -68,6 +68,45 @@ from commec.screeners.fetch_nc_bits import fetch_noncoding_regions
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
+class ScreenArgumentParser(argparse.ArgumentParser):
+    """
+    Argument parser that returns a `user_specified_args` namespace item, 
+    which helps selectively override other configuration (e.g. provided via YAML)
+    i.e. for only when it has explicitly been used as an argument in CLI.
+
+    Importantly, this iterates over all sub-parsers too, required for the 
+    cli entry point of Commec. However to do this we access various private 
+    parser attributes - which is naughty - but its better than writing our own argsparse.
+    """
+    def parse_args(self, args=None, namespace=None):     
+        # Get argument strings; in most cases, args and sys.argv[1:] will be the same
+        cli_strings = args if args is not None else sys.argv[1:]
+        user_specified_args = set()
+
+        def collect_user_actions(parser : ScreenArgumentParser):
+            """ 
+            Recursively collect all actions, including subparsers. 
+            _actions has every argument provide to the parser, and
+            has every SubParserActions instances.
+            """
+            for action in parser._actions:
+                if isinstance(action, argparse._SubParsersAction):
+                    # Recurse into each subparser
+                    for _sub_name, subparser in action.choices.items():
+                        collect_user_actions(subparser)
+                else:
+                    for arg_string in action.option_strings:
+                        #print("Testing:", arg_string)
+                        if arg_string in cli_strings:
+                            #print("added!")
+                            user_specified_args.add(action.dest)
+
+        # Collect arguments from main parser and all subparsers
+        collect_user_actions(self)
+        
+        ns = super().parse_args(args, namespace)
+        setattr(ns,"user_specified_args", user_specified_args)
+        return ns
 
 def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
@@ -94,13 +133,13 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     screen_logic_group.add_argument(
         "-f",
         "--fast",
-        dest="fast_mode",
+        dest="in_fast_mode",
         action="store_true",
         help="Run in fast mode and skip protein and nucleotide homology search",
     )
     screen_logic_group.add_argument(
         "-p",
-        "--protein-search-tool",
+        "-protein-search-tool",
         dest="protein_search_tool",
         choices=["blastx", "diamond"],
         help="Tool for protein homology search to identify regulated pathogens",
@@ -140,7 +179,7 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     output_handling_group.add_argument(
         "-c",
         "--cleanup",
-        dest="cleanup",
+        dest="do_cleanup",
         action="store_true",
         help="Delete intermediate output files for this Screen run",
     )
@@ -172,7 +211,7 @@ class Screen:
         self.database_tools: ScreenTools = None
         self.scripts_dir: str = os.path.dirname(__file__)  # Legacy.
 
-    def setup(self, args: argparse.ArgumentParser):
+    def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
         self.params: ScreenIOParameters = ScreenIOParameters(args)
 
@@ -200,12 +239,14 @@ class Screen:
         # Add the input contents to the log
         shutil.copyfile(self.params.query.input_fasta_path, self.params.tmp_log)
 
-    def run(self, args: argparse.ArgumentParser):
+    def run(self, args: argparse.Namespace):
         """
         Wrapper so that args be parsed in main() or commec.py interface.
         """
         # Perform setup steps.
         self.setup(args)
+
+        self.params.output_yaml(self.params.input_prefix + "_config.yaml")
 
         # Biorisk screen
         logging.info(">> STEP 1: Checking for biorisk genes...")
@@ -295,8 +336,6 @@ class Screen:
             str(self.params.config["threads"]),
         )
 
-        self.params.output_yaml(self.params.input_prefix + "_config.yaml")
-
     def screen_nucleotides(self):
         """
         Call `fetch_nc_bits.py`, search noncoding regions with `blastn` and
@@ -365,8 +404,7 @@ class Screen:
         # in future parse, and grab from search handler instead.
         check_for_benign(sample_name, coords, benign_desc)
 
-
-def run(args: argparse.ArgumentParser):
+def run(args: argparse.Namespace):
     """
     Entry point from commec main. Passes args to Screen object, and runs.
     """
@@ -378,7 +416,7 @@ def main():
     """
     Main function. Passes args to Screen object, which then runs.
     """
-    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser = ScreenArgumentParser(description=DESCRIPTION)
     add_args(parser)
     args = parser.parse_args()
     run(args)
