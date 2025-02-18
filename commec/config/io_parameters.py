@@ -200,25 +200,25 @@ class ScreenIOParameters:
         - If no prefix was given, use the input filename.
         - If a directory was given, use the input filename as file prefix within that directory.
         """
+        
+        # Get file stem (e.g. /home/user/commec/testing_cm_02.fasta -> testing_cm_02)
         name = os.path.splitext(os.path.basename(input_file))[0]
         name = self._shorten_name(name)
 
         prefix = prefix_arg or name
 
         base = prefix
-        outputs = os.path.join(prefix, f"output_{name}/")
-        inputs = os.path.join(prefix, f"input_{name}/")
+        outputs = os.path.join(base, f"output_{name}/")
+        inputs = os.path.join(base, f"input_{name}/")
 
         for path in [base, outputs, inputs]:
             os.makedirs(path, exist_ok=True)
 
-        #os.path.
         base_prefix = os.path.join(base,name)
         outputs_prefix =  os.path.join(outputs,name)
         inputs_prefix =  os.path.join(inputs,name)
 
         return base_prefix, outputs_prefix, inputs_prefix
-
 
     def _shorten_name(self, name : str) -> str:
         """
