@@ -228,6 +228,10 @@ class Screen:
         Doing this in the destructor means that sometimes this will complete
         successfully, despite exceptions, and premature exits.
         """
+        if not self.params:
+            #Setup failed, so no need to output anything
+            return
+
         time_taken = (time.time() - self.start_time)
         hours, rem = divmod(time_taken, 3600)
         minutes, seconds = divmod(rem, 60)
@@ -237,7 +241,7 @@ class Screen:
 
         # Only output the HTML, and cleanup if this was a successful run:
         if self.success:
-            generate_html_from_screen_data(self.screen_data, self.params.output_prefix+"_summary")
+            generate_html_from_screen_data(self.screen_data, self.params.directory_prefix+"_summary")
             if self.params.config["do_cleanup"]:
                 self.params.clean()
 
@@ -253,14 +257,13 @@ class Screen:
             handlers=[
                 logging.StreamHandler(),
                 logging.FileHandler(self.params.output_screen_file, "a"),
-                logging.FileHandler(self.params.tmp_log, "a"),
             ],
         )
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format="%(message)s",
-            handlers=[logging.FileHandler(self.params.tmp_log, "a")],
-        )
+
+        # Create a separate DEBUG-only handler for tmp_log
+        debug_handler = logging.FileHandler(self.params.tmp_log, "a")
+        debug_handler.setLevel(logging.DEBUG)  # Set level to DEBUG for this handler
+        logging.getLogger().addHandler(debug_handler)
 
         logging.info(" Validating Inputs...")
         self.params.setup()
