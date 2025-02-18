@@ -201,7 +201,7 @@ class ScreenIOParameters:
         - If a directory was given, use the input filename as file prefix within that directory.
         """
         name = os.path.splitext(os.path.basename(input_file))[0]
-        name = self._decimate_name(name)
+        name = self._shorten_name(name)
 
         prefix = prefix_arg or name
 
@@ -220,29 +220,34 @@ class ScreenIOParameters:
         return base_prefix, outputs_prefix, inputs_prefix
 
 
-    def _decimate_name(self, input_name : str) -> str:
-        name = input_name
-        # Reduce the name size if its too verbose.
-        if len(name) > 25:
+    def _shorten_name(self, name : str) -> str:
+        """
+        Split the input name by underscores, and cut down each component of the name until
+        either (1) each component is reduced to a minimum size or (2) the name is shorter
+        than the target length.
+        """
+        # Same as longest FASTA id length recommended by NCBI
+        TARGET_LEN = 25
+        # Somewhat arbitrary pick
+        MIN_TOKEN_SIZE = 3
+
+        if len(name) > TARGET_LEN:
             tokens = re.split(r'[_\-\s]', name)
 
             def sum_size(in_tokens):
-                total_length = 0
-                for t in in_tokens:
-                    total_length += len(t)
-                return total_length
-            
-            while(sum_size(tokens) > 25):
-                reduced = sum_size(tokens)
-                for i, t in enumerate(tokens):
-                    if len(t) > 3:
-                        tokens[i] = t[:-1]
-                # Can't get smaller!
-                if reduced == sum_size(tokens):
+                return sum(len(t) for t in tokens)  
+
+            while sum_size(tokens) > TARGET_LEN:
+                initial_size = sum_size(tokens) 
+
+                # Cut one character off the end of each token longer than the minimum size
+                tokens = [t[:-1] if len(t) > MIN_TOKEN_SIZE else t for t in tokens]
+                
+                # Can't get smaller! 
+                if initial_size == sum_size(tokens):
                     break
 
-            tokens = [token for token in tokens if (token)]
-            name = "_".join(tokens)
+            name = "_".join(filter(None, tokens))
 
         return name
 
