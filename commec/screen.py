@@ -544,7 +544,10 @@ def run(args: argparse.Namespace):
     Entry point from commec main. Passes args to Screen object, and runs.
     """
     my_screen: Screen = Screen()
-    my_screen.run(args)
+    try:
+        my_screen.run(args)
+    except KeyboardInterrupt:
+        print(" >>> Commec Screen Terminated.")
 
 
 def main():
