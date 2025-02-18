@@ -124,8 +124,8 @@ class SearchHandler(ABC):
         """
         if not os.path.isdir(self.db_directory):
             raise DatabaseValidationError(
-                f"Mandatory screening database directory not found: {self.db_directory}."
-                " Screening directory can be set via --databases option or --config yaml."
+                f"Screening database directory not found at: {self.db_directory}."
+                " Screening directory path can be set via --databases option or --config yaml."
             )
 
         if not os.path.isfile(self.db_file):

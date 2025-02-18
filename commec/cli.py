@@ -13,7 +13,6 @@ Command-line usage:
     - commec flag /path/to/directory/with/output.screen 
     - commec split input.fasta
 """
-import argparse
 from commec.flag import (
     DESCRIPTION as flag_DESCRIPTION,
     add_args as flag_add_args,
@@ -23,6 +22,7 @@ from commec.screen import (
     DESCRIPTION as screen_DESCRIPTION,
     add_args as screen_add_args,
     run as screen_run,
+    ScreenArgumentParser
 )
 from commec.split import (
     DESCRIPTION as split_DESCRIPTION,
@@ -35,12 +35,11 @@ from commec.setup import (
     run as setup_run,
 )
 
-
 def main():
     """
     Parse the command line arguments and call the relevant sub-command.
     """
-    parser = argparse.ArgumentParser(
+    parser = ScreenArgumentParser(
         prog="commec", description="Command-line entrypoint for the Common Mechanism"
     )
     subparsers = parser.add_subparsers(dest="command")
@@ -62,6 +61,7 @@ def main():
     setup_add_args(setup_parser)
 
     args = parser.parse_args()
+
     if args.command == "screen":
         screen_run(args)
     elif args.command == "flag":

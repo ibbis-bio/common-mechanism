@@ -8,8 +8,7 @@ Sets and alters defaults based on input parameters.
 
 import logging
 import os
-from typing import Union
-from commec.config.screen_io import ScreenIO
+from commec.config.io_parameters import ScreenIOParameters
 from commec.tools.blastn import BlastNHandler
 from commec.tools.blastx import BlastXHandler
 from commec.tools.diamond import DiamondHandler
@@ -21,9 +20,9 @@ class ScreenTools:
     Using parameters and filenames in `ScreenIo`, set up the tools needed to search datbases.
     """
 
-    def __init__(self, params: ScreenIO):
+    def __init__(self, params: ScreenIOParameters):
         self.biorisk_hmm: HmmerHandler = None
-        self.regulated_protein : Union[BlastXHandler, DiamondHandler] = None
+        self.regulated_protein : BlastXHandler | DiamondHandler = None
         self.regulated_nt: BlastNHandler = None
         self.benign_hmm: HmmerHandler = None
         self.benign_blastn: BlastNHandler = None
@@ -33,49 +32,47 @@ class ScreenTools:
         self.benign_taxid_path: str | os.PathLike = None
         self.biorisk_taxid_path: str | os.PathLike = None
 
-        config_file = params.yaml_configuration
-
         # Paths for vaxid, taxids, and taxonomy directory, used for check_regulated_pathogens
         # (Declared this way for backwards compatibility at this stage)
-        value = config_file.get("databases", {}).get("taxonomy", {}).get("path")
+        value = params.config.get("databases", {}).get("taxonomy", {}).get("taxonomy_directory")
         self.taxonomy_path = value if value is not None else params.db_dir + "/taxonomy/"
 
-        value = config_file.get("databases", {}).get("taxonomy", {}).get("regulated")
+        value = params.config.get("databases", {}).get("taxonomy", {}).get("regulated_vaxids")
         self.biorisk_taxid_path = value if value is not None else os.path.join(
-            config_file["databases"]["biorisk_hmm"]["path"],"reg_taxids.txt")
+            params.config["databases"]["biorisk_hmm"]["path"],"reg_taxids.txt")
 
-        value = config_file.get("databases", {}).get("taxonomy", {}).get("benign")
+        value = params.config.get("databases", {}).get("taxonomy", {}).get("benign_taxids")
         self.benign_taxid_path = value if value is not None else os.path.join(
-            config_file["databases"]["benign"]["hmm"]["path"],"vax_taxids.txt")
+            params.config["databases"]["benign"]["hmm"]["path"],"vax_taxids.txt")
 
         # Database tools for Biorisks / Protein and NT screens / Benign screen:
         self.biorisk_hmm = HmmerHandler(
-            config_file["databases"]["biorisk_hmm"]["path"],
+            params.config["databases"]["biorisk_hmm"]["path"],
             params.aa_path,
             f"{params.output_prefix}.biorisk.hmmscan",
-            threads=params.config.threads,
-            force=params.config.force,
+            threads=params.config["threads"],
+            force=params.config["force"],
         )
 
         if params.should_do_protein_screening:
-            if params.config.protein_search_tool == "blastx":
+            if params.config["protein_search_tool"] == "blastx":
                 self.regulated_protein = BlastXHandler(
-                    config_file["databases"]["regulated_protein"]["blast"]["path"],
+                    params.config["databases"]["regulated_protein"]["blast"]["path"],
                     input_file=params.nt_path,
                     out_file=f"{params.output_prefix}.nr.blastx",
-                    threads=params.config.threads,
-                    force=params.config.force,
+                    threads=params.config["threads"],
+                    force=params.config["force"],
                 )
-            elif params.config.protein_search_tool in ("nr.dmnd", "diamond"):
+            elif params.config["protein_search_tool"] in ("nr.dmnd", "diamond"):
                 self.regulated_protein = DiamondHandler(
-                    config_file["databases"]["regulated_protein"]["diamond"]["path"],
+                    params.config["databases"]["regulated_protein"]["diamond"]["path"],
                     input_file=params.nt_path,
                     out_file=f"{params.output_prefix}.nr.dmnd",
-                    threads=params.config.threads,
-                    force=params.config.force,
+                    threads=params.config["threads"],
+                    force=params.config["force"],
                 )
-                self.regulated_protein.jobs = params.config.diamond_jobs
-                if params.config.protein_search_tool == "nr.dmnd":
+                self.regulated_protein.jobs = params.config["diamond_jobs"]
+                if params.config["protein_search_tool"] == "nr.dmnd":
                     logging.info(
                         "Using old \"nr.dmnd\" keyword for search tool will not be supported"
                         " in future releases,consider using \"diamond\" instead."
@@ -85,32 +82,32 @@ class ScreenTools:
 
         if params.should_do_nucleotide_screening:
             self.regulated_nt = BlastNHandler(
-                config_file["databases"]["regulated_nt"]["path"],
-                input_file=f"{params.output_prefix}.noncoding.fasta",
+                params.config["databases"]["regulated_nt"]["path"],
+                input_file=params.nc_path,
                 out_file=f"{params.output_prefix}.nt.blastn",
-                threads=params.config.threads,
-                force=params.config.force,
+                threads=params.config["threads"],
+                force=params.config["force"],
             )
 
         if params.should_do_benign_screening:
             self.benign_hmm = HmmerHandler(
-                config_file["databases"]["benign"]["hmm"]["path"],
+                params.config["databases"]["benign"]["hmm"]["path"],
                 input_file=params.aa_path,
                 out_file=f"{params.output_prefix}.benign.hmmscan",
-                threads=params.config.threads,
-                force=params.config.force,
+                threads=params.config["threads"],
+                force=params.config["force"],
             )
             self.benign_blastn = BlastNHandler(
-                config_file["databases"]["benign"]["fasta"]["path"],
+                params.config["databases"]["benign"]["fasta"]["path"],
                 input_file=params.nt_path,
                 out_file=f"{params.output_prefix}.benign.blastn",
-                threads=params.config.threads,
-                force=params.config.force,
+                threads=params.config["threads"],
+                force=params.config["force"],
             )
             self.benign_cmscan = CmscanHandler(
-                config_file["databases"]["benign"]["cm"]["path"],
+                params.config["databases"]["benign"]["cm"]["path"],
                 input_file=params.nt_path,
                 out_file=f"{params.output_prefix}.benign.cmscan",
-                threads=params.config.threads,
-                force=params.config.force,
+                threads=params.config["threads"],
+                force=params.config["force"],
             )

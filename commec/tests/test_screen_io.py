@@ -1,10 +1,9 @@
 import pytest
 from unittest.mock import mock_open, patch
 import os
-import argparse
 
-from commec.config.screen_io import ScreenIO, IoValidationError
-from commec.screen import add_args
+from commec.config.io_parameters import ScreenIOParameters, IoValidationError
+from commec.screen import add_args, ScreenArgumentParser
 
 
 @pytest.fixture
@@ -33,9 +32,9 @@ def test_default_parameters(fasta_name, test_data_dir, database_dir, tmp_path):
         "sys.argv",
         ["test.py", "-f", input_fasta, "-d", database_dir, "-o", str(tmp_path)],
     ):
-        parser = argparse.ArgumentParser()
+        parser = ScreenArgumentParser()
         add_args(parser)
-        screen_io = ScreenIO(parser.parse_args())
+        screen_io = ScreenIOParameters(parser.parse_args())
         assert screen_io.setup()
 
 
@@ -54,9 +53,9 @@ def test_parse_input_fasta(
         "sys.argv",
         ["test.py", "-f", input_fasta, "-d", database_dir, "-o", str(tmp_path)],
     ):
-        parser = argparse.ArgumentParser()
+        parser = ScreenArgumentParser()
         add_args(parser)
-        screen_io = ScreenIO(parser.parse_args())
+        screen_io = ScreenIOParameters(parser.parse_args())
         screen_io.setup()
 
     queries = screen_io.parse_input_fasta()
@@ -77,9 +76,9 @@ def test_parse_invalid_input_fasta(fasta_name, test_data_dir, database_dir, tmp_
         "sys.argv",
         ["test.py", "-f", input_fasta, "-d", database_dir, "-o", str(tmp_path)],
     ):
-        parser = argparse.ArgumentParser()
+        parser = ScreenArgumentParser()
         add_args(parser)
-        screen_io = ScreenIO(parser.parse_args())
+        screen_io = ScreenIOParameters(parser.parse_args())
         screen_io.setup()
 
     with pytest.raises(IoValidationError):

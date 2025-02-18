@@ -61,7 +61,7 @@ from Bio import SeqIO
 
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
-from commec.config.screen_io import ScreenIO, ScreenConfig
+from commec.config.io_parameters import ScreenIOParameters
 from commec.config.query import Query
 from commec.config.screen_tools import ScreenTools
 
@@ -72,10 +72,7 @@ from commec.screeners.check_reg_path import (
     update_taxonomic_data_from_database
 )
 
-from commec.tools.fetch_nc_bits import (
-    fetch_noncoding_regions,
-    calculate_noncoding_regions_per_query
-)
+from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 
 from commec.config.result import (
     ScreenResult,
@@ -88,12 +85,50 @@ from commec.config.json_io import encode_screen_data_to_json
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
+class ScreenArgumentParser(argparse.ArgumentParser):
+    """
+    Argument parser that returns a `user_specified_args` namespace item, 
+    which helps selectively override other configuration (e.g. provided via YAML)
+    i.e. for only when it has explicitly been used as an argument in CLI.
+
+    Importantly, this iterates over all sub-parsers too, required for the 
+    cli entry point of Commec. However to do this we access various private 
+    parser attributes - which is naughty - but its better than writing our own argsparse.
+    """
+    def parse_args(self, args=None, namespace=None):     
+        # Get argument strings; in most cases, args and sys.argv[1:] will be the same
+        cli_strings = args if args is not None else sys.argv[1:]
+        user_specified_args = set()
+
+        def collect_user_actions(parser : ScreenArgumentParser):
+            """ 
+            Recursively collect all actions, including subparsers. 
+            _actions has every argument provide to the parser, and
+            has every SubParserActions instances.
+            """
+            for action in parser._actions:
+                if isinstance(action, argparse._SubParsersAction):
+                    # Recurse into each subparser
+                    for _sub_name, subparser in action.choices.items():
+                        collect_user_actions(subparser)
+                else:
+                    for arg_string in action.option_strings:
+                        #print("Testing:", arg_string)
+                        if arg_string in cli_strings:
+                            #print("added!")
+                            user_specified_args.add(action.dest)
+
+        # Collect arguments from main parser and all subparsers
+        collect_user_actions(self)
+        
+        ns = super().parse_args(args, namespace)
+        setattr(ns,"user_specified_args", user_specified_args)
+        return ns
 
 def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
     Add module arguments to an ArgumentParser object.
     """
-    default_config: ScreenConfig = ScreenConfig()
 
     parser.add_argument(dest="fasta_file", type=file_arg, help="FASTA file to screen")
     parser.add_argument(
@@ -108,23 +143,22 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "-y",
         "--config",
         dest="config_yaml",
-        default=default_config.config_yaml_file,
         help="Configuration for screen run in YAML format, including custom database paths",
+        default="",
     )
     screen_logic_group = parser.add_argument_group("Screen run logic")
     screen_logic_group.add_argument(
         "-f",
         "--fast",
-        dest="fast_mode",
+        dest="in_fast_mode",
         action="store_true",
         help="Run in fast mode and skip protein and nucleotide homology search",
     )
     screen_logic_group.add_argument(
         "-p",
-        "--protein-search-tool",
+        "-protein-search-tool",
         dest="protein_search_tool",
         choices=["blastx", "diamond"],
-        default=default_config.protein_search_tool,
         help="Tool for protein homology search to identify regulated pathogens",
     )
     screen_logic_group.add_argument(
@@ -140,7 +174,6 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--threads",
         dest="threads",
         type=int,
-        default=default_config.threads,
         help="Number of CPU threads to use. Passed to search tools.",
     )
     parallel_group.add_argument(
@@ -148,7 +181,6 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--diamond-jobs",
         dest="diamond_jobs",
         type=int,
-        default=default_config.diamond_jobs,
         help="Diamond-only: number of runs to do in parallel on split Diamond databases",
     )
     output_handling_group = parser.add_argument_group("Output file handling")
@@ -159,11 +191,12 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         dest="output_prefix",
         help="Prefix for output files. Can be a string (interpreted as output basename) or a"
         + " directory (files will be output there, names will be determined from input FASTA)",
+        default = ""
     )
     output_handling_group.add_argument(
         "-c",
         "--cleanup",
-        dest="cleanup",
+        dest="do_cleanup",
         action="store_true",
         help="Delete intermediate output files for this Screen run",
     )
@@ -190,7 +223,7 @@ class Screen:
     """
 
     def __init__(self):
-        self.screen_io : ScreenIO = None
+        self.params : ScreenIOParameters = None
         self.queries : dict[str, Query] = None
         self.database_tools : ScreenTools = None
         self.screen_data : ScreenResult = ScreenResult()
@@ -207,16 +240,16 @@ class Screen:
         minutes, seconds = divmod(rem, 60)
         self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
         self.screen_data.update()
-        encode_screen_data_to_json(self.screen_data, self.screen_io.output_json)
-        generate_html_from_screen_data(self.screen_data, self.screen_io.output_prefix+"_summary")
+        encode_screen_data_to_json(self.screen_data, self.params.output_json)
+        generate_html_from_screen_data(self.screen_data, self.params.output_prefix+"_summary")
         
-        if self.screen_io.config.do_cleanup:
-            self.screen_io.clean()
+        if self.params.config["do_cleanup"]:
+            self.params.clean()
 
-    def setup(self, args: argparse.ArgumentParser):
+    def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
-        self.screen_io: ScreenIO = ScreenIO(args)
-        self.screen_io.setup()
+        self.params: ScreenIOParameters = ScreenIOParameters(args)
+        self.params.setup()
 
         # Set up logging
         logging.basicConfig(
@@ -224,27 +257,27 @@ class Screen:
             format="%(message)s",
             handlers=[
                 logging.StreamHandler(),
-                logging.FileHandler(self.screen_io.output_screen_file, "a"),
-                logging.FileHandler(self.screen_io.tmp_log, "a"),
+                logging.FileHandler(self.params.output_screen_file, "a"),
+                logging.FileHandler(self.params.tmp_log, "a"),
             ],
         )
         logging.basicConfig(
             level=logging.DEBUG,
             format="%(message)s",
-            handlers=[logging.FileHandler(self.screen_io.tmp_log, "a")],
+            handlers=[logging.FileHandler(self.params.tmp_log, "a")],
         )
 
         logging.info(" Validating Inputs...")
-        self.screen_io.setup()
-        self.database_tools: ScreenTools = ScreenTools(self.screen_io)
+        self.params.setup()
+        self.database_tools: ScreenTools = ScreenTools(self.params)
 
         # Add the input contents to the log
-        shutil.copyfile(self.screen_io.input_fasta_path, self.screen_io.tmp_log)
+        shutil.copyfile(self.params.input_fasta_path, self.params.tmp_log)
 
         # Initialize the queries
-        self.queries = self.screen_io.parse_input_fasta()
+        self.queries = self.params.parse_input_fasta()
         for query in self.queries.values():
-            query.translate(self.screen_io.nt_path, self.screen_io.aa_path)
+            query.translate(self.params.nt_path, self.params.aa_path)
             qr = QueryResult(query.original_name,
                                  len(query.seq_record),
                                  str(query.seq_record.seq))
@@ -255,11 +288,11 @@ class Screen:
         _tools = self.database_tools
         _info = self.screen_data.commec_info
         _info.biorisk_database_info = _tools.biorisk_hmm.get_version_information()
-        if self.screen_io.should_do_protein_screening:
+        if self.params.should_do_protein_screening:
             _info.protein_database_info = _tools.regulated_protein.get_version_information()
-        if self.screen_io.should_do_nucleotide_screening:
+        if self.params.should_do_nucleotide_screening:
             _info.nucleotide_database_info = _tools.regulated_nt.get_version_information()
-        if self.screen_io.should_do_benign_screening:
+        if self.params.should_do_benign_screening:
             _info.benign_protein_database_info = _tools.benign_hmm.get_version_information()
             _info.benign_rna_database_info = _tools.benign_blastn.get_version_information()
             _info.benign_synbio_database_info = _tools.benign_cmscan.get_version_information()
@@ -267,12 +300,14 @@ class Screen:
         # Store start time.
         _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    def run(self, args : argparse.ArgumentParser):
+    def run(self, args : argparse.Namespace):
         """
         Wrapper so that args be parsed in main() or commec.py interface.
         """
         # Perform setup steps.
         self.setup(args)
+
+        self.params.output_yaml(self.params.input_prefix + "_config.yaml")
 
         # Biorisk screen
         logging.info(">> STEP 1: Checking for biorisk genes...")
@@ -283,7 +318,7 @@ class Screen:
         )
 
         # Taxonomy screen (Protein)
-        if self.screen_io.should_do_protein_screening:
+        if self.params.should_do_protein_screening:
             logging.info(" >> STEP 2: Checking regulated pathogen proteins...")
             self.screen_proteins()
             logging.info(
@@ -295,7 +330,7 @@ class Screen:
             self.reset_protein_recommendations(ScreenStatus.SKIP)
 
         # Taxonomy screen (Nucleotide)
-        if self.screen_io.should_do_nucleotide_screening:
+        if self.params.should_do_nucleotide_screening:
             logging.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
             self.screen_nucleotides()
             logging.info(
@@ -307,7 +342,7 @@ class Screen:
             self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
 
         # Benign Screen
-        if self.screen_io.should_do_benign_screening:
+        if self.params.should_do_benign_screening:
             logging.info(
                 ">> STEP 4: Checking any pathogen regions for benign components..."
             )
@@ -323,7 +358,6 @@ class Screen:
         logging.info(
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
-
 
 
     def screen_biorisks(self):
@@ -345,7 +379,7 @@ class Screen:
         Call `run_blastx.sh` or `run_diamond.sh` followed by `check_reg_path.py` to add regulated
         pathogen protein screening results to `screen_file`.
         """
-        logging.debug("\t...running %s", self.screen_io.config.protein_search_tool)
+        logging.debug("\t...running %s", self.params.config["protein_search_tool"])
         self.database_tools.regulated_protein.search()
         if not self.database_tools.regulated_protein.check_output():
             self.reset_protein_recommendations(ScreenStatus.ERROR)
@@ -355,18 +389,18 @@ class Screen:
             )
 
         logging.debug(
-            "\t...checking %s results", self.screen_io.config.protein_search_tool
+            "\t...checking %s results", self.params.config["protein_search_tool"]
         )
-        reg_path_coords = f"{self.screen_io.output_prefix}.reg_path_coords.csv"
+        #reg_path_coords = f"{self.params.output_prefix}.reg_path_coords.csv"
 
         # Delete any previous check_reg_path results for this search
-        if os.path.isfile(reg_path_coords):
-            os.remove(reg_path_coords)
+        #if os.path.isfile(reg_path_coords):
+        #    os.remove(reg_path_coords)
 
         #check_for_regulated_pathogens(
         #    self.database_tools.regulated_protein.out_file,
-        #    self.screen_io.db_dir,
-        #    str(self.screen_io.config.threads),
+        #    self.params.db_dir,
+        #    str(self.params.config.threads),
         #)
 
         update_taxonomic_data_from_database(self.database_tools.regulated_protein,
@@ -376,7 +410,7 @@ class Screen:
                                             self.screen_data,
                                             self.queries,
                                             ScreenStep.TAXONOMY_AA,
-                                            self.screen_io.config.threads)
+                                            self.params.config["threads"])
 
 
     def screen_nucleotides(self):
@@ -409,8 +443,7 @@ class Screen:
             return
 
         # Create a non-coding fasta file.
-        noncoding_fasta = f"{self.screen_io.output_prefix}.noncoding.fasta"
-        with open(noncoding_fasta, "w", encoding="utf-8") as output_file:
+        with open(self.params.nc_path, "w", encoding="utf-8") as output_file:
             output_file.writelines(nc_fasta_sequences)
 
         # Only run new blastn search if there are no previous results
@@ -427,11 +460,11 @@ class Screen:
         # It may be prudent to instead explictly convert them in the output file itself, or during import.
 
         logging.debug("\t...checking blastn results")
-        check_for_regulated_pathogens(
-            self.database_tools.regulated_nt.out_file,
-            self.screen_io.db_dir,
-            str(self.screen_io.config.threads),
-        )
+        #check_for_regulated_pathogens(
+        #    self.database_tools.regulated_nt.out_file,
+        #    self.params.db_dir,
+        #    str(self.params.config["threads"]),
+        #)
 
         update_taxonomic_data_from_database(self.database_tools.regulated_nt,
                                             self.database_tools.benign_taxid_path,
@@ -440,7 +473,7 @@ class Screen:
                                             self.screen_data,
                                             self.queries,
                                             ScreenStep.TAXONOMY_NT,
-                                            self.screen_io.config.threads)
+                                            self.params.config["threads"])
 
     def screen_benign(self):
         """
@@ -503,8 +536,7 @@ class Screen:
         for query in self.screen_data.queries.values():
             query.recommendation.nucleotide_taxonomy_status = new_recommendation
 
-
-def run(args: argparse.ArgumentParser):
+def run(args: argparse.Namespace):
     """
     Entry point from commec main. Passes args to Screen object, and runs.
     """
@@ -516,7 +548,7 @@ def main():
     """
     Main function. Passes args to Screen object, which then runs.
     """
-    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser = ScreenArgumentParser(description=DESCRIPTION)
     add_args(parser)
     args = parser.parse_args()
     run(args)
