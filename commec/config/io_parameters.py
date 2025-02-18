@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
 """
-Defines the `ScreenIOParameters` class and associated dataclasses.
+Defines the `ScreenIO` class and associated dataclasses.
 Objects responsible for parsing and interpreting user input for
 the screen workflow of commec.
 """
@@ -22,7 +22,7 @@ from Bio import SeqIO
 from commec.config.query import Query
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 
-class ScreenIOParameters:
+class ScreenIO:
     """
     Container for input settings constructed from arguments to `screen`.
     """

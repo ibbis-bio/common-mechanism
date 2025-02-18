@@ -8,7 +8,7 @@ Sets and alters defaults based on input parameters.
 
 import logging
 import os
-from commec.config.io_parameters import ScreenIOParameters
+from commec.config.io_parameters import ScreenIO
 from commec.tools.blastn import BlastNHandler
 from commec.tools.blastx import BlastXHandler
 from commec.tools.diamond import DiamondHandler
@@ -20,7 +20,7 @@ class ScreenTools:
     Using parameters and filenames in `ScreenIo`, set up the tools needed to search datbases.
     """
 
-    def __init__(self, params: ScreenIOParameters):
+    def __init__(self, params: ScreenIO):
         self.biorisk_hmm: HmmerHandler = None
         self.regulated_protein : BlastXHandler | DiamondHandler = None
         self.regulated_nt: BlastNHandler = None

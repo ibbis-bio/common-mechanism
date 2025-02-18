@@ -3,7 +3,7 @@ from unittest.mock import patch
 import os
 import yaml
 
-from commec.config.io_parameters import ScreenIOParameters
+from commec.config.io_parameters import ScreenIO
 from commec.cli import ScreenArgumentParser
 from commec.screen import add_args
 
@@ -72,7 +72,7 @@ def test_default_config_only(expected_defaults):
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args([INPUT_QUERY])
-    params = ScreenIOParameters(args)
+    params = ScreenIO(args)
     
     assert expected_defaults == params.config
 
@@ -86,7 +86,7 @@ def test_user_yaml_override(tmp_path, expected_defaults, custom_yaml_config):
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
-    params = ScreenIOParameters(args)
+    params = ScreenIO(args)
     
     # Check that user YAML values override defaults
     expected_defaults.update(custom_yaml_config)
@@ -115,7 +115,7 @@ def test_cli_override(tmp_path, expected_defaults, custom_yaml_config):
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args(cli_args)
-    params = ScreenIOParameters(args)
+    params = ScreenIO(args)
     
     # Override defaults with user YAML
     expected_defaults.update(custom_yaml_config)
@@ -147,5 +147,5 @@ def test_missing_default_config():
         args = args.parse_args([INPUT_QUERY])
         
         with pytest.raises(FileNotFoundError, match="No default yaml found"):
-            _ = ScreenIOParameters(args)
+            _ = ScreenIO(args)
 

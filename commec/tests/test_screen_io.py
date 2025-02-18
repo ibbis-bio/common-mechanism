@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import mock_open, patch
 import os
 
-from commec.config.io_parameters import ScreenIOParameters, IoValidationError
+from commec.config.io_parameters import ScreenIO, IoValidationError
 from commec.screen import add_args, ScreenArgumentParser
 
 
@@ -34,7 +34,7 @@ def test_default_parameters(fasta_name, test_data_dir, database_dir, tmp_path):
     ):
         parser = ScreenArgumentParser()
         add_args(parser)
-        screen_io = ScreenIOParameters(parser.parse_args())
+        screen_io = ScreenIO(parser.parse_args())
         assert screen_io.setup()
 
 
@@ -55,7 +55,7 @@ def test_parse_input_fasta(
     ):
         parser = ScreenArgumentParser()
         add_args(parser)
-        screen_io = ScreenIOParameters(parser.parse_args())
+        screen_io = ScreenIO(parser.parse_args())
         screen_io.setup()
 
     queries = screen_io.parse_input_fasta()
@@ -78,7 +78,7 @@ def test_parse_invalid_input_fasta(fasta_name, test_data_dir, database_dir, tmp_
     ):
         parser = ScreenArgumentParser()
         add_args(parser)
-        screen_io = ScreenIOParameters(parser.parse_args())
+        screen_io = ScreenIO(parser.parse_args())
         screen_io.setup()
 
     with pytest.raises(IoValidationError):

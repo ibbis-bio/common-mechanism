@@ -58,7 +58,7 @@ import sys
 import traceback
 import pandas as pd
 
-from commec.config.io_parameters import ScreenIOParameters
+from commec.config.io_parameters import ScreenIO
 from commec.config.query import Query
 from commec.config.screen_tools import ScreenTools
 from commec.config.result import (
@@ -215,7 +215,7 @@ class Screen:
     """
 
     def __init__(self):
-        self.params : ScreenIOParameters = None
+        self.params : ScreenIO = None
         self.queries : dict[str, Query] = None
         self.database_tools : ScreenTools = None
         self.screen_data : ScreenResult = ScreenResult()
@@ -243,7 +243,7 @@ class Screen:
 
     def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
-        self.params: ScreenIOParameters = ScreenIOParameters(args)
+        self.params: ScreenIO = ScreenIO(args)
         self.params.setup()
 
         # Set up logging
