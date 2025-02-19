@@ -234,7 +234,7 @@ class Screen:
         console_handler.setLevel(logging.INFO)
         console_handler.setFormatter(log_formatter)
 
-        screen_handler = logging.FileHandler(self.params.output_screen_file, "a")
+        screen_handler = logging.FileHandler(self.params.output_screen_file, "w")
         screen_handler.setLevel(logging.INFO)
         screen_handler.setFormatter(log_formatter)
 
