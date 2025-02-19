@@ -14,21 +14,24 @@ import pandas as pd
 from commec.tools.hmmer import readhmmer, trimhmmer, HmmerHandler
 
 
-def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str):
+def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str) -> int:
     """
-    Checks an HMM scan output, and parses it for biorisks, according to those found in the biorisk_annotations.csv.
+    Checks an HMM scan output, and parses it for biorisks, according to those found in
+    the biorisk annotations.
     INPUTS:
         - hmmscan_input_file - the file output from hmmscan, containing information about potential hits.
         - hmm_folder - the directory containing biorisk_annotations.csv
+    RETURNS:
+        0 or 1 depending on whether execution was successful
     """
 
     # check input files
     hmm_folder_csv = biorisk_annotations_directory + "/biorisk_annotations.csv"
     if not os.path.exists(hmmscan_input_file):
-        logging.error("\t...input file does not exist\n")
+        logging.error(f"\t...hmmscan file does not exist: {hmmscan_input_file}")
         return 1
     if not os.path.exists(hmm_folder_csv):
-        logging.error("\t...biorisk_annotations.csv does not exist\n" + hmm_folder_csv)
+        logging.error(f"\t...Biorisk annotations file does not exist: {hmm_folder_csv}")
         return 1
 
     # Specify input file and read in database file
@@ -38,11 +41,11 @@ def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str):
     # read in HMMER output and check for valid hits
     if HmmerHandler.is_empty(hmmscan_input_file):
         logging.info("\t...ERROR: biorisk search results empty\n")
-        return
+        return 1
 
     if not HmmerHandler.has_hits(hmmscan_input_file):
         logging.info("\t\t --> Biorisks: no hits detected, PASS\n")
-        return
+        return 0
 
     hmmer = readhmmer(hmmscan_input_file)
     keep1 = [i for i, x in enumerate(hmmer["E-value"]) if x < 1e-20]
