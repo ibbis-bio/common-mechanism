@@ -123,7 +123,7 @@ def get_flag_list(screen_dir):
                 reg_nonreg_flags[-1:] = ["Err"]
 
             # All homology-related flags should be replaced with "-" if run in fast mode
-            fast_mode = [s for s in lines if "FAST MODE" in s]
+            fast_mode = [s for s in lines if "SKIPPING STEP 2: Protein search" in s]
             if len(fast_mode) > 0:
                 virus_flags[-1:] = ["-"]
                 bacteria_flags[-1:] = ["-"]
