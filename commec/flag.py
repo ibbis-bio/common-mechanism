@@ -75,7 +75,11 @@ def get_flag_list(screen_dir):
     reg_nonreg_flags = []
     benign_flags = []
 
-    for screen_path in glob.glob(os.path.join(screen_dir, "*.screen")):
+    screen_paths = glob.glob(os.path.join(screen_dir, "*.screen"))
+    if not screen_paths:
+        raise FileNotFoundError(f"No .screen files were found in directory: {screen_dir}")
+
+    for screen_path in screen_paths:
         filenames.append(os.path.basename(screen_path))
         with open(screen_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
