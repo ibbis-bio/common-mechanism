@@ -84,4 +84,4 @@ class BlastXHandler(BlastHandler):
             return SearchToolVersion(tool_info, database_info)
 
         except subprocess.CalledProcessError:
-            return None
+            return SearchToolVersion()

@@ -314,8 +314,8 @@ class Screen:
             _info.nucleotide_database_info = _tools.regulated_nt.get_version_information()
         if self.params.should_do_benign_screening:
             _info.benign_protein_database_info = _tools.benign_hmm.get_version_information()
-            _info.benign_rna_database_info = _tools.benign_blastn.get_version_information()
-            _info.benign_synbio_database_info = _tools.benign_cmscan.get_version_information()
+            _info.benign_rna_database_info = _tools.benign_cmscan.get_version_information()
+            _info.benign_synbio_database_info = _tools.benign_blastn.get_version_information()
 
         # Store start time.
         _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -327,7 +327,7 @@ class Screen:
         # Perform setup steps.
         self.setup(args)
         self.params.output_yaml(self.params.input_prefix + "_config.yaml")
-
+        
         # Biorisk screen
         try:
             logging.info(">> STEP 1: Checking for biorisk genes...")
@@ -339,6 +339,8 @@ class Screen:
         except Exception as e:
             logging.info(" ERROR STEP 1: Biorisk search failed due to an error:\n %s", str(e))
             logging.info(" Traceback:\n%s", traceback.format_exc())
+            print(" ERROR STEP 1: Biorisk search failed due to an error:\n %s", str(e))
+            print(" Traceback:\n%s", traceback.format_exc())
             self.reset_biorisk_recommendations(ScreenStatus.ERROR)
 
         # Taxonomy screen (Protein)
@@ -353,6 +355,8 @@ class Screen:
             except Exception as e:
                 logging.info(" ERROR STEP 2: Protein search failed due to an error:\n %s", str(e))
                 logging.info(" Traceback:\n%s", traceback.format_exc())
+                print(" ERROR STEP 2: Protein search failed due to an error:\n %s", str(e))
+                print(" Traceback:\n%s", traceback.format_exc())
                 self.reset_protein_recommendations(ScreenStatus.ERROR)
         else:
             logging.info(" SKIPPING STEP 2: Protein search")
@@ -370,6 +374,8 @@ class Screen:
             except Exception as e:
                 logging.info(" ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
                 logging.info(" Traceback:\n%s", traceback.format_exc())
+                print(" ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
+                print(" Traceback:\n%s", traceback.format_exc())
                 self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
         else:
             logging.info(" SKIPPING STEP 3: Nucleotide search")
@@ -389,6 +395,8 @@ class Screen:
             except Exception as e:
                 logging.info(" ERROR STEP 4: Benign search failed due to an error:\n %s", str(e))
                 logging.info(" Traceback:\n%s", traceback.format_exc())
+                print(" ERROR STEP 4: Benign search failed due to an error:\n %s", str(e))
+                print(" Traceback:\n%s", traceback.format_exc())
                 self.reset_benign_recommendations(ScreenStatus.ERROR)
         else:
             logging.info(" SKIPPING STEP 4: Benign search")
