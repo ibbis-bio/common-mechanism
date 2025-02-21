@@ -19,8 +19,8 @@ databases:
       path: '{default}nr_dmnd/nr.dmnd'
   taxonomy:
       taxonomy_directory: "{default}taxonomy/"
-      regulated_vaxids: "{default}biorisk_db/vaxids.txt"
-      benign_taxids: "{default}benign_db/taxids.txt"
+      regulated_vaxids: "{default}biorisk_db/reg_taxids.txt"
+      benign_taxids: "{default}benign_db/vax_taxids.txt"
 threads: 1
 protein_search_tool: 'blastx'
 in_fast_mode: False

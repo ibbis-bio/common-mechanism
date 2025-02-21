@@ -11,6 +11,7 @@ Usage:
 """
 import logging
 import pandas as pd
+from commec.tools.blast_tools import get_top_hits
 from commec.tools.blastn import BlastNHandler  # For has_hits.
 from commec.tools.hmmer import HmmerHandler
 from commec.tools.cmscan import CmscanHandler
@@ -30,7 +31,7 @@ from commec.config.result import (
 
 # Constants determining Commec's sensitivity for benign screen.
 BENIGN_PROTEIN_EVALUE_CUTOFF : float = 1e-20
-MINIMUM_PEPTIDE_COVERAGE : int = 50
+MINIMUM_PEPTIDE_COVERAGE : int = 50 # Number is counted in bases, not AA's.
 MINIMUM_QUERY_COVERAGE_FRACTION : float = 0.80
 MINIMUM_RNA_BASEPAIR_COVERAGE : int = 50
 MINIMUM_SYNBIO_COVERAGE_FRACTION : float = 0.80
@@ -47,10 +48,17 @@ def _update_benign_data_for_query(query : Query,
     """
     # We only care about the benign data for this query.
     # TODO: This will require updating when the Query unique ID is used for creation of cleaned fasta.
-    benign_protein_for_query = benign_protein[benign_protein["query name"] == query.name]
+    # Print full DataFrame
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None, 'display.width', None):
+        print(benign_protein)
+        
+    benign_protein_for_query = benign_protein[
+        benign_protein["query name"].str.rsplit("_", n=1).str[0] == query.name
+    ]
+    print("PROTEIN BENIGN QUERY: ", benign_protein_for_query)
+
     benign_rna_for_query = benign_rna[benign_rna["query name"] == query.name]
     benign_synbio_for_query = benign_synbio[benign_synbio["query acc."] == query.name]
-
 
     new_benign_hits = []
 
@@ -63,48 +71,51 @@ def _update_benign_data_for_query(query : Query,
             continue
 
         for region in hit.ranges:
-            benign_protein_for_query = _trim_to_region(benign_protein_for_query, region)
-
+            benign_protein_for_query_trimmed = _trim_to_region(benign_protein_for_query, region)
             # Filter benign proteins for relevance...
-            benign_protein_for_query = benign_protein_for_query.assign(
+            benign_protein_for_query_trimmed = benign_protein_for_query_trimmed.assign(
                 coverage=abs(
-                    benign_protein_for_query["q. start"] - benign_protein_for_query["q. end"]
+                    benign_protein_for_query_trimmed["q. end"] - benign_protein_for_query_trimmed["q. start"]
                     ))
 
-            benign_protein_for_query = benign_protein_for_query[
-                benign_protein_for_query["query length"] - benign_protein_for_query["coverage"]
+            benign_protein_for_query_trimmed = benign_protein_for_query_trimmed[
+                benign_protein_for_query_trimmed["nt_qlen"] - benign_protein_for_query_trimmed["coverage"]
                 < MINIMUM_PEPTIDE_COVERAGE
                 ]
 
-            benign_protein_for_query = benign_protein_for_query[
-                benign_protein_for_query["coverage"] > MINIMUM_QUERY_COVERAGE_FRACTION]
-            benign_protein_for_query = benign_protein_for_query.reset_index(drop=True)
+            benign_protein_for_query_trimmed = benign_protein_for_query_trimmed[
+                benign_protein_for_query_trimmed["coverage"] > MINIMUM_QUERY_COVERAGE_FRACTION]
+            benign_protein_for_query_trimmed = benign_protein_for_query_trimmed.reset_index(drop=True)
 
             # Filter benign RNA for relevance...
-            benign_rna_for_query = _trim_to_region(benign_rna_for_query, region)
-            benign_rna_for_query = benign_rna_for_query.assign(
-                        coverage=region.query_length - abs(benign_rna_for_query["q. end"] - benign_rna_for_query["q. start"])
+            benign_rna_for_query_trimmed = _trim_to_region(benign_rna_for_query, region)
+            benign_rna_for_query_trimmed = benign_rna_for_query_trimmed.assign(
+                        coverage=region.length() - abs(benign_rna_for_query_trimmed["q. end"] - benign_rna_for_query_trimmed["q. start"])
                     )
             
-            benign_rna_for_query = benign_rna_for_query[
-                benign_rna_for_query["coverage"] < MINIMUM_RNA_BASEPAIR_COVERAGE]
-            benign_rna_for_query = benign_rna_for_query.reset_index(drop=True)
+            benign_rna_for_query_passed = benign_rna_for_query_trimmed[
+                benign_rna_for_query_trimmed["coverage"] < MINIMUM_RNA_BASEPAIR_COVERAGE]
+            benign_rna_for_query_failed = benign_rna_for_query_trimmed[
+                benign_rna_for_query_trimmed["coverage"] >= MINIMUM_RNA_BASEPAIR_COVERAGE]
+            benign_rna_for_query_passed = benign_rna_for_query_passed.reset_index(drop=True)
+            benign_rna_for_query_failed = benign_rna_for_query_failed.reset_index(drop=True)
 
             # Filter benign SynBio for relevance... 
-            benign_synbio_for_query = _trim_to_region(benign_synbio_for_query, region)
-            benign_synbio_for_query = benign_synbio_for_query[
-                benign_synbio_for_query["q. coverage"] > MINIMUM_SYNBIO_COVERAGE_FRACTION]
-            benign_synbio_for_query = benign_synbio_for_query.reset_index(drop=True)
+            benign_synbio_for_query_trimmed = _trim_to_region(benign_synbio_for_query, region)
 
-            # Report top hit for 
-            if not benign_protein_for_query.empty:
-                benign_hit = benign_protein_for_query["subject title"][0]
+            benign_synbio_for_query_trimmed = benign_synbio_for_query_trimmed[
+                benign_synbio_for_query_trimmed["q. coverage"] > MINIMUM_SYNBIO_COVERAGE_FRACTION]
+            benign_synbio_for_query_trimmed = benign_synbio_for_query_trimmed.reset_index(drop=True)
+
+            # Report top hit for Protein / RNA / Synbio
+            if not benign_protein_for_query_trimmed.empty:
+                benign_hit = benign_protein_for_query_trimmed["subject title"][0]
                 benign_hit_description = str(*benign_descriptions["Description"][benign_descriptions["ID"] == benign_hit])
                 match_ranges = [
                     MatchRange(
-                    float(benign_protein_for_query['evalue'][0]),
-                    int(benign_protein_for_query['s. start'][0]), int(benign_protein_for_query['s. end'][0]),
-                    int(benign_protein_for_query['q. start'][0]), int(benign_protein_for_query['q. end'][0])
+                    float(benign_protein_for_query_trimmed['evalue'][0]),
+                    int(benign_protein_for_query_trimmed['s. start'][0]), int(benign_protein_for_query_trimmed['s. end'][0]),
+                    int(benign_protein_for_query_trimmed['q. start'][0]), int(benign_protein_for_query_trimmed['q. end'][0])
                     )
                 ]
                 benign_hit_outcome = HitResult(
@@ -115,20 +126,21 @@ def _update_benign_data_for_query(query : Query,
                         benign_hit,
                         benign_hit_description,
                         match_ranges,
+                        annotations={"Coverage: ":float(benign_protein_for_query_trimmed['coverage'][0])}
                     )
                 new_benign_hits.append(benign_hit_outcome)
                 logging.info("Clearing %s (%s) as house-keeping protein, for %s", 
                              hit.name, hit.recommendation.status, query.name)
                 hit.recommendation.status = hit.recommendation.status.clear()
 
-            if not benign_rna_for_query.empty:
-                benign_hit = benign_rna_for_query["subject title"][0]
-                benign_hit_description =  benign_rna_for_query["description of target"][0]
+            if not benign_rna_for_query_passed.empty:
+                benign_hit = benign_rna_for_query_trimmed["subject title"][0]
+                benign_hit_description =  benign_rna_for_query_trimmed["description of target"][0]
                 match_ranges = [
                     MatchRange(
-                    float(benign_rna_for_query['evalue'][0]),
-                    int(benign_rna_for_query['s. start'][0]), int(benign_rna_for_query['s. end'][0]),
-                    int(benign_rna_for_query['q. start'][0]), int(benign_rna_for_query['q. end'][0])
+                    float(benign_rna_for_query_trimmed['evalue'][0]),
+                    int(benign_rna_for_query_trimmed['s. start'][0]), int(benign_rna_for_query_trimmed['s. end'][0]),
+                    int(benign_rna_for_query_trimmed['q. start'][0]), int(benign_rna_for_query_trimmed['q. end'][0])
                     )
                 ]
                 benign_hit_outcome = HitResult(
@@ -141,18 +153,22 @@ def _update_benign_data_for_query(query : Query,
                         match_ranges,
                     )
                 new_benign_hits.append(benign_hit_outcome)
-                logging.info("Clearing %s (%s) as Benign RNA, for %s", 
-                             hit.name, hit.recommendation.status, query.name)
+                logging.info("Clearing %s (%s) as <%i bases unaccounted for Benign RNA, for %s",
+                             hit.name, hit.recommendation.status, MINIMUM_RNA_BASEPAIR_COVERAGE, query.name)
                 hit.recommendation.status = hit.recommendation.status.clear()
 
-            if not benign_synbio_for_query.empty:
-                benign_hit = benign_synbio_for_query["subject title"][0]
-                benign_hit_description =  benign_synbio_for_query["subject title"][0]
+            if not benign_rna_for_query_failed.empty:
+                logging.info("Clear failed for %s (%s) as Benign RNA >%i bases unaccounted for, for %s", 
+                             hit.name, hit.recommendation.status, MINIMUM_RNA_BASEPAIR_COVERAGE, query.name)
+
+            if not benign_synbio_for_query_trimmed.empty:
+                benign_hit = benign_synbio_for_query_trimmed["subject title"][0]
+                benign_hit_description =  benign_synbio_for_query_trimmed["subject title"][0]
                 match_ranges = [
                     MatchRange(
-                    float(benign_synbio_for_query['evalue'][0]),
-                    int(benign_synbio_for_query['s. start'][0]), int(benign_synbio_for_query['s. end'][0]),
-                    int(benign_synbio_for_query['q. start'][0]), int(benign_synbio_for_query['q. end'][0])
+                    float(benign_synbio_for_query_trimmed['evalue'][0]),
+                    int(benign_synbio_for_query_trimmed['s. start'][0]), int(benign_synbio_for_query_trimmed['s. end'][0]),
+                    int(benign_synbio_for_query_trimmed['q. start'][0]), int(benign_synbio_for_query_trimmed['q. end'][0])
                     )
                 ]
                 benign_hit_outcome = HitResult(
@@ -192,6 +208,7 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
 
     benign_rna_screen_data = benign_rna_handle.read_output()
     benign_synbio_screen_data = benign_synbio_handle.read_output()
+    benign_synbio_screen_data = get_top_hits(benign_synbio_screen_data)
 
     for query in queries.values():
         _update_benign_data_for_query(query,
@@ -217,7 +234,7 @@ def _trim_to_region(data : pd.DataFrame, region : MatchRange):
         )
         & ~(
             (data["q. start"] < region.query_start)
-            & (data["q. end"] < region.query_end)
+            & (data["q. end"] < region.query_start)
         )
     ]
     return datatrim

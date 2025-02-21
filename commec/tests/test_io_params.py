@@ -34,8 +34,8 @@ def expected_defaults():
             },
             "taxonomy": {
                 "taxonomy_directory": "commec-dbs/taxonomy/",
-                "regulated_vaxids": "commec-dbs/biorisk_db/vaxids.txt",
-                "benign_taxids": "commec-dbs/benign_db/taxids.txt"
+                "regulated_vaxids": "commec-dbs/biorisk_db/reg_taxids.txt",
+                "benign_taxids": "commec-dbs/benign_db/vax_taxids.txt"
         },
         },
         "threads": 1,
