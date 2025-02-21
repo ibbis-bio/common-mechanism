@@ -4,6 +4,7 @@ import json
 from dataclasses import asdict
 import textwrap
 from unittest.mock import patch
+import pytest
 import pandas as pd
 from commec.screen import run, ScreenArgumentParser, add_args
 from commec.config.json_io import get_screen_data_from_json, encode_screen_data_to_json
@@ -39,6 +40,7 @@ def print_tmp_path_contents(tmp_path):
     for path in tmp_path.rglob("*"):  # Recursively list all files and directories
         print(path.relative_to(tmp_path), "->", "DIR" if path.is_dir() else "FILE")
 
+@pytest.mark.filterwarnings("ignore:.*scattermapbox.*is deprecated.*:DeprecationWarning")
 def test_functional_screen(tmp_path, request):
     """
     Full test, utilising --resume to ignore database runs,
