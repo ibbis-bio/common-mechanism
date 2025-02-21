@@ -1,0 +1,14 @@
+>> STEP 1: Checking for biorisk genes...
+		 --> Biorisks: no hits detected, PASS
+ STEP 1 completed at 2024-08-27 16:58:14
+ >> STEP 2: Checking regulated pathogen proteins...
+Traceback (most recent call last):
+  File "/blue/salemi/brittany.rife/nti/common-mechanism/commec/check_reg_path.py", line 158, in <module>
+    main()
+  File "/blue/salemi/brittany.rife/nti/common-mechanism/commec/check_reg_path.py", line 57, in main
+    blast = taxdist(blast, reg_ids, vax_ids, args.db + "/taxonomy/", args.threads)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/blue/salemi/brittany.rife/nti/common-mechanism/commec/utils.py", line 118, in taxdist
+    zip(
+TypeError: 'float' object is not iterable
+	 ERROR: command 'python /blue/salemi/brittany.rife/nti/common-mechanism/commec/check_reg_path.py -i AF006966.1_8_6_dmnd.nr.blastx -d /orange/salemi/brittany.rife/databases -t 6' failed
