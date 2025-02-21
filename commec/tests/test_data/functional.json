@@ -1,0 +1,343 @@
+{
+    "commec_info": {
+        "commec_version": "0.3.0",
+        "json_output_version": "0.1",
+        "biorisk_database_info": {
+            "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
+            "database_info": "HMMER3/f [3.4 | Aug 2023]"
+        },
+        "protein_database_info": {
+            "tool_info": "blastx: 2.16.0+\n Package: blast 2.16.0, build Dec 14 2024 23:05:40",
+            "database_info": "BLASTDB Version: 5Date: Sep 3, 2024  12:32 AM\tLongest sequence: 2,882 residues"
+        },
+        "nucleotide_database_info": {
+            "tool_info": "blastn: 2.16.0+\n Package: blast 2.16.0, build Dec 14 2024 23:05:40",
+            "database_info": "BLASTDB Version: 5Date: Sep 3, 2024  12:16 AM\tLongest sequence: 8,669 bases"
+        },
+        "benign_protein_database_info": {
+            "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
+            "database_info": "HMMER3/f [3.4 | Aug 2023]"
+        },
+        "benign_rna_database_info": {
+            "tool_info": "INFERNAL 1.1.5 (Sep 2023)",
+            "database_info": "INFERNAL1/a [1.1.5 | Sep 2023]"
+        },
+        "benign_synbio_database_info": {
+            "tool_info": "x.x.x",
+            "database_info": "x.x.x"
+        },
+        "time_taken": "00:00:02",
+        "date_run": "2025-02-24 12:50:06"
+    },
+    "queries": {
+        "FCTEST1": {
+            "query": "FCTEST1",
+            "length": 600,
+            "sequence": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "recommendation": {
+                "screen_status": "Pass",
+                "biorisk_status": "Warning",
+                "protein_taxonomy_status": "Flag",
+                "nucleotide_taxonomy_status": "Flag",
+                "benign_status": "Pass"
+            },
+            "hits": {
+                "Toxin1": {
+                    "recommendation": {
+                        "status": "Flag (Cleared)",
+                        "from_step": "Biorisk Screen"
+                    },
+                    "name": "Toxin1",
+                    "description": " TestBioriskToxinFlag",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 30,
+                            "query_start": 4,
+                            "query_end": 93
+                        },
+                        {
+                            "e_value": 0.0,
+                            "match_start": 10,
+                            "match_end": 20,
+                            "query_start": 31,
+                            "query_end": 63
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "not assigned"
+                        ],
+                        "regulated": [
+                            "Regulated Gene"
+                        ]
+                    }
+                },
+                "Toxin2": {
+                    "recommendation": {
+                        "status": "Warning (Cleared)",
+                        "from_step": "Biorisk Screen"
+                    },
+                    "name": "Toxin2",
+                    "description": " TestBioriskToxin",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 36,
+                            "match_end": 63,
+                            "query_start": 106,
+                            "query_end": 189
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "not assigned"
+                        ],
+                        "regulated": [
+                            "Virulance Factor"
+                        ]
+                    }
+                },
+                "Toxin3": {
+                    "recommendation": {
+                        "status": "Warning (Cleared)",
+                        "from_step": "Biorisk Screen"
+                    },
+                    "name": "Toxin3",
+                    "description": " TestBioriskToxin",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 30,
+                            "query_start": 507,
+                            "query_end": 596
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "not assigned"
+                        ],
+                        "regulated": [
+                            "Virulance Factor"
+                        ]
+                    }
+                },
+                "NR_HIT_FLAG": {
+                    "recommendation": {
+                        "status": "Flag (Cleared)",
+                        "from_step": "Protein Taxonomy Screen"
+                    },
+                    "name": "NR_HIT_FLAG",
+                    "description": "SUBJECT",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 100,
+                            "query_start": 320,
+                            "query_end": 380
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulation": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "12345"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "species"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "NR_HIT_MIXED": {
+                    "recommendation": {
+                        "status": "Pass",
+                        "from_step": "Protein Taxonomy Screen"
+                    },
+                    "name": "NR_HIT_MIXED",
+                    "description": "SUBJECT",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 100,
+                            "query_start": 340,
+                            "query_end": 390
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulation": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "2",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "12345"
+                                ],
+                                "non_regulated_taxids": [
+                                    "12346",
+                                    "12347"
+                                ],
+                                "regulated_species": [
+                                    "species"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "NT_HIT_FLAG": {
+                    "recommendation": {
+                        "status": "Flag (Cleared)",
+                        "from_step": "Nucleotide Taxonomy Screen"
+                    },
+                    "name": "NT_HIT_FLAG",
+                    "description": "SUBJECT",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 100,
+                            "query_start": 220,
+                            "query_end": 280
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulation": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "12345"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "species"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "NT_HIT_MIXED": {
+                    "recommendation": {
+                        "status": "Pass",
+                        "from_step": "Nucleotide Taxonomy Screen"
+                    },
+                    "name": "NT_HIT_MIXED",
+                    "description": "SUBJECT",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 100,
+                            "query_start": 421,
+                            "query_end": 481
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulation": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "1",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "12345"
+                                ],
+                                "non_regulated_taxids": [
+                                    "12346"
+                                ],
+                                "regulated_species": [
+                                    "species"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "Benign1": {
+                    "recommendation": {
+                        "status": "Pass",
+                        "from_step": "Benign Protein Screen"
+                    },
+                    "name": "Benign1",
+                    "description": "TEST_BENIGN_DESCRIPTION",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 10,
+                            "match_end": 200,
+                            "query_start": 43,
+                            "query_end": 600
+                        }
+                    ],
+                    "annotations": {
+                        "Coverage: ": 557.0
+                    }
+                },
+                "BENIGNRNA": {
+                    "recommendation": {
+                        "status": "Pass",
+                        "from_step": "Benign RNA Screen"
+                    },
+                    "name": "BENIGNRNA",
+                    "description": "BenignCMTestOutput ",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 100,
+                            "match_end": 50,
+                            "query_start": 25,
+                            "query_end": 70
+                        }
+                    ],
+                    "annotations": {}
+                },
+                "BENIGNSYNBIO": {
+                    "recommendation": {
+                        "status": "Pass",
+                        "from_step": "Benign SynBio Screen"
+                    },
+                    "name": "BENIGNSYNBIO",
+                    "description": "BENIGNSYNBIO",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 100,
+                            "query_start": 500,
+                            "query_end": 600
+                        }
+                    ],
+                    "annotations": {}
+                }
+            }
+        }
+    }
+}

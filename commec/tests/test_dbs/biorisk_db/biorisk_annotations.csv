@@ -1,0 +1,4 @@
+ID,Description,Must flag
+Toxin1, TestBioriskToxinFlag,TRUE
+Toxin2, TestBioriskToxin,False
+Toxin3, TestBioriskToxin,False
