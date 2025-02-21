@@ -17,13 +17,17 @@ DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs")
 
 # test each database type.
 databases_to_implement = [
-    [DiamondHandler,   "nr_dmnd",     "nr.dmnd"],
-    [BlastNHandler,    "nt_blast",    "nt"],
-    [BlastXHandler,    "nr_blast",    "nr"],
-    [HmmerHandler,       "benign_db",   "benign.hmm"],
-    [CmscanHandler,    "benign_db",   "benign.cmscan"],
+    [DiamondHandler, "nr_dmnd", "nr"],
+    [BlastNHandler, "nt_blast", "nt"],
+    [BlastXHandler, "nr_blast", "nr"],
+    [HmmerHandler, "benign_db", "benign.hmm"],
+    [CmscanHandler, "benign_db", "benign.cm"],
 ]
 
+def print_tmp_path_contents(tmp_path):
+    print(f"Contents of {tmp_path}:")
+    for path in tmp_path.rglob("*"):  # Recursively list all files and directories
+        print(path.relative_to(tmp_path), "->", "DIR" if path.is_dir() else "FILE")
 
 @pytest.mark.parametrize("input_db", databases_to_implement)
 def test_database_can_run(input_db, request):

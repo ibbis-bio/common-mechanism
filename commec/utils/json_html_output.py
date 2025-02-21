@@ -8,8 +8,8 @@ import textwrap
 import argparse
 import plotly.graph_objects as go
 import pandas as pd
-from mako.template import Template
 import importlib
+from mako.template import Template
 
 from commec.config.json_io import get_screen_data_from_json
 from commec.config.result import (
@@ -192,6 +192,7 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
             #Best match to regulated viruses. 2 best match hits to nucleotides found in 1 species, 2 with regulated pathogen taxId in lineage (Influenza A)
         return "No Annotations."
 
+#@pytest.mark.filterwarnings("ignore")
 def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
     """ 
     Write the data from a single query into the figure for plotly. 
