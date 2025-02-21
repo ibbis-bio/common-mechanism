@@ -55,6 +55,9 @@ def dict_to_dataclass(cls: Type, data: Dict[str, Any]) -> Any:
     # Prepare a dictionary for filtered data
     filtered_data = {}
 
+    if data is None:
+        return filtered_data
+
     for f in fields(cls):
         field_name = f.name
         field_type = f.type
