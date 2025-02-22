@@ -121,6 +121,7 @@ def get_protein_outcome(step_content: str) -> set[str]:
     outcomes = set()
     if "FAST MODE: Skipping" in step_content or "SKIPPING STEP 2" in step_content:
         outcomes.add("skip")
+
     if "Best match to sequence(s)" in step_content and "FLAG" in step_content:
         outcomes.add("flag")
     if "found in both regulated and non-regulated organisms" in step_content:
@@ -139,11 +140,13 @@ def get_nucleotide_outcome(step_content: str) -> set[str]:
     """Process nucleotide scan step from .screen file."""
     outcomes = set()
     if (
-        "no noncoding regions >= 50 bases found, skipping nt scan" in step_content
+        "skipping nt scan" in step_content
+        or "skipping nucleotide search" in step_content
         or "FAST MODE: Skipping" in step_content
         or "SKIPPING STEP 3" in step_content
     ):
         outcomes.add("skip")
+
     if "Best match to sequence(s)" in step_content and "FLAG" in step_content:
         outcomes.add("flag")
     if "no top hit exclusive to a regulated pathogen: PASS" in step_content:
@@ -158,15 +161,17 @@ def get_benign_outcome(step_content) -> set[str]:
     outcomes = set()
     if "no regulated regions to clear" in step_content:
         outcomes.add("skip")
+
     if (
         "Regulated region at bases" in step_content
         and "failed to clear: FLAG" in step_content
     ):
-        outcomes.add("not cleared")
+        outcomes.add("not-cleared")
     if "all regulated regions cleared: PASS" in step_content:
         outcomes.add("cleared")
     if "ERROR" in step_content:
         outcomes.add("error")
+
     return outcomes if outcomes else {"-"}
 
 
@@ -175,9 +180,27 @@ def check_regulated_flags(content):
     Check for regulated virus, bacteria, and eukaryote flags in the content.
     """
     return {
-        "virus_flag": "true" if "FLAG (virus)" in content else "false",
-        "bacteria_flag": "true" if "FLAG (bacteria)" in content else "false",
-        "eukaryote_flag": "true" if "FLAG (eukaryote)" in content else "false",
+        "virus_flag": True if "FLAG (virus)" in content else False,
+        "bacteria_flag": True if "FLAG (bacteria)" in content else False,
+        "eukaryote_flag": True if "FLAG (eukaryote)" in content else False,
+    }
+
+def check_benign_substeps(step_content):
+    """
+    Check for whether benign protiein, RNA or DNA (synbio sequences) is in the content.
+    """
+    # Step-specific benign outcomes
+    # if re.search(r'no.*?protein hits|-->.*?protein.*?FAIL', step_content):
+    #     benign_protein = False
+    # if re.search(r'no.*?RNA hits|-->.*?RNA.*?FAIL', step_content):
+    #     outcomes.add("no-benign-rna") 
+    # if re.search(r'no.*?Synbio sequence hits|-->.*?Synbio sequence.*?FAIL', step_content):
+    #     outcomes.add("no-benign-dna")
+
+    return {
+        "benign_protein": True if re.search(r'-->.*?protein.*?PASS', step_content) else False,
+        "benign_rna": True if re.search(r'-->.*?RNA.*?PASS', step_content) else False,
+        "benign_dna": True if re.search(r'-->.*?Synbio sequence.*?PASS', step_content) else False,
     }
 
 
@@ -207,6 +230,8 @@ def process_file(file_path) -> list[str]:
     }
     # Add regulated flags
     results.update(check_regulated_flags(content))
+    if "cleared" in results["benign"] or "not-cleared" in results["benign"]:
+        results.update(check_benign_substeps(steps[3]))
 
     return results
 
@@ -266,9 +291,9 @@ def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> list[str
         regulated_eukaryote = "P"
         mixed_regulated_non_reg = "P"
     elif "-" not in results["protein"] and "-" not in results["nucleotide"]:
-        regulated_virus = "F" if results["virus_flag"] == "true" else "P"
-        regulated_bacteria = "F" if results["bacteria_flag"] == "true" else "P"
-        regulated_eukaryote = "F" if results["eukaryote_flag"] == "true" else "P"
+        regulated_virus = "F" if results["virus_flag"] else "P"
+        regulated_bacteria = "F" if results["bacteria_flag"] else "P"
+        regulated_eukaryote = "F" if results["eukaryote_flag"] else "P"
         mixed_regulated_non_reg = (
             "F"
             if ("mix" in results["protein"] or "mix" in results["nucleotide"])
@@ -281,7 +306,7 @@ def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> list[str
         benign = "Err"
     if "cleared" in results["benign"]:
         benign = "P"
-    if "not cleared" in results["benign"]:
+    if "not-cleared" in results["benign"]:
         benign = "F"
 
     return [
@@ -335,6 +360,9 @@ def write_output_csvs(output_dir, status, flags, recommendations):
         "virus_flag",
         "bacteria_flag",
         "eukaryote_flag",
+        "benign_protein",
+        "benign_rna",
+        "benign_dna",
     ]
     def sort_and_join_sets(value):
         if isinstance(value, set):
