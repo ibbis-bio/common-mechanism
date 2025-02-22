@@ -19,7 +19,8 @@
 		 --> no top hit exclusive to a regulated pathogen: PASS
  STEP 3 completed at 2024-06-24 23:23:32
 >> STEP 4: Checking any pathogen regions for benign components...
-	...no housekeeping protein hits
+		 -->Housekeeping proteins covering 2.0 to 925.0 = PASS
+		   COG0449: glutamine-fructose-6-phosphate transaminase (isomerizing) activity (E-value: 5.6e-50
 	...no benign RNA hits
 		 -->Synbio sequences - <80% coverage achieved = FAIL
 		 -->Regulated region at bases 7507 to 7607 failed to clear: FLAG

@@ -14,8 +14,6 @@ def test_flag_status(tmp_path):
     args = parser.parse_args([SCREEN_DIR, "-o", str(tmp_path)])
     run(args)
 
-
-
     # Check if the output file exists
     status_output = tmp_path / "screen_pipeline_status.csv"
     assert status_output.exists()
@@ -27,9 +25,9 @@ def test_flag_status(tmp_path):
         fast-mode-2025-02,{SCREEN_DIR}/fast-mode-2025-02.screen,warn,skip,skip,skip
         no-hits-2024-06,{SCREEN_DIR}/no-hits-2024-06.screen,pass,-,-,skip
         prot-error-2024-08,{SCREEN_DIR}/prot-error-2024-08.screen,pass,error,-,-
-        prot-hit-not-cleared-2024-06,{SCREEN_DIR}/prot-hit-not-cleared-2024-06.screen,pass,flag,skip,not cleared
+        prot-hit-not-cleared-2024-06,{SCREEN_DIR}/prot-hit-not-cleared-2024-06.screen,pass,flag,skip,not-cleared
         prot-mixed-hit-2024-06,{SCREEN_DIR}/prot-mixed-hit-2024-06.screen,pass,mix,skip,skip
-        prot-multiple-hits-2024-06,{SCREEN_DIR}/prot-multiple-hits-2024-06.screen,warn,flag;mix,pass,not cleared
+        prot-multiple-hits-2024-06,{SCREEN_DIR}/prot-multiple-hits-2024-06.screen,warn,flag;mix,pass,not-cleared
         prot-nt-hits-cleared-2024-09,{SCREEN_DIR}/prot-nt-hits-cleared-2024-09.screen,pass,flag,flag,cleared
         """
     )
