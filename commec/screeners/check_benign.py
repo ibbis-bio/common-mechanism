@@ -47,18 +47,15 @@ def _update_benign_data_for_query(query : Query,
     any overlapping WARN or FLAG hits.
     """
     # We only care about the benign data for this query.
-    # TODO: This will require updating when the Query unique ID is used for creation of cleaned fasta.
-    # Print full DataFrame
-    with pd.option_context('display.max_rows', None, 'display.max_columns', None, 'display.width', None):
-        print(benign_protein)
-        
     benign_protein_for_query = benign_protein[
         benign_protein["query name"].str.rsplit("_", n=1).str[0] == query.name
     ]
-    print("PROTEIN BENIGN QUERY: ", benign_protein_for_query)
-
-    benign_rna_for_query = benign_rna[benign_rna["query name"] == query.name]
-    benign_synbio_for_query = benign_synbio[benign_synbio["query acc."] == query.name]
+    benign_rna_for_query = benign_rna[
+        benign_rna["query name"] == query.name
+    ]
+    benign_synbio_for_query = benign_synbio[
+        benign_synbio["query acc."] == query.name
+    ]
 
     new_benign_hits = []
 

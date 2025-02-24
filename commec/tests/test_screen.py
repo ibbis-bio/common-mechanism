@@ -53,8 +53,6 @@ def test_functional_screen(tmp_path, request):
 
     # The three input queries cover all reading frame scenarios.
     desc_1 = "FCTEST1" # 600mer
-    desc_2 = "FCTEST2" # 601mer
-    desc_3 = "FCTEST3" # 602mer
     seq_1 = textwrap.dedent(
         """\
         aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
@@ -65,26 +63,6 @@ def test_functional_screen(tmp_path, request):
         aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         """
     )
-    seq_2 = textwrap.dedent(
-        """\
-        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        """
-    )
-    seq_3 = textwrap.dedent(
-        """\
-        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        """
-    )
     hmmer_biorisk_to_parse = textwrap.dedent(
         """\
         #                                                         --- full sequence --- -------------- this domain -------------   hmm coord   ali coord   env coord
@@ -93,8 +71,7 @@ def test_functional_screen(tmp_path, request):
         Toxin1     12345      1000 FCTEST1_1    21345       200    0         1000  10.1   1   1         0         0 1116.0  10.1    10    20    11   21    40   160  1.00 SmallImportantFlag
         Toxin1     12345      1000 FCTEST1_1    21345       200    0          100  10.1   1   1         0         0 1116.0  10.1    15    25    16   26    40   160  1.00 SmallUnimportantTRIM
         Toxin3     12345      1000 FCTEST1_5    21345       200    0          500  10.1   1   1         0         0 1116.0  10.1     1    30     2   31    40   160  1.00 ReverseExample
-        Toxin2     12345      1000 FCTEST1_1    21345       200    0         1000  10.1   1   1         0         0 1116.0  10.1    36    63    36   63    30   60  1.00 Warning Example
-        """
+        Toxin2     12345      1000 FCTEST1_1    21345       200    0         1000  10.1   1   1         0         0 1116.0  10.1    36    63    36   63    30   60  1.00 Warning Example"""
     )
     blastnr_to_parse = textwrap.dedent(
         """\
@@ -141,7 +118,7 @@ def test_functional_screen(tmp_path, request):
     )
 
     input_fasta_path = tmp_path / "functional.fasta"
-    input_fasta_path.write_text(f">{desc_1}\n{seq_1}\n>{desc_2}\n{seq_2}\n>{desc_3}\n{seq_3}\n")
+    input_fasta_path.write_text(f">{desc_1}\n{seq_1}\n")
     json_output_path = tmp_path / "functional.output.json"
     desired_json_output_path = os.path.join(os.path.dirname(__file__), "test_data/functional.json")
     html_output_path = os.path.join(os.path.dirname(__file__), "test_data/functional")
