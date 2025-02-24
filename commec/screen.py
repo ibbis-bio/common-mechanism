@@ -258,6 +258,9 @@ class Screen:
             generate_html_from_screen_data(self.screen_data, self.params.directory_prefix+"_summary")
             if self.params.config["do_cleanup"]:
                 self.params.clean()
+            
+            benchmark_filename = benchmark_write_log()
+            create_benchmark_visual(benchmark_filename, benchmark_filename+".html")
 
     def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
@@ -311,6 +314,8 @@ class Screen:
 
         # Store start time.
         _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        benchmark_set_log_file_name(self.params.output_prefix+"bm")
+        benchmark_set_logging(self.params.config["benchmark"])
 
     @benchmark
     def run(self, args : argparse.Namespace):

@@ -15,13 +15,12 @@ import time
 import inspect
 import functools
 
-class Logger:
+class BenchmarkTool:
     """A simple logger class to handle logging of benchmarks."""
     def __init__(self, filename="benchmark.txt"):
         self.filename = filename
         self.loglines = []
-        self.program_start = time.time()
-        self.log_filename = "benchmarking.txt"
+        self.logging_start = time.time()
         self.is_logging = True
 
     def log(self, message):
@@ -36,6 +35,7 @@ class Logger:
             with open(self.filename, "w", encoding = 'utf-8"') as file:
                 for message in self.loglines:
                     file.write(message + "\n")
+        return self.filename
 
 def format_time(seconds):
     """ Simple time formatter, 00:00:00.000 for HH::MM:SS.MS """
@@ -46,17 +46,17 @@ def format_time(seconds):
     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}.{milliseconds:03}"
 
 # This script uses a global single logger instance.
-logger = Logger()
+BENCHMARKTOOL = BenchmarkTool()
 
 # Accessors for import to mutate logger.
 def benchmark_set_log_file_name(filename : str):
-    logger.filename = filename
+    BENCHMARKTOOL.filename = filename
 
 def benchmark_set_logging(is_logging : bool = True):
-    logger.is_logging = is_logging
+    BENCHMARKTOOL.is_logging = is_logging
 
 def benchmark_write_log():
-    logger.write_to_file()
+    return BENCHMARKTOOL.write_to_file()
 
 def benchmark_scope(name : str, stack : int = 0):
     """ Factory function for BenchmarkScope instantiation."""
@@ -74,14 +74,14 @@ class BenchmarkScope:
             for nested scoped benchmarks.
         """
         self.name = name
-        self.start_time = time.time() - logger.program_start
+        self.start_time = time.time() - BENCHMARKTOOL.logging_start
         self.stack_depth : int = int((len(inspect.stack(0))) / 2) + stack
 
     def __del__(self):
-        end_time = time.time() - logger.program_start
+        end_time = time.time() - BENCHMARKTOOL.logging_start
         duration = (end_time - self.start_time)
         log_message = f"{self.stack_depth}\t{self.name}\t{format_time(duration)}\t{format_time(self.start_time)}\t{format_time(end_time)}"
-        logger.log(log_message)
+        BENCHMARKTOOL.log(log_message)
 
 # Decorator.
 def benchmark(func):
@@ -92,7 +92,7 @@ def benchmark(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         # Measure the start time
-        start_time = time.time() - logger.program_start
+        start_time = time.time() - BENCHMARKTOOL.logging_start
 
         # Get call stack depth
         stack_depth : int = int((len(inspect.stack(0))) / 2)
@@ -101,12 +101,12 @@ def benchmark(func):
         result = func(*args, **kwargs)
 
         # Measure the end time and calculate duration
-        end_time = time.time() - logger.program_start
+        end_time = time.time() - BENCHMARKTOOL.logging_start
         duration = (end_time - start_time)# * 1000  # Convert to milliseconds
 
         # Log the function name, depth, and duration
         log_message = f"{stack_depth}\t{func.__name__}\t{format_time(duration)}\t{format_time(start_time)}\t{format_time(end_time)}"
-        logger.log(log_message)
+        BENCHMARKTOOL.log(log_message)
 
         return result
     return wrapper
