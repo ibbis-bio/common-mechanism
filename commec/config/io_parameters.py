@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
 """
-Defines the `ScreenIOParameters` class and associated dataclasses.
+Defines the `ScreenIO` class and associated dataclasses.
 Objects responsible for parsing and interpreting user input for
 the screen workflow of commec.
 """
@@ -17,30 +17,34 @@ import importlib.resources
 import yaml
 from yaml.parser import ParserError
 
+from Bio import SeqIO
+
 from commec.config.query import Query
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 
-class ScreenIOParameters:
+class ScreenIO:
     """
     Container for input settings constructed from arguments to `screen`.
     """
     def __init__(self, args: argparse.Namespace):
         # Inputs that do no have a package-level default, since they are specific to each run
         self.db_dir = args.database_dir
-        input_fasta = args.fasta_file
+        self.input_fasta_path = args.fasta_file
         output_prefix = args.output_prefix
 
         # Output folder hierarchy
-        base, outputs, inputs = self._get_output_prefixes(input_fasta, output_prefix)
+        base, outputs, inputs = self._get_output_prefixes(self.input_fasta_path, output_prefix)
         self.directory_prefix = base
         self.output_prefix = outputs
         self.input_prefix = inputs
 
-        self.output_screen_file = f"{self.directory_prefix}.screen"
+        # IO files
+        self.output_screen_file = f"{self.directory_prefix}.log"
+        self.output_json = f"{self.directory_prefix}.output.json"
         self.tmp_log = f"{self.directory_prefix}.log.tmp"
-
-        # Query
-        self.query: Query = Query(args.fasta_file)
+        self.nt_path = f"{self.input_prefix}.cleaned.fasta"
+        self.aa_path = f"{self.input_prefix}.faa"
+        self.nc_path = f"{self.input_prefix}.noncoding.fasta"
 
         # Get configuration based on defaults and CLI args (including YAML config if supplied)
         self.config = {}
@@ -61,7 +65,7 @@ class ScreenIOParameters:
         """
         Additional setup once the class has been instantiated (i.e. that requires logs).
         """
-        # Sanity checks on thread input.
+        # Make sure the number of threads provided by the user makes sense
         if self.config["threads"] > multiprocessing.cpu_count():
             logging.info(
                 "Requested allocated threads [%i] is greater"
@@ -83,8 +87,56 @@ class ScreenIOParameters:
                 'tool as "diamond" will have no effect!'
             )
 
-        self.query.setup(self.input_prefix)
+        # Write a clean FASTA that can be used downstream
+        self._write_clean_fasta()
         return True
+
+
+    def parse_input_fasta(self) -> dict[str, Query]:
+        """
+        Parse queries from FASTA file.
+        """
+        records = []
+
+        with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
+            queries = {}
+            records = list(SeqIO.parse(fasta_file, "fasta"))
+
+        for record in records:
+            try:
+                query = Query(record)
+                if query.name in queries:
+                    raise ValueError(f"Duplicate sequence identifier found: {query.name}")
+                queries[query.name] = query
+                # Override the original cleaned fasta, with updated names.
+                record.id = query.name
+                record.name = ""
+                record.description = ""
+            except Exception as e:
+                raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}") from e
+
+        with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
+            SeqIO.write(records, fasta_file, "fasta")
+
+        return queries
+
+    def clean(self):
+        """
+        Tidy up directories and temporary files after a run.
+        """
+        if self.config.do_cleanup:
+            for pattern in [
+                "reg_path_coords.csv",
+                "*hmmscan",
+                "*blastn",
+                "faa",
+                "*blastx",
+                "*dmnd",
+                "*.tmp",
+            ]:
+                for file in glob.glob(f"{self.output_prefix}.{pattern}"):
+                    if os.path.isfile(file):
+                        os.remove(file)
 
     def _read_config(self, args: argparse.Namespace):
         """
@@ -198,7 +250,8 @@ class ScreenIOParameters:
             prefix/input_name/name
 
         - If no prefix was given, use the input filename.
-        - If a directory was given, use the input filename as file prefix within that directory.
+        - If a directory was given, use the input filename 
+            as file prefix within that directory.
         """
         name = os.path.splitext(os.path.basename(input_file))[0]
         name = self._decimate_name(name)
@@ -258,23 +311,22 @@ class ScreenIOParameters:
             yaml.safe_dump(self.config, stream_out, default_flow_style=False)
 
 
-    def clean(self):
+    def _write_clean_fasta(self) -> str:
         """
-        Tidy up directories and temporary files after a run.
+        Write a FASTA in which whitespace (including non-breaking spaces) and 
+        illegal characters are replaced with underscores.
         """
-        if self.config["do_cleanup"]:
-            for pattern in [
-                "reg_path_coords.csv",
-                "*hmmscan",
-                "*blastn",
-                "faa",
-                "*blastx",
-                "*dmnd",
-                "*.tmp",
-            ]:
-                for file in glob.glob(f"{self.output_prefix}.{pattern}"):
-                    if os.path.isfile(file):
-                        os.remove(file)
+        with (
+            open(self.input_fasta_path, "r", encoding="utf-8") as fin,
+            open(self.nt_path, "w", encoding="utf-8") as fout,
+        ):
+            for line in fin:
+                line = line.strip()
+                modified_line = "".join(
+                    "_" if c.isspace() or c == "\xc2\xa0" or c == "#" else c
+                    for c in line
+                )
+                fout.write(f"{modified_line}{os.linesep}")
 
     @property
     def should_do_protein_screening(self) -> bool:
@@ -287,3 +339,7 @@ class ScreenIOParameters:
     @property
     def should_do_benign_screening(self) -> bool:
         return True
+
+
+class IoValidationError(ValueError):
+    """Custom exception for errors when handling input and output with `ScreenIO`."""

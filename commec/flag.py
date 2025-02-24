@@ -30,7 +30,6 @@ DESCRIPTION = (
     "Parse all .screen files in a directory and create two CSVs file of flags raised"
 )
 
-
 def add_args(parser):
     """
     Add module arguments to an ArgumentParser object.
