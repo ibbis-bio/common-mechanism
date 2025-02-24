@@ -58,44 +58,22 @@ import sys
 import traceback
 import pandas as pd
 
-<<<<<<< HEAD
-from commec.utils.file_utils import file_arg, directory_arg
-from commec.utils.benchmark import (
-    benchmark, 
-    benchmark_set_log_file_name, 
-    benchmark_set_logging, 
-    benchmark_write_log
-)
-from commec.utils.json_html_output import generate_html_from_screen_data
-from commec.config.screen_io import ScreenIO, ScreenConfig
-from commec.config.query import Query
-from commec.config.screen_tools import ScreenTools
-
-from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
-from commec.screeners.check_benign import check_for_benign, update_benign_data_from_database
-from commec.screeners.check_reg_path import (
-    check_for_regulated_pathogens,
-    update_taxonomic_data_from_database
-)
-
-from dev_scripts.benchmark_visualisation import visualize_data as create_benchmark_visual
-
-from commec.tools.fetch_nc_bits import (
-    fetch_noncoding_regions, 
-    calculate_noncoding_regions_per_query
-)
-
-=======
 from commec.config.io_parameters import ScreenIO
 from commec.config.query import Query
 from commec.config.screen_tools import ScreenTools
->>>>>>> json-output
 from commec.config.result import (
     ScreenResult,
     ScreenStep,
     QueryResult,
     ScreenStatus,
 )
+from commec.utils.benchmark import (
+    benchmark, 
+    benchmark_set_log_file_name, 
+    benchmark_set_logging, 
+    benchmark_write_log
+)
+from dev_scripts.benchmark_visualisation import visualize_data as create_benchmark_visual
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
 from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
