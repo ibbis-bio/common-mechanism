@@ -9,6 +9,8 @@ from dataclasses import dataclass
 import subprocess
 import logging
 
+from commec.utils.benchmark import benchmark
+
 
 @dataclass
 class SearchToolVersion:
@@ -165,6 +167,7 @@ class SearchHandler(ABC):
                 formatted_args.append(str(value))
         return formatted_args
 
+    @benchmark
     def run_as_subprocess(self, command, out_file, raise_errors=False):
         """
         Run a command using subprocess.run, piping stdout and stderr to `out_file`.

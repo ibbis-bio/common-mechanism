@@ -11,6 +11,7 @@ import os
 import pandas as pd
 from commec.tools.hmmer import readhmmer, remove_overlaps, recalculate_hmmer_query_coordinates, append_nt_querylength_info, HmmerHandler
 from commec.config.query import Query
+from commec.utils.benchmark import benchmark
 from commec.config.result import (
     ScreenResult,
     HitResult,
@@ -43,6 +44,7 @@ def _guess_domain(search_string : str) -> str:
         return "Eukaryote"
     return "not assigned"
 
+@benchmark
 def update_biorisk_data_from_database(search_handle : HmmerHandler, data : ScreenResult, queries : dict[str, Query]):
     """
     Takes an input database, reads its outputs, and updates the input data to contain
@@ -151,6 +153,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
         # Update the recommendation for this query for biorisk.
         query_data.recommendation.biorisk_status = biorisk_overall
 
+@benchmark
 def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str, queries : dict[str,Query]):
     """
     LEGACY .screen output content.

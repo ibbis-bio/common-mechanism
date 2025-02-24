@@ -16,6 +16,7 @@ from commec.tools.blastn import BlastNHandler  # For has_hits.
 from commec.tools.hmmer import HmmerHandler
 from commec.tools.cmscan import CmscanHandler
 from commec.config.query import Query
+from commec.utils.benchmark import benchmark
 from commec.tools.hmmer import (
     recalculate_hmmer_query_coordinates,
     append_nt_querylength_info
@@ -36,6 +37,7 @@ MINIMUM_QUERY_COVERAGE_FRACTION : float = 0.80
 MINIMUM_RNA_BASEPAIR_COVERAGE : int = 50
 MINIMUM_SYNBIO_COVERAGE_FRACTION : float = 0.80
 
+@benchmark
 def _update_benign_data_for_query(query : Query,
                                   benign_protein : pd.DataFrame,
                                   benign_rna : pd.DataFrame,
@@ -187,7 +189,7 @@ def _update_benign_data_for_query(query : Query,
     for benign_addition in new_benign_hits:
         query.result_handle.add_new_hit_information(benign_addition)
 
-
+@benchmark
 def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                      benign_rna_handle : CmscanHandler,
                                      benign_synbio_handle : BlastNHandler,

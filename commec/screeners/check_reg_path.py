@@ -18,6 +18,7 @@ import pandas as pd
 from commec.tools.blast_tools import read_blast, get_taxonomic_labels, get_top_hits
 from commec.tools.blastn import BlastNHandler
 from commec.tools.search_handler import SearchHandler
+from commec.utils.benchmark import benchmark, benchmark_scope
 from commec.config.query import Query
 from commec.config.result import (
     ScreenResult,
@@ -30,7 +31,6 @@ from commec.config.result import (
 )
 
 pd.set_option("display.max_colwidth", 10000)
-
 
 def _check_inputs(
         search_handle : SearchHandler,
@@ -69,6 +69,7 @@ def _check_inputs(
     
     return True
 
+@benchmark
 def update_taxonomic_data_from_database(
         search_handle : SearchHandler,
         benign_taxid_path : str | os.PathLike,
@@ -287,11 +288,14 @@ def main():
     exit_code = check_for_regulated_pathogens(args.in_file, args.db, args.threads)
     sys.exit(exit_code)
 
+@benchmark
 def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_threads: int):
     """
     Check an input file (output from a database search) for regulated pathogens, from the benign and
     biorisk database taxids.
     """
+    bm_init =  benchmark_scope("init")
+
     # Check input file
     if not os.path.exists(input_file):
         logging.error("\t...input query file %s does not exist\n", input_file)
@@ -326,6 +330,7 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
     if not BlastNHandler.has_hits(input_file):
         logging.info("\t... Skipping regulated pathogens check, no hits in: %s\n", input_file)
         return 0
+    del bm_init
 
     blast = read_blast(input_file)
     blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, input_database_dir + "/taxonomy/", n_threads)
@@ -338,8 +343,11 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
     reg_vir = 0
     reg_fung = 0
 
+    _bm_work = benchmark_scope("regpath_work")
+
     # if this is the nucleotide screen, check if any weak protein flags can be negated with strong non-regulated nt ones
     if re.findall(".nt.blastn", input_file):
+        benchmark_scope("regex",1)
         if hits1 is not None:
             for region in range(0, hits1.shape[0]):  # for each regulated pathogen region
                 # look at only the hits that overlap it
@@ -384,6 +392,7 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
                         )
 
     if blast2["regulated"].sum():  # if ANY of the trimmed hits are regulated
+        benchmark_scope("check",1)
         hits = pd.DataFrame(columns=["q. start", "q. end"])
         with pd.option_context(
             "display.max_rows",
@@ -395,6 +404,8 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
         ):
             # for each hit (subject acc) linked with at least one regulated taxid
             for site in set(blast2["q. start"][blast2["regulated"] != False]):
+                bm_site =  benchmark_scope("site",2)
+                bm =  benchmark_scope("check_hit")
                 subset = blast2[(blast2["q. start"] == site)]
                 subset = subset.sort_values(by=["regulated"], ascending=False)
                 subset = subset.reset_index(drop=True)
@@ -476,6 +487,7 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
                 else:  # something is wrong, n_reg > n_total
                     logging.info("\t...gene: %s\n" % gene_names)
                     logging.info("%s\n" % (blast["regulated"][blast["subject acc."] == gene_names]))
+                del bm
         hits = hits.drop_duplicates()
         # Create output file
         if hits1 is not None:

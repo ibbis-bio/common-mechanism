@@ -67,6 +67,13 @@ from commec.config.result import (
     QueryResult,
     ScreenStatus,
 )
+from commec.utils.benchmark import (
+    benchmark, 
+    benchmark_set_log_file_name, 
+    benchmark_set_logging, 
+    benchmark_write_log
+)
+from dev_scripts.benchmark_visualisation import visualize_data as create_benchmark_visual
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
 from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
@@ -206,6 +213,13 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         action="store_true",
         help="Re-use any pre-existing output for this Screen run (cannot be used with --force)",
     )
+    parser.add_argument(
+        "-b",
+        "--bm",
+        dest="benchmark",
+        action="store_true",
+        help="Output benchmarking statistics (txt and html graphic) for this screening run.",
+    )
     return parser
 
 class Screen:
@@ -244,6 +258,9 @@ class Screen:
             generate_html_from_screen_data(self.screen_data, self.params.directory_prefix+"_summary")
             if self.params.config["do_cleanup"]:
                 self.params.clean()
+            
+            benchmark_filename = benchmark_write_log()
+            create_benchmark_visual(benchmark_filename, benchmark_filename+".html")
 
     def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
@@ -297,7 +314,10 @@ class Screen:
 
         # Store start time.
         _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        benchmark_set_log_file_name(self.params.output_prefix+"bm")
+        benchmark_set_logging(self.params.config["benchmark"])
 
+    @benchmark
     def run(self, args : argparse.Namespace):
         """
         Wrapper so that args be parsed in main() or commec.py interface.
@@ -385,7 +405,7 @@ class Screen:
         )
         self.success = True
 
-
+    @benchmark
     def screen_biorisks(self):
         """
         Call hmmscan` and `check_biorisk.py` to add biorisk results to `screen_file`.
@@ -400,6 +420,7 @@ class Screen:
         )
         update_biorisk_data_from_database(self.database_tools.biorisk_hmm, self.screen_data, self.queries)
 
+    @benchmark
     def screen_proteins(self):
         """
         Call `run_blastx.sh` or `run_diamond.sh` followed by `check_reg_path.py` to add regulated
@@ -427,7 +448,7 @@ class Screen:
                                             ScreenStep.TAXONOMY_AA,
                                             self.params.config["threads"])
 
-
+    @benchmark
     def screen_nucleotides(self):
         """
         Screen Nucleotides only in regions determined to be non-coding.
@@ -479,6 +500,7 @@ class Screen:
                                             ScreenStep.TAXONOMY_NT,
                                             self.params.config["threads"])
 
+    @benchmark
     def screen_benign(self):
         """
         Call `hmmscan`, `blastn`, and `cmscan` and then pass results
@@ -556,7 +578,6 @@ def run(args: argparse.Namespace):
         my_screen.run(args)
     except KeyboardInterrupt:
         print(" >>> Commec Screen Terminated.")
-
 
 def main():
     """
