@@ -30,6 +30,7 @@ import re
 from dataclasses import dataclass, asdict, field
 from typing import List, Iterator, Tuple
 from enum import StrEnum
+import pandas as pd
 from importlib.metadata import version, PackageNotFoundError
 from commec.tools.search_handler import SearchToolVersion
 
@@ -156,9 +157,9 @@ class MatchRange:
 
     # TODO: Add frame, as QueryStart and QueryEnd should be in Frame0 NT coords.
 
-    def query_length(self):
+    def length(self):
         """Returns the length in Nucleotides of this range."""
-        return abs(self.query_start - self.query_end)
+        return abs(self.query_end - self.query_start)
 
     def __hash__(self):
         return hash(

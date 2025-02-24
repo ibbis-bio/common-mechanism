@@ -94,15 +94,16 @@ class Query:
         nc_pos : int = 1
         for start, end in self.non_coding_regions:
             region_length : int = end - start
-            if (index < (nc_pos + region_length) and 
+            if (index <= (nc_pos + region_length) and
                 index >= nc_pos):
                 return index - nc_pos + start
-            nc_pos += region_length
+
+            nc_pos += region_length + 1
 
         # index was out put bounds of non-coding list of tuples:
         raise QueryValueError(
             f"Non-coding index provided  ({index}) for {self.name}"
-             "which is out-of-bounds for any known NC start-end tuple."
+            f"which is out-of-bounds for any known NC start-end tuple: {self.non_coding_regions}"
             )
 
 class QueryValueError(ValueError):

@@ -8,6 +8,7 @@ import textwrap
 import argparse
 import plotly.graph_objects as go
 import pandas as pd
+import importlib
 from mako.template import Template
 
 from commec.config.json_io import get_screen_data_from_json
@@ -27,7 +28,7 @@ class CommecPalette():
     LT_BLUE = [66,155,185]
     ORANGE = [241,80,36]
     # Yellow and Red are not official Commec colours.
-    YELLOW = [241,80,36]
+    YELLOW = [241,168,29]
     RED = [207,27,81]
 
     @staticmethod
@@ -76,7 +77,8 @@ def generate_html_from_screen_data(input_data : ScreenResult, output_file : str)
         figures_html.append(html)
 
     # Construct the composite HTML
-    template = Template(filename="commec/utils/template.html")
+    template_path = str(importlib.resources.files("commec").joinpath("utils").joinpath("template.html"))
+    template = Template(filename = template_path)
     rendered_html = template.render(figures_html=figures_html)
 
     # Save the combined HTML output
@@ -190,6 +192,7 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
             #Best match to regulated viruses. 2 best match hits to nucleotides found in 1 species, 2 with regulated pathogen taxId in lineage (Influenza A)
         return "No Annotations."
 
+#@pytest.mark.filterwarnings("ignore")
 def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
     """ 
     Write the data from a single query into the figure for plotly. 
@@ -200,7 +203,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
          "label_verbose": query_to_draw.query, 
          "outcome" : f"Commec Recommendation for this query: {query_to_draw.recommendation.screen_status}",
          "outcome_verbose":"",
-         "start": 0, "stop": query_to_draw.length, 
+         "start": 1, "stop": query_to_draw.length, 
          "color" : CommecPalette.DK_BLUE, 
          "stack" : 0},
     ]

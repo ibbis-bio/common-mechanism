@@ -201,6 +201,10 @@ def update_taxonomic_data_from_database(
                 non_reg_taxids = list(set(non_reg_taxids))
                 match_ranges = list(set(match_ranges))
 
+                reg_species.sort()
+                reg_taxids.sort()
+                non_reg_taxids.sort()
+
                 recommendation : ScreenStatus = ScreenStatus.FLAG
 
                 # TODO: Currently, we recapitulate old behaviour,

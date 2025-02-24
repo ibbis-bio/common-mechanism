@@ -53,13 +53,13 @@ class CmscanHandler(SearchHandler):
                     # Early exit if data has been found
                     if database_info:
                         break
-
+            
             result = subprocess.run(
                 ["cmscan", "-h"], capture_output=True, text=True, check=True
             )
-            tool_info = result.stdout.splitlines()[1].strip()[2:]
+            tool_info = result.stdout.splitlines()[1].strip()[2:] or "error retrieving info"
 
-            return SearchToolVersion(tool_info, database_info)
+            return SearchToolVersion(tool_info, database_info or "error")
 
         except subprocess.CalledProcessError:
             return None
