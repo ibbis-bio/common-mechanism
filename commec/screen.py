@@ -302,12 +302,10 @@ class Screen:
         """
         Wrapper so that args be parsed in main() or commec.py interface.
         """
-        print("performing Setup:")
         # Perform setup steps.
         self.setup(args)
         self.params.output_yaml(self.params.input_prefix + "_config.yaml")
         
-        print("performing Screen:")
         # Biorisk screen
         try:
             logging.info(">> STEP 1: Checking for biorisk genes...")
@@ -342,7 +340,6 @@ class Screen:
             logging.info(" SKIPPING STEP 2: Protein search")
             self.reset_protein_recommendations(ScreenStatus.SKIP)
 
-        print("Taxonomy NT:")
         # Taxonomy screen (Nucleotide)
         if self.params.should_do_nucleotide_screening:
             try:
@@ -362,7 +359,6 @@ class Screen:
             logging.info(" SKIPPING STEP 3: Nucleotide search")
             self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
 
-        print("Benign:")
         # Benign Screen
         if self.params.should_do_benign_screening:
             try:
@@ -387,7 +383,6 @@ class Screen:
         logging.info(
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
-        print("Success!")
         self.success = True
 
 
