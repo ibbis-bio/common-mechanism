@@ -27,7 +27,7 @@
             "database_info": "x.x.x"
         },
         "time_taken": "00:00:02",
-        "date_run": "2025-02-24 12:50:06"
+        "date_run": "2025-02-26 10:41:03"
     },
     "queries": {
         "FCTEST1": {
@@ -35,16 +35,16 @@
             "length": 600,
             "sequence": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "recommendation": {
-                "screen_status": "Pass",
+                "screen_status": "Flag",
                 "biorisk_status": "Warning",
                 "protein_taxonomy_status": "Flag",
                 "nucleotide_taxonomy_status": "Flag",
-                "benign_status": "Pass"
+                "benign_status": "Flag"
             },
             "hits": {
                 "Toxin1": {
                     "recommendation": {
-                        "status": "Flag (Cleared)",
+                        "status": "Flag",
                         "from_step": "Biorisk Screen"
                     },
                     "name": "Toxin1",
@@ -76,7 +76,7 @@
                 },
                 "Toxin2": {
                     "recommendation": {
-                        "status": "Warning (Cleared)",
+                        "status": "Warning",
                         "from_step": "Biorisk Screen"
                     },
                     "name": "Toxin2",
@@ -101,7 +101,7 @@
                 },
                 "Toxin3": {
                     "recommendation": {
-                        "status": "Warning (Cleared)",
+                        "status": "Warning",
                         "from_step": "Biorisk Screen"
                     },
                     "name": "Toxin3",
@@ -300,42 +300,6 @@
                     "annotations": {
                         "Coverage: ": 557.0
                     }
-                },
-                "BENIGNRNA": {
-                    "recommendation": {
-                        "status": "Pass",
-                        "from_step": "Benign RNA Screen"
-                    },
-                    "name": "BENIGNRNA",
-                    "description": "BenignCMTestOutput ",
-                    "ranges": [
-                        {
-                            "e_value": 0.0,
-                            "match_start": 100,
-                            "match_end": 50,
-                            "query_start": 25,
-                            "query_end": 70
-                        }
-                    ],
-                    "annotations": {}
-                },
-                "BENIGNSYNBIO": {
-                    "recommendation": {
-                        "status": "Pass",
-                        "from_step": "Benign SynBio Screen"
-                    },
-                    "name": "BENIGNSYNBIO",
-                    "description": "BENIGNSYNBIO",
-                    "ranges": [
-                        {
-                            "e_value": 0.0,
-                            "match_start": 1,
-                            "match_end": 100,
-                            "query_start": 500,
-                            "query_end": 600
-                        }
-                    ],
-                    "annotations": {}
                 }
             }
         }
