@@ -62,10 +62,13 @@ def _update_benign_data_for_query(query : Query,
 
     # Check every region, of every hit that is a FLAG or WARN, against the Benign screen outcomes.
     for hit in query.result_handle.hits.values():
-        if hit.recommendation.status not in {
+        if ((hit.recommendation.status not in {
             ScreenStatus.FLAG,
             ScreenStatus.WARN
-            }:
+            })
+            or
+            (hit.recommendation.from_step == ScreenStep.BIORISK)
+            ):
             continue
 
         for region in hit.ranges:

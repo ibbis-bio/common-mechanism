@@ -30,28 +30,23 @@ class ScreenIO:
     Container for input settings constructed from arguments to `screen`.
     """
     def __init__(self, args: argparse.Namespace):
+        # Inputs that do no have a package-level default, since they are specific to each run
         self.db_dir = args.database_dir
         self.input_fasta_path = args.fasta_file
+        output_prefix = args.output_prefix
 
-        # Set up output files
-        self.output_prefix = self._get_output_prefix(self.input_fasta_path, args.output_prefix)
-        self.nt_path = f"{self.output_prefix}.cleaned.fasta"
-        self.aa_path = f"{self.output_prefix}.faa"
-        self.output_screen_file = f"{self.output_prefix}.screen"
-        self.tmp_log = f"{self.output_prefix}.log.tmp"
-        self.output_json = f"{self.output_prefix}.output.json"
+        # Output folder hierarchy
+        base, outputs, inputs = self._get_output_prefixes(self.input_fasta_path, output_prefix)
+        self.directory_prefix = base
+        self.output_prefix = outputs
+        self.input_prefix = inputs
 
-        # Parse paths to input databases (may be from CLI or YAML configuration file)
-        self.db_dir = args.database_dir
-        self.yaml_configuration = {}
-
-        if os.path.exists(self.config.config_yaml_file):
-            self._get_configurations_from_yaml(self.config.config_yaml_file, self.db_dir)
-        else:
-            raise FileNotFoundError(
-                "No configuration yaml found. If using a custom file, check the path is correct: "
-                + self.config.config_yaml_file
-            )
+        # IO files
+        self.output_screen_file = f"{self.directory_prefix}.screen.log"
+        self.output_json = f"{self.directory_prefix}.output.json"
+        self.nt_path = f"{self.input_prefix}.cleaned.fasta"
+        self.aa_path = f"{self.input_prefix}.faa"
+        self.nc_path = f"{self.input_prefix}.noncoding.fasta"
 
         # Get configuration based on defaults and CLI args (including YAML config if supplied)
         self.config = {}
