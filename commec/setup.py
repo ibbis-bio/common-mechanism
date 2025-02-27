@@ -63,6 +63,11 @@ class CliSetup:
             "https://f005.backblazeb2.com/file/common-mechanism-dbs/common-mechanism-dbs.zip"
         )
         self.biorisk_download_url: str = self.default_biorisk_download_url
+        
+        self.default_tutorial_download_url: str = (
+            "https://f005.backblazeb2.com/file/common-mechanism-dbs/common-mechanism-tutorial.zip"
+        )
+        self.tutorial_mode : bool = False
 
         self.download_blastnr: bool = False
         self.blastnr_database: str = "nr"
@@ -84,8 +89,6 @@ class CliSetup:
             self.download_blastnt = True
             self.download_taxonomy = True
             self.do_setup()
-        else:
-            self.start()
 
     def start(self):
         """
@@ -235,8 +238,60 @@ class CliSetup:
                 self.database_directory = user_input
 
             print("Using database directory: ", self.database_directory)
-            self.decide_commec_dbs()
+            self.decide_tutorial_dbs()
             return
+
+    def decide_tutorial_dbs(self):
+        """
+        Decide whether or not we just download the tutorial databases. 
+        Unlike Commec Databases, this process is a single step - and the URL is 
+        assumed. Only if there is an error with the URL will the user know about it.
+        """
+        self.print_step_header(2,0)
+        print(
+            "Instead of starting with real (and much larger) databases: ",
+            "\nWould you like to download tutorial mini-databases",
+            "to run Commec on only the tutorial examples?",
+            '\n"y" or "n", for yes or no.',
+            "\n type \"help\" for more info.",
+        )
+        while True:
+            user_input: str = self.user_input()
+            if user_input == "help":
+                self.print_help_info(
+                    [
+                        "\n -> type yes,y or no,n to indicate decision.",
+                        "\n  (The Tutorial databases are light weight biorisk, benign,",
+                        "\n  protein, nucleotide, and taxonomy databases, ",
+                        "\n  which contain everything needed to simulate a run with the ",
+                        "\n  tutorial exemplar inputs. They ONLY WORK for the tutorial examples.",
+                    ]
+                )
+                continue
+            if user_input == "back":
+                self.setup_overall_directory()
+                return
+            if user_input in ["y", "yes"]:
+                if not self.check_url_exists(self.default_tutorial_download_url):
+                    print(
+                        "The Tutorial download URL is currently not responding!",
+                        C_F_GRAY,
+                        "\n(", self.default_tutorial_download_url, ")\n",
+                        C_F_ORANGE,
+                        "We apologise but the Commec tutorial is not available at this time.",
+                        C_RESET,
+                        "\n( or you are not connected to the internet )",
+                    )
+                    continue
+                self.tutorial_mode = True
+
+                self.confirm()
+                return
+            if user_input in ["n", "no"]:
+                self.tutorial_mode = False
+                self.decide_commec_dbs()
+                return
+            print("Unrecognised input (", user_input, ")")
 
     def decide_commec_dbs(self):
         """Decide whether the Commec Benign/risks database needs to be downloaded."""
@@ -251,14 +306,14 @@ class CliSetup:
                 self.print_help_info(
                     [
                         "\n -> type yes,y or no,n to indicate decision.",
-                        "\n  (The Commec databases consist of a currated biorisk",
+                        "\n  ( The Commec databases consist of a currated biorisk",
                         "\n  and benign database, which are required for commec to run",
-                        '\n  and are the only databases used in "--fast-mode")',
+                        '\n  and are the only databases used in "--fast-mode" )',
                     ]
                 )
                 continue
             if user_input == "back":
-                self.setup_overall_directory()
+                self.decide_tutorial_dbs()
                 return
             if user_input in ["y", "yes"]:
                 self.download_biorisk = True
@@ -287,8 +342,8 @@ class CliSetup:
                     [
                         "\n -> Provide a URL to download, the commec database URL can be found at ",
                         "\n  https://github.com/ibbis-screening/common-mechanism/wiki/install",
-                        "\n  (The URL will be checked that it is valid",
-                        "\n  which will require an internet connection.)",
+                        "\n  ( The URL will be checked that it is valid",
+                        "\n  which will require an internet connection. )",
                     ]
                 )
                 continue
@@ -478,12 +533,17 @@ class CliSetup:
                 " -> Taxonomy database will be downloaded," "\n    from URL: ",
                 self.taxonomy_download_url,
             )
+        if self.tutorial_mode:
+            print(
+                " -> The Commec Tutorial mini-Databases and examples will be downloaded!"
+            )
 
         if not (
             self.download_biorisk
             or self.download_blastnr
             or self.download_blastnt
             or self.download_taxonomy
+            or self.tutorial_mode
         ):
             print(
                 "You have opted to not download anything!"
@@ -513,6 +573,9 @@ class CliSetup:
                 if self.download_taxonomy:
                     self.get_taxonomy_url()
                     return
+                if self.tutorial_mode:
+                    self.decide_tutorial_dbs()
+                    return
                 self.decide_taxonomy()
                 return
             if user_input == "start":
@@ -531,11 +594,42 @@ class CliSetup:
             or self.download_blastnr
             or self.download_blastnt
             or self.download_taxonomy
+            or self.tutorial_mode
         ):
             print("No downloads were requested!")
             self.stop()
 
         os.makedirs(self.database_directory, exist_ok=True)
+
+        if self.tutorial_mode:
+            command = [
+                "wget",
+                "-c",
+                "-P",
+                self.database_directory,
+                self.default_tutorial_download_url,
+            ]
+            print("Downloading Tutorial database from\n", self.default_tutorial_download_url)
+            result = subprocess.run(command, check=True)
+            if result.returncode != 0:
+                command_str = " ".join(command)
+                print(
+                    "\t ERROR: Command",
+                    command_str,
+                    "failed with error",
+                    result.stderr,
+                )
+            # Parse the URL to extract the path
+            parsed_url = parse.urlparse(self.default_tutorial_download_url)
+            filename_zipped = os.path.join(
+                self.database_directory, os.path.basename(parsed_url.path)
+            )
+
+            print("Extracting Tutorial databases...")
+            # Open the zip file and extract its contents, remove zip file.
+            with zipfile.ZipFile(filename_zipped, "r") as zip_ref:
+                zip_ref.extractall(self.database_directory)
+            os.remove(filename_zipped)
 
         if self.download_biorisk:
             command = [
@@ -757,7 +851,8 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 def run(arguments):
     """Run CLI with an parsed argument parser input."""
-    CliSetup(arguments.automated)
+    my_setup : CliSetup = CliSetup(arguments.automated)
+    my_setup.start()
 
 
 if __name__ == "__main__":
