@@ -20,15 +20,15 @@ def test_flag_status(tmp_path):
 
     expected_status = textwrap.dedent(
         f"""\
-        name,filepath,biorisk,protein,nucleotide,benign
-        biorisk-error-2025-02,{SCREEN_DIR}/biorisk-error-2025-02.screen,error,-,-,-
-        fast-mode-2025-02,{SCREEN_DIR}/fast-mode-2025-02.screen,warn,skip,skip,skip
-        no-hits-2024-06,{SCREEN_DIR}/no-hits-2024-06.screen,pass,-,-,skip
-        prot-error-2024-08,{SCREEN_DIR}/prot-error-2024-08.screen,pass,error,-,-
-        prot-hit-not-cleared-2024-06,{SCREEN_DIR}/prot-hit-not-cleared-2024-06.screen,pass,flag,skip,not-cleared
-        prot-mixed-hit-2024-06,{SCREEN_DIR}/prot-mixed-hit-2024-06.screen,pass,mix,skip,skip
-        prot-multiple-hits-2024-06,{SCREEN_DIR}/prot-multiple-hits-2024-06.screen,warn,flag;mix,pass,not-cleared
-        prot-nt-hits-cleared-2024-09,{SCREEN_DIR}/prot-nt-hits-cleared-2024-09.screen,pass,flag,flag,cleared
+        name,filepath,flag,biorisk,protein,nucleotide,benign,virus_flag,bacteria_flag,eukaryote_flag,benign_protein,benign_rna,benign_dna
+        biorisk-error-2025-02,{SCREEN_DIR}/biorisk-error-2025-02.screen,error,error,-,-,-,,,,,,
+        fast-mode-2025-02,{SCREEN_DIR}/fast-mode-2025-02.screen,pass,warn,skip,skip,skip,,,,,,
+        no-hits-2024-06,{SCREEN_DIR}/no-hits-2024-06.screen,pass,pass,-,-,skip,,,,,,
+        prot-error-2024-08,{SCREEN_DIR}/prot-error-2024-08.screen,error,pass,error,-,-,,,,,,
+        prot-hit-not-cleared-2024-06,{SCREEN_DIR}/prot-hit-not-cleared-2024-06.screen,flag,pass,flag,skip,not-cleared,True,False,False,False,False,False
+        prot-mixed-hit-2024-06,{SCREEN_DIR}/prot-mixed-hit-2024-06.screen,pass,pass,mix,skip,skip,False,False,False,,,
+        prot-multiple-hits-2024-06,{SCREEN_DIR}/prot-multiple-hits-2024-06.screen,flag,warn,flag;mix,pass,not-cleared,False,True,False,True,False,False
+        prot-nt-hits-cleared-2024-09,{SCREEN_DIR}/prot-nt-hits-cleared-2024-09.screen,pass,pass,flag,flag,cleared,False,True,False,False,True,True
         """
     )
     actual_status = status_output.read_text()

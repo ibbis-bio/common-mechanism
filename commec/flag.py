@@ -175,7 +175,7 @@ def get_benign_outcome(step_content) -> set[str]:
     return outcomes if outcomes else {"-"}
 
 
-def check_regulated_flags(content):
+def get_regulated_taxa(content):
     """
     Check for regulated virus, bacteria, and eukaryote flags in the content.
     """
@@ -185,23 +185,24 @@ def check_regulated_flags(content):
         "eukaryote_flag": True if "FLAG (eukaryote)" in content else False,
     }
 
-def check_benign_substeps(step_content):
+
+def get_benign_substeps(step_content):
     """
     Check for whether benign protiein, RNA or DNA (synbio sequences) is in the content.
     """
-    # Step-specific benign outcomes
-    # if re.search(r'no.*?protein hits|-->.*?protein.*?FAIL', step_content):
-    #     benign_protein = False
-    # if re.search(r'no.*?RNA hits|-->.*?RNA.*?FAIL', step_content):
-    #     outcomes.add("no-benign-rna") 
-    # if re.search(r'no.*?Synbio sequence hits|-->.*?Synbio sequence.*?FAIL', step_content):
-    #     outcomes.add("no-benign-dna")
-
     return {
-        "benign_protein": True if re.search(r'-->.*?protein.*?PASS', step_content) else False,
-        "benign_rna": True if re.search(r'-->.*?RNA.*?PASS', step_content) else False,
-        "benign_dna": True if re.search(r'-->.*?Synbio sequence.*?PASS', step_content) else False,
+        "benign_protein": True
+        if re.search(r"-->.*?protein.*?PASS", step_content)
+        else False,
+        "benign_rna": True if re.search(r"-->.*?RNA.*?PASS", step_content) else False,
+        "benign_dna": True
+        if re.search(r"-->.*?Synbio sequence.*?PASS", step_content)
+        else False,
     }
+
+
+def step_has_outcome(results: set):
+    return "error" not in results and "skip" not in results and "-" not in results
 
 
 def process_file(file_path) -> list[str]:
@@ -223,17 +224,52 @@ def process_file(file_path) -> list[str]:
     results = {
         "filename": filename_without_extension,
         "location": file_path,
+        "flag": None,
         "biorisk": process_step(steps[0] if len(steps) > 0 else "-", 1),
         "protein": process_step(steps[1] if len(steps) > 1 else "-", 2),
         "nucleotide": process_step(steps[2] if len(steps) > 2 else "-", 3),
         "benign": process_step(steps[3] if len(steps) > 3 else "-", 4),
     }
-    # Add regulated flags
-    results.update(check_regulated_flags(content))
-    if "cleared" in results["benign"] or "not-cleared" in results["benign"]:
-        results.update(check_benign_substeps(steps[3]))
+    # Add regulated flags - only check protein, since nucleotide may have been skipped due to having
+    # no noconding regions
+    if step_has_outcome(results["protein"]):
+        results.update(get_regulated_taxa(content))
+    # Add info about benign sub-steps
+    if step_has_outcome(results["benign"]):
+        results.update(get_benign_substeps(steps[3]))
+
+    results["flag"] = get_overall_flag(results)
 
     return results
+
+
+def get_overall_flag(results: dict[str]) -> str:
+    """
+    Get a single overall recommendation (pass, flag or error) based on the flags.
+
+    We don't take into account virulence factor flags here; those are just a warning, since
+    we've found that some virulence factors are housekeeping genes (and are poorly-supported
+    Victors entries).
+    """
+    # Errors mean we can't determine overall pass or flag
+    if any(
+        [
+            results.get(key) == {"error"}
+            for key in ["biorisk", "protein", "nucleotide", "benign"]
+        ]
+    ):
+        return "error"
+
+    # if a biorisk is flagged, flag the whole thing
+    if "flag" in results["biorisk"]:
+        return "flag"
+    # Flag regulated pathogens unless cleared in the benign screen
+    elif ("flag" in results["protein"] or "flag" in results["nucleotide"] == "flag") and "not-cleared" in results[
+        "benign"
+    ]:
+        return "flag"
+    else:
+        return "pass"
 
 
 def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> list[str]:
@@ -321,27 +357,12 @@ def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> list[str
     ]
 
 
-def get_recommendation(flags: list[str]) -> str:
+def get_recommendation(flag: str) -> str:
     """
-    Get a single overall recommendation (P, F, or Err) based on the flags.
-
-    We don't take into account virulence factor flags here; those are just a warning, since
-    we've found that some virulence factors are housekeeping genes (and are poorly-supported
-    Victors entries).
+    Map between flag column in screen_pipeline_status and older flags format.
     """
-    _, risk, _, reg_vir, reg_bac, reg_euk, _, benign = flags
-
-    # Errors mean we can't determine overall pass or flag
-    if risk == "Err" or reg_bac == "Err" or benign == "Err":
-        return "Err"
-    # if a biorisk is flagged, flag the whole thing
-    if risk == "F":
-        return "F"
-    # Flag regulated pathogens unless cleared in the benign screen
-    elif (reg_vir == "F" or reg_bac == "F" or reg_euk == "F") and benign == "F":
-        return "F"
-    else:
-        return "P"
+    flag_map = {"flag": "F", "pass": "P", "error": "Err"}
+    return flag_map[flag]
 
 
 def write_output_csvs(output_dir, status, flags, recommendations):
@@ -353,6 +374,7 @@ def write_output_csvs(output_dir, status, flags, recommendations):
     status_df.columns = [
         "name",
         "filepath",
+        "flag",
         "biorisk",
         "protein",
         "nucleotide",
@@ -364,21 +386,14 @@ def write_output_csvs(output_dir, status, flags, recommendations):
         "benign_rna",
         "benign_dna",
     ]
+
     def sort_and_join_sets(value):
         if isinstance(value, set):
             return ";".join(sorted(value))
         return value
-    status_df = status_df.apply(lambda col: col.apply(sort_and_join_sets))
 
-    columns_to_print = [
-        "name",
-        "filepath",
-        "biorisk",
-        "protein",
-        "nucleotide",
-        "benign",
-    ]
-    status_df[columns_to_print].to_csv(status_file, index=False)
+    status_df = status_df.apply(lambda col: col.apply(sort_and_join_sets))
+    status_df.to_csv(status_file, index=False)
     print(f"Pipeline step status written to {status_file}")
 
     flags_df = pd.DataFrame(flags)
@@ -432,7 +447,11 @@ def run(args: argparse.Namespace):
         screen_status.append(process_file(file_path))
 
     screen_flags = [get_flags_from_status(status) for status in screen_status]
-    recommendations = [(flags[0], get_recommendation(flags)) for flags in screen_flags]
+
+    recommendations = [
+        (status["location"], get_recommendation(status["flag"]))
+        for status in screen_status
+    ]
 
     write_output_csvs(output_dir, screen_status, screen_flags, recommendations)
 
