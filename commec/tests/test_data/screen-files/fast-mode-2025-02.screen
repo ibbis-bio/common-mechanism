@@ -1,0 +1,15 @@
+ Validating Inputs...
+>> STEP 1: Checking for biorisk genes...
+		 --> Biorisks: Regulated genes not found, PASS
+
+		 --> Virulence factor found in bases 4 to 471, WARNING
+		     Gene: putative secreted protein-tyrosine phosphatase [Yersinia pestis CO92]
+
+ STEP 1 completed at 2025-02-18 02:05:16
+ SKIPPING STEP 2: Protein search
+ SKIPPING STEP 3: Nucleotide search
+>> STEP 4: Checking any pathogen regions for benign components...
+	...no regulated regions to clear
+
+>> STEP 4 completed at 2025-02-18 02:05:16
+>> COMPLETED AT 2025-02-18 02:05:16

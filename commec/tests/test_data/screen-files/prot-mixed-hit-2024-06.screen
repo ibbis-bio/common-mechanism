@@ -1,0 +1,18 @@
+>> STEP 1: Checking for biorisk genes...
+		 --> Biorisks: no hits detected, PASS
+ STEP 1 completed at 2024-06-24 19:29:55
+ >> STEP 2: Checking regulated pathogen proteins...
+0           10239;2559587;2732396;2732408;2732506;76804;2499399;11118;2501931;694002;2509511;694009;1508227
+1           10239;2559587;2732396;2732408;2732506;76804;2499399;11118;2501931;694002;2509511;694009;1508227
+		 --> Best match to sequence(s) QGA88265, QGA88308, WEG19430, QZX47334, QWN56262, QZX47339, QGA88261 at bases 3 - 365 found in both regulated and non-regulated organisms
+		     Species: Severe acute respiratory syndrome-related coronavirus, Betacoronavirus sp. RsYN09, Sarbecovirus sp. (taxid(s): 2833184, 694009, 2872810, 1508227) (100.0 percent identity to query)
+		     Description: ORF1ab polyprotein [Severe acute respiratory syndrome-related coronavirus]
+		 --> no top hit exclusive to a regulated pathogen: PASS
+ STEP 2 completed at 2024-06-24 19:32:11
+ >> STEP 3: Checking regulated pathogen nucleotides...
+	...protein hits found, fetching nt regions not covered by a 90% ID hit or better
+		 --> no noncoding regions >= 50 bases found, skipping nt scan
+ STEP 3 completed at 2024-06-24 19:32:12
+>> STEP 4: Checking any pathogen regions for benign components...
+	...no regulated regions to clear
+>> COMPLETED AT 2024-06-24 19:32:13
