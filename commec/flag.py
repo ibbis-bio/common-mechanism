@@ -11,52 +11,46 @@ options:
   -o, --output OUTPUT_DIR
                        path where output CSVs should be written
 
-Each line in each CSV corresponds to a .screen file. The flags.csv file will have the following
-columns and values:
-
-The "biorisk", "virulence_factor", "regulated_virus", "regulated_bacteria", "regulated_eukaryote",
-"mixed_regulated_and_non_reg" colums take the following values:
-
-  * F     flagged
-  * P     no flags
-  * -     not run
-  * Err   error logged in this step
-
-The "benign" columns takes the following values:
-
-  * F     flags not cleared
-  * P     all flags cleared
-
-The flags_recommended CSV just has two columns, "filename" and "recommend_flag_or_pass".
-
-The "biorisk", "protein", "nucleotide", and "benign" columns in  screen_pipeline_status.csv
-can take the following values:
-
-  * flag          the sequence was flagged in this step
-  * pass          the sequence passed in this step
-  * skip          this step was intentionally not run
-  * error         an error occurred during this step
-  * -             this step was not run due to an error, interrupt, or other unexpected outcome
-  * mix           (protein / nucloetide only) equally-good best match is to regulated- and
-                  non-regulated organisms
-  * warn          (biorisk only) significant hit to a virulence factor, but these are often shared
-                  between regulated and non-regulated organisms
-  * cleared       (benign only) earlier flags were cleared
-  * not cleared   (benign only) earlier flags were not cleared
-
-Additionally, it includes three columns indicating whether the sequence was flagged as a regulated
-virus, bacteria, or eukaryote, and the full paths to the files are also provided.
-
+The screen_pipline_status covers the status of the 4 screening steps, while flags.csv has just
+flag outcomes for various things that commec can flag, and flags_recommended just has an overall
+flag recommendation for each screen file.
 """
 
 import argparse
 import glob
 import os
 import re
+from enum import StrEnum
 import pandas as pd
 from commec.utils.file_utils import directory_arg
 
 DESCRIPTION = "Parse all .screen files in a directory and create CSVs of flags raised"
+
+
+class Outcome(StrEnum):
+    """Possible outcomes for each step of the screening process."""
+
+    FLAG = "flag"  # the sequence was flagged in this step
+    PASS = "pass"  # the sequence passed in this step
+    SKIP = "skip"  # step was intentionally not run
+    ERROR = "error"  # an error occurred during this step
+    NOT_RUN = "-"  # step was not run due to an error, interrupt, or other unexpected outcome
+    # (protein / nucloetide only) equally-good best match to regulated and non-regulated organisms
+    MIX = "mix"
+    # (biorisk only) significant hit to a virulence factor, but these are often shared between
+    # regulated and non-regulated organisms
+    WARN = "warn"
+    CLEARED = "cleared"  # (benign only) all earlier flags were cleared
+    NOT_CLEARED = "not-cleared"  # (benign only) not all earlier flags were cleared
+
+
+class Flag(StrEnum):
+    """Possible values for the flags.csv summary."""
+
+    FLAG = "F"
+    PASS = "P"
+    ERROR = "Err"
+    NOT_RUN = "-"
 
 
 def add_args(parser: argparse.ArgumentParser):
@@ -86,126 +80,7 @@ def add_args(parser: argparse.ArgumentParser):
     return parser
 
 
-def process_step(step_content: str, step_number: int):
-    """
-    Process the .screen file output to determine the outcome of the step.
-    """
-    step_processors = {
-        1: get_biorisk_outcome,
-        2: get_protein_outcome,
-        3: get_nucleotide_outcome,
-        4: get_benign_outcome,
-    }
-    return step_processors.get(step_number, lambda _: "-")(step_content)
-
-
-def get_biorisk_outcome(step_content: str) -> set[str]:
-    """Process biorisk scan step from .screen file."""
-    outcomes = set()
-    if "FLAG" in step_content:
-        outcomes.add("flag")
-    if "Virulence factor found" in step_content:
-        outcomes.add("warn")
-    if (
-        "Biorisks: no hits detected, PASS" in step_content
-        or "Biorisks: no significant hits detected, PASS" in step_content
-    ):
-        outcomes.add("pass")
-    if "ERROR" in step_content:
-        outcomes.add("error")
-    return outcomes if outcomes else {"-"}
-
-
-def get_protein_outcome(step_content: str) -> set[str]:
-    """Process protein scan step from .screen file."""
-    outcomes = set()
-    if "FAST MODE: Skipping" in step_content or "SKIPPING STEP 2" in step_content:
-        outcomes.add("skip")
-
-    if "Best match to sequence(s)" in step_content and "FLAG" in step_content:
-        outcomes.add("flag")
-    if "found in both regulated and non-regulated organisms" in step_content:
-        outcomes.add("mix")
-    if (
-        "no top hit exclusive to a regulated pathogen: PASS" in step_content
-        and "mix" not in outcomes
-    ):
-        outcomes.add("pass")
-    if "ERROR" in step_content:
-        outcomes.add("error")
-    return outcomes if outcomes else {"-"}
-
-
-def get_nucleotide_outcome(step_content: str) -> set[str]:
-    """Process nucleotide scan step from .screen file."""
-    outcomes = set()
-    if (
-        "skipping nt scan" in step_content
-        or "skipping nucleotide search" in step_content
-        or "FAST MODE: Skipping" in step_content
-        or "SKIPPING STEP 3" in step_content
-    ):
-        outcomes.add("skip")
-
-    if "Best match to sequence(s)" in step_content and "FLAG" in step_content:
-        outcomes.add("flag")
-    if "no top hit exclusive to a regulated pathogen: PASS" in step_content:
-        outcomes.add("pass")
-    if "ERROR" in step_content:
-        outcomes.add("error")
-    return outcomes if outcomes else {"-"}
-
-
-def get_benign_outcome(step_content) -> set[str]:
-    """Process benign scan step from .screen file."""
-    outcomes = set()
-    if "no regulated regions to clear" in step_content:
-        outcomes.add("skip")
-
-    if (
-        "Regulated region at bases" in step_content
-        and "failed to clear: FLAG" in step_content
-    ):
-        outcomes.add("not-cleared")
-    if "all regulated regions cleared: PASS" in step_content:
-        outcomes.add("cleared")
-    if "ERROR" in step_content:
-        outcomes.add("error")
-
-    return outcomes if outcomes else {"-"}
-
-
-def get_regulated_taxa(content):
-    """
-    Check for regulated virus, bacteria, and eukaryote flags in the content.
-    """
-    return {
-        "virus_flag": True if "FLAG (virus)" in content else False,
-        "bacteria_flag": True if "FLAG (bacteria)" in content else False,
-        "eukaryote_flag": True if "FLAG (eukaryote)" in content else False,
-    }
-
-
-def get_benign_substeps(step_content):
-    """
-    Check for whether benign protiein, RNA or DNA (synbio sequences) is in the content.
-    """
-    return {
-        "benign_protein": True
-        if re.search(r"-->.*?protein.*?PASS", step_content)
-        else False,
-        "benign_rna": True if re.search(r"-->.*?RNA.*?PASS", step_content) else False,
-        "benign_dna": True
-        if re.search(r"-->.*?Synbio sequence.*?PASS", step_content)
-        else False,
-    }
-
-
-def step_has_outcome(results: set):
-    return "error" not in results and "skip" not in results and "-" not in results
-
-
-def process_file(file_path) -> list[str]:
+def process_file(file_path) -> dict[str, str | set[str] | bool]:
     """
     Read input screen file, split into steps, and prepare dict of results for CSV output.
     """
@@ -222,18 +97,27 @@ def process_file(file_path) -> list[str]:
     filename_without_extension = os.path.splitext(filename)[0]
 
     results = {
-        "filename": filename_without_extension,
-        "location": file_path,
+        "name": filename_without_extension,
+        "filepath": file_path,
         "flag": None,
-        "biorisk": process_step(steps[0] if len(steps) > 0 else "-", 1),
-        "protein": process_step(steps[1] if len(steps) > 1 else "-", 2),
-        "nucleotide": process_step(steps[2] if len(steps) > 2 else "-", 3),
-        "benign": process_step(steps[3] if len(steps) > 3 else "-", 4),
     }
+
+    # Process each step with the appropriate method
+    step_processors = {
+        0: get_biorisk_outcome,
+        1: get_protein_outcome,
+        2: get_nucleotide_outcome,
+        3: get_benign_outcome,
+    }
+    for i, step_name in enumerate(["biorisk", "protein", "nucleotide", "benign"]):
+        step_content = steps[i] if i < len(steps) else ""
+        results[step_name] = step_processors[i](step_content)
+
     # Add regulated flags - only check protein, since nucleotide may have been skipped due to having
     # no noconding regions
     if step_has_outcome(results["protein"]):
         results.update(get_regulated_taxa(content))
+
     # Add info about benign sub-steps
     if step_has_outcome(results["benign"]):
         results.update(get_benign_substeps(steps[3]))
@@ -241,6 +125,109 @@ def process_file(file_path) -> list[str]:
     results["flag"] = get_overall_flag(results)
 
     return results
+
+
+def get_biorisk_outcome(step_content: str) -> set[str]:
+    """Process biorisk scan step from .screen file."""
+    outcomes = set()
+    if "FLAG" in step_content:
+        outcomes.add(Outcome.FLAG)
+    if "Virulence factor found" in step_content:
+        outcomes.add(Outcome.WARN)
+    if (
+        "Biorisks: no hits detected, PASS" in step_content
+        or "Biorisks: no significant hits detected, PASS" in step_content
+    ):
+        outcomes.add(Outcome.PASS)
+    if "ERROR" in step_content:
+        outcomes.add(Outcome.ERROR)
+    return outcomes if outcomes else {Outcome.NOT_RUN}
+
+
+def get_protein_outcome(step_content: str) -> set[str]:
+    """Process protein scan step from .screen file."""
+    outcomes = set()
+    if "FAST MODE: Skipping" in step_content or "SKIPPING STEP 2" in step_content:
+        outcomes.add(Outcome.SKIP)
+
+    if "Best match to sequence(s)" in step_content and "FLAG" in step_content:
+        outcomes.add(Outcome.FLAG)
+    if "found in both regulated and non-regulated organisms" in step_content:
+        outcomes.add(Outcome.MIX)
+    if (
+        "no top hit exclusive to a regulated pathogen: PASS" in step_content
+        and "mix" not in outcomes
+    ):
+        outcomes.add(Outcome.PASS)
+    if "ERROR" in step_content:
+        outcomes.add(Outcome.ERROR)
+    return outcomes if outcomes else {Outcome.NOT_RUN}
+
+
+def get_nucleotide_outcome(step_content: str) -> set[str]:
+    """Process nucleotide scan step from .screen file."""
+    outcomes = set()
+    if (
+        "skipping nt scan" in step_content
+        or "skipping nucleotide search" in step_content
+        or "FAST MODE: Skipping" in step_content
+        or "SKIPPING STEP 3" in step_content
+    ):
+        outcomes.add(Outcome.SKIP)
+
+    if "Best match to sequence(s)" in step_content and "FLAG" in step_content:
+        outcomes.add(Outcome.FLAG)
+    if "no top hit exclusive to a regulated pathogen: PASS" in step_content:
+        outcomes.add(Outcome.PASS)
+    if "ERROR" in step_content:
+        outcomes.add(Outcome.ERROR)
+    return outcomes if outcomes else {Outcome.NOT_RUN}
+
+
+def get_benign_outcome(step_content) -> set[str]:
+    """Process benign scan step from .screen file."""
+    outcomes = set()
+    if "no regulated regions to clear" in step_content:
+        outcomes.add(Outcome.SKIP)
+
+    if "Regulated region at bases" in step_content and "failed to clear: FLAG" in step_content:
+        outcomes.add(Outcome.NOT_CLEARED)
+    if "all regulated regions cleared: PASS" in step_content:
+        outcomes.add(Outcome.CLEARED)
+    if "ERROR" in step_content:
+        outcomes.add(Outcome.ERROR)
+
+    return outcomes if outcomes else {Outcome.NOT_RUN}
+
+
+def get_regulated_taxa(content) -> dict[str, bool]:
+    """
+    Check for regulated virus, bacteria, and eukaryote flags in the content.
+    """
+    return {
+        "virus_flag": True if "FLAG (virus)" in content else False,
+        "bacteria_flag": True if "FLAG (bacteria)" in content else False,
+        "eukaryote_flag": True if "FLAG (eukaryote)" in content else False,
+    }
+
+
+def get_benign_substeps(step_content) -> dict[str, bool]:
+    """
+    Check for whether benign protiein, RNA or DNA (synbio sequences) is in the content.
+    """
+    return {
+        "benign_protein": True if re.search(r"-->.*?protein.*?PASS", step_content) else False,
+        "benign_rna": True if re.search(r"-->.*?RNA.*?PASS", step_content) else False,
+        "benign_dna": True if re.search(r"-->.*?Synbio sequence.*?PASS", step_content) else False,
+    }
+
+
+def step_has_outcome(results: set) -> bool:
+    return (
+        Outcome.ERROR not in results
+        and Outcome.SKIP not in results
+        and Outcome.NOT_RUN not in results
+    )
 
 
 def get_overall_flag(results: dict[str]) -> str:
@@ -254,170 +241,123 @@ def get_overall_flag(results: dict[str]) -> str:
     # Errors mean we can't determine overall pass or flag
     if any(
         [
-            results.get(key) == {"error"}
+            Outcome.ERROR in results.get(key)
             for key in ["biorisk", "protein", "nucleotide", "benign"]
         ]
     ):
-        return "error"
+        return Outcome.ERROR
 
     # if a biorisk is flagged, flag the whole thing
-    if "flag" in results["biorisk"]:
-        return "flag"
+    if Outcome.FLAG in results["biorisk"]:
+        return Outcome.FLAG
     # Flag regulated pathogens unless cleared in the benign screen
-    elif ("flag" in results["protein"] or "flag" in results["nucleotide"] == "flag") and "not-cleared" in results[
-        "benign"
-    ]:
-        return "flag"
+    elif (
+        Outcome.FLAG in results["protein"] or Outcome.FLAG in results["nucleotide"]
+    ) and Outcome.NOT_CLEARED in results["benign"]:
+        return Outcome.FLAG
     else:
-        return "pass"
+        return Outcome.PASS
 
 
-def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> list[str]:
+def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> dict[str]:
     """
-    Map step results to flags format, which has the following columns:
-        - filename
-        - biorisk:                      set by biorisk step
-        - virulence_factor:             set by biorisk step
-        - regulated_virus:              set by protein or nucleotide step
-        - regulated_bacteria:           set by protein or nucleotide step
-        - regulated_eukaryote:          set by protein or nucleotide step
-        - mixed_regulated_and_non_reg:  set by protein or nucleotide step
-        - benign:                       set by benign step
-
-    And can take the following values:
-        - "F" if flagged (or, for benign, not cleared)
-        - "P" if no flags (or, for benign, all cleared)
-        - "Err" if error logged
-        - "-" if not run (skipped OR not reached due to an error)
+    Map step results to flags format for flags.csv output.
     """
-    filename = results["location"]
-
     # Columns determined by biorisk step
-    biorisk = "-"
-    virulence_factor = "-"
-
-    if "error" in results["biorisk"]:
-        biorisk = virulence_factor = "Err"
-    elif "flag" in results["biorisk"]:
-        biorisk = "F"
-        virulence_factor = "P" if "warn" not in results["biorisk"] else "F"
-    elif "warn" in results["biorisk"]:
-        biorisk = "P"
-        virulence_factor = "F"
-    elif "pass" in results["biorisk"]:
-        biorisk = "P"
-        virulence_factor = "P"
-
+    biorisk = Flag.NOT_RUN
+    virulence_factor = Flag.NOT_RUN
     # Columns determined by protein and nucleotide step
-    regulated_virus = "-"
-    regulated_bacteria = "-"
-    regulated_eukaryote = "-"
-    mixed_regulated_non_reg = "-"
+    regulated_virus = Flag.NOT_RUN
+    regulated_bacteria = Flag.NOT_RUN
+    regulated_eukaryote = Flag.NOT_RUN
+    mixed_regulated_non_reg = Flag.NOT_RUN
+    # Column determined by benign step
+    benign = Outcome.NOT_RUN
 
-    if "error" in results["protein"]:
-        regulated_virus = "Err"
-        regulated_bacteria = "Err"
-        regulated_eukaryote = "Err"
-        mixed_regulated_non_reg = "Err"
-    elif "skip" in results["protein"] or "-" in results["protein"]:
+    if Outcome.ERROR in results["biorisk"]:
+        biorisk = virulence_factor = Flag.ERROR
+    elif Outcome.FLAG in results["biorisk"]:
+        biorisk = Flag.FLAG
+        virulence_factor = Flag.PASS if Outcome.WARN not in results["biorisk"] else Flag.FLAG
+    elif Outcome.WARN in results["biorisk"]:
+        biorisk = Flag.PASS
+        virulence_factor = Flag.FLAG
+    elif Outcome.PASS in results["biorisk"]:
+        biorisk = Flag.PASS
+        virulence_factor = Flag.PASS
+
+    if Outcome.ERROR in results["protein"]:
+        regulated_virus = Flag.ERROR
+        regulated_bacteria = Flag.ERROR
+        regulated_eukaryote = Flag.ERROR
+        mixed_regulated_non_reg = Flag.ERROR
+    elif Outcome.SKIP in results["protein"] or Outcome.NOT_RUN in results["protein"]:
         pass  # leave values as defaults
-    elif "pass" in results["protein"] and "pass" in results["nucleotide"]:
-        regulated_virus = "P"
-        regulated_bacteria = "P"
-        regulated_eukaryote = "P"
-        mixed_regulated_non_reg = "P"
-    elif "-" not in results["protein"] and "-" not in results["nucleotide"]:
-        regulated_virus = "F" if results["virus_flag"] else "P"
-        regulated_bacteria = "F" if results["bacteria_flag"] else "P"
-        regulated_eukaryote = "F" if results["eukaryote_flag"] else "P"
+    elif Outcome.PASS in results["protein"] and Outcome.PASS in results["nucleotide"]:
+        regulated_virus = Flag.PASS
+        regulated_bacteria = Flag.PASS
+        regulated_eukaryote = Flag.PASS
+        mixed_regulated_non_reg = Flag.PASS
+    elif Outcome.NOT_RUN not in results["protein"] and Outcome.NOT_RUN not in results["nucleotide"]:
+        regulated_virus = Flag.FLAG if results["virus_flag"] else Flag.PASS
+        regulated_bacteria = Flag.FLAG if results["bacteria_flag"] else Flag.PASS
+        regulated_eukaryote = Flag.FLAG if results["eukaryote_flag"] else Flag.PASS
         mixed_regulated_non_reg = (
-            "F"
-            if ("mix" in results["protein"] or "mix" in results["nucleotide"])
-            else "P"
+            Flag.FLAG
+            if (Outcome.MIX in results["protein"] or Outcome.MIX in results["nucleotide"])
+            else Flag.PASS
         )
 
-    # Column determined by benign step
-    benign = "-"
-    if "error" in results["benign"]:
-        benign = "Err"
-    if "cleared" in results["benign"]:
-        benign = "P"
-    if "not-cleared" in results["benign"]:
-        benign = "F"
+    if Outcome.ERROR in results["benign"]:
+        benign = Flag.ERROR
+    elif Outcome.CLEARED in results["benign"]:
+        benign = Flag.PASS
+    elif Outcome.NOT_CLEARED in results["benign"]:
+        benign = Flag.FLAG
 
-    return [
-        filename,
-        biorisk,
-        virulence_factor,
-        regulated_virus,
-        regulated_bacteria,
-        regulated_eukaryote,
-        mixed_regulated_non_reg,
-        benign,
-    ]
+    return {
+        "filename": results["filepath"],
+        "biorisk": biorisk,
+        "virulence_factor": virulence_factor,
+        "regulated_virus": regulated_virus,
+        "regulated_bacteria": regulated_bacteria,
+        "regulated_eukaryote": regulated_eukaryote,
+        "mixed_regulated_and_non_reg": mixed_regulated_non_reg,
+        "benign": benign,
+    }
 
 
 def get_recommendation(flag: str) -> str:
     """
     Map between flag column in screen_pipeline_status and older flags format.
     """
-    flag_map = {"flag": "F", "pass": "P", "error": "Err"}
+    flag_map = {
+        Outcome.FLAG: Flag.FLAG,
+        Outcome.PASS: Flag.PASS,
+        Outcome.ERROR: Flag.ERROR,
+    }
     return flag_map[flag]
 
 
 def write_output_csvs(output_dir, status, flags, recommendations):
+    """Write results to 3 output CSV files."""
     status_file = os.path.join(output_dir, "screen_pipeline_status.csv")
     flags_file = os.path.join(output_dir, "flags.csv")
     recommendations_file = os.path.join(output_dir, "flags_recommended.csv")
 
     status_df = pd.DataFrame(status)
-    status_df.columns = [
-        "name",
-        "filepath",
-        "flag",
-        "biorisk",
-        "protein",
-        "nucleotide",
-        "benign",
-        "virus_flag",
-        "bacteria_flag",
-        "eukaryote_flag",
-        "benign_protein",
-        "benign_rna",
-        "benign_dna",
-    ]
-
-    def sort_and_join_sets(value):
-        if isinstance(value, set):
-            return ";".join(sorted(value))
-        return value
-
-    status_df = status_df.apply(lambda col: col.apply(sort_and_join_sets))
+    status_df = status_df.map(lambda x: ";".join(sorted(x)) if isinstance(x, set) else x)
     status_df.to_csv(status_file, index=False)
     print(f"Pipeline step status written to {status_file}")
 
-    flags_df = pd.DataFrame(flags)
-    flags_df.columns = [
-        "filename",
-        "biorisk",
-        "virulence_factor",
-        "regulated_virus",
-        "regulated_bacteria",
-        "regulated_eukaryote",
-        "mixed_regulated_and_non_reg",
-        "benign",
-    ]
-    flags_df.to_csv(flags_file, index=False)
+    pd.DataFrame(flags).to_csv(flags_file, index=False)
     print(f"Screen results written to {flags_file}")
 
-    summary = pd.DataFrame(recommendations)
-    summary.columns = ("filename", "recommend_flag_or_pass")
+    summary = pd.DataFrame(recommendations, columns=["filename", "recommend_flag_or_pass"])
     summary.to_csv(recommendations_file, index=False, header=None)
     print(f"Flag recommendations written to {recommendations_file}")
 
-    print(
-        "Flags: ", (summary["recommend_flag_or_pass"] == "F").sum(), "/", len(summary)
-    )
+    print("Flags: ", (summary["recommend_flag_or_pass"] == "F").sum(), "/", len(summary))
     print("Errors: ", (summary["recommend_flag_or_pass"] == "Err").sum())
 
 
@@ -428,42 +368,30 @@ def run(args: argparse.Namespace):
     Read all files that end with .screen in the input directory, then summarize their outcomes in
     three CSVs: flags.csv, flags_recommended.csv, and screen_pipeline_status.csv.
     """
-    # Check that screen files can be found
+    # Find .screen files
     search_dir = args.directory
     search_recursive = args.recursive
-    output_dir = args.output if args.output is not None else os.path.dirname(search_dir)
+    output_dir = args.output or os.path.dirname(search_dir)
 
     search_pattern = "**/*.screen" if search_recursive else "*.screen"
-    screen_paths = glob.glob(
-        os.path.join(search_dir, search_pattern), recursive=search_recursive
-    )
+    screen_paths = glob.glob(os.path.join(search_dir, search_pattern), recursive=search_recursive)
     if not screen_paths:
-        raise FileNotFoundError(
-            f"No .screen files were found in directory: {search_dir}"
-        )
+        raise FileNotFoundError(f"No .screen files were found in directory: {search_dir}")
 
-    screen_status = []
-    for file_path in sorted(screen_paths):
-        screen_status.append(process_file(file_path))
-
+    screen_status = [process_file(file_path) for file_path in sorted(screen_paths)]
     screen_flags = [get_flags_from_status(status) for status in screen_status]
-
     recommendations = [
-        (status["location"], get_recommendation(status["flag"]))
-        for status in screen_status
+        (status["filepath"], get_recommendation(status["flag"])) for status in screen_status
     ]
 
     write_output_csvs(output_dir, screen_status, screen_flags, recommendations)
 
 
 def main():
-    """
-    Main function. Passes args to `run`.
-    """
+    """Main function. Passes args to `run`."""
     parser = argparse.ArgumentParser(description=DESCRIPTION)
     add_args(parser)
-    args = parser.parse_args()
-    run(args)
+    run(parser.parse_args())
 
 
 if __name__ == "__main__":
