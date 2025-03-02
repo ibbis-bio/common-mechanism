@@ -213,9 +213,10 @@ class Screen:
 
     def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
+        self._setup_console_logging()
         self.params: ScreenIOParameters = ScreenIOParameters(args)
 
-        self.setup_logging()
+        self._setup_file_logging()
         logging.info("Validating Inputs...")
 
         self.params.setup()
@@ -225,24 +226,34 @@ class Screen:
         # Add the input contents to the log
         shutil.copyfile(self.params.query.input_fasta_path, self.params.tmp_log)
 
-    def setup_logging(self):
+    def _setup_console_logging(self):
+        """Set up logging to console."""
         log_formatter = logging.Formatter("%(levelname)-8s | %(message)s")
         root_logger = logging.getLogger()
-        root_logger.setLevel(logging.DEBUG)
 
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.INFO)
         console_handler.setFormatter(log_formatter)
 
+        root_logger.addHandler(console_handler)
+
+    def _setup_file_logging(self):
+        """Set up logging to file; requires file names determined by parameters."""
+        root_logger = logging.getLogger()
+
         screen_handler = logging.FileHandler(self.params.output_screen_file, "a")
         screen_handler.setLevel(logging.INFO)
-        screen_handler.setFormatter(log_formatter)
+        screen_handler.setFormatter(logging.Formatter("%(levelname)-8s | %(message)s"))
 
         tmp_log_handler = logging.FileHandler(self.params.tmp_log, "a")
         tmp_log_handler.setLevel(logging.DEBUG)
-        tmp_log_handler.setFormatter(log_formatter)
+        tmp_log_handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s | %(levelname)-8s | %(message)s",
+                datefmt='%Y-%m-%d %H:%M:%S'  # Full ISO-like format
+            )
+        )
 
-        root_logger.addHandler(console_handler)
         root_logger.addHandler(screen_handler)
         root_logger.addHandler(tmp_log_handler)
 

@@ -49,11 +49,10 @@ class ScreenIOParameters:
         # Check whether a .screen output file already exists.
         if os.path.exists(self.output_screen_file) and not (
             self.config["force"] or self.config["resume"]):
-            # Print statement must be used as logging not yet instantiated
-            print(
-                f"Screen output {self.output_screen_file} already exists. \n"
-                "Either use a different output location, or use --force or --resume to override. "
-                "\nAborting Screen."
+            logging.warning(
+                f"""Screen output {self.output_screen_file} already exists.
+                Either use a different output location, or use --force or --resume to override.
+                Aborting Screen."""
             )
             sys.exit(1)
 
@@ -76,11 +75,9 @@ class ScreenIOParameters:
             self.config["diamond_jobs"] is not None
             and self.config["protein_search_tool"] == "blastx"
         ):
-            logging.info(
-                "WARNING: --jobs is a diamond only parameter! "
-                "Specifying -j (--jobs) without also specifying "
-                "-p (--protein-search-tool), the protein search "
-                'tool as "diamond" will have no effect!'
+            logging.warning(
+                "--jobs is a diamond only parameter! Specifying -j (--jobs) without also"
+                " specifying -p (--protein-search-tool) as 'diamond' will have no effect!"
             )
 
         self.query.setup(self.input_prefix)
