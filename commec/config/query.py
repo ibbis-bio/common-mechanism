@@ -27,6 +27,7 @@ class Query:
         """
         self.nt_path = self.get_cleaned_fasta(output_prefix)
         self.aa_path = f"{output_prefix}.transeq.faa"
+        self.translate_query()
 
     def translate_query(self):
         """Run command transeq, to translate our input sequences."""

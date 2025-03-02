@@ -214,33 +214,33 @@ class Screen:
     def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
         self._setup_console_logging()
+        logging.debug("Parsing input parameters...")
         self.params: ScreenIOParameters = ScreenIOParameters(args)
 
         self._setup_file_logging()
-        logging.info("Validating Inputs...")
-
-        self.params.setup()
+        logging.info("Validating input query and databases...")
         self.database_tools: ScreenTools = ScreenTools(self.params)
-        self.params.query.translate_query()
+        self.params.query.setup(self.params.input_prefix)
 
-        # Add the input contents to the log
+        # Add input contents to the log
+        logging.info(f"Input query file: {self.params.query.input_fasta_path}")
+        logging.debug("Full query file contents:")
         shutil.copyfile(self.params.query.input_fasta_path, self.params.tmp_log)
 
     def _setup_console_logging(self):
         """Set up logging to console."""
         log_formatter = logging.Formatter("%(levelname)-8s | %(message)s")
-        root_logger = logging.getLogger()
+        logger = logging.getLogger("commec")
 
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.INFO)
         console_handler.setFormatter(log_formatter)
 
-        root_logger.addHandler(console_handler)
+        logger.addHandler(console_handler)
 
     def _setup_file_logging(self):
         """Set up logging to file; requires file names determined by parameters."""
-        root_logger = logging.getLogger()
-
+        logger = logging.getLogger("commec")
         screen_handler = logging.FileHandler(self.params.output_screen_file, "a")
         screen_handler.setLevel(logging.INFO)
         screen_handler.setFormatter(logging.Formatter("%(levelname)-8s | %(message)s"))
@@ -254,8 +254,8 @@ class Screen:
             )
         )
 
-        root_logger.addHandler(screen_handler)
-        root_logger.addHandler(tmp_log_handler)
+        logger.addHandler(screen_handler)
+        logger.addHandler(tmp_log_handler)
 
     def run(self, args: argparse.Namespace):
         """

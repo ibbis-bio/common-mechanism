@@ -20,6 +20,8 @@ from yaml.parser import ParserError
 from commec.config.query import Query
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 
+logger = logging.getLogger(__name__)
+
 class ScreenIOParameters:
     """
     Container for input settings constructed from arguments to `screen`.
@@ -56,11 +58,7 @@ class ScreenIOParameters:
             )
             sys.exit(1)
 
-    def setup(self) -> bool:
-        """
-        Additional setup once the class has been instantiated (i.e. that requires logs).
-        """
-        # Sanity checks on thread input.
+        # Sanity check threads settings
         if self.config["threads"] > multiprocessing.cpu_count():
             logging.info(
                 "Requested allocated threads [%i] is greater"
@@ -68,6 +66,7 @@ class ScreenIOParameters:
                 self.config["threads"],
                 multiprocessing.cpu_count(),
             )
+
         if self.config["threads"] < 1:
             raise RuntimeError("Number of allocated threads must be at least 1!")
 
@@ -79,9 +78,6 @@ class ScreenIOParameters:
                 "--jobs is a diamond only parameter! Specifying -j (--jobs) without also"
                 " specifying -p (--protein-search-tool) as 'diamond' will have no effect!"
             )
-
-        self.query.setup(self.input_prefix)
-        return True
 
     def _read_config(self, args: argparse.Namespace):
         """
