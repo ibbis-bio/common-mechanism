@@ -87,8 +87,8 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
         hits1 = pd.read_csv(sample_name + ".reg_path_coords.csv")
 
     if BlastNHandler.is_empty(input_file):
-        logger.info(
-            "\tERROR: Cannot check for regulated pathogens in empty or non-existent file: %s\n",
+        logger.error(
+            "Cannot check for regulated pathogens in empty or non-existent file: %s\n",
             input_file,
         )
         return 1

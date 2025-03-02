@@ -174,8 +174,8 @@ class SearchHandler(ABC):
 
             if result.returncode != 0:
                 command_str = " ".join(command)
-                logger.info(
-                    "\t ERROR: command %s failed with error %s",
+                logger.error(
+                    "\t command %s failed with error %s",
                     command_str,
                     result.stderr,
                 )

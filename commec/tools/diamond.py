@@ -108,20 +108,20 @@ class DiamondHandler(BlastHandler):
         n_threads_per_run = max_threads // n_concurrent_runs
 
         if n_concurrent_runs < 1:
-            logger.info(
-                "WARNING: Number of concurrent Diamond runs cannot be < 1. Resetting to 1..."
+            logger.warning(
+                "Number of concurrent Diamond runs cannot be < 1. Resetting to 1..."
             )
             n_concurrent_runs = 1
 
         if n_threads_per_run < 1:
-            logger.info(
-                "WARNING: Number of threads per Diamond run cannot be < 1. Resetting to 1..."
+            logger.waring(
+                "Number of threads per Diamond run cannot be < 1. Resetting to 1..."
             )
             n_threads_per_run = 1
 
         if number_of_databases < n_concurrent_runs:
-            logger.info(
-                "WARNING: Excessive number of requested concurrent Diamond jobs %i."
+            logger.warning(
+                "Excessive number of requested concurrent Diamond jobs %i."
                 " Resetting to number of Diamond databases %i...",
                 n_concurrent_runs,
                 number_of_databases,
@@ -165,8 +165,8 @@ class DiamondHandler(BlastHandler):
         likely to be over- or under-utlized.
         """
         if self.threads_per_run * self.concurrent_runs < self.threads:
-            logger.info(
-                "WARNING: With provided settings, the total number of threads [%i*%i] used across"
+            logger.warning(
+                "With provided settings, the total number of threads [%i*%i] used across"
                 " [%i] concurrent Diamond jobs is less than maximum threads [%i]. CPU may not be"
                 " fully utilised.",
                 self.threads_per_run,
@@ -175,16 +175,16 @@ class DiamondHandler(BlastHandler):
                 self.threads,
             )
         if self.threads_per_run * self.concurrent_runs > self.threads:
-            logger.info(
-                "WARNING: With provided settings, the [%i] concurrent Diamond jobs, each using"
+            logger.warning(
+                "With provided settings, the [%i] concurrent Diamond jobs, each using"
                 " [%i] threads, may exceed maximum threads [%i]. CPU may be bottlenecked.",
                 self.concurrent_runs,
                 self.threads_per_run,
                 self.threads,
             )
         if n_diamond_dbs % self.concurrent_runs > 0:
-            logger.info(
-                "WARNING: With provided settings, DIAMOND will run through its [%i] database files"
+            logger.warning(
+                "With provided settings, DIAMOND will run through its [%i] database files"
                 " using [%i] concurrent jobs with [%i] threads each. Since number of DIAMOND "
                 " database files [%i] is not divisible by [%i], CPU may not be fully utilised.",
                 n_diamond_dbs,

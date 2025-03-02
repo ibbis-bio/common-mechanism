@@ -41,7 +41,7 @@ def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str) -
 
     # read in HMMER output and check for valid hits
     if HmmerHandler.is_empty(hmmscan_input_file):
-        logger.info("\t...ERROR: biorisk search results empty\n")
+        logger.error("\t... biorisk search results empty\n")
         return 1
 
     if not HmmerHandler.has_hits(hmmscan_input_file):

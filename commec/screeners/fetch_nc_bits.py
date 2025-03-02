@@ -96,8 +96,8 @@ def fetch_noncoding_regions(protein_results, query_fasta):
     query_col = "query acc."
     if blast_df[query_col].nunique() > 1:
         first_query = blast_df[query_col].iloc[0]
-        logger.info(
-            "WARNING: Only fetching nucleotides from first query [%s] in multi-query results: %s",
+        logger.warning(
+            "Only fetching nucleotides from first query [%s] in multi-query results: %s",
             first_query,
             protein_results,
         )
@@ -118,8 +118,8 @@ def fetch_noncoding_regions(protein_results, query_fasta):
     records = get_records(query_fasta)
 
     if len(records) > 1:
-        logger.info(
-            "WARNING: Only fetching nucleotides from first record in multifasta: %s",
+        logger.warning(
+            "Only fetching nucleotides from first record in multifasta: %s",
             query_fasta,
         )
 
