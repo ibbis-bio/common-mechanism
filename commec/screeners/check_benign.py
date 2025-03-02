@@ -20,6 +20,7 @@ from commec.tools.blast_tools import get_top_hits, read_blast
 from commec.tools.hmmer import readhmmer
 from commec.tools.cmscan import readcmscan
 
+logger = logging.getLogger(__name__)
 
 def check_for_benign(query, coords, benign_desc):
     """

@@ -14,6 +14,8 @@ from commec.tools.diamond import DiamondHandler
 from commec.tools.cmscan import CmscanHandler
 from commec.tools.hmmer import HmmerHandler
 
+logger = logging.getLogger(__name__)
+
 class ScreenTools:
     """
     Using a set of `ScreenIoParameters`, set up the tools needed to search datbases.

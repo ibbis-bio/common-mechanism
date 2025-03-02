@@ -20,6 +20,7 @@ from commec.tools.blastn import BlastNHandler
 
 pd.set_option("display.max_colwidth", 10000)
 
+logger = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser()

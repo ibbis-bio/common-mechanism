@@ -16,6 +16,7 @@ from multiprocessing import Pool
 from commec.tools.blast_tools import BlastHandler
 from commec.tools.search_handler import SearchToolVersion
 
+logger = logging.getLogger(__name__)
 
 class DiamondHandler(BlastHandler):
     """

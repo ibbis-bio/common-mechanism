@@ -18,6 +18,7 @@ from commec.tools.search_handler import SearchHandler, DatabaseValidationError
 TAXID_SYNTHETIC_CONSTRUCTS = 32630
 TAXID_VECTORS = 29278
 
+logger = logging.getLogger(__name__)
 
 class BlastHandler(SearchHandler):
     """

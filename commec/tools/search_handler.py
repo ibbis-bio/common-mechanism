@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import subprocess
 import logging
 
+logger = logging.getLogger(__name__)
 
 @dataclass
 class SearchToolVersion:

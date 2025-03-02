@@ -14,6 +14,7 @@ from Bio import SeqIO
 from commec.tools.blast_tools import get_high_identity_matches
 from commec.tools.search_handler import SearchHandler
 
+logger = logging.getLogger(__name__)
 
 def get_ranges_with_no_hits(blast_df):
     """

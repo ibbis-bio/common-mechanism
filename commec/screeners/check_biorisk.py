@@ -13,6 +13,7 @@ import argparse
 import pandas as pd
 from commec.tools.hmmer import readhmmer, trimhmmer, HmmerHandler
 
+logger = logging.getLogger(__name__)
 
 def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str) -> int:
     """
