@@ -68,6 +68,8 @@ from commec.screeners.fetch_nc_bits import fetch_noncoding_regions
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
+logger = logging.getLogger(__name__)
+
 class ScreenArgumentParser(argparse.ArgumentParser):
     """
     Argument parser that returns a `user_specified_args` namespace item, 
@@ -214,33 +216,30 @@ class Screen:
     def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
         self._setup_console_logging()
-        logging.debug("Parsing input parameters...")
+        logger.debug("Parsing input parameters...")
         self.params: ScreenIOParameters = ScreenIOParameters(args)
 
         self._setup_file_logging()
-        logging.info("Validating input query and databases...")
+        logger.info("Validating input query and databases...")
         self.database_tools: ScreenTools = ScreenTools(self.params)
         self.params.query.setup(self.params.input_prefix)
 
         # Add input contents to the log
-        logging.info(f"Input query file: {self.params.query.input_fasta_path}")
-        logging.debug("Full query file contents:")
+        logger.info(f"Input query file: {self.params.query.input_fasta_path}")
+        logger.debug("Full query file contents:")
         shutil.copyfile(self.params.query.input_fasta_path, self.params.tmp_log)
 
     def _setup_console_logging(self):
         """Set up logging to console."""
-        log_formatter = logging.Formatter("%(levelname)-8s | %(message)s")
-        logger = logging.getLogger("commec")
-
+        commec_logger = logging.getLogger("commec")
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.INFO)
-        console_handler.setFormatter(log_formatter)
-
-        logger.addHandler(console_handler)
+        console_handler.setFormatter(logging.Formatter("%(levelname)-8s | %(message)s"))
+        commec_logger.addHandler(console_handler)
 
     def _setup_file_logging(self):
         """Set up logging to file; requires file names determined by parameters."""
-        logger = logging.getLogger("commec")
+        commec_logger = logging.getLogger("commec")
         screen_handler = logging.FileHandler(self.params.output_screen_file, "a")
         screen_handler.setLevel(logging.INFO)
         screen_handler.setFormatter(logging.Formatter("%(levelname)-8s | %(message)s"))
@@ -254,8 +253,8 @@ class Screen:
             )
         )
 
-        logger.addHandler(screen_handler)
-        logger.addHandler(tmp_log_handler)
+        commec_logger.addHandler(screen_handler)
+        commec_logger.addHandler(tmp_log_handler)
 
     def run(self, args: argparse.Namespace):
         """
@@ -267,49 +266,49 @@ class Screen:
         self.params.output_yaml(self.params.input_prefix + "_config.yaml")
 
         # Biorisk screen
-        logging.info(">> STEP 1: Checking for biorisk genes...")
+        logger.info(">> STEP 1: Checking for biorisk genes...")
         self.screen_biorisks()
-        logging.info(
+        logger.info(
             " STEP 1 completed at %s",
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
 
         # Taxonomy screen (Protein)
         if self.params.should_do_protein_screening:
-            logging.info(" >> STEP 2: Checking regulated pathogen proteins...")
+            logger.info(" >> STEP 2: Checking regulated pathogen proteins...")
             self.screen_proteins()
-            logging.info(
+            logger.info(
                 " STEP 2 completed at %s",
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             )
         else:
-            logging.info(" SKIPPING STEP 2: Protein search")
+            logger.info(" SKIPPING STEP 2: Protein search")
 
         # Taxonomy screen (Nucleotide)
         if self.params.should_do_nucleotide_screening:
-            logging.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
+            logger.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
             self.screen_nucleotides()
-            logging.info(
+            logger.info(
                 " STEP 3 completed at %s",
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             )
         else:
-            logging.info(" SKIPPING STEP 3: Nucleotide search")
+            logger.info(" SKIPPING STEP 3: Nucleotide search")
 
         # Benign Screen
         if self.params.should_do_benign_screening:
-            logging.info(
+            logger.info(
                 ">> STEP 4: Checking any pathogen regions for benign components..."
             )
             self.screen_benign()
-            logging.info(
+            logger.info(
                 ">> STEP 4 completed at %s",
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             )
         else:
-            logging.info(" SKIPPING STEP 4: Benign search")
+            logger.info(" SKIPPING STEP 4: Benign search")
 
-        logging.info(
+        logger.info(
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
         self.params.clean()
@@ -318,9 +317,9 @@ class Screen:
         """
         Call hmmscan` and `check_biorisk.py` to add biorisk results to `screen_file`.
         """
-        logging.debug("\t...running hmmscan")
+        logger.debug("\t...running hmmscan")
         self.database_tools.biorisk_hmm.search()
-        logging.debug("\t...checking hmmscan results")
+        logger.debug("\t...checking hmmscan results")
         exit_status = check_biorisk(
             self.database_tools.biorisk_hmm.out_file,
             self.database_tools.biorisk_hmm.db_directory,
@@ -335,7 +334,7 @@ class Screen:
         Call `run_blastx.sh` or `run_diamond.sh` followed by `check_reg_path.py` to add regulated
         pathogen protein screening results to `screen_file`.
         """
-        logging.debug("\t...running %s", self.params.config["protein_search_tool"])
+        logger.debug("\t...running %s", self.params.config["protein_search_tool"])
         self.database_tools.regulated_protein.search()
         if not self.database_tools.regulated_protein.check_output():
             raise RuntimeError(
@@ -343,7 +342,7 @@ class Screen:
                 + self.database_tools.regulated_protein.out_file
             )
 
-        logging.debug(
+        logger.debug(
             "\t...checking %s results", self.params.config["protein_search_tool"]
         )
         reg_path_coords = f"{self.params.output_prefix}.reg_path_coords.csv"
@@ -371,7 +370,7 @@ class Screen:
         noncoding_fasta = f"{self.params.output_prefix}.noncoding.fasta"
 
         if not os.path.isfile(noncoding_fasta):
-            logging.debug(
+            logger.debug(
                 "\t...skipping nucleotide search since no noncoding regions fetched"
             )
             return
@@ -386,7 +385,7 @@ class Screen:
                 + self.database_tools.regulated_nt.out_file
             )
 
-        logging.debug("\t...checking blastn results")
+        logger.debug("\t...checking blastn results")
         check_for_regulated_pathogens(
             self.database_tools.regulated_nt.out_file,
             self.params.db_dir,
@@ -400,14 +399,14 @@ class Screen:
         """
         sample_name = self.params.output_prefix
         if not os.path.exists(sample_name + ".reg_path_coords.csv"):
-            logging.info("\t...no regulated regions to clear\n")
+            logger.info("\t...no regulated regions to clear\n")
             return
 
-        logging.debug("\t...running benign hmmscan")
+        logger.debug("\t...running benign hmmscan")
         self.database_tools.benign_hmm.search()
-        logging.debug("\t...running benign blastn")
+        logger.debug("\t...running benign blastn")
         self.database_tools.benign_blastn.search()
-        logging.debug("\t...running benign cmscan")
+        logger.debug("\t...running benign cmscan")
         self.database_tools.benign_cmscan.search()
 
         coords = pd.read_csv(sample_name + ".reg_path_coords.csv")
@@ -417,10 +416,10 @@ class Screen:
         )
 
         if coords.shape[0] == 0:
-            logging.info("\t...no regulated regions to clear\n")
+            logger.info("\t...no regulated regions to clear\n")
             return
 
-        logging.debug("\t...checking benign scan results")
+        logger.debug("\t...checking benign scan results")
 
         # Note currently check_for_benign hard codes .benign.hmmscan,
         # in future parse, and grab from search handler instead.

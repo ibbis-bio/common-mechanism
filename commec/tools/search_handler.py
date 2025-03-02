@@ -87,7 +87,7 @@ class SearchHandler(ABC):
          - If force is enabled.
         """
         if not self.force and self.check_output():
-            logging.info("%s expected output data already exists, "
+            logger.info("%s expected output data already exists, "
                          "will use existing data found in:\n%s",
                          self.__class__.__name__, self.out_file)
             return
@@ -165,7 +165,7 @@ class SearchHandler(ABC):
         """
         Run a command using subprocess.run, piping stdout and stderr to `out_file`.
         """
-        logging.debug("SUBPROCESS: %s", " ".join(command))
+        logger.debug("SUBPROCESS: %s", " ".join(command))
 
         with open(out_file, "a", encoding="utf-8") as f:
             result = subprocess.run(
@@ -174,7 +174,7 @@ class SearchHandler(ABC):
 
             if result.returncode != 0:
                 command_str = " ".join(command)
-                logging.info(
+                logger.info(
                     "\t ERROR: command %s failed with error %s",
                     command_str,
                     result.stderr,

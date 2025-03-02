@@ -51,7 +51,7 @@ class ScreenIOParameters:
         # Check whether a .screen output file already exists.
         if os.path.exists(self.output_screen_file) and not (
             self.config["force"] or self.config["resume"]):
-            logging.warning(
+            logger.warning(
                 f"""Screen output {self.output_screen_file} already exists.
                 Either use a different output location, or use --force or --resume to override.
                 Aborting Screen."""
@@ -60,7 +60,7 @@ class ScreenIOParameters:
 
         # Sanity check threads settings
         if self.config["threads"] > multiprocessing.cpu_count():
-            logging.info(
+            logger.info(
                 "Requested allocated threads [%i] is greater"
                 " than the detected CPU count of the hardware[%i].",
                 self.config["threads"],
@@ -74,7 +74,7 @@ class ScreenIOParameters:
             self.config["diamond_jobs"] is not None
             and self.config["protein_search_tool"] == "blastx"
         ):
-            logging.warning(
+            logger.warning(
                 "--jobs is a diamond only parameter! Specifying -j (--jobs) without also"
                 " specifying -p (--protein-search-tool) as 'diamond' will have no effect!"
             )

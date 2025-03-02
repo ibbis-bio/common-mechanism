@@ -29,10 +29,10 @@ def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str) -
     # check input files
     hmm_folder_csv = biorisk_annotations_directory + "/biorisk_annotations.csv"
     if not os.path.exists(hmmscan_input_file):
-        logging.error(f"\t...hmmscan file does not exist: {hmmscan_input_file}")
+        logger.error(f"\t...hmmscan file does not exist: {hmmscan_input_file}")
         return 1
     if not os.path.exists(hmm_folder_csv):
-        logging.error(f"\t...Biorisk annotations file does not exist: {hmm_folder_csv}")
+        logger.error(f"\t...Biorisk annotations file does not exist: {hmm_folder_csv}")
         return 1
 
     # Specify input file and read in database file
@@ -41,11 +41,11 @@ def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str) -
 
     # read in HMMER output and check for valid hits
     if HmmerHandler.is_empty(hmmscan_input_file):
-        logging.info("\t...ERROR: biorisk search results empty\n")
+        logger.info("\t...ERROR: biorisk search results empty\n")
         return 1
 
     if not HmmerHandler.has_hits(hmmscan_input_file):
-        logging.info("\t\t --> Biorisks: no hits detected, PASS\n")
+        logger.info("\t\t --> Biorisks: no hits detected, PASS\n")
         return 0
 
     hmmer = readhmmer(hmmscan_input_file)
@@ -66,7 +66,7 @@ def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str) -
         hmmer.loc[model, "Must flag"] = lookup.iloc[name_index[0], 2]
 
     if hmmer.shape[0] == 0:
-        logging.info("\t\t --> Biorisks: no significant hits detected, PASS\n")
+        logger.info("\t\t --> Biorisks: no significant hits detected, PASS\n")
         return
 
     if sum(hmmer["Must flag"]) > 0:
@@ -78,7 +78,7 @@ def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str) -
                 hmmer["ali to"][region] = divmod(
                     hmmer["ali to"][region], hmmer["qlen"][region]
                 )[0]
-            logging.info(
+            logger.info(
                 "\t\t --> Biorisks: Regulated gene in bases "
                 + str(hmmer["ali from"][region])
                 + " to "
@@ -89,11 +89,11 @@ def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str) -
             )
 
     else:
-        logging.info("\t\t --> Biorisks: Regulated genes not found, PASS\n")
+        logger.info("\t\t --> Biorisks: Regulated genes not found, PASS\n")
 
     if sum(hmmer["Must flag"]) != hmmer.shape[0]:
         for region in hmmer.index[hmmer["Must flag"] == 0]:
-            logging.info(
+            logger.info(
                 "\t\t --> Virulence factor found in bases "
                 + str(hmmer["ali from"][region])
                 + " to "
