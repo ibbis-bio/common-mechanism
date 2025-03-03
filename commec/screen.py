@@ -225,27 +225,6 @@ class Screen:
         # Add the input contents to the log
         shutil.copyfile(self.params.query.input_fasta_path, self.params.tmp_log)
 
-    def setup_logging(self):
-        log_formatter = logging.Formatter("%(levelname)-8s | %(message)s")
-        root_logger = logging.getLogger()
-        root_logger.setLevel(logging.DEBUG)
-
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
-        console_handler.setFormatter(log_formatter)
-
-        screen_handler = logging.FileHandler(self.params.output_screen_file, "w")
-        screen_handler.setLevel(logging.INFO)
-        screen_handler.setFormatter(log_formatter)
-
-        tmp_log_handler = logging.FileHandler(self.params.tmp_log, "a")
-        tmp_log_handler.setLevel(logging.DEBUG)
-        tmp_log_handler.setFormatter(log_formatter)
-
-        root_logger.addHandler(console_handler)
-        root_logger.addHandler(screen_handler)
-        root_logger.addHandler(tmp_log_handler)
-
     def run(self, args: argparse.Namespace):
         """
         Wrapper so that args be parsed in main() or commec.py interface.
