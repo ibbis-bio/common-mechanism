@@ -80,8 +80,12 @@ def test_database_no_file(input_db):
     except DatabaseValidationError:
         assert True
 
+n_jobs = [
+    None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+]
 
-def test_diamond_job_and_threads_calculations():
+@pytest.mark.parametrize("input_jobs", n_jobs)
+def test_diamond_job_and_threads_calculations(input_jobs):
     """
     Tests a range of threads, and diamond database sizes,
     for automatically calculating the optimum number of runs,
@@ -92,9 +96,22 @@ def test_diamond_job_and_threads_calculations():
         "commec/tests/test_data/single_record.fasta",
         "output.test",
     )
+    handler.jobs = input_jobs
+
     for max_threads in range(1, 25):
         for n_database_files in range(3, 9):
             concurrent_runs, threads_per_run = handler.determine_runs_and_threads(
                 max_threads, n_database_files
             )
-            assert concurrent_runs * threads_per_run == max_threads
+            # Debug printing.
+            print("With", input_jobs, "input jobs, ", 
+                  n_database_files, "dbs, and", 
+                  max_threads, "max threads: Do", 
+                  threads_per_run, "threads per", concurrent_runs,"runs.")
+
+            # If input jobs is provided, we should never exceed max threads.
+            assert concurrent_runs * threads_per_run <= max_threads
+
+            # If no number of input jobs is provided, we should ALWAYS use all available threads.
+            if input_jobs is None:
+                assert concurrent_runs * threads_per_run == max_threads

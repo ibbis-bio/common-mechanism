@@ -104,6 +104,22 @@ class DiamondHandler(BlastHandler):
                 max_threads
                 )
 
+        if number_of_databases < n_concurrent_runs:
+            logging.info(
+                "WARNING: Excessive number of requested concurrent Diamond jobs %i."
+                " Resetting to number of Diamond databases %i...",
+                n_concurrent_runs,
+                number_of_databases,
+            )
+            n_concurrent_runs = number_of_databases
+
+        if n_concurrent_runs > max_threads:
+            logging.info(
+                "WARNING: Number of concurrent Diamond runs cannot be greater than the "
+                " maximimum allowed threads. Concurrent runs will be capped at maximum threads."
+            )
+            n_concurrent_runs = max_threads
+
         n_threads_per_run = max_threads // n_concurrent_runs
 
         if n_concurrent_runs < 1:
@@ -117,15 +133,6 @@ class DiamondHandler(BlastHandler):
                 "WARNING: Number of threads per Diamond run cannot be < 1. Resetting to 1..."
             )
             n_threads_per_run = 1
-
-        if number_of_databases < n_concurrent_runs:
-            logging.info(
-                "WARNING: Excessive number of requested concurrent Diamond jobs %i."
-                " Resetting to number of Diamond databases %i...",
-                n_concurrent_runs,
-                number_of_databases,
-            )
-            n_concurrent_runs = number_of_databases
 
         return n_concurrent_runs, n_threads_per_run
 
