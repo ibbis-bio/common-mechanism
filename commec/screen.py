@@ -141,7 +141,7 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
     screen_logic_group.add_argument(
         "-p",
-        "-protein-search-tool",
+        "--protein-search-tool",
         dest="protein_search_tool",
         choices=["blastx", "diamond"],
         help="Tool for protein homology search to identify regulated pathogens",
