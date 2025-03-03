@@ -175,7 +175,7 @@ class SearchHandler(ABC):
             if result.returncode != 0:
                 command_str = " ".join(command)
                 logger.error(
-                    "\t command %s failed with error %s",
+                    "\t command '%s' failed with error '%s'",
                     command_str,
                     result.stderr,
                 )

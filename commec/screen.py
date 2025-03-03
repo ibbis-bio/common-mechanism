@@ -53,7 +53,6 @@ import argparse
 import datetime
 import logging
 import os
-import shutil
 import sys
 import pandas as pd
 
@@ -225,13 +224,11 @@ class Screen:
         setup_file_logging(self.params.tmp_log, log_level=logging.DEBUG)
         
         logger.info("Validating input query and databases...")
-        self.database_tools: ScreenTools = ScreenTools(self.params)
         self.params.query.setup(self.params.input_prefix)
+        self.database_tools: ScreenTools = ScreenTools(self.params)
 
-        # Add input contents to the log
         logger.info(f"Input query file: {self.params.query.input_fasta_path}")
-        logger.debug("Full query file contents:")
-        shutil.copyfile(self.params.query.input_fasta_path, self.params.tmp_log)
+
 
     def run(self, args: argparse.Namespace):
         """
@@ -303,7 +300,7 @@ class Screen:
         )
         if exit_status != 0:
             raise RuntimeError(
-                "ERROR: Biorisk search did not complete successfully."
+                f"Output of biorisk search could not be processed: {self.database_tools.biorisk_hmm.out_file}"
             )
 
     def screen_proteins(self):
