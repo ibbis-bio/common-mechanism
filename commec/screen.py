@@ -58,6 +58,7 @@ import sys
 import pandas as pd
 
 from commec.utils.file_utils import file_arg, directory_arg
+from commec.utils.logging import setup_console_logging, setup_file_logging
 from commec.config.io_parameters import ScreenIOParameters
 from commec.config.screen_tools import ScreenTools
 
@@ -215,11 +216,14 @@ class Screen:
 
     def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
-        self._setup_console_logging()
+        setup_console_logging()
         logger.debug("Parsing input parameters...")
         self.params: ScreenIOParameters = ScreenIOParameters(args)
 
-        self._setup_file_logging()
+        # Need to initialize parameters before you can start logging to files
+        setup_file_logging(self.params.output_screen_file)
+        setup_file_logging(self.params.tmp_log, log_level=logging.DEBUG)
+        
         logger.info("Validating input query and databases...")
         self.database_tools: ScreenTools = ScreenTools(self.params)
         self.params.query.setup(self.params.input_prefix)
@@ -228,33 +232,6 @@ class Screen:
         logger.info(f"Input query file: {self.params.query.input_fasta_path}")
         logger.debug("Full query file contents:")
         shutil.copyfile(self.params.query.input_fasta_path, self.params.tmp_log)
-
-    def _setup_console_logging(self):
-        """Set up logging to console."""
-        commec_logger = logging.getLogger("commec")
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
-        console_handler.setFormatter(logging.Formatter("%(levelname)-8s | %(message)s"))
-        commec_logger.addHandler(console_handler)
-
-    def _setup_file_logging(self):
-        """Set up logging to file; requires file names determined by parameters."""
-        commec_logger = logging.getLogger("commec")
-        screen_handler = logging.FileHandler(self.params.output_screen_file, "a")
-        screen_handler.setLevel(logging.INFO)
-        screen_handler.setFormatter(logging.Formatter("%(levelname)-8s | %(message)s"))
-
-        tmp_log_handler = logging.FileHandler(self.params.tmp_log, "a")
-        tmp_log_handler.setLevel(logging.DEBUG)
-        tmp_log_handler.setFormatter(
-            logging.Formatter(
-                "%(asctime)s | %(levelname)-8s | %(message)s",
-                datefmt='%Y-%m-%d %H:%M:%S'  # Full ISO-like format
-            )
-        )
-
-        commec_logger.addHandler(screen_handler)
-        commec_logger.addHandler(tmp_log_handler)
 
     def run(self, args: argparse.Namespace):
         """
