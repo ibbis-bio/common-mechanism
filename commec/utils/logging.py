@@ -19,7 +19,7 @@ def setup_console_logging(log_level=logging.INFO):
     add_logging_to_excepthook()
 
 
-def setup_file_logging(self, filename, log_level=logging.INFO, log_mode="w"):
+def setup_file_logging(filename, log_level=logging.INFO, log_mode="w"):
     """Set up logging to a file. Format determined based on level."""
     commec_logger = logging.getLogger("commec")
     file_handler = logging.FileHandler(filename, log_mode)
