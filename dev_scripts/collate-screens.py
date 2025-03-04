@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
+"""
+Collate screen files located in any subdirectories of an input directory, then match description
+fields between FASTAs in adjacent _input directories and FASTAs in another directory, renaming
+collated screen files with the names of matched FASTA files. Created as a workaround for breaking
+changes introduced in the commec output format in v0.3.
 
+Required inputs:
+    -i, --input-dir     input directory to recursively search for .screen files
+    -o, --output-dir    output directory where screen files should be collated
+    -f, --fasta-dir     directory to search recursively for FASTAs input to commec screen
+
+Example:
+$ python collate-screens.py -i . -o ./test-collate-pls -f ../functional-json-test/
+"""
 import argparse
 import csv
 import os
