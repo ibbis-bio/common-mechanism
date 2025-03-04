@@ -31,7 +31,7 @@ class ScreenIOParameters:
         input_fasta = args.fasta_file
         
         # Set up output files
-        self.output_prefix = self._get_output_prefixes(input_fasta, args.output_prefix)
+        self.output_prefix = self.get_output_prefix(input_fasta, args.output_prefix)
         self.output_screen_file = f"{self.output_prefix}.screen"
         self.tmp_log = f"{self.output_prefix}.log.tmp"
 
