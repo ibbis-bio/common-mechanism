@@ -75,17 +75,22 @@ def test_functional_screen(tmp_path, request):
     )
     blastnr_to_parse = textwrap.dedent(
         """\
-        #query acc.	title	subject acc.taxid	evalue	bit score	% identity	q.len	q.start	q.end	s.len	s. start	s. end
-        FCTEST1	SUBJECT	NR_HIT_FLAG	    12345	    0.0	    BITSCORE	99.999	    500	    320	    380	    100	    1	        100
-        FCTEST1	SUBJECT	NR_HIT_MIXED	12345	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
-        FCTEST1	SUBJECT	NR_HIT_MIXED	12346	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
-        FCTEST1	SUBJECT	NR_HIT_MIXED	12347	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
+        #query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	s.len	s. start	s. end
+        FCTEST1	ShouldntClear	NR_HIT_FLAG1	12345	    0.0	    BITSCORE	99.999	    500	    320	    380	    100	    1	        100
+        FCTEST1	ShouldClearBySynbio	NR_HIT_FLAG2	12345	    0.0	    BITSCORE	99.999	    500	    410	    490	    100	    1	        100
+        FCTEST1	ShouldntClear	NR_HIT_FLAG3	12345	    0.0	    BITSCORE	99.999	    500	    410	    500	    100	    1	        100
+        FCTEST1	ShouldClear	NR_HIT_FLAG4	12345	    0.0	    BITSCORE	99.999	    500	    310	    370	    100	    1	        100
+        FCTEST1	ShouldMixedReg	NR_HIT_MIXED	12345	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
+        FCTEST1	ShouldMixednonReg	NR_HIT_MIXED	12346	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
+        FCTEST1	ShouldMixedNonReg	NR_HIT_MIXED	12347	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
         """
     )
     blastnt_to_parse = textwrap.dedent(
         """\
-        #query acc.	title	subject acc.taxid	evalue	bit score	% identity	q.len	q.start	q.end	s.len	s. start	s. end
-        FCTEST1	SUBJECT	NT_HIT_FLAG	    12345	    0.0	    BITSCORE	99.999	    500	    220	    280	    100	    1	        100
+        #query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start 	q.end	s.len	s. start	s. end
+        FCTEST1	SUBJECT	NT_HIT_FLAG1	    12345	    0.0	    BITSCORE	99.999	    500	    220	    280	     60	    1	        100
+        FCTEST1	SUBJECT	NT_HIT_FLAG2	    12345	    0.0	    BITSCORE	99.999	    500	    110	    190	     80	    1	        100
+        FCTEST1	SUBJECT	NT_HIT_FLAG3	    12345	    0.0	    BITSCORE	99.999	    500	    110	    200	     90	    1	        100
         FCTEST1	SUBJECT	NT_HIT_MIXED	12345	    0.0	    BITSCORE	99.999	    500	    350	    410	    100	    1	        100
         FCTEST1	SUBJECT	NT_HIT_MIXED	12346	    0.0	    BITSCORE	99.999	    500	    350	    410	    100	    1	        100
         """
@@ -96,7 +101,7 @@ def test_functional_screen(tmp_path, request):
         """\
         #                                                         --- full sequence --- -------------- this domain -------------           hmm coord   ali coord   env coord
         # tname    accession        tlen qname        accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias    from    to  from    to  from    to  acc description of target
-        Benign1    Benign1          1000  FCTEST1_1     21345     200       0.0   1000  10.1   1   1         0         0    1116.0  10.1    10   200    15   200    10   200  1.00  BenignHMMClear
+        Benign1    Benign1          1000  FCTEST1_1     21345     60       0.0   1000  10.1   1   1         0         0    1116.0  10.1    67   123    67   123    67   123  1.00  BenignHMMClear
         """
     )
 
@@ -105,15 +110,15 @@ def test_functional_screen(tmp_path, request):
         """\
         #target name         accession query name                accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value  inc description of target
         #------------------- --------- ------------------------- --------- --- -------- -------- -------- -------- ------ ----- ---- ---- ----- ------ ---------  --- ---------------------
-        BENIGNRNA            12346     FCTEST1	                 Q1         50	    100       50       25       70 STRAND TRUNC PASS   GC    10   1000       0.0  100    BenignCMTestOutput
+        BENIGNRNA            12346     FCTEST1	                 Q1         50	    100      200       50      150 STRAND TRUNC PASS   GC    10   1000       0.0  100    BenignCMTestOutput
         """
     )
 
-    #SYNBIO: NOTE: Requires 80% coverage with QUERY,
+    #SYNBIO:
     benign_blastnt_to_parse = textwrap.dedent(
         """\
-        #query acc.	title	subject acc.taxid	evalue	bit score	% identity	q.len	q.start	q.end	s.len	s. start	s. end
-        FCTEST1	BENIGNSYNBIO	BENIGN_SB	210	        0.0	    BITSCORE	99.999	    100	    600	    500	    500	    1	    100
+        #query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	    s.len	s. start	s. end
+        FCTEST1	BENIGNSYNBIO	BENIGN_SB	210	        0.0	    BITSCORE	99.999	    600	    410	    480	    90	    10	    100
         """
     )
 
@@ -195,7 +200,8 @@ def test_functional_screen(tmp_path, request):
 
     # Convert both original and retrieved data to dictionaries and compare
     assert asdict(output_result) == asdict(test_result), (
-        f"JSON Write/Read interpreter failed.\n"
+        f"Functional test does not match predicted output, fix code,"
+        f" or if new output is expected, run with --gen-examples\n"
         f"Test JSON Reference data: \n{asdict(output_result)}\n"
         f"Test JSON output data: \n{asdict(test_result)}"
     )
