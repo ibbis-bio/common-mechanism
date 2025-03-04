@@ -246,7 +246,7 @@ class Screen:
         # Perform setup steps.
         self.setup(args)
 
-        self.params.output_yaml(self.params.input_prefix + "_config.yaml")
+        self.params.output_yaml(self.params.output_prefix + "_config.yaml")
 
         # Biorisk screen
         logging.info(">> STEP 1: Checking for biorisk genes...")

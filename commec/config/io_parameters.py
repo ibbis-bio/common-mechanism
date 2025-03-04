@@ -19,6 +19,7 @@ from yaml.parser import ParserError
 
 from commec.config.query import Query
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
+from commec.utils.file_utils import expand_and_normalize
 
 class ScreenIOParameters:
     """
@@ -28,16 +29,11 @@ class ScreenIOParameters:
         # Inputs that do no have a package-level default, since they are specific to each run
         self.db_dir = args.database_dir
         input_fasta = args.fasta_file
-        output_prefix = args.output_prefix
-
-        # Output folder hierarchy
-        base, outputs, inputs = self._get_output_prefixes(input_fasta, output_prefix)
-        self.directory_prefix = base
-        self.output_prefix = outputs
-        self.input_prefix = inputs
-
-        self.output_screen_file = f"{self.directory_prefix}.screen"
-        self.tmp_log = f"{self.directory_prefix}.log.tmp"
+        
+        # Set up output files
+        self.output_prefix = self._get_output_prefixes(input_fasta, args.output_prefix)
+        self.output_screen_file = f"{self.output_prefix}.screen"
+        self.tmp_log = f"{self.output_prefix}.log.tmp"
 
         # Query
         self.query: Query = Query(args.fasta_file)
@@ -83,7 +79,7 @@ class ScreenIOParameters:
                 'tool as "diamond" will have no effect!'
             )
 
-        self.query.setup(self.input_prefix)
+        self.query.setup(self.output_prefix)
         return True
 
     def _read_config(self, args: argparse.Namespace):
@@ -121,7 +117,7 @@ class ScreenIOParameters:
         """
         Loads a yaml file as a dictionary into the Config dictionary.
         The load is done lazily - and basepaths are not parsed and replaced throughout.
-        """        
+        """
         raw_config_from_yaml = {}
         try:
             with open(config_filepath, "r", encoding = "utf-8") as file:
@@ -190,66 +186,37 @@ class ScreenIOParameters:
             except TypeError:
                 pass
 
-    def _get_output_prefixes(self, input_file, prefix_arg=""):
+    @staticmethod
+    def get_output_prefix(input_file: str | os.PathLike, prefix_arg="") -> str:
         """
-        Returns a set of prefixes that can be used for all output files:
-            prefix/name
-            prefix/output_name/name
-            prefix/input_name/name
+        Returns a prefix that can be used for all output files.
 
         - If no prefix was given, use the input filename.
         - If a directory was given, use the input filename as file prefix within that directory.
         """
-        
+        input_dir = os.path.dirname(input_file)
         # Get file stem (e.g. /home/user/commec/testing_cm_02.fasta -> testing_cm_02)
-        name = os.path.splitext(os.path.basename(input_file))[0]
-        name = self._shorten_name(name)
+        input_name = os.path.splitext(os.path.basename(input_file))[0]
+        # Take only the first 64 characters of the input name
+        if len(input_name) > 64:
+            input_name = input_name[:64]
 
-        prefix = prefix_arg or name
+        # If no prefix given, use input filepath without extension
+        if not prefix_arg:
+            return os.path.join(input_dir, input_name)
 
-        base = prefix
-        outputs = os.path.join(base, f"output_{name}/")
-        inputs = os.path.join(base, f"input_{name}/")
+        if (
+            os.path.isdir(prefix_arg)
+            or prefix_arg.endswith(os.path.sep)
+            or prefix_arg in {".", "..", "~"}
+        ):
+            os.makedirs(expand_and_normalize(prefix_arg), exist_ok=True)
 
-        for path in [base, outputs, inputs]:
-            os.makedirs(path, exist_ok=True)
+            # Use the input filename as a prefix within that directory (stripping out the path)
+            return os.path.join(prefix_arg, input_name)
 
-        base_prefix = os.path.join(base,name)
-        outputs_prefix =  os.path.join(outputs,name)
-        inputs_prefix =  os.path.join(inputs,name)
-
-        return base_prefix, outputs_prefix, inputs_prefix
-
-    def _shorten_name(self, name : str) -> str:
-        """
-        Split the input name by underscores, and cut down each component of the name until
-        either (1) each component is reduced to a minimum size or (2) the name is shorter
-        than the target length.
-        """
-        # Same as longest FASTA id length recommended by NCBI
-        TARGET_LEN = 25
-        # Somewhat arbitrary pick
-        MIN_TOKEN_SIZE = 3
-
-        if len(name) > TARGET_LEN:
-            tokens = re.split(r'[_\-\s]', name)
-
-            def sum_size(in_tokens):
-                return sum(len(t) for t in tokens)  
-
-            while sum_size(tokens) > TARGET_LEN:
-                initial_size = sum_size(tokens) 
-
-                # Cut one character off the end of each token longer than the minimum size
-                tokens = [t[:-1] if len(t) > MIN_TOKEN_SIZE else t for t in tokens]
-                
-                # Can't get smaller! 
-                if initial_size == sum_size(tokens):
-                    break
-
-            name = "_".join(filter(None, tokens))
-
-        return name
+        # Existing, non-directory prefixes can be used as-is
+        return prefix_arg
 
     def output_yaml(self, output_filepath : str | os.PathLike):
         """
