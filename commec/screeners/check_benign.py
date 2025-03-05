@@ -47,13 +47,13 @@ def _filter_benign_proteins(query : Query,
     a specified hit, for a specified region.
 
     Benign proteins should have a coverage of at least 80% of the region they are 
-    aiming to cover, as well as 
+    aiming to cover, as well as be at least 50 nucleotide in length.
     """
     # Ignore this region, if there are no overlapping hits.
-    benign_protein_for_query_trimmed = _trim_to_region(benign_protein_for_query, region)
+    benign_protein_for_query_trimmed = _trim_to_region(benign_protein_for_query, region).copy()
     if benign_protein_for_query_trimmed.empty:
         return []
-    
+
     benign_protein_for_query_trimmed = _calculate_coverage(benign_protein_for_query_trimmed, region)
 
     # Ensure that this benign hit covers at least 50 nucleotides of the query
@@ -95,7 +95,7 @@ def _filter_benign_proteins(query : Query,
             match_ranges,
             annotations={"Coverage: ":float(benign_protein_for_query_trimmed['coverage_ratio'][0])}
         )
-    
+
     # Rarely, something can be cleared that is already cleared, no need to report on that.
     if hit.recommendation.status not in {ScreenStatus.CLEARED_FLAG, ScreenStatus.CLEARED_WARN}:
         logging.info("Clearing %s (%s) as house-keeping protein, for %s", 
@@ -319,9 +319,10 @@ def _calculate_coverage(data : pd.DataFrame, region : MatchRange):
     Mutates data to add coverage compared to a specific region, 
     as a ratio and absolute number of nucleotides.
     """
-    data["coverage_nt"] = (
-        data["q. end"].clip(upper=region.query_end) -
+    data.loc[:,"coverage_nt"] = (
+        data["q. end"].clip(upper=region.query_end) - 
         data["q. start"].clip(lower=region.query_start)
-    )
-    data["coverage_ratio"] = data["coverage_nt"] / region.length()
+        )
+    
+    data.loc[:,"coverage_ratio"] = data["coverage_nt"] / region.length()
     return data
