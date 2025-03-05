@@ -31,7 +31,7 @@ from commec.config.result import (
 
 # Constants determining Commec's sensitivity for benign screen.
 BENIGN_PROTEIN_EVALUE_CUTOFF : float = 1e-20
-MINIMUM_PEPTIDE_COVERAGE : int = 50 # Number is counted in bases, not AA's.
+MINIMUM_PEPTIDE_COVERAGE : int = 50 # Number is counted in NTs, not AA's.
 MINIMUM_QUERY_COVERAGE_FRACTION : float = 0.80
 MINIMUM_RNA_BASEPAIR_COVERAGE : int = 50
 MINIMUM_SYNBIO_COVERAGE_FRACTION : float = 0.80
@@ -45,65 +45,66 @@ def _filter_benign_proteins(query : Query,
     Performs the logic of a benign housekeeping protein dataframe for a
     specific query, and determines whether it contains the criteria to clear 
     a specified hit, for a specified region.
-    """
 
+    Benign proteins should have a coverage of at least 80% of the region they are 
+    aiming to cover, as well as 
+    """
+    # Ignore this region, if there are no overlapping hits.
     benign_protein_for_query_trimmed = _trim_to_region(benign_protein_for_query, region)
     if benign_protein_for_query_trimmed.empty:
         return []
     
-    # Filter benign proteins for relevance...
-    benign_protein_for_query_trimmed = benign_protein_for_query_trimmed.assign(
-        coverage=abs(
-            benign_protein_for_query_trimmed["q. end"] - benign_protein_for_query_trimmed["q. start"]
-            ))
+    benign_protein_for_query_trimmed = _calculate_coverage(benign_protein_for_query_trimmed, region)
 
+    # Ensure that this benign hit covers at least 50 nucleotides of the query
     benign_protein_for_query_trimmed = benign_protein_for_query_trimmed[
-        benign_protein_for_query_trimmed["nt_qlen"] - benign_protein_for_query_trimmed["coverage"]
-        < MINIMUM_PEPTIDE_COVERAGE
-        ]
-    
+        benign_protein_for_query_trimmed["coverage_nt"] > MINIMUM_PEPTIDE_COVERAGE]
+
     if benign_protein_for_query_trimmed.empty:
         logging.info("Not enough housekeeping protein coverage to clear %s found in %s",
         hit.name, query.name)
         return []
 
     benign_protein_for_query_trimmed = benign_protein_for_query_trimmed[
-        benign_protein_for_query_trimmed["coverage"] > MINIMUM_QUERY_COVERAGE_FRACTION]
+        benign_protein_for_query_trimmed["coverage_ratio"] > MINIMUM_QUERY_COVERAGE_FRACTION]
+
     benign_protein_for_query_trimmed = benign_protein_for_query_trimmed.reset_index(drop=True)
 
+    if benign_protein_for_query_trimmed.empty:
+        logging.info("Housekeeping protein to clear %s, insufficiently covers query %s",
+        hit.name, query.name)
+        return []
+
     # Report top hit for Protein / RNA / Synbio
-    if not benign_protein_for_query_trimmed.empty:
-        benign_hit = benign_protein_for_query_trimmed["subject title"][0]
-        benign_hit_description = str(*benign_descriptions["Description"][benign_descriptions["ID"] == benign_hit])
-        match_ranges = [
-            MatchRange(
-            float(benign_protein_for_query_trimmed['evalue'][0]),
-            int(benign_protein_for_query_trimmed['s. start'][0]), int(benign_protein_for_query_trimmed['s. end'][0]),
-            int(benign_protein_for_query_trimmed['q. start'][0]), int(benign_protein_for_query_trimmed['q. end'][0])
-            )
-        ]
-        benign_hit_outcome = HitResult(
-                HitScreenStatus(
-                    ScreenStatus.PASS,
-                    ScreenStep.BENIGN_PROTEIN
-                ),
-                benign_hit,
-                benign_hit_description,
-                match_ranges,
-                annotations={"Coverage: ":float(benign_protein_for_query_trimmed['coverage'][0])}
-            )
-        
-        # Rarely, something can be cleared that is already cleared, no need to report on that.
-        if hit.recommendation.status not in {ScreenStatus.CLEARED_FLAG, ScreenStatus.CLEARED_WARN}:
-            logging.info("Clearing %s (%s) as house-keeping protein, for %s", 
-                            hit.name, hit.recommendation.status, query.name)
-            hit.recommendation.status = hit.recommendation.status.clear()
+    benign_hit = benign_protein_for_query_trimmed["subject title"][0]
+    benign_hit_description = str(*benign_descriptions["Description"][benign_descriptions["ID"] == benign_hit])
+    match_ranges = [
+        MatchRange(
+        float(benign_protein_for_query_trimmed['evalue'][0]),
+        int(benign_protein_for_query_trimmed['s. start'][0]), int(benign_protein_for_query_trimmed['s. end'][0]),
+        int(benign_protein_for_query_trimmed['q. start'][0]), int(benign_protein_for_query_trimmed['q. end'][0])
+        )
+    ]
+    benign_hit_outcome = HitResult(
+            HitScreenStatus(
+                ScreenStatus.PASS,
+                ScreenStep.BENIGN_PROTEIN
+            ),
+            benign_hit,
+            benign_hit_description,
+            match_ranges,
+            annotations={"Coverage: ":float(benign_protein_for_query_trimmed['coverage_ratio'][0])}
+        )
+    
+    # Rarely, something can be cleared that is already cleared, no need to report on that.
+    if hit.recommendation.status not in {ScreenStatus.CLEARED_FLAG, ScreenStatus.CLEARED_WARN}:
+        logging.info("Clearing %s (%s) as house-keeping protein, for %s", 
+                        hit.name, hit.recommendation.status, query.name)
+        hit.recommendation.status = hit.recommendation.status.clear()
 
-        return [benign_hit_outcome]
+    return [benign_hit_outcome]
 
-    logging.info("Housekeeping protein to clear %s, insufficiently covers query %s",
-    hit.name, query.name)
-    return []
+
 
 def _filter_benign_rna(query : Query,
                             hit : HitResult,
@@ -312,3 +313,15 @@ def _trim_to_region(data : pd.DataFrame, region : MatchRange):
         )
     ]
     return datatrim
+
+def _calculate_coverage(data : pd.DataFrame, region : MatchRange):
+    """ 
+    Mutates data to add coverage compared to a specific region, 
+    as a ratio and absolute number of nucleotides.
+    """
+    data["coverage_nt"] = (
+        data["q. end"].clip(upper=region.query_end) -
+        data["q. start"].clip(lower=region.query_start)
+    )
+    data["coverage_ratio"] = data["coverage_nt"] / region.length()
+    return data
