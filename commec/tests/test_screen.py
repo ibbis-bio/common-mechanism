@@ -76,12 +76,13 @@ def test_functional_screen(tmp_path, request):
     blastnr_to_parse = textwrap.dedent(
         """\
         #query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	s.len	s. start	s. end
-        FCTEST1	SUBJECT	NR_HIT_FLAG1	12345	    0.0	    BITSCORE	99.999	    500	    320	    380	    100	    1	        100
-        FCTEST1	SUBJECT	NR_HIT_FLAG2	12345	    0.0	    BITSCORE	99.999	    500	    410	    480	    100	    1	        100
-        FCTEST1	SUBJECT	NR_HIT_FLAG3	12345	    0.0	    BITSCORE	99.999	    500	    410	    500	    100	    1	        100
-        FCTEST1	SUBJECT	NR_HIT_MIXED	12345	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
-        FCTEST1	SUBJECT	NR_HIT_MIXED	12346	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
-        FCTEST1	SUBJECT	NR_HIT_MIXED	12347	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
+        FCTEST1	ShouldntClear	NR_HIT_FLAG1	12345	    0.0	    BITSCORE	99.999	    500	    320	    380	    100	    1	        100
+        FCTEST1	ShouldClearBySynbio	NR_HIT_FLAG2	12345	    0.0	    BITSCORE	99.999	    500	    410	    480	    100	    1	        100
+        FCTEST1	ShouldntClear	NR_HIT_FLAG3	12345	    0.0	    BITSCORE	99.999	    500	    410	    500	    100	    1	        100
+        FCTEST1	ShouldClear	NR_HIT_FLAG4	12345	    0.0	    BITSCORE	99.999	    500	    310	    370	    100	    1	        100
+        FCTEST1	ShouldMixedReg	NR_HIT_MIXED	12345	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
+        FCTEST1	ShouldMixednonReg	NR_HIT_MIXED	12346	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
+        FCTEST1	ShouldMixedNonReg	NR_HIT_MIXED	12347	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
         """
     )
     blastnt_to_parse = textwrap.dedent(
@@ -109,11 +110,11 @@ def test_functional_screen(tmp_path, request):
         """\
         #target name         accession query name                accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value  inc description of target
         #------------------- --------- ------------------------- --------- --- -------- -------- -------- -------- ------ ----- ---- ---- ----- ------ ---------  --- ---------------------
-        BENIGNRNA            12346     FCTEST1	                 Q1         50	    100      200       100      180 STRAND TRUNC PASS   GC    10   1000       0.0  100    BenignCMTestOutput
+        BENIGNRNA            12346     FCTEST1	                 Q1         50	    100      200       50      150 STRAND TRUNC PASS   GC    10   1000       0.0  100    BenignCMTestOutput
         """
     )
 
-    #SYNBIO: NOTE: Requires 80% coverage with QUERY,
+    #SYNBIO:
     benign_blastnt_to_parse = textwrap.dedent(
         """\
         #query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	    s.len	s. start	s. end

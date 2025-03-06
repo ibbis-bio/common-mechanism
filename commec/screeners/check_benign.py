@@ -65,6 +65,7 @@ def _filter_benign_proteins(query : Query,
         hit.name, query.name)
         return []
 
+    # Ensure that this benign hit covers at least 80% of the regulated region.
     benign_protein_for_query_trimmed = benign_protein_for_query_trimmed[
         benign_protein_for_query_trimmed["coverage_ratio"] > MINIMUM_QUERY_COVERAGE_FRACTION]
 
@@ -111,16 +112,18 @@ def _filter_benign_rna(query : Query,
                             region : MatchRange,
                             benign_rna_for_query : pd.DataFrame) -> list:
     # Filter benign RNA for relevance...
-    benign_rna_for_query_trimmed = _trim_to_region(benign_rna_for_query, region)
+    benign_rna_for_query_trimmed = _trim_to_region(benign_rna_for_query, region).copy()
     if benign_rna_for_query_trimmed.empty:
         return []
 
-    benign_rna_for_query_trimmed = benign_rna_for_query_trimmed.assign(
-                coverage=region.length() - abs(benign_rna_for_query_trimmed["q. end"] - benign_rna_for_query_trimmed["q. start"])
-            )
+    benign_rna_for_query_trimmed = _calculate_coverage(benign_rna_for_query_trimmed, region)
+
+    #benign_rna_for_query_trimmed = benign_rna_for_query_trimmed.assign(
+    #            coverage=region.length() - abs(benign_rna_for_query_trimmed["q. end"] - benign_rna_for_query_trimmed["q. start"])
+    #        )
     
     benign_rna_for_query_passed = benign_rna_for_query_trimmed[
-        benign_rna_for_query_trimmed["coverage"] < MINIMUM_RNA_BASEPAIR_COVERAGE]
+        (region.length() - benign_rna_for_query_trimmed["coverage_nt"]) < MINIMUM_RNA_BASEPAIR_COVERAGE]
     benign_rna_for_query_passed = benign_rna_for_query_passed.reset_index(drop=True)
 
     if not benign_rna_for_query_passed.empty:
@@ -323,6 +326,5 @@ def _calculate_coverage(data : pd.DataFrame, region : MatchRange):
         data["q. end"].clip(upper=region.query_end) - 
         data["q. start"].clip(lower=region.query_start)
         )
-    
     data.loc[:,"coverage_ratio"] = data["coverage_nt"] / region.length()
     return data
