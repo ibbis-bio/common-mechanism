@@ -106,16 +106,16 @@ def process_file(file_path) -> dict[str, str | set[str] | bool]:
         "biorisk": get_biorisk_outcome(steps[0]),
         "protein": get_protein_outcome(steps[1]),
         "nucleotide": get_nucleotide_outcome(steps[2]),
-        "benign": get_benign_outcome(steps[3])
+        "benign": get_benign_outcome(steps[3]),
     }
 
     # Add regulated flags - only check protein, since nucleotide may have been skipped due to
     # having no noconding regions
-    if step_has_outcome(results["protein"]):
+    if step_ran_successfully(results["protein"]):
         results.update(get_regulated_taxa(content))
 
     # Add info about benign sub-steps
-    if step_has_outcome(results["benign"]):
+    if step_ran_successfully(results["benign"]):
         results.update(get_benign_substeps(steps[3]))
 
     results["flag"] = get_overall_flag(results)
@@ -218,7 +218,8 @@ def get_benign_substeps(step_content) -> dict[str, bool]:
     }
 
 
-def step_has_outcome(results: set) -> bool:
+def step_ran_successfully(results: set) -> bool:
+    """Step did not have an ERROR, SKIP or NOT_RUN outcome."""
     return (
         Outcome.ERROR not in results
         and Outcome.SKIP not in results
@@ -243,16 +244,17 @@ def get_overall_flag(results: dict[str]) -> str:
     ):
         return Outcome.ERROR
 
-    # if a biorisk is flagged, flag the whole thing
+    # If a biorisk is flagged, flag the whole thing
     if Outcome.FLAG in results["biorisk"]:
         return Outcome.FLAG
-    # Flag regulated pathogens unless cleared in the benign screen
-    elif (
-        Outcome.FLAG in results["protein"] or Outcome.FLAG in results["nucleotide"]
-    ) and Outcome.NOT_CLEARED in results["benign"]:
-        return Outcome.FLAG
-    else:
+    # If flags were cleared, that's a pass
+    if Outcome.CLEARED in results["benign"]:
         return Outcome.PASS
+    # Flag regulated pathogens unless already cleared in the benign screen
+    if Outcome.FLAG in results["protein"] or Outcome.FLAG in results["nucleotide"]:
+        return Outcome.FLAG
+    # Other outcomes pass
+    return Outcome.PASS
 
 
 def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> dict[str]:
@@ -270,31 +272,17 @@ def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> dict[str
     # Column determined by benign step
     benign = Outcome.NOT_RUN
 
+    # Set biorisk and virtulence factor flags based on biorisk search
+    if step_ran_successfully(results["biorisk"]):
+        biorisk = Flag.FLAG if Outcome.FLAG in results["biorisk"] else Flag.PASS
+        virulence_factor = Flag.FLAG if Outcome.WARN in results["biorisk"] else Flag.PASS
+
+    # Error overrides anything else
     if Outcome.ERROR in results["biorisk"]:
         biorisk = virulence_factor = Flag.ERROR
-    elif Outcome.FLAG in results["biorisk"]:
-        biorisk = Flag.FLAG
-        virulence_factor = Flag.PASS if Outcome.WARN not in results["biorisk"] else Flag.FLAG
-    elif Outcome.WARN in results["biorisk"]:
-        biorisk = Flag.PASS
-        virulence_factor = Flag.FLAG
-    elif Outcome.PASS in results["biorisk"]:
-        biorisk = Flag.PASS
-        virulence_factor = Flag.PASS
 
-    if Outcome.ERROR in results["protein"]:
-        regulated_virus = Flag.ERROR
-        regulated_bacteria = Flag.ERROR
-        regulated_eukaryote = Flag.ERROR
-        mixed_regulated_non_reg = Flag.ERROR
-    elif Outcome.SKIP in results["protein"] or Outcome.NOT_RUN in results["protein"]:
-        pass  # leave values as defaults
-    elif Outcome.PASS in results["protein"] and Outcome.PASS in results["nucleotide"]:
-        regulated_virus = Flag.PASS
-        regulated_bacteria = Flag.PASS
-        regulated_eukaryote = Flag.PASS
-        mixed_regulated_non_reg = Flag.PASS
-    elif Outcome.NOT_RUN not in results["protein"] and Outcome.NOT_RUN not in results["nucleotide"]:
+    # Set regulated pathogen flags based on protein and nucleotide search
+    if step_ran_successfully(results["protein"]):
         regulated_virus = Flag.FLAG if results["virus_flag"] else Flag.PASS
         regulated_bacteria = Flag.FLAG if results["bacteria_flag"] else Flag.PASS
         regulated_eukaryote = Flag.FLAG if results["eukaryote_flag"] else Flag.PASS
@@ -304,12 +292,19 @@ def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> dict[str
             else Flag.PASS
         )
 
+    # Error overrides anything else
+    if Outcome.ERROR in results["protein"] or Outcome.ERROR in results["nucleotide"]:
+        regulated_virus = regulated_bacteria = regulated_eukaryote = mixed_regulated_non_reg = (
+            Flag.ERROR
+        )
+
+    # Set benign flag based on benign search
+    if Outcome.CLEARED in results["benign"]:
+        benign = Flag.PASS
+    if Outcome.NOT_CLEARED in results["benign"]:
+        benign = Flag.FLAG
     if Outcome.ERROR in results["benign"]:
         benign = Flag.ERROR
-    elif Outcome.CLEARED in results["benign"]:
-        benign = Flag.PASS
-    elif Outcome.NOT_CLEARED in results["benign"]:
-        benign = Flag.FLAG
 
     return {
         "filename": results["filepath"],
@@ -332,7 +327,7 @@ def get_recommendation(flag: str) -> str:
         Outcome.PASS: Flag.PASS,
         Outcome.ERROR: Flag.ERROR,
     }
-    return flag_map[flag]
+    return flag_map.get(flag, Flag.NOT_RUN)
 
 
 def write_output_csvs(output_dir, status, flags, recommendations):

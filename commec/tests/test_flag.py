@@ -7,8 +7,8 @@ from commec.flag import add_args, run
 
 SCREEN_DIR = os.path.join(os.path.dirname(__file__), "test_data/screen-files")
 
-def test_flag_status(tmp_path):
-    """We are lazily writing tests for a full run of flag instead of unit test."""
+def test_flag(tmp_path):
+    """We are lazily writing tests for a full run of flag instead of unit tests."""
     parser = argparse.ArgumentParser()
     add_args(parser)
     args = parser.parse_args([SCREEN_DIR, "-o", str(tmp_path)])
