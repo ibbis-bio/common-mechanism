@@ -87,34 +87,30 @@ def process_file(file_path) -> dict[str, str | set[str] | bool]:
     with open(file_path, "r", encoding="utf-8") as file:
         content = file.read()
 
+    filename_without_extension = os.path.splitext(os.path.basename(file_path))[0]
+
+    # Don't capture any of the file before STEP 1
     first_step = re.search(r">> STEP 1:", content)
+    # Split by STEP
     if first_step:
         content = content[first_step.start() :]
         steps = re.split(r"(?=(?:>> STEP \d|SKIPPING STEP \d))", content)
+    # Strip whitespace and pad out to 4 steps in total
     steps = [step.strip() for step in steps if step.strip()]
-
-    filename = os.path.basename(file_path)
-    filename_without_extension = os.path.splitext(filename)[0]
+    steps = steps + [""] * (4 - len(steps))
 
     results = {
         "name": filename_without_extension,
         "filepath": file_path,
         "flag": None,
+        "biorisk": get_biorisk_outcome(steps[0]),
+        "protein": get_protein_outcome(steps[1]),
+        "nucleotide": get_nucleotide_outcome(steps[2]),
+        "benign": get_benign_outcome(steps[3])
     }
 
-    # Process each step with the appropriate method
-    step_processors = {
-        0: get_biorisk_outcome,
-        1: get_protein_outcome,
-        2: get_nucleotide_outcome,
-        3: get_benign_outcome,
-    }
-    for i, step_name in enumerate(["biorisk", "protein", "nucleotide", "benign"]):
-        step_content = steps[i] if i < len(steps) else ""
-        results[step_name] = step_processors[i](step_content)
-
-    # Add regulated flags - only check protein, since nucleotide may have been skipped due to having
-    # no noconding regions
+    # Add regulated flags - only check protein, since nucleotide may have been skipped due to
+    # having no noconding regions
     if step_has_outcome(results["protein"]):
         results.update(get_regulated_taxa(content))
 
