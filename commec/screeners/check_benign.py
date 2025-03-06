@@ -162,13 +162,22 @@ def _filter_benign_synbio(query : Query,
                           benign_synbio_for_query : pd.DataFrame) -> list:
 
     # Filter benign SynBio for relevance...
-    benign_synbio_for_query_trimmed = _trim_to_region(benign_synbio_for_query, region)
+    benign_synbio_for_query_trimmed = _trim_to_region(benign_synbio_for_query, region).copy()
     if benign_synbio_for_query_trimmed.empty:
         return []
     
+
+    benign_synbio_for_query_trimmed = _calculate_coverage(benign_synbio_for_query_trimmed, region)
+
+    # This original way of doing things is coverage for the entire query.
+    #benign_synbio_for_query_trimmed = benign_synbio_for_query_trimmed[
+    #    benign_synbio_for_query_trimmed["q. coverage"] > MINIMUM_SYNBIO_COVERAGE_FRACTION]
+    #benign_synbio_for_query_trimmed = benign_synbio_for_query_trimmed.reset_index(drop=True)
+
     benign_synbio_for_query_trimmed = benign_synbio_for_query_trimmed[
-        benign_synbio_for_query_trimmed["q. coverage"] > MINIMUM_SYNBIO_COVERAGE_FRACTION]
+        benign_synbio_for_query_trimmed["coverage_ratio"] > MINIMUM_SYNBIO_COVERAGE_FRACTION]
     benign_synbio_for_query_trimmed = benign_synbio_for_query_trimmed.reset_index(drop=True)
+
 
     if benign_synbio_for_query_trimmed.empty:
         logging.info("Synbio sequences <80%% coverage achieved over hit %s for query %s.", hit.name, query.name)

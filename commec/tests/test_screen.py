@@ -77,7 +77,7 @@ def test_functional_screen(tmp_path, request):
         """\
         #query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	s.len	s. start	s. end
         FCTEST1	ShouldntClear	NR_HIT_FLAG1	12345	    0.0	    BITSCORE	99.999	    500	    320	    380	    100	    1	        100
-        FCTEST1	ShouldClearBySynbio	NR_HIT_FLAG2	12345	    0.0	    BITSCORE	99.999	    500	    410	    480	    100	    1	        100
+        FCTEST1	ShouldClearBySynbio	NR_HIT_FLAG2	12345	    0.0	    BITSCORE	99.999	    500	    410	    490	    100	    1	        100
         FCTEST1	ShouldntClear	NR_HIT_FLAG3	12345	    0.0	    BITSCORE	99.999	    500	    410	    500	    100	    1	        100
         FCTEST1	ShouldClear	NR_HIT_FLAG4	12345	    0.0	    BITSCORE	99.999	    500	    310	    370	    100	    1	        100
         FCTEST1	ShouldMixedReg	NR_HIT_MIXED	12345	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
@@ -118,7 +118,7 @@ def test_functional_screen(tmp_path, request):
     benign_blastnt_to_parse = textwrap.dedent(
         """\
         #query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	    s.len	s. start	s. end
-        FCTEST1	BENIGNSYNBIO	BENIGN_SB	210	        0.0	    BITSCORE	99.999	    80	    410	    490	    90	    10	    100
+        FCTEST1	BENIGNSYNBIO	BENIGN_SB	210	        0.0	    BITSCORE	99.999	    600	    410	    480	    90	    10	    100
         """
     )
 
