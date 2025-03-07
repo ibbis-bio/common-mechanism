@@ -303,10 +303,14 @@ class Screen:
         logging.debug("\t...running hmmscan")
         self.database_tools.biorisk_hmm.search()
         logging.debug("\t...checking hmmscan results")
-        check_biorisk(
+        exit_status = check_biorisk(
             self.database_tools.biorisk_hmm.out_file,
             self.database_tools.biorisk_hmm.db_directory,
         )
+        if exit_status != 0:
+            raise RuntimeError(
+                "ERROR: Biorisk search did not complete successfully."
+            )
 
     def screen_proteins(self):
         """
