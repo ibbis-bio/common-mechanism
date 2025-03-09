@@ -246,7 +246,7 @@ class Screen:
         # Perform setup steps.
         self.setup(args)
 
-        self.params.output_yaml(self.params.input_prefix + "_config.yaml")
+        self.params.output_yaml(self.params.output_prefix + "_config.yaml")
 
         # Biorisk screen
         logging.info(">> STEP 1: Checking for biorisk genes...")
@@ -303,10 +303,14 @@ class Screen:
         logging.debug("\t...running hmmscan")
         self.database_tools.biorisk_hmm.search()
         logging.debug("\t...checking hmmscan results")
-        check_biorisk(
+        exit_status = check_biorisk(
             self.database_tools.biorisk_hmm.out_file,
             self.database_tools.biorisk_hmm.db_directory,
         )
+        if exit_status != 0:
+            raise RuntimeError(
+                "ERROR: Biorisk search did not complete successfully."
+            )
 
     def screen_proteins(self):
         """
