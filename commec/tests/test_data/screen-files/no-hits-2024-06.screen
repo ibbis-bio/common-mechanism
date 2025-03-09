@@ -1,0 +1,13 @@
+>> STEP 1: Checking for biorisk genes...
+		 --> Biorisks: no significant hits detected, PASS
+ STEP 1 completed at 2024-06-24 16:49:29
+ >> STEP 2: Checking regulated pathogen proteins...
+	...no hits
+ STEP 2 completed at 2024-06-24 16:51:11
+ >> STEP 3: Checking regulated pathogen nucleotides...
+	...no hits to the nr database
+	...no hits
+ STEP 3 completed at 2024-06-24 16:51:12
+>> STEP 4: Checking any pathogen regions for benign components...
+	...no regulated regions to clear
+>> COMPLETED AT 2024-06-24 16:51:13

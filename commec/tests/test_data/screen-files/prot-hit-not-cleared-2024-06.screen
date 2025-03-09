@@ -1,0 +1,18 @@
+>> STEP 1: Checking for biorisk genes...
+		 --> Biorisks: no hits detected, PASS
+ STEP 1 completed at 2024-09-03 05:57:18
+ >> STEP 2: Checking regulated pathogen proteins...
+		 --> Best match to sequence(s) AMT79992, AHL83753, AAF04797, AMT80120, AMT80254, ADW86059, ANB41717, WFP21365, ACY66806, AHL83655, WFP21263, AHL83687, AMT80218, ANB41697, AHL83781, AMT80072, WGH73008, WFP21271, Q4QXJ7, WFP21337, 7V0N_A, WFP21323, ANB41727, AMN91481, AMN91457, AMT80132, WFP21377, AHL83797, ANB41585, WFP21295, ALE15082, AMT80102, AMT79954, ANB41701, AHL83809, WFP21289, AMN91563, AHL83649, AMT80320, AHL83707, WGH73012, WFP21353, AHL83735, AMN91527, ADB08660, ADW86014, ADW86051, ANB41675, AMN91485, ANB41577 at bases 3 - 629 found in only regulated organisms: FLAG (virus)
+		     Species: Eastern equine encephalitis virus (taxid(s): 11021, 374598) (100.0 percent identity to query)
+		     Description: E1 glycoprotein, partial [Eastern equine encephalitis virus]
+ STEP 2 completed at 2024-09-03 06:42:37
+ >> STEP 3: Checking regulated pathogen nucleotides...
+	...protein hits found, fetching nt regions not covered by a 90% ID hit or better
+		 --> no noncoding regions >= 50 bases found, skipping nt scan
+ STEP 3 completed at 2024-09-03 06:42:38
+>> STEP 4: Checking any pathogen regions for benign components...
+	...no housekeeping protein hits
+	...no benign RNA hits
+	...no Synbio sequence hits
+		 -->Regulated region at bases 3 to 629 failed to clear: FLAG
+>> COMPLETED AT 2024-09-03 06:42:41
