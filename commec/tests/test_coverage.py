@@ -28,9 +28,9 @@ example_hmmer_01 = pd.DataFrame({
 
 # Example DataFrame
 example_hmmer_01_output = pd.DataFrame({
-    "q. start": [100,  50,   0,   0],
-    "q. end":   [200, 150, 100, 200],
-    "coverage_nt": [100, 50, 0,  100],
+    "q. start":    [100,  50,   0,   0],
+    "q. end":      [200, 150, 100, 200],
+    "coverage_nt": [100,  50,   0, 100],
     "coverage_ratio": [1.0, 0.5, 0.0, 1.0]
 })
 

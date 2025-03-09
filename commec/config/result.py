@@ -109,6 +109,9 @@ class ScreenStatus(StrEnum):
             return ScreenStatus.CLEARED_FLAG
         return self
 
+    def update(self, other):
+        self = compare(self, other)
+
 
 def compare(a: ScreenStatus, b: ScreenStatus):
     """
@@ -227,6 +230,7 @@ class QueryScreenStatus:
         if self.benign_status in {
             ScreenStatus.CLEARED_FLAG,
             ScreenStatus.CLEARED_WARN,
+            ScreenStatus.WARN,
             ScreenStatus.PASS,
         }:
             self.screen_status = self.benign_status
@@ -315,9 +319,33 @@ class QueryResult:
         ]
         return flagged_and_warnings_data
 
+    def _update_step_flags(self):
+        """
+        Updates the steps within QueryScreenStatus to be congruent for every hit.
+        Then updates the Query flag to consolidate all.
+        """
+        for hit in self.hits.values():
+            match hit.recommendation.from_step:
+                case ScreenStep.BIORISK:
+                    self.recommendation.biorisk_status.update(hit.recommendation.status)
+                case ScreenStep.TAXONOMY_AA:
+                    self.recommendation.biorisk_status.update(hit.recommendation.status)
+                case ScreenStep.TAXONOMY_NT:
+                    self.recommendation.biorisk_status.update(hit.recommendation.status)
+                case ScreenStep.BENIGN_PROTEIN:
+                    self.recommendation.biorisk_status.update(hit.recommendation.status)
+                case ScreenStep.BENIGN_RNA:
+                    self.recommendation.biorisk_status.update(hit.recommendation.status)
+                case ScreenStep.BENIGN_SYNBIO:
+                    self.recommendation.biorisk_status.update(hit.recommendation.status)
+
+        self.recommendation.update_query_flag()
+
+
     def update(self):
         """
         Call this before exporting to file.
+        Ensures 
         Sorts the hits based on E-values,
         Updates the commec recommendation based on all hits recommendations.
         """
@@ -328,8 +356,9 @@ class QueryResult:
             self.hits.items(), key=lambda item: item[1].get_e_value(), reverse=True
         )
         self.hits = dict(sorted_items_desc)
-        self.recommendation.update_query_flag()
+        self._update_step_flags()
 
+        
 
 @dataclass
 class ScreenRunInfo:
