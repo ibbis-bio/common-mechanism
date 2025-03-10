@@ -48,7 +48,13 @@ class TextWrapFormatter(logging.Formatter):
 
         formatted_lines = []
         for line in message.splitlines():
-            wrapped = textwrap.wrap(line, width=self.line_width, subsequent_indent=self.indent)
+            wrapped = textwrap.wrap(
+                line,
+                width=self.line_width,
+                subsequent_indent=self.indent,
+                break_long_words=False,
+                break_on_hyphens=False,
+            )
             formatted_lines.extend(wrapped)
 
         return "\n".join(formatted_lines)
