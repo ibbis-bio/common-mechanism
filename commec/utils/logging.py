@@ -3,31 +3,28 @@
 """
 Utilities to set up commec package logging.
 """
+
 import logging
 import sys
 import textwrap
+
 
 class TextWrapFormatter(logging.Formatter):
     """
     Format multi-line log messages with proper vertical alignment, configurable styling,
     and text wrapping for longer messages.
     """
-    def __init__(
-        self,
-        fmt=None,
-        *args,
-        continuation_marker="│ ",
-        line_width=120,
-    ):
+
+    def __init__(self, fmt=None, *args, continuation_marker="│ ", line_width=120, **kwargs):
         if fmt is None:
             fmt = f"%(levelname)-8s{continuation_marker}%(message)s"
-        super().__init__(fmt, *args)
+        super().__init__(fmt, *args, **kwargs)
         self.continuation_marker = continuation_marker
         self.line_width = line_width
-        
+
         # String to prepended to all lines of wrapped output except the first
         indent_size = self._find_message_start() - len(self.continuation_marker)
-        self.subsequent_indent = " " * indent_size + self.continuation_marker
+        self.indent = " " * indent_size + self.continuation_marker
 
     def _find_message_start(self):
         """
@@ -40,7 +37,7 @@ class TextWrapFormatter(logging.Formatter):
             lineno=0,
             msg="DUMMY_MESSAGE",
             args=(),
-            exc_info=None
+            exc_info=None,
         )
         sample.asctime = self.formatTime(sample)
         sample_formatted = super().format(sample)
@@ -48,23 +45,21 @@ class TextWrapFormatter(logging.Formatter):
 
     def format(self, record):
         message = super().format(record)
-        
+
         formatted_lines = []
         for line in message.splitlines():
-            wrapped = textwrap.wrap(line, 
-                                  width=self.width,
-                                  subsequent_indent=self.indent)
+            wrapped = textwrap.wrap(line, width=self.line_width, subsequent_indent=self.indent)
             formatted_lines.extend(wrapped)
-            
-        return '\n'.join(formatted_lines)
+
+        return "\n".join(formatted_lines)
 
     def formatException(self, ei):
         """Format exception with consistent indentation."""
         exception_text = super().formatException(ei)
         if exception_text:
-            return '\n'.join(f"{self.indent}{line}" 
-                           for line in exception_text.splitlines())
+            return "\n".join(f"{self.indent}{line}" for line in exception_text.splitlines())
         return exception_text
+
 
 def setup_console_logging(log_level=logging.INFO):
     """Set up logging to console."""
