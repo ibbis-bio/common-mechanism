@@ -3,10 +3,68 @@
 """
 Utilities to set up commec package logging.
 """
-
 import logging
 import sys
+import textwrap
 
+class TextWrapFormatter(logging.Formatter):
+    """
+    Format multi-line log messages with proper vertical alignment, configurable styling,
+    and text wrapping for longer messages.
+    """
+    def __init__(
+        self,
+        fmt=None,
+        *args,
+        continuation_marker="│ ",
+        line_width=120,
+    ):
+        if fmt is None:
+            fmt = f"%(levelname)-8s{continuation_marker}%(message)s"
+        super().__init__(fmt, *args)
+        self.continuation_marker = continuation_marker
+        self.line_width = line_width
+        
+        # String to prepended to all lines of wrapped output except the first
+        indent_size = self._find_message_start() - len(self.continuation_marker)
+        self.subsequent_indent = " " * indent_size + self.continuation_marker
+
+    def _find_message_start(self):
+        """
+        Deterine how far to indent messages by formatting a dummy message.
+        """
+        sample = logging.LogRecord(
+            name="dummy",
+            level=logging.INFO,
+            pathname="./test",
+            lineno=0,
+            msg="DUMMY_MESSAGE",
+            args=(),
+            exc_info=None
+        )
+        sample.asctime = self.formatTime(sample)
+        sample_formatted = super().format(sample)
+        return sample_formatted.find(sample.msg)
+
+    def format(self, record):
+        message = super().format(record)
+        
+        formatted_lines = []
+        for line in message.splitlines():
+            wrapped = textwrap.wrap(line, 
+                                  width=self.width,
+                                  subsequent_indent=self.indent)
+            formatted_lines.extend(wrapped)
+            
+        return '\n'.join(formatted_lines)
+
+    def formatException(self, ei):
+        """Format exception with consistent indentation."""
+        exception_text = super().formatException(ei)
+        if exception_text:
+            return '\n'.join(f"{self.indent}{line}" 
+                           for line in exception_text.splitlines())
+        return exception_text
 
 def setup_console_logging(log_level=logging.INFO):
     """Set up logging to console."""
@@ -17,7 +75,7 @@ def setup_console_logging(log_level=logging.INFO):
     if not any(isinstance(h, logging.StreamHandler) for h in commec_logger.handlers):
         console_handler = logging.StreamHandler()
         console_handler.setLevel(log_level)
-        console_handler.setFormatter(logging.Formatter("%(levelname)-8s | %(message)s"))
+        console_handler.setFormatter(TextWrapFormatter())
         commec_logger.addHandler(console_handler)
 
     add_logging_to_excepthook()
@@ -33,12 +91,12 @@ def setup_file_logging(filename, log_level=logging.INFO, log_mode="w"):
 
     # Log format has more detail if logging down to the debug level
     if log_level == logging.DEBUG:
-        formatter = logging.Formatter(
-            "%(asctime)s | %(levelname)-8s | %(message)s",
+        formatter = TextWrapFormatter(
+            fmt="%(asctime)s│ %(levelname)-8s│ %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",  # Full ISO-like format
         )
     else:
-        formatter = logging.Formatter("%(levelname)-8s | %(message)s")
+        formatter = logging.Formatter("%(levelname)-8s│ %(message)s")
 
     # Update existing filehandlers, avoiding duplicates
     file_handler = None
