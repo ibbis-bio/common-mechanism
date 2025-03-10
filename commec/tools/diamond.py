@@ -135,6 +135,13 @@ class DiamondHandler(BlastHandler):
             )
             n_threads_per_run = 1
 
+        if n_threads_per_run > number_of_databases and n_concurrent_runs == 1:
+            logging.info(
+                "WARNING: Number of threads per run greater than number of databases. Reducing thread count."
+            )
+            n_threads_per_run = number_of_databases
+
+
         return n_concurrent_runs, n_threads_per_run
 
     def _search(self):
