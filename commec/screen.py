@@ -224,7 +224,7 @@ class Screen:
         setup_file_logging(self.params.tmp_log, log_level=logging.DEBUG)
         
         logger.info("Validating input query and databases...")
-        self.params.query.setup(self.params.input_prefix)
+        self.params.query.setup(self.params.output_prefix)
         self.database_tools: ScreenTools = ScreenTools(self.params)
 
         logger.info(f"Input query file: {self.params.query.input_fasta_path}")
@@ -237,7 +237,7 @@ class Screen:
         # Perform setup steps.
         self.setup(args)
 
-        self.params.output_yaml(self.params.input_prefix + "_config.yaml")
+        self.params.output_yaml(self.params.output_prefix + "_config.yaml")
 
         # Biorisk screen
         logger.info(">> STEP 1: Checking for biorisk genes...")

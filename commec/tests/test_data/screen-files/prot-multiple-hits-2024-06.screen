@@ -1,0 +1,27 @@
+>> STEP 1: Checking for biorisk genes...
+		 --> Biorisks: Regulated genes not found, PASS
+		 --> Virulence factor found in bases 526 to 802, WARNING
+		     Gene: PE2 [Venezuelan equine encephalitis virus]
+ STEP 1 completed at 2024-06-24 23:10:58
+ >> STEP 2: Checking regulated pathogen proteins...
+		 --> Best match to sequence(s) KXB23588 at bases 7507 - 7607 found in only regulated organisms: FLAG (bacteria)
+		     Species: Legionella pneumophila (taxid(s): 446) (73.469 percent identity to query)
+		     Description: hypothetical protein PtVF66_13895, partial [Legionella pneumophila]
+		 --> Best match to sequence(s) WP_099588326 at bases 6123 - 6929 found in both regulated and non-regulated organisms
+		     Species: Bacillus cereus group sp. BY9-3LC, Clostridioides difficile, Streptococcus dysgalactiae,
+		     Lactiplantibacillus plantarum, Bacillus cereus, Francisella tularensis, Sinomonas cellulolyticus,
+		     Pseudomonas sp. MWU13-2860, Lacticaseibacillus rhamnosus, Escherichia coli, Corynebacterium
+		     glutamicum, Borreliella burgdorferi (taxid(s): 2071714, 47715, 139, 99822, 119857, 562, 1396, 1590, 1718, 1496, 3018075, 2801916) (100.0 percent identity to query)
+		     Description: MULTISPECIES: APH(3')-I family aminoglycoside O-phosphotransferase [Bacteria]
+ STEP 2 completed at 2024-06-24 23:23:21
+ >> STEP 3: Checking regulated pathogen nucleotides...
+	...protein hits found, fetching nt regions not covered by a 90% ID hit or better
+		 --> no top hit exclusive to a regulated pathogen: PASS
+ STEP 3 completed at 2024-06-24 23:23:32
+>> STEP 4: Checking any pathogen regions for benign components...
+		 -->Housekeeping proteins covering 2.0 to 925.0 = PASS
+		   COG0449: glutamine-fructose-6-phosphate transaminase (isomerizing) activity (E-value: 5.6e-50
+	...no benign RNA hits
+		 -->Synbio sequences - <80% coverage achieved = FAIL
+		 -->Regulated region at bases 7507 to 7607 failed to clear: FLAG
+>> COMPLETED AT 2024-06-24 23:23:43
