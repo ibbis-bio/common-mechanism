@@ -45,19 +45,33 @@ class TextWrapFormatter(logging.Formatter):
 
     def format(self, record):
         message = super().format(record)
+        lines = message.splitlines()
 
         formatted_lines = []
-        for line in message.splitlines():
+        # First line gets the levelname/timestamp/etc from super().format, then
+        # long lines are wrapped with the indent
+        wrapped_first = textwrap.wrap(
+            lines[0],
+            width=self.line_width,
+            subsequent_indent=self.indent,
+            break_long_words=False,
+            break_on_hyphens=False
+        )
+        formatted_lines.extend(wrapped_first)
+
+        # When a message has newlines, lines after the first should be indented even if short
+        for line in lines[1:]:
             wrapped = textwrap.wrap(
                 line,
                 width=self.line_width,
+                initial_indent=self.indent,
                 subsequent_indent=self.indent,
                 break_long_words=False,
-                break_on_hyphens=False,
+                break_on_hyphens=False
             )
             formatted_lines.extend(wrapped)
-
-        return "\n".join(formatted_lines)
+        
+        return '\n'.join(formatted_lines)
 
     def formatException(self, ei):
         """Format exception with consistent indentation."""
