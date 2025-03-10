@@ -93,14 +93,15 @@ class DiamondHandler(BlastHandler):
         self, max_threads: int, number_of_databases: int
     ) -> tuple[int, int]:
         """
-        Determine the optimal number of Diamond runs and processors per run for best CPU utilization
-        and efficiency.
+        Determine the optimal number of Diamond runs and processors per run
+        for best CPU utilization and efficiency.
+        Invalid job numbers are overridden by the greatest common denominator.
         """
-        if self.jobs is not None:
+        if self.jobs is not None and self.jobs > 0:
             n_concurrent_runs = self.jobs
         else:
             n_concurrent_runs = greatest_common_denominator(
-                number_of_databases, 
+                number_of_databases,
                 max_threads
                 )
 

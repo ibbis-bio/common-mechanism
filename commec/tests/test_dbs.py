@@ -81,7 +81,7 @@ def test_database_no_file(input_db):
         assert True
 
 n_jobs = [
-    None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+    None, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
 ]
 
 @pytest.mark.parametrize("input_jobs", n_jobs)
