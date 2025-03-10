@@ -92,7 +92,7 @@ def test_diamond_job_and_threads_calculations(input_jobs):
     and threads per run. Such that no CPU time is wasted.
     No specific expected outcomes, but we can check general expectations:
      - Never exceed max threads.
-     - 
+     No specific expected outcomes, but we check general expectations (e.g. never exceeding max_threads)
     """
     handler = DiamondHandler(
         "commec/tests/test_dbs/nr_dmnd/nr",
