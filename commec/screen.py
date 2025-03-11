@@ -26,6 +26,7 @@ options:
                         Path to directory containing reference databases (e.g. taxonomy, protein, HMM)
   -y CONFIG_YAML, --config CONFIG_YAML
                         Configuration for screen run in YAML format, including custom database paths
+  -v, --verbose         Output verbose (i.e. DEBUG-level) logs
 
 Screen run logic:
   -f, --fast            Run in fast mode and skip protein and nucleotide homology search
@@ -47,7 +48,6 @@ Output file handling:
   -c, --cleanup         Delete intermediate output files for run
   -F, --force           Overwrite any pre-existing output for run (cannot be used with --resume)
   -R, --resume          Re-use any pre-existing output run (cannot be used with --force)
-
 """
 import argparse
 import datetime
@@ -57,7 +57,7 @@ import sys
 import pandas as pd
 
 from commec.utils.file_utils import file_arg, directory_arg
-from commec.utils.logging import setup_console_logging, setup_file_logging
+from commec.utils.logging import setup_console_logging, setup_file_logging, set_log_level
 from commec.config.io_parameters import ScreenIOParameters
 from commec.config.screen_tools import ScreenTools
 
@@ -130,6 +130,13 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         dest="config_yaml",
         help="Configuration for screen run in YAML format, including custom database paths",
         default="",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="Output verbose (i.e. DEBUG-level) logs",
     )
     screen_logic_group = parser.add_argument_group("Screen run logic")
     screen_logic_group.add_argument(
@@ -215,12 +222,22 @@ class Screen:
 
     def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
-        setup_console_logging()
+        # Start logging to console
+        log_level = logging.INFO if not args.verbose else logging.DEBUG
+        setup_console_logging(log_level)
         logger.debug("Parsing input parameters...")
+
         self.params: ScreenIOParameters = ScreenIOParameters(args)
 
-        # Need to initialize parameters before you can start logging to files
-        setup_file_logging(self.params.output_screen_file)
+        # Logging level may be overridden
+        if self.params.config["verbose"]:
+            log_level = logging.DEBUG
+        
+        # Update console log-level
+        set_log_level(log_level, update_only_handler_type=logging.StreamHandler)
+
+        # Needed to initialize parameters before logging to files
+        setup_file_logging(self.params.output_screen_file, log_level)
         setup_file_logging(self.params.tmp_log, log_level=logging.DEBUG)
         
         logger.info("Validating input query and databases...")

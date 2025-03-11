@@ -55,7 +55,7 @@ class TextWrapFormatter(logging.Formatter):
             width=self.line_width,
             subsequent_indent=self.indent,
             break_long_words=False,
-            break_on_hyphens=False
+            break_on_hyphens=False,
         )
         formatted_lines.extend(wrapped_first)
 
@@ -67,18 +67,11 @@ class TextWrapFormatter(logging.Formatter):
                 initial_indent=self.indent,
                 subsequent_indent=self.indent,
                 break_long_words=False,
-                break_on_hyphens=False
+                break_on_hyphens=False,
             )
             formatted_lines.extend(wrapped)
-        
-        return '\n'.join(formatted_lines)
 
-    def formatException(self, ei):
-        """Format exception with consistent indentation."""
-        exception_text = super().formatException(ei)
-        if exception_text:
-            return "\n".join(f"{self.indent}{line}" for line in exception_text.splitlines())
-        return exception_text
+        return "\n".join(formatted_lines)
 
 
 def setup_console_logging(log_level=logging.INFO):
@@ -111,7 +104,7 @@ def setup_file_logging(filename, log_level=logging.INFO, log_mode="w"):
             datefmt="%Y-%m-%d %H:%M:%S",  # Full ISO-like format
         )
     else:
-        formatter = logging.Formatter("%(levelname)-8s│ %(message)s")
+        formatter = TextWrapFormatter("%(levelname)-8s│ %(message)s")
 
     # Update existing filehandlers, avoiding duplicates
     file_handler = None
@@ -154,3 +147,21 @@ def add_logging_to_excepthook():
         original_excepthook(exc_type, exc_value, exc_traceback)
 
     sys.excepthook = commec_exception_logger
+
+
+def set_log_level(log_level, update_only_handler_type=None):
+    """
+    Update the log level for the commec logger, as well as associated handlers.
+    Optionally, restrict updates to only a particular class of handlers (e.g. StreamHandler).
+    """
+    commec_logger = logging.getLogger("commec")
+    commec_logger.setLevel(log_level)
+
+    handlers_to_update = commec_logger.handlers
+    if update_only_handler_type:
+        handlers_to_update = [
+            h for h in handlers_to_update if isinstance(h, update_only_handler_type)
+        ]
+
+    for handler in handlers_to_update:
+        handler.setLevel(log_level)
