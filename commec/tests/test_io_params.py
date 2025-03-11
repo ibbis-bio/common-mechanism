@@ -46,7 +46,8 @@ def expected_defaults():
         "do_cleanup": False,
         "diamond_jobs": None,
         "force": False,
-        "resume": False
+        "resume": False,
+        "verbose": False
     }
 
 @pytest.fixture
@@ -59,7 +60,7 @@ def custom_yaml_config():
         },
         "in_fast_mode": True,
         "force": True,
-        "threads": 8
+        "threads": 8,
     }
 
 def test_missing_input_file():

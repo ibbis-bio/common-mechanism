@@ -18,6 +18,7 @@ from commec.tools.search_handler import SearchHandler, DatabaseValidationError
 TAXID_SYNTHETIC_CONSTRUCTS = 32630
 TAXID_VECTORS = 29278
 
+logger = logging.getLogger(__name__)
 
 class BlastHandler(SearchHandler):
     """
@@ -86,14 +87,14 @@ def _get_lineages(taxids, db_path: str | os.PathLike, threads: int):
     # Warn about error codes from lineage search
     taxids_not_found = lin[lin["Code"] == -1]["TaxID"]
     if not taxids_not_found.empty:
-        logging.warning(
+        logger.warning(
             "No information about the following taxID(s) was found in the taxonomy database: %s",
             ", ".join(taxids_not_found.astype(str).tolist()),
         )
 
     taxids_deleted = lin[lin["Code"] == 0]["TaxID"]
     if not taxids_deleted.empty:
-        logging.warning(
+        logger.warning(
             "The following taxID(s) have been deleted (in delnodes.dmp): %s",
             ", ".join(taxids_deleted.astype(str).tolist()),
         )
@@ -137,7 +138,7 @@ def get_taxonomic_labels(
     # Check if any rows will be removed due to not finding a valid lineage for them
     rows_to_remove = blast[~blast[TAXIDS_COL].isin(lin["TaxID"])]
     if not rows_to_remove.empty:
-        logging.warning(
+        logger.warning(
             "Removing %i rows from BLAST results due to invalid taxID(s): %s"
             " - check that taxonomy and protein databases are up to date!",
             len(rows_to_remove),
