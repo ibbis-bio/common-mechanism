@@ -20,6 +20,7 @@ from commec.tools.blastn import BlastNHandler
 
 pd.set_option("display.max_colwidth", 10000)
 
+logger = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -63,20 +64,20 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
     """
     # Check input file
     if not os.path.exists(input_file):
-        logging.error("\t...input query file %s does not exist\n", input_file)
+        logger.error("\t...input query file %s does not exist\n", input_file)
         return 1
     sample_name = re.sub(r"\.nr.*|\.nt\.blastn", "", input_file)
 
     # Read in lists of regulated and benign tax ids
     benign_taxid_path = f"{input_database_dir}/benign_db/vax_taxids.txt"
     if not os.path.exists(benign_taxid_path):
-        logging.error("\t...benign db file %s does not exist\n", benign_taxid_path)
+        logger.error("\t...benign db file %s does not exist\n", benign_taxid_path)
         return 1
     vax_taxids = pd.read_csv(benign_taxid_path, header=None).squeeze().astype(str).tolist()
 
     biorisk_taxid_path = f"{input_database_dir}/biorisk_db/reg_taxids.txt"
     if not os.path.exists(biorisk_taxid_path):
-        logging.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
+        logger.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
         return 1
     reg_taxids = pd.read_csv(biorisk_taxid_path, header=None).squeeze().astype(str).tolist()
 
@@ -86,14 +87,14 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
         hits1 = pd.read_csv(sample_name + ".reg_path_coords.csv")
 
     if BlastNHandler.is_empty(input_file):
-        logging.info(
-            "\tERROR: Cannot check for regulated pathogens in empty or non-existent file: %s\n",
+        logger.error(
+            "Cannot check for regulated pathogens in empty or non-existent file: %s\n",
             input_file,
         )
         return 1
 
     if not BlastNHandler.has_hits(input_file):
-        logging.info("\t... Skipping regulated pathogens check, no hits in: %s\n", input_file)
+        logger.info("\t... Skipping regulated pathogens check, no hits in: %s\n", input_file)
         return 0
 
     blast = read_blast(input_file)
@@ -138,14 +139,14 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
                             hit = htrim["subject title"][row]
                             descriptions.append(hit)
                         annot_string = "\n\t...".join(str(v) for v in descriptions)
-                        logging.info(
+                        logger.info(
                             "\t...Regulated protein region at bases "
                             + str(int(hits1["q. start"][region]))
                             + " to "
                             + str(int(hits1["q. end"][region]))
                             + " overlapped with a nucleotide hit\n"
                         )
-                        logging.info(
+                        logger.info(
                             "\t\t     Species: %s (taxid(s): %s) (%s percent identity to query)\n",
                             species_list,
                             taxid_list,
@@ -205,15 +206,15 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
 
                 # if some of the organisms with this sequence aren't regulated, say so
                 if n_reg < n_total:
-                    logging.info(
+                    logger.info(
                         "\t\t --> Best match to sequence(s) %s at bases %s found in both regulated and non-regulated organisms\n"
                         % (gene_names, coordinates)
                     )
-                    logging.info(
+                    logger.info(
                         "\t\t     Species: %s (taxid(s): %s) (%s percent identity to query)\n"
                         % (species_list, taxid_list, percent_ids)
                     )
-                    logging.info("\t\t     Description: %s\n" % (desc))
+                    logger.info("\t\t     Description: %s\n" % (desc))
                     # could explicitly list which are and aren't regulated?
                 # otherwise, raise a flag and say which superkingdom the flag belongs to
                 elif n_reg == n_total:
@@ -233,18 +234,18 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
                         hits = pd.concat([hits, new_hits], ignore_index=True)
                     elif not new_hits.empty:
                         hits = new_hits.copy()
-                    logging.info(
+                    logger.info(
                         "\t\t --> Best match to sequence(s) %s at bases %s found in only regulated organisms: FLAG (%s)\n"
                         % (gene_names, coordinates, org)
                     )
-                    logging.info(
+                    logger.info(
                         "\t\t     Species: %s (taxid(s): %s) (%s percent identity to query)\n"
                         % (species_list, taxid_list, percent_ids)
                     )
-                    logging.info("\t\t     Description: %s\n" % (desc))
+                    logger.info("\t\t     Description: %s\n" % (desc))
                 else:  # something is wrong, n_reg > n_total
-                    logging.info("\t...gene: %s\n" % gene_names)
-                    logging.info("%s\n" % (blast["regulated"][blast["subject acc."] == gene_names]))
+                    logger.info("\t...gene: %s\n" % gene_names)
+                    logger.info("%s\n" % (blast["regulated"][blast["subject acc."] == gene_names]))
         hits = hits.drop_duplicates()
         # Create output file
         if hits1 is not None:
@@ -252,7 +253,7 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
         hits.to_csv(sample_name + ".reg_path_coords.csv", index=False)
 
     if reg_vir == 0 and reg_bac == 0 and reg_fung == 0 and reg_fung == 0:
-        logging.info("\t\t --> no top hit exclusive to a regulated pathogen: PASS\n")
+        logger.info("\t\t --> no top hit exclusive to a regulated pathogen: PASS\n")
 
     return 0
 

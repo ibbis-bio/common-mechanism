@@ -14,6 +14,7 @@ from Bio import SeqIO
 from commec.tools.blast_tools import get_high_identity_matches
 from commec.tools.search_handler import SearchHandler
 
+logger = logging.getLogger(__name__)
 
 def get_ranges_with_no_hits(blast_df):
     """
@@ -74,19 +75,19 @@ def fetch_noncoding_regions(protein_results, query_fasta):
     """Fetch noncoding regions > 50bp and write to a new file."""
     outfile = re.sub(".nr.*", "", protein_results) + ".noncoding.fasta"
 
-    logging.info("Checking protein hits in: %s", protein_results)
+    logger.info("Checking protein hits in: %s", protein_results)
 
     if SearchHandler.is_empty(protein_results) or not SearchHandler.has_hits(
         protein_results
     ):
-        logging.info("\t...no protein hits found, screening entire sequence\n")
+        logger.info("\t...no protein hits found, screening entire sequence\n")
         shutil.copyfile(query_fasta, outfile)
         return
 
     blast_df = get_high_identity_matches(protein_results)
 
     if blast_df.empty:
-        logging.info(
+        logger.info(
             "Protein hits all low percent identity (<90%%) - screening entire sequence"
         )
         shutil.copyfile(query_fasta, outfile)
@@ -95,21 +96,21 @@ def fetch_noncoding_regions(protein_results, query_fasta):
     query_col = "query acc."
     if blast_df[query_col].nunique() > 1:
         first_query = blast_df[query_col].iloc[0]
-        logging.info(
-            "WARNING: Only fetching nucleotides from first query [%s] in multi-query results: %s",
+        logger.warning(
+            "Only fetching nucleotides from first query [%s] in multi-query results: %s",
             first_query,
             protein_results,
         )
         blast_df = blast_df[blast_df[query_col] == first_query]
 
-    logging.info(
+    logger.info(
         "Protein hits found, fetching nt regions not covered by a 90%% ID hit or better"
     )
     ranges_to_screen = get_ranges_with_no_hits(blast_df)
 
     # if the entire sequence, save regions <50 bases, is covered with protein, skip nt scan
     if not ranges_to_screen:
-        logging.info(
+        logger.info(
             "\t\t --> no noncoding regions >= 50 bases found, skipping nt scan\n"
         )
         return
@@ -117,13 +118,13 @@ def fetch_noncoding_regions(protein_results, query_fasta):
     records = get_records(query_fasta)
 
     if len(records) > 1:
-        logging.info(
-            "WARNING: Only fetching nucleotides from first record in multifasta: %s",
+        logger.warning(
+            "Only fetching nucleotides from first record in multifasta: %s",
             query_fasta,
         )
 
     ranges_str = ", ".join(f"{start}-{end}" for start, end in ranges_to_screen)
-    logging.info("Writing noncoding regions [%s] to: %s", ranges_str, outfile)
+    logger.info("Writing noncoding regions [%s] to: %s", ranges_str, outfile)
     write_nc_sequences(ranges_to_screen, records[0], outfile)
 
 

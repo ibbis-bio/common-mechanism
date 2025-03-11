@@ -8,7 +8,6 @@ the screen workflow of commec.
 import os
 import sys
 import glob
-import re
 import argparse
 import logging
 import multiprocessing
@@ -20,6 +19,8 @@ from yaml.parser import ParserError
 from commec.config.query import Query
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 from commec.utils.file_utils import expand_and_normalize
+
+logger = logging.getLogger(__name__)
 
 class ScreenIOParameters:
     """
@@ -45,26 +46,22 @@ class ScreenIOParameters:
         # Check whether a .screen output file already exists.
         if os.path.exists(self.output_screen_file) and not (
             self.config["force"] or self.config["resume"]):
-            # Print statement must be used as logging not yet instantiated
-            print(
-                f"Screen output {self.output_screen_file} already exists. \n"
-                "Either use a different output location, or use --force or --resume to override. "
-                "\nAborting Screen."
+            logger.warning(
+                f"""Screen output {self.output_screen_file} already exists.
+                Either use a different output location, or use --force or --resume to override.
+                Aborting Screen."""
             )
             sys.exit(1)
 
-    def setup(self) -> bool:
-        """
-        Additional setup once the class has been instantiated (i.e. that requires logs).
-        """
-        # Sanity checks on thread input.
+        # Sanity check threads settings
         if self.config["threads"] > multiprocessing.cpu_count():
-            logging.info(
+            logger.info(
                 "Requested allocated threads [%i] is greater"
                 " than the detected CPU count of the hardware[%i].",
                 self.config["threads"],
                 multiprocessing.cpu_count(),
             )
+
         if self.config["threads"] < 1:
             raise RuntimeError("Number of allocated threads must be at least 1!")
 
@@ -72,15 +69,10 @@ class ScreenIOParameters:
             self.config["diamond_jobs"] is not None
             and self.config["protein_search_tool"] == "blastx"
         ):
-            logging.info(
-                "WARNING: --jobs is a diamond only parameter! "
-                "Specifying -j (--jobs) without also specifying "
-                "-p (--protein-search-tool), the protein search "
-                'tool as "diamond" will have no effect!'
+            logger.warning(
+                "--jobs is a diamond only parameter! Specifying -j (--jobs) without also"
+                " specifying -p (--protein-search-tool) as 'diamond' will have no effect!"
             )
-
-        self.query.setup(self.output_prefix)
-        return True
 
     def _read_config(self, args: argparse.Namespace):
         """
