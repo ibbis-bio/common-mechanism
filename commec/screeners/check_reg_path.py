@@ -45,27 +45,23 @@ def _check_inputs(
     """
     # check input files
     if not search_handle.check_output():
-        logging.info("\t...ERROR: Taxonomic search results empty\n %s", search_handle.out_file)
+        logger.info("\t...ERROR: Taxonomic search results empty\n %s", search_handle.out_file)
         return False
 
     if not os.path.exists(benign_taxid_path):
-        logging.error("\t...benign db file %s does not exist\n", benign_taxid_path)
+        logger.error("\t...benign db file %s does not exist\n", benign_taxid_path)
         return False
 
     if not os.path.exists(biorisk_taxid_path):
-        logging.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
+        logger.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
         return False
     
     if not os.path.exists(taxonomy_directory):
-        logging.error("\t...taxonomy directory %s does not exist\n", taxonomy_directory)
+        logger.error("\t...taxonomy directory %s does not exist\n", taxonomy_directory)
         return False
 
     if search_handle.is_empty(search_handle.out_file):
-        logging.info("\tERROR: Homology search has failed\n")
-        return False
-
-    if not search_handle.has_hits(search_handle.out_file):
-        logging.info("\t...no hits\n")
+        logger.info("\tERROR: Homology search has failed\n")
         return False
     
     return True
@@ -89,11 +85,15 @@ def update_taxonomic_data_from_database(
         step : Which taxonomic step this is (Nucleotide, Protein, etc)
         n_threads : maximum number of available threads for allocation.
     """
-    logging.debug("Acquiring Taxonomic Data for JSON output:")
+    logger.debug("Acquiring Taxonomic Data for JSON output:")
 
     if not _check_inputs(search_handle, benign_taxid_path, 
                          biorisk_taxid_path, taxonomy_directory):
         return 1
+
+    if not search_handle.has_hits(search_handle.out_file):
+        logger.info("\t...no hits\n")
+        return 0
 
     # Read in lists of regulated and benign tax ids
     vax_taxids = pd.read_csv(benign_taxid_path, header=None).squeeze().astype(str).tolist()
@@ -115,7 +115,7 @@ def update_taxonomic_data_from_database(
     top_hits = get_top_hits(blast)
 
     if top_hits["regulated"].sum() == 0:
-        logging.info("\t...no regulated hits\n")
+        logger.info("\t...no regulated hits\n")
         return 0
     
     # The non-coding fasta appends (start, stop) info to the filenames. This counters that.
@@ -132,7 +132,7 @@ def update_taxonomic_data_from_database(
         for query in unique_queries:
             query_write = data.get_query(query)
             if not query_write:
-                logging.debug("Query during %s could not be found! [%s]", str(step), query)
+                logger.debug("Query during %s could not be found! [%s]", str(step), query)
                 continue
 
             unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
@@ -253,6 +253,7 @@ def update_taxonomic_data_from_database(
                         write_hit.annotations["domain"] = domains # Always overwrite, better than our guess from biorisk.
                         write_hit.annotations["regulation"].append(regulation_dict)
                         write_hit.recommendation.status = compare(write_hit.recommendation.status, recommendation)
+    return 0
 
 def main():
     parser = argparse.ArgumentParser()

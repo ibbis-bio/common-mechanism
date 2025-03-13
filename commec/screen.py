@@ -272,18 +272,17 @@ class Screen:
         # Logging level may be overridden
         if self.params.config["verbose"]:
             log_level = logging.DEBUG
-        
+
         # Update console log-level
         set_log_level(log_level, update_only_handler_type=logging.StreamHandler)
 
         # Needed to initialize parameters before logging to files
         setup_file_logging(self.params.output_screen_file, log_level)
-        setup_file_logging(self.params.tmp_log, log_level=logging.DEBUG)
-        
+
         logger.info("Validating input query and databases...")
         self.database_tools: ScreenTools = ScreenTools(self.params)
 
-        logger.info(f"Input query file: {self.params.input_fasta_path}")
+        logger.info("Input query file: %s", self.params.input_fasta_path)
 
         # Initialize the queries
         self.queries = self.params.parse_input_fasta()
@@ -390,7 +389,7 @@ class Screen:
                 print(" Traceback:\n%s", traceback.format_exc())
                 self.reset_benign_recommendations(ScreenStatus.ERROR)
         else:
-            logging.info(" SKIPPING STEP 4: Benign search")
+            logger.info(" SKIPPING STEP 4: Benign search")
             self.reset_benign_recommendations(ScreenStatus.SKIP)
 
         logger.info(
@@ -406,11 +405,6 @@ class Screen:
         logger.debug("\t...running hmmscan")
         self.database_tools.biorisk_hmm.search()
         logger.debug("\t...checking hmmscan results")
-        #exit_status = check_biorisk(
-        #    self.database_tools.biorisk_hmm.out_file,
-        #    self.database_tools.biorisk_hmm.db_directory,
-        #    self.queries
-        #)
         exit_status = update_biorisk_data_from_database(
             self.database_tools.biorisk_hmm,
             self.screen_data,
@@ -462,12 +456,12 @@ class Screen:
         calculate_noncoding_regions_per_query(
             self.database_tools.regulated_protein.out_file,
             self.queries)
-        
+
         # Generate the non-coding fasta.
         nc_fasta_sequences = ""
         for query in self.queries.values():
             nc_fasta_sequences += query.get_non_coding_regions_as_fasta()
-        
+
         # Skip if there is no non-coding information.
         if nc_fasta_sequences == "":
             logger.debug(
@@ -489,7 +483,7 @@ class Screen:
                 "ERROR: Expected nucleotide search output not created: "
                 + self.database_tools.regulated_nt.out_file
             )
-        
+
         logger.debug("\t...checking blastn results")
         # Note: Currently noncoding coordinates are converted within update_taxonomic_data_from_database,
         update_taxonomic_data_from_database(self.database_tools.regulated_nt,
