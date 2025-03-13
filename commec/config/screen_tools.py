@@ -15,6 +15,8 @@ from commec.tools.diamond import DiamondHandler
 from commec.tools.cmscan import CmscanHandler
 from commec.tools.hmmer import HmmerHandler
 
+logger = logging.getLogger(__name__)
+
 class ScreenTools:
     """
     Using parameters and filenames in `ScreenIo`, set up the tools needed to search datbases.
@@ -73,7 +75,7 @@ class ScreenTools:
                 )
                 self.regulated_protein.jobs = params.config["diamond_jobs"]
                 if params.config["protein_search_tool"] == "nr.dmnd":
-                    logging.info(
+                    logger.info(
                         "Using old \"nr.dmnd\" keyword for search tool will not be supported"
                         " in future releases,consider using \"diamond\" instead."
                     )

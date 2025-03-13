@@ -8,7 +8,6 @@ the screen workflow of commec.
 import os
 import sys
 import glob
-import re
 import argparse
 import logging
 import multiprocessing
@@ -21,6 +20,9 @@ from Bio import SeqIO
 
 from commec.config.query import Query
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
+from commec.utils.file_utils import expand_and_normalize
+
+logger = logging.getLogger(__name__)
 
 class ScreenIO:
     """
@@ -53,11 +55,10 @@ class ScreenIO:
         # Check whether a .screen output file already exists.
         if os.path.exists(self.output_screen_file) and not (
             self.config["force"] or self.config["resume"]):
-            # Print statement must be used as logging not yet instantiated
-            print(
-                f"Screen output {self.output_screen_file} already exists. \n"
-                "Either use a different output location, or use --force or --resume to override. "
-                "\nAborting Screen."
+            logger.warning(
+                f"""Screen output {self.output_screen_file} already exists.
+                Either use a different output location, or use --force or --resume to override.
+                Aborting Screen."""
             )
             sys.exit(1)
 
@@ -67,12 +68,13 @@ class ScreenIO:
         """
         # Make sure the number of threads provided by the user makes sense
         if self.config["threads"] > multiprocessing.cpu_count():
-            logging.info(
+            logger.info(
                 "Requested allocated threads [%i] is greater"
                 " than the detected CPU count of the hardware[%i].",
                 self.config["threads"],
                 multiprocessing.cpu_count(),
             )
+
         if self.config["threads"] < 1:
             raise RuntimeError("Number of allocated threads must be at least 1!")
 
@@ -80,11 +82,9 @@ class ScreenIO:
             self.config["diamond_jobs"] is not None
             and self.config["protein_search_tool"] == "blastx"
         ):
-            logging.info(
-                "WARNING: --jobs is a diamond only parameter! "
-                "Specifying -j (--jobs) without also specifying "
-                "-p (--protein-search-tool), the protein search "
-                'tool as "diamond" will have no effect!'
+            logger.warning(
+                "--jobs is a diamond only parameter! Specifying -j (--jobs) without also"
+                " specifying -p (--protein-search-tool) as 'diamond' will have no effect!"
             )
 
         # Write a clean FASTA that can be used downstream
@@ -173,7 +173,7 @@ class ScreenIO:
         """
         Loads a yaml file as a dictionary into the Config dictionary.
         The load is done lazily - and basepaths are not parsed and replaced throughout.
-        """        
+        """
         raw_config_from_yaml = {}
         try:
             with open(config_filepath, "r", encoding = "utf-8") as file:
@@ -242,62 +242,38 @@ class ScreenIO:
             except TypeError:
                 pass
 
-    def _get_output_prefixes(self, input_file, prefix_arg=""):
+    @staticmethod
+    def _get_output_prefixes(input_file: str | os.PathLike, prefix_arg="") -> str:
         """
-        Returns a set of prefixes that can be used for all output files:
-            prefix/name
-            prefix/output_name/name
-            prefix/input_name/name
+        Returns a prefix that can be used for all output files.
 
         - If no prefix was given, use the input filename.
         - If a directory was given, use the input filename 
             as file prefix within that directory.
         """
-        name = os.path.splitext(os.path.basename(input_file))[0]
-        name = self._decimate_name(name)
+        input_dir = os.path.dirname(input_file)
+        # Get file stem (e.g. /home/user/commec/testing_cm_02.fasta -> testing_cm_02)
+        input_name = os.path.splitext(os.path.basename(input_file))[0]
+        # Take only the first 64 characters of the input name
+        if len(input_name) > 64:
+            input_name = input_name[:64]
 
-        prefix = prefix_arg or name
+        # If no prefix given, use input filepath without extension
+        if not prefix_arg:
+            return os.path.join(input_dir, input_name)
 
-        base = prefix
-        outputs = os.path.join(prefix, f"output_{name}/")
-        inputs = os.path.join(prefix, f"input_{name}/")
+        if (
+            os.path.isdir(prefix_arg)
+            or prefix_arg.endswith(os.path.sep)
+            or prefix_arg in {".", "..", "~"}
+        ):
+            os.makedirs(expand_and_normalize(prefix_arg), exist_ok=True)
 
-        for path in [base, outputs, inputs]:
-            os.makedirs(path, exist_ok=True)
+            # Use the input filename as a prefix within that directory (stripping out the path)
+            return os.path.join(prefix_arg, input_name)
 
-        #os.path.
-        base_prefix = os.path.join(base,name)
-        outputs_prefix =  os.path.join(outputs,name)
-        inputs_prefix =  os.path.join(inputs,name)
-
-        return base_prefix, outputs_prefix, inputs_prefix
-
-
-    def _decimate_name(self, input_name : str) -> str:
-        name = input_name
-        # Reduce the name size if its too verbose.
-        if len(name) > 25:
-            tokens = re.split(r'[_\-\s]', name)
-
-            def sum_size(in_tokens):
-                total_length = 0
-                for t in in_tokens:
-                    total_length += len(t)
-                return total_length
-            
-            while(sum_size(tokens) > 25):
-                reduced = sum_size(tokens)
-                for i, t in enumerate(tokens):
-                    if len(t) > 3:
-                        tokens[i] = t[:-1]
-                # Can't get smaller!
-                if reduced == sum_size(tokens):
-                    break
-
-            tokens = [token for token in tokens if (token)]
-            name = "_".join(tokens)
-
-        return name
+        # Existing, non-directory prefixes can be used as-is
+        return prefix_arg
 
     def output_yaml(self, output_filepath : str | os.PathLike):
         """

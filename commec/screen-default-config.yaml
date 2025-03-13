@@ -22,10 +22,11 @@ databases:
       regulated_vaxids: "{default}biorisk_db/reg_taxids.txt"
       benign_taxids: "{default}benign_db/vax_taxids.txt"
 threads: 1
-protein_search_tool: 'blastx'
-in_fast_mode: False
-skip_nt_search: False
-do_cleanup: False
 diamond_jobs: null
+do_cleanup: False
 force: False
+in_fast_mode: False
+protein_search_tool: 'blastx'
 resume: False
+skip_nt_search: False
+verbose: False

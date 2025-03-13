@@ -6,6 +6,7 @@ import yaml
 from commec.config.io_parameters import ScreenIO
 from commec.cli import ScreenArgumentParser
 from commec.screen import add_args
+from commec.utils.file_utils import expand_and_normalize
 
 INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.fasta")
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
@@ -45,7 +46,8 @@ def expected_defaults():
         "do_cleanup": False,
         "diamond_jobs": None,
         "force": False,
-        "resume": False
+        "resume": False,
+        "verbose": False
     }
 
 @pytest.fixture
@@ -58,7 +60,7 @@ def custom_yaml_config():
         },
         "in_fast_mode": True,
         "force": True,
-        "threads": 8
+        "threads": 8,
     }
 
 def test_missing_input_file():
@@ -149,3 +151,30 @@ def test_missing_default_config():
         with pytest.raises(FileNotFoundError, match="No default yaml found"):
             _ = ScreenIO(args)
 
+
+@pytest.mark.parametrize(
+    "input_file, prefix_arg, expected_prefix, is_makedirs_called",
+    [
+        # No prefix - keeps relative path
+        ("dir/file.fasta", None, "dir/file", False),
+        # Directory prefix - places in dir
+        ("./file.fasta", "dir/output/", "dir/output/file", True),
+        # Custom prefix - use that directly
+        ("dir/file.fasta", "dir/output", "dir/output", False),
+        # User directory prefix - places in expanded dir
+        ("dir/file.fasta", "~", "~/file", True),
+        # Relative directory prefix - places in dir
+        ("dir/file.fasta", "..", "../file", True),
+    ],
+)
+@patch("os.makedirs")
+def test_get_output_prefix(
+    mock_makedirs, input_file, prefix_arg, expected_prefix, is_makedirs_called
+):
+    assert expected_prefix == ScreenIOParameters.get_output_prefix(input_file, prefix_arg)
+
+    # Verify makedirs was called when appropriate
+    if is_makedirs_called:
+        mock_makedirs.assert_called_once_with(expand_and_normalize(prefix_arg), exist_ok=True)
+    else:
+        mock_makedirs.assert_not_called()

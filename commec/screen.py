@@ -26,6 +26,7 @@ options:
                         Path to directory containing reference databases (e.g. taxonomy, protein, HMM)
   -y CONFIG_YAML, --config CONFIG_YAML
                         Configuration for screen run in YAML format, including custom database paths
+  -v, --verbose         Output verbose (i.e. DEBUG-level) logs
 
 Screen run logic:
   -f, --fast            Run in fast mode and skip protein and nucleotide homology search
@@ -47,19 +48,21 @@ Output file handling:
   -c, --cleanup         Delete intermediate output files for run
   -F, --force           Overwrite any pre-existing output for run (cannot be used with --resume)
   -R, --resume          Re-use any pre-existing output run (cannot be used with --force)
-
 """
 import argparse
 import datetime
 import time
 import logging
 import shutil
+import os
 import sys
 import traceback
 import pandas as pd
 
 from commec.config.io_parameters import ScreenIO
 from commec.config.query import Query
+from commec.utils.file_utils import file_arg, directory_arg
+from commec.utils.logging import setup_console_logging, setup_file_logging, set_log_level
 from commec.config.screen_tools import ScreenTools
 from commec.config.result import (
     ScreenResult,
@@ -76,6 +79,8 @@ from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.config.json_io import encode_screen_data_to_json
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
+
+logger = logging.getLogger(__name__)
 
 class ScreenArgumentParser(argparse.ArgumentParser):
     """
@@ -138,6 +143,13 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="Configuration for screen run in YAML format, including custom database paths",
         default="",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="Output verbose (i.e. DEBUG-level) logs",
+    )
     screen_logic_group = parser.add_argument_group("Screen run logic")
     screen_logic_group.add_argument(
         "-f",
@@ -148,7 +160,7 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
     screen_logic_group.add_argument(
         "-p",
-        "-protein-search-tool",
+        "--protein-search-tool",
         dest="protein_search_tool",
         choices=["blastx", "diamond"],
         help="Tool for protein homology search to identify regulated pathogens",
@@ -247,30 +259,31 @@ class Screen:
 
     def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
+
+
+        # Start logging to console
+        log_level = logging.INFO if not args.verbose else logging.DEBUG
+        setup_console_logging(log_level)
+        logger.debug("Parsing input parameters...")
+
         self.params: ScreenIO = ScreenIO(args)
         self.params.setup()
 
-        # Set up logging
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(message)s",
-            handlers=[
-                logging.StreamHandler(),
-                logging.FileHandler(self.params.output_screen_file, "a"),
-            ],
-        )
+        # Logging level may be overridden
+        if self.params.config["verbose"]:
+            log_level = logging.DEBUG
+        
+        # Update console log-level
+        set_log_level(log_level, update_only_handler_type=logging.StreamHandler)
 
-        # Create a separate DEBUG-only handler for tmp_log
-        debug_handler = logging.FileHandler(self.params.tmp_log, "a")
-        debug_handler.setLevel(logging.DEBUG)  # Set level to DEBUG for this handler
-        logging.getLogger().addHandler(debug_handler)
-
-        logging.info(" Validating Inputs...")
-        self.params.setup()
+        # Needed to initialize parameters before logging to files
+        setup_file_logging(self.params.output_screen_file, log_level)
+        setup_file_logging(self.params.tmp_log, log_level=logging.DEBUG)
+        
+        logger.info("Validating input query and databases...")
         self.database_tools: ScreenTools = ScreenTools(self.params)
 
-        # Add the input contents to the log
-        shutil.copyfile(self.params.input_fasta_path, self.params.tmp_log)
+        logger.info(f"Input query file: {self.params.input_fasta_path}")
 
         # Initialize the queries
         self.queries = self.params.parse_input_fasta()
@@ -308,15 +321,15 @@ class Screen:
         
         # Biorisk screen
         try:
-            logging.info(">> STEP 1: Checking for biorisk genes...")
+            logger.info(">> STEP 1: Checking for biorisk genes...")
             self.screen_biorisks()
-            logging.info(
+            logger.info(
                 " STEP 1 completed at %s",
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             )
         except Exception as e:
-            logging.info(" ERROR STEP 1: Biorisk search failed due to an error:\n %s", str(e))
-            logging.info(" Traceback:\n%s", traceback.format_exc())
+            logger.info(" ERROR STEP 1: Biorisk search failed due to an error:\n %s", str(e))
+            logger.info(" Traceback:\n%s", traceback.format_exc())
             print(" ERROR STEP 1: Biorisk search failed due to an error:\n %s", str(e))
             print(" Traceback:\n%s", traceback.format_exc())
             self.reset_biorisk_recommendations(ScreenStatus.ERROR)
@@ -324,55 +337,55 @@ class Screen:
         # Taxonomy screen (Protein)
         if self.params.should_do_protein_screening:
             try:
-                logging.info(" >> STEP 2: Checking regulated pathogen proteins...")
+                logger.info(" >> STEP 2: Checking regulated pathogen proteins...")
                 self.screen_proteins()
-                logging.info(
+                logger.info(
                     " STEP 2 completed at %s",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
             except Exception as e:
-                logging.info(" ERROR STEP 2: Protein search failed due to an error:\n %s", str(e))
-                logging.info(" Traceback:\n%s", traceback.format_exc())
+                logger.info(" ERROR STEP 2: Protein search failed due to an error:\n %s", str(e))
+                logger.info(" Traceback:\n%s", traceback.format_exc())
                 print(" ERROR STEP 2: Protein search failed due to an error:\n %s", str(e))
                 print(" Traceback:\n%s", traceback.format_exc())
                 self.reset_protein_recommendations(ScreenStatus.ERROR)
         else:
-            logging.info(" SKIPPING STEP 2: Protein search")
+            logger.info(" SKIPPING STEP 2: Protein search")
             self.reset_protein_recommendations(ScreenStatus.SKIP)
 
         # Taxonomy screen (Nucleotide)
         if self.params.should_do_nucleotide_screening:
             try:
-                logging.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
+                logger.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
                 self.screen_nucleotides()
-                logging.info(
+                logger.info(
                     " STEP 3 completed at %s",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
             except Exception as e:
-                logging.info(" ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
-                logging.info(" Traceback:\n%s", traceback.format_exc())
+                logger.info(" ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
+                logger.info(" Traceback:\n%s", traceback.format_exc())
                 print(" ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
                 print(" Traceback:\n%s", traceback.format_exc())
                 self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
         else:
-            logging.info(" SKIPPING STEP 3: Nucleotide search")
+            logger.info(" SKIPPING STEP 3: Nucleotide search")
             self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
 
         # Benign Screen
         if self.params.should_do_benign_screening:
             try:
-                logging.info(
+                logger.info(
                     ">> STEP 4: Checking any pathogen regions for benign components..."
                 )
                 self.screen_benign()
-                logging.info(
+                logger.info(
                     ">> STEP 4 completed at %s",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
             except Exception as e:
-                logging.info(" ERROR STEP 4: Benign search failed due to an error:\n %s", str(e))
-                logging.info(" Traceback:\n%s", traceback.format_exc())
+                logger.info(" ERROR STEP 4: Benign search failed due to an error:\n %s", str(e))
+                logger.info(" Traceback:\n%s", traceback.format_exc())
                 print(" ERROR STEP 4: Benign search failed due to an error:\n %s", str(e))
                 print(" Traceback:\n%s", traceback.format_exc())
                 self.reset_benign_recommendations(ScreenStatus.ERROR)
@@ -380,7 +393,7 @@ class Screen:
             logging.info(" SKIPPING STEP 4: Benign search")
             self.reset_benign_recommendations(ScreenStatus.SKIP)
 
-        logging.info(
+        logger.info(
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
         self.success = True
@@ -390,22 +403,30 @@ class Screen:
         """
         Call hmmscan` and `check_biorisk.py` to add biorisk results to `screen_file`.
         """
-        logging.debug("\t...running hmmscan")
+        logger.debug("\t...running hmmscan")
         self.database_tools.biorisk_hmm.search()
-        logging.debug("\t...checking hmmscan results")
-        check_biorisk(
-            self.database_tools.biorisk_hmm.out_file,
-            self.database_tools.biorisk_hmm.db_directory,
-            self.queries
-        )
-        update_biorisk_data_from_database(self.database_tools.biorisk_hmm, self.screen_data, self.queries)
+        logger.debug("\t...checking hmmscan results")
+        #exit_status = check_biorisk(
+        #    self.database_tools.biorisk_hmm.out_file,
+        #    self.database_tools.biorisk_hmm.db_directory,
+        #    self.queries
+        #)
+        exit_status = update_biorisk_data_from_database(
+            self.database_tools.biorisk_hmm, 
+            self.screen_data, 
+            self.queries)
+        
+        if exit_status != 0:
+            raise RuntimeError(
+                f"Output of biorisk search could not be processed: {self.database_tools.biorisk_hmm.out_file}"
+            )
 
     def screen_proteins(self):
         """
         Call `run_blastx.sh` or `run_diamond.sh` followed by `check_reg_path.py` to add regulated
         pathogen protein screening results to `screen_file`.
         """
-        logging.debug("\t...running %s", self.params.config["protein_search_tool"])
+        logger.debug("\t...running %s", self.params.config["protein_search_tool"])
         self.database_tools.regulated_protein.search()
         if not self.database_tools.regulated_protein.check_output():
             self.reset_protein_recommendations(ScreenStatus.ERROR)
@@ -414,7 +435,7 @@ class Screen:
                 + self.database_tools.regulated_protein.out_file
             )
 
-        logging.debug(
+        logger.debug(
             "\t...checking %s results", self.params.config["protein_search_tool"]
         )
 
@@ -449,7 +470,7 @@ class Screen:
         
         # Skip if there is no non-coding information.
         if nc_fasta_sequences == "":
-            logging.debug(
+            logger.debug(
                 "\t...skipping nucleotide search since no noncoding regions fetched"
             )
             self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
@@ -469,6 +490,7 @@ class Screen:
                 + self.database_tools.regulated_nt.out_file
             )
         
+        logger.debug("\t...checking blastn results")
         # Note: Currently noncoding coordinates are converted within update_taxonomic_data_from_database,
         update_taxonomic_data_from_database(self.database_tools.regulated_nt,
                                             self.database_tools.benign_taxid_path,
@@ -492,16 +514,16 @@ class Screen:
                 break
 
         if not hits_to_clear:
-            logging.info("\t...no regulated regions to clear\n")
+            logger.info("\t...no regulated regions to clear\n")
             self.reset_benign_recommendations(ScreenStatus.SKIP)
             return
 
         # Run the benign tools:
-        logging.info("\t...running benign hmmscan")
+        logger.info("\t...running benign hmmscan")
         self.database_tools.benign_hmm.search()
-        logging.info("\t...running benign blastn")
+        logger.info("\t...running benign blastn")
         self.database_tools.benign_blastn.search()
-        logging.info("\t...running benign cmscan")
+        logger.info("\t...running benign cmscan")
         self.database_tools.benign_cmscan.search()
 
 

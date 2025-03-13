@@ -36,6 +36,8 @@ MINIMUM_QUERY_COVERAGE_FRACTION : float = 0.80
 MINIMUM_RNA_BASEPAIR_COVERAGE : int = 50
 MINIMUM_SYNBIO_COVERAGE_FRACTION : float = 0.80
 
+logger = logging.getLogger(__name__)
+
 def _filter_benign_proteins(query : Query,
                             hit : HitResult,
                             region : MatchRange,

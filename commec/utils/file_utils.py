@@ -23,3 +23,8 @@ def file_arg(path):
     if not os.path.getsize(path) > 0:
         raise argparse.ArgumentTypeError(f"{path} is an empty file")
     return path
+
+@staticmethod
+def expand_and_normalize(path):
+    """Expand ~ and $var path elements, and normalize path, removing double slashes, etc."""
+    return os.path.normpath(os.path.expandvars(os.path.expanduser(path)))

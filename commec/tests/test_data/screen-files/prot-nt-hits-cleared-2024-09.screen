@@ -1,0 +1,41 @@
+>> STEP 1: Checking for biorisk genes...
+		 --> Biorisks: no hits detected, PASS
+ STEP 1 completed at 2024-09-03 05:57:18
+ >> STEP 2: Checking regulated pathogen proteins...
+		 --> Best match to sequence(s) NDS77015 at bases 89 - 268 found in only regulated organisms: FLAG (bacteria)
+		     Species: Francisella tularensis (taxid(s): 119857) (98.333 percent identity to query)
+		     Description: hypothetical protein [Francisella tularensis subsp. holarctica]
+		 --> Best match to sequence(s) CEE24912 at bases 391 - 501 found in only regulated organisms: FLAG (bacteria)
+		     Species: Xanthomonas citri (taxid(s): 611301, 487854) (75.758 percent identity to query)
+		     Description: conserved hypothetical protein [Xanthomonas citri pv. citri]
+ STEP 2 completed at 2024-09-03 06:42:50
+ >> STEP 3: Checking regulated pathogen nucleotides...
+	...protein hits found, fetching nt regions not covered by a 90% ID hit or better
+	...Regulated protein region at bases 89 to 268 overlapped with a nucleotide hit
+		     Species: Francisella tularensis (taxid(s): 263) (100.0 percent identity to query)
+	...Regulated protein region at bases 391 to 501 overlapped with a nucleotide hit
+		     Species: Francisella tularensis (taxid(s): 263) (100.0 percent identity to query)
+		 --> Best match to sequence(s) AF143093 at bases 1 - 411 found in only regulated organisms: FLAG (bacteria)
+		     Species: Francisella tularensis (taxid(s): 263) (100.0 percent identity to query)
+		     Description: Francisella tularensis 16S ribosomal RNA gene, partial sequence
+ STEP 3 completed at 2024-09-03 11:29:43
+>> STEP 4: Checking any pathogen regions for benign components...
+	...no housekeeping protein hits
+		 -->Housekeeping RNAs - <50 bases unaccounted for: PASS
+		   RNA family: SSU_rRNA_bacteria
+		 -->Housekeeping RNAs - <50 bases unaccounted for: PASS
+		   RNA family: SSU_rRNA_bacteria
+		 -->Housekeeping RNAs - <50 bases unaccounted for: PASS
+		   RNA family: SSU_rRNA_bacteria
+		 -->Synbio sequences - >80% coverage achieved = PASS
+		   Synbio parts: BBa_I1100 P 3987 Composite "SBWB Ribosome Test System"
+		   BBa_C0101 P 3986 Coding "16s rRNA (non-standard 5%27 end, matched to B0035)"
+		 -->Synbio sequences - >80% coverage achieved = PASS
+		   Synbio parts: BBa_I1100 P 3987 Composite "SBWB Ribosome Test System"
+		   BBa_C0101 P 3986 Coding "16s rRNA (non-standard 5%27 end, matched to B0035)"
+		 -->Synbio sequences - >80% coverage achieved = PASS
+		   Synbio parts: BBa_I1100 P 3987 Composite "SBWB Ribosome Test System"
+		   BBa_C0101 P 3986 Coding "16s rRNA (non-standard 5%27 end, matched to B0035)"
+
+		 -->all regulated regions cleared: PASS
+>> COMPLETED AT 2024-09-03 11:29:50
