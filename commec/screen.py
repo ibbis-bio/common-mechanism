@@ -415,13 +415,21 @@ class Screen:
         """
         logger.debug("\t...running hmmscan")
         self.database_tools.biorisk_hmm.search()
-        logging.debug("\t...checking hmmscan results")
-        check_biorisk(
-            self.database_tools.biorisk_hmm.out_file,
-            self.database_tools.biorisk_hmm.db_directory,
-            self.queries
-        )
-        update_biorisk_data_from_database(self.database_tools.biorisk_hmm, self.screen_data, self.queries)
+        logger.debug("\t...checking hmmscan results")
+        #exit_status = check_biorisk(
+        #    self.database_tools.biorisk_hmm.out_file,
+        #    self.database_tools.biorisk_hmm.db_directory,
+        #    self.queries
+        #)
+        exit_status = update_biorisk_data_from_database(
+            self.database_tools.biorisk_hmm,
+            self.screen_data,
+            self.queries)
+        
+        if exit_status != 0:
+            raise RuntimeError(
+                f"Output of biorisk search could not be processed: {self.database_tools.biorisk_hmm.out_file}"
+            )
 
     def screen_proteins(self):
         """
