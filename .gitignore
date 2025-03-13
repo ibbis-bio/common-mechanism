@@ -30,3 +30,6 @@ venv/
 .vscode
 .pylintrc
 *:Zone.Identifier
+
+# test visual output
+commec/tests/test_data/functional.html
