@@ -61,13 +61,13 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
     hmm_folder_csv = os.path.join(search_handle.db_directory,"biorisk_annotations.csv")
     if not os.path.exists(hmm_folder_csv):
         logger.error("\t...biorisk_annotations.csv does not exist\n %s", hmm_folder_csv)
-        return
+        return 1
     if not search_handle.check_output():
         logger.error("\t...database output file does not exist\n %s", search_handle.out_file)
-        return
+        return 1
     if search_handle.is_empty(search_handle.out_file):
         logger.error("\t...ERROR: biorisk search results empty\n")
-        return
+        return 1
 
     for query in data.queries.values():
         query.recommendation.biorisk_status = ScreenStatus.PASS
@@ -152,6 +152,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
 
         # Update the recommendation for this query for biorisk.
         query_data.recommendation.biorisk_status = biorisk_overall
+    return 0
 
 def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str, queries : dict[str,Query]):
     """

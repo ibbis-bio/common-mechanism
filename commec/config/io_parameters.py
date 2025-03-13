@@ -243,37 +243,69 @@ class ScreenIO:
                 pass
 
     @staticmethod
-    def _get_output_prefixes(input_file: str | os.PathLike, prefix_arg="") -> str:
+    def _get_output_prefixes(input_file: str | os.PathLike, prefix_arg=None) -> str:
         """
-        Returns a prefix that can be used for all output files.
+        Returns a set of prefixes that can be used for all output files:
+            prefix/name
+            prefix/output_name/name
+            prefix/input_name/name
 
         - If no prefix was given, use the input filename.
         - If a directory was given, use the input filename 
             as file prefix within that directory.
         """
-        input_dir = os.path.dirname(input_file)
-        # Get file stem (e.g. /home/user/commec/testing_cm_02.fasta -> testing_cm_02)
-        input_name = os.path.splitext(os.path.basename(input_file))[0]
-        # Take only the first 64 characters of the input name
-        if len(input_name) > 64:
-            input_name = input_name[:64]
+        #input_dir = os.path.dirname(input_file)
+        ## Get file stem (e.g. /home/user/commec/testing_cm_02.fasta -> testing_cm_02)
+        #input_name = os.path.splitext(os.path.basename(input_file))[0]
+        ## Take only the first 64 characters of the input name
+        #if len(input_name) > 64:
+        #    input_name = input_name[:64]
 
-        # If no prefix given, use input filepath without extension
-        if not prefix_arg:
-            return os.path.join(input_dir, input_name)
+        ## If no prefix given, use input filepath without extension
+        #if not prefix_arg:
+        #    return os.path.join(input_dir, input_name)
 
-        if (
-            os.path.isdir(prefix_arg)
-            or prefix_arg.endswith(os.path.sep)
-            or prefix_arg in {".", "..", "~"}
-        ):
-            os.makedirs(expand_and_normalize(prefix_arg), exist_ok=True)
+        #if (
+        #    os.path.isdir(prefix_arg)
+        #    or prefix_arg.endswith(os.path.sep)
+        #    or prefix_arg in {".", "..", "~"}
+        #):
+        #    os.makedirs(expand_and_normalize(prefix_arg), exist_ok=True)
 
-            # Use the input filename as a prefix within that directory (stripping out the path)
-            return os.path.join(prefix_arg, input_name)
+        #    # Use the input filename as a prefix within that directory (stripping out the path)
+        #    return os.path.join(prefix_arg, input_name)
 
-        # Existing, non-directory prefixes can be used as-is
-        return prefix_arg
+        ## Existing, non-directory prefixes can be used as-is
+        #return prefix_arg
+
+        name = os.path.splitext(os.path.basename(input_file))[0]
+        name = name[:64]
+
+        prefix = prefix_arg or os.path.dirname(input_file)
+
+        # Update the prefix and name of the prefix argument is not a directory.
+        if prefix_arg:
+            if not (
+                os.path.isdir(prefix_arg)
+                or prefix_arg.endswith(os.path.sep)
+                or prefix_arg in {".", "..", "~"}
+            ):
+                name = os.path.splitext(os.path.basename(prefix))[0]
+                prefix = os.path.dirname(input_file)
+
+        base = prefix
+        outputs = os.path.join(prefix, f"output_{name}/")
+        inputs = os.path.join(prefix, f"input_{name}/")
+
+        for path in [base, outputs, inputs]:
+            os.makedirs(expand_and_normalize(path), exist_ok=True)
+
+        #os.path.
+        base_prefix = os.path.join(base,name)
+        outputs_prefix =  os.path.join(outputs,name)
+        inputs_prefix =  os.path.join(inputs,name)
+
+        return base_prefix, outputs_prefix, inputs_prefix
 
     def output_yaml(self, output_filepath : str | os.PathLike):
         """

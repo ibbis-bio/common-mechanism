@@ -412,8 +412,8 @@ class Screen:
         #    self.queries
         #)
         exit_status = update_biorisk_data_from_database(
-            self.database_tools.biorisk_hmm, 
-            self.screen_data, 
+            self.database_tools.biorisk_hmm,
+            self.screen_data,
             self.queries)
         
         if exit_status != 0:
