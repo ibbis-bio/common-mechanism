@@ -70,7 +70,7 @@ from commec.config.result import (
 )
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
-from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
+from commec.screeners.check_biorisk import update_biorisk_data_from_database
 from commec.screeners.check_benign import update_benign_data_from_database
 from commec.screeners.check_reg_path import update_taxonomic_data_from_database
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
@@ -272,7 +272,7 @@ class Screen:
         # Logging level may be overridden
         if self.params.config["verbose"]:
             log_level = logging.DEBUG
-        
+
         # Update console log-level
         set_log_level(log_level, update_only_handler_type=logging.StreamHandler)
         logging.info(" Validating Inputs...")
@@ -281,18 +281,11 @@ class Screen:
 
         # Needed to initialize parameters before logging to files
         setup_file_logging(self.params.output_screen_file, log_level)
-        setup_file_logging(self.params.tmp_log, log_level=logging.DEBUG)
-        
+
         logger.info("Validating input query and databases...")
         self.database_tools: ScreenTools = ScreenTools(self.params)
 
-        logger.info(f"Input query file: {self.params.query.input_fasta_path}")
-
-        # Update screen data output with the Query information.
-        # TODO: Parse the input query, separate out the input names, and 
-        #self.output_screen_data.query.name = self.params.query.query_description
-        #self.output_screen_data.query.length = len(self.params.query.aa_raw)
-        #self.output_screen_data.query.sequence = self.params.query.aa_raw
+        logger.info("Input query file: %s", self.params.input_fasta_path)
 
         # Initialize the queries
         self.queries = self.params.parse_input_fasta()
@@ -337,10 +330,8 @@ class Screen:
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             )
         except Exception as e:
-            logging.info(" ERROR STEP 1: Biorisk search failed due to an error:\n %s", str(e))
-            logging.info(" Traceback:\n%s", traceback.format_exc())
-            print(" ERROR STEP 1: Biorisk search failed due to an error:\n %s", str(e))
-            print(" Traceback:\n%s", traceback.format_exc())
+            logger.info(" ERROR STEP 1: Biorisk search failed due to an error:\n %s", str(e))
+            logger.info(" Traceback:\n%s", traceback.format_exc())
             self.reset_biorisk_recommendations(ScreenStatus.ERROR)
 
         # Taxonomy screen (Protein)
@@ -353,10 +344,8 @@ class Screen:
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
             except Exception as e:
-                logging.info(" ERROR STEP 2: Protein search failed due to an error:\n %s", str(e))
-                logging.info(" Traceback:\n%s", traceback.format_exc())
-                print(" ERROR STEP 2: Protein search failed due to an error:\n %s", str(e))
-                print(" Traceback:\n%s", traceback.format_exc())
+                logger.info(" ERROR STEP 2: Protein search failed due to an error:\n %s", str(e))
+                logger.info(" Traceback:\n%s", traceback.format_exc())
                 self.reset_protein_recommendations(ScreenStatus.ERROR)
         else:
             logging.info(" SKIPPING STEP 2: Protein search")
@@ -372,10 +361,8 @@ class Screen:
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
             except Exception as e:
-                logging.info(" ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
-                logging.info(" Traceback:\n%s", traceback.format_exc())
-                print(" ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
-                print(" Traceback:\n%s", traceback.format_exc())
+                logger.info(" ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
+                logger.info(" Traceback:\n%s", traceback.format_exc())
                 self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
         else:
             logging.info(" SKIPPING STEP 3: Nucleotide search")
@@ -393,13 +380,11 @@ class Screen:
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
             except Exception as e:
-                logging.info(" ERROR STEP 4: Benign search failed due to an error:\n %s", str(e))
-                logging.info(" Traceback:\n%s", traceback.format_exc())
-                print(" ERROR STEP 4: Benign search failed due to an error:\n %s", str(e))
-                print(" Traceback:\n%s", traceback.format_exc())
+                logger.info(" ERROR STEP 4: Benign search failed due to an error:\n %s", str(e))
+                logger.info(" Traceback:\n%s", traceback.format_exc())
                 self.reset_benign_recommendations(ScreenStatus.ERROR)
         else:
-            logging.info(" SKIPPING STEP 4: Benign search")
+            logger.info(" SKIPPING STEP 4: Benign search")
             self.reset_benign_recommendations(ScreenStatus.SKIP)
 
         logger.info(
@@ -416,11 +401,6 @@ class Screen:
         logger.debug("\t...running hmmscan")
         self.database_tools.biorisk_hmm.search()
         logger.debug("\t...checking hmmscan results")
-        #exit_status = check_biorisk(
-        #    self.database_tools.biorisk_hmm.out_file,
-        #    self.database_tools.biorisk_hmm.db_directory,
-        #    self.queries
-        #)
         exit_status = update_biorisk_data_from_database(
             self.database_tools.biorisk_hmm,
             self.screen_data,
@@ -449,15 +429,18 @@ class Screen:
             "\t...checking %s results", self.params.config["protein_search_tool"]
         )
 
-        update_taxonomic_data_from_database(self.database_tools.regulated_protein,
+        exit_status = update_taxonomic_data_from_database(self.database_tools.regulated_protein,
                                             self.database_tools.benign_taxid_path,
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
                                             self.screen_data,
                                             self.queries,
                                             ScreenStep.TAXONOMY_AA,
-                                            self.screen_io.config.threads)
-
+                                            self.params.config["threads"])
+        if exit_status != 0:
+            raise RuntimeError(
+                f"Output of protein taxonomy search could not be processed: {self.database_tools.regulated_protein.out_file}"
+            )
 
     def screen_nucleotides(self):
         """
@@ -472,12 +455,12 @@ class Screen:
         calculate_noncoding_regions_per_query(
             self.database_tools.regulated_protein.out_file,
             self.queries)
-        
+
         # Generate the non-coding fasta.
         nc_fasta_sequences = ""
         for query in self.queries.values():
             nc_fasta_sequences += query.get_non_coding_regions_as_fasta()
-        
+
         # Skip if there is no non-coding information.
         if nc_fasta_sequences == "":
             logging.debug(
@@ -500,9 +483,10 @@ class Screen:
                 "ERROR: Expected nucleotide search output not created: "
                 + self.database_tools.regulated_nt.out_file
             )
-        
+
+        logger.debug("\t...checking blastn results")
         # Note: Currently noncoding coordinates are converted within update_taxonomic_data_from_database,
-        update_taxonomic_data_from_database(self.database_tools.regulated_nt,
+        exit_status = update_taxonomic_data_from_database(self.database_tools.regulated_nt,
                                             self.database_tools.benign_taxid_path,
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
@@ -510,6 +494,11 @@ class Screen:
                                             self.queries,
                                             ScreenStep.TAXONOMY_NT,
                                             self.params.config.threads)
+
+        if exit_status != 0:
+            raise RuntimeError(
+                f"Output of nucleotide taxonomy search could not be processed: {self.database_tools.regulated_nt.out_file}"
+            )
 
     def screen_benign(self):
         """
