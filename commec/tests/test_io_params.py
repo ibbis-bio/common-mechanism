@@ -32,12 +32,12 @@ def expected_defaults():
             "regulated_protein": {
                 "blast": {"path": "commec-dbs/nr_blast/nr"},
                 "diamond": {"path": "commec-dbs/nr_dmnd/nr.dmnd"}
+            },
+            "taxonomy": {
+                "taxonomy_directory": "commec-dbs/taxonomy/",
+                "regulated_vaxids": "commec-dbs/biorisk_db/reg_taxids.txt",
+                "benign_taxids": "commec-dbs/benign_db/vax_taxids.txt"
             }
-        },
-        "taxonomy": {
-            "taxonomy_directory": "commec-dbs/taxonomy/",
-            "regulated_vaxids": "commec-dbs/biorisk_db/vaxids.txt",
-            "benign_taxids": "commec-dbs/benign_db/taxids.txt"
         },
         "threads": 1,
         "protein_search_tool": "blastx",
@@ -136,7 +136,7 @@ def test_cli_override(tmp_path, expected_defaults, custom_yaml_config):
            return dictionary.replace(str_to_override, override_str)
         return dictionary
     
-    expected_defaults = recursive_override(expected_defaults, db_str_to_override, str(tmp_path))
+    expected_defaults = recursive_override(expected_defaults, db_str_to_override, str(tmp_path) + "/")
 
     assert expected_defaults == params.config
 
