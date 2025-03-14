@@ -15,6 +15,7 @@ import re
 import sys
 import textwrap
 import pandas as pd
+from commec.config.screen_tools import ScreenIOParameters
 from commec.tools.blast_tools import read_blast, get_taxonomic_labels, get_top_hits
 from commec.tools.blastn import BlastNHandler
 
@@ -57,7 +58,7 @@ def main():
     sys.exit(exit_code)
 
 
-def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_threads: int):
+def check_for_regulated_pathogens(input_file: str, params: ScreenIOParameters):
     """
     Check an input file (output from a database search) for regulated pathogens, from the benign and
     biorisk database taxids.
@@ -69,13 +70,13 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
     sample_name = re.sub(r"\.nr.*|\.nt\.blastn", "", input_file)
 
     # Read in lists of regulated and benign tax ids
-    benign_taxid_path = f"{input_database_dir}/benign_db/vax_taxids.txt"
+    benign_taxid_path = params.config["databases"]["taxonomy"]["benign_taxids"]
     if not os.path.exists(benign_taxid_path):
         logger.error("\t...benign db file %s does not exist\n", benign_taxid_path)
         return 1
     vax_taxids = pd.read_csv(benign_taxid_path, header=None).squeeze().astype(str).tolist()
 
-    biorisk_taxid_path = f"{input_database_dir}/biorisk_db/reg_taxids.txt"
+    biorisk_taxid_path = params.config["databases"]["taxonomy"]["regulated_vaxids"]
     if not os.path.exists(biorisk_taxid_path):
         logger.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
         return 1
@@ -98,7 +99,7 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
         return 0
 
     blast = read_blast(input_file)
-    blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, input_database_dir + "/taxonomy/", n_threads)
+    blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, params.config["databases"]["taxonomy"]["taxonomy_directory"], params.config["threads"])
     blast = blast[blast["species"] != ""]  # ignore submissions made above the species level
 
     # label each base with the top matching hit, but include different taxids attributed to same hit

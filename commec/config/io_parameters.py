@@ -158,6 +158,10 @@ class ScreenIOParameters:
                 else:
                     self.db_dir = base_paths["default"]
 
+                # Ensure that the 
+                for key, value in base_paths.items():
+                    base_paths[key] = os.path.join(value,'')
+
                 def recursive_format(dictionary, base_paths):
                     """
                     Recursively apply string formatting to read paths from nested yaml config dicts.
