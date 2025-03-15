@@ -35,7 +35,7 @@ def expected_defaults():
             },
             "taxonomy": {
                 "taxonomy_directory": "commec-dbs/taxonomy/",
-                "regulated_vaxids": "commec-dbs/biorisk_db/reg_taxids.txt",
+                "regulated_taxids": "commec-dbs/biorisk_db/reg_taxids.txt",
                 "benign_taxids": "commec-dbs/benign_db/vax_taxids.txt"
             }
         },
@@ -55,7 +55,7 @@ def custom_yaml_config():
     return {
         "databases": {
             "taxonomy": {
-                "regulated_vaxids" : "custom_path.txt"
+                "regulated_taxids" : "custom_path.txt"
             }
         },
         "in_fast_mode": True,

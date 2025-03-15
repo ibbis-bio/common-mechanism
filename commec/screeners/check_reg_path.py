@@ -76,7 +76,7 @@ def check_for_regulated_pathogens(input_file: str, params: ScreenIOParameters):
         return 1
     vax_taxids = pd.read_csv(benign_taxid_path, header=None).squeeze().astype(str).tolist()
 
-    biorisk_taxid_path = params.config["databases"]["taxonomy"]["regulated_vaxids"]
+    biorisk_taxid_path = params.config["databases"]["taxonomy"]["regulated_taxids"]
     if not os.path.exists(biorisk_taxid_path):
         logger.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
         return 1
