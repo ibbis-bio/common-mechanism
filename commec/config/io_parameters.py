@@ -158,25 +158,25 @@ class ScreenIOParameters:
                 else:
                     self.db_dir = base_paths["default"]
 
-                # Ensure that the 
+                # Ensure all the base paths end with a separator
                 for key, value in base_paths.items():
                     base_paths[key] = os.path.join(value,'')
 
-                def recursive_format(dictionary, base_paths):
+                def recursive_format(nested_yaml, base_paths):
                     """
                     Recursively apply string formatting to read paths from nested yaml config dicts.
                     """
-                    if isinstance(dictionary, dict):
+                    if isinstance(nested_yaml, dict):
                         return {key : recursive_format(value, base_paths) 
-                                for key, value in dictionary.items()}
-                    if isinstance(dictionary, str):
+                                for key, value in nested_yaml.items()}
+                    if isinstance(nested_yaml, str):
                         try:
-                            return dictionary.format(**base_paths)
+                            return nested_yaml.format(**base_paths)
                         except KeyError as e:
                             raise ValueError(
-                                f"Unknown base path key referenced in path: {dictionary}"
+                                f"Unknown base path key referenced in path: {nested_yaml}"
                             ) from e
-                    return dictionary
+                    return nested_yaml
 
                 self.config = recursive_format(self.config, base_paths)
             except TypeError:
