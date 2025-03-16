@@ -346,7 +346,7 @@ class Screen:
             self.database_tools.regulated_protein.out_file,
             self.params.config["databases"]["taxonomy"]["path"],
             self.params.config["databases"]["taxonomy"]["benign_taxids"],
-            self.params.config["databases"]["taxonomy"]["benign_taxids"],
+            self.params.config["databases"]["taxonomy"]["regulated_taxids"],
             self.params.config["threads"]
         )
 
@@ -381,7 +381,10 @@ class Screen:
         logger.debug("\t...checking blastn results")
         check_for_regulated_pathogens(
             self.database_tools.regulated_nt.out_file,
-            self.params
+            self.params.config["databases"]["taxonomy"]["path"],
+            self.params.config["databases"]["taxonomy"]["benign_taxids"],
+            self.params.config["databases"]["taxonomy"]["regulated_taxids"],
+            self.params.config["threads"]
         )
 
     def screen_benign(self):
