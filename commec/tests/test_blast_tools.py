@@ -75,7 +75,7 @@ def test_get_lineages(mock_lineage, blast_df, lineage_df):
     mock_lineage.return_value = lineage_df
     blast_df = _split_by_tax_id(blast_df)
     lin = _get_lineages(
-        blast_df["subject tax ids"], "/home/tessa/cm_databases/taxonomy/", 8
+        blast_df["subject tax ids"], "commec-dbs/taxonomy/", 8
     )
     # Expect the invalid taxid to be filtered out
     expected_tax_ids = {2371, 644357, 10760, 32630}
@@ -89,7 +89,7 @@ def test_taxdist(mock_lineage, blast_df, lineage_df):
     reg_taxids = ['644357', '10760']
     vax_taxids = ['10760']
     reg_df = get_taxonomic_labels(
-        blast_df, reg_taxids, vax_taxids, "/home/tessa/cm_databases/taxonomy/", 8
+        blast_df, reg_taxids, vax_taxids, "commec-dbs/taxonomy/", 8
     )
     # Expect the synthetic taxid to be filtered out
     expected_tax_ids = {2371, 644357, 10760}

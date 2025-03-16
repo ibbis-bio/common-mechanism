@@ -344,8 +344,10 @@ class Screen:
 
         check_for_regulated_pathogens(
             self.database_tools.regulated_protein.out_file,
-            self.params.db_dir,
-            str(self.params.config["threads"]),
+            self.params.config["databases"]["taxonomy"]["path"],
+            self.params.config["databases"]["taxonomy"]["benign_taxids"],
+            self.params.config["databases"]["taxonomy"]["benign_taxids"],
+            self.params.config["threads"]
         )
 
     def screen_nucleotides(self):
@@ -379,8 +381,7 @@ class Screen:
         logger.debug("\t...checking blastn results")
         check_for_regulated_pathogens(
             self.database_tools.regulated_nt.out_file,
-            self.params.db_dir,
-            str(self.params.config["threads"]),
+            self.params
         )
 
     def screen_benign(self):
