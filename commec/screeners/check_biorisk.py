@@ -67,7 +67,7 @@ def check_biorisk(hmmscan_input_file: str, biorisk_annotations_directory: str) -
 
     if hmmer.shape[0] == 0:
         logger.info("\t\t --> Biorisks: no significant hits detected, PASS\n")
-        return
+        return 0
 
     if sum(hmmer["Must flag"]) > 0:
         for region in hmmer.index[hmmer["Must flag"] != 0]:
