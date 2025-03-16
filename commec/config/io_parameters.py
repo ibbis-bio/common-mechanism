@@ -19,6 +19,7 @@ from yaml.parser import ParserError
 from commec.config.query import Query
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 from commec.utils.file_utils import expand_and_normalize
+from commec.utils.dict_utils import deep_update
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +89,7 @@ class ScreenIOParameters:
         # Read package-level configuration defaults
         default_yaml = importlib.resources.files("commec").joinpath(DEFAULT_CONFIG_YAML_PATH)
         if default_yaml.exists():
-            self._lazy_update_config_from_yaml(str(default_yaml))
+            self.config = self._load_config_from_yaml(str(default_yaml))
         else:
             raise FileNotFoundError(
                 f"No default yaml found. Expected at {DEFAULT_CONFIG_YAML_PATH}"
@@ -97,7 +98,7 @@ class ScreenIOParameters:
         # Override configuration with any in user-provided YAML file
         cli_config_yaml=args.config_yaml.strip()
         if os.path.exists(cli_config_yaml):
-            self._lazy_update_config_from_yaml(cli_config_yaml)
+            self._update_config_from_yaml(cli_config_yaml)
 
         # Override configuration with any user-provided CLI arguments
         self._update_config_from_cli(args)
@@ -105,19 +106,27 @@ class ScreenIOParameters:
         # Update paths in configuration using appropriate string substitution
         self._format_config_paths(self.db_dir)
 
-    def _lazy_update_config_from_yaml(self, config_filepath: str | os.PathLike) -> None:
+    def _load_config_from_yaml(self, config_filepath: str | os.PathLike) -> dict:
         """
-        Loads a yaml file as a dictionary into the Config dictionary.
-        The load is done lazily - and basepaths are not parsed and replaced throughout.
+        Loads a yaml file, ensuring it's a dictionary.
         """
-        raw_config_from_yaml = {}
         try:
             with open(config_filepath, "r", encoding = "utf-8") as file:
-                raw_config_from_yaml = yaml.safe_load(file)
+                config_from_yaml = yaml.safe_load(file)
         except ParserError:
             raise ValueError(f"Invalid yaml syntax in configuration file: {config_filepath}")
-        assert isinstance(raw_config_from_yaml, dict), "Loaded configuration file (yaml) did not result in a Dictionary!"
-        self.config.update(raw_config_from_yaml)
+
+        if not isinstance(config_from_yaml, dict):
+            raise TypeError(f"Loaded configuration file did not result in a dictionary: {file}")
+        return config_from_yaml
+
+    def _update_config_from_yaml(self, config_filepath: str | os.PathLike) -> None:
+        """
+        Override YAML configuration based on provided YAML file. Items in the provided file, but
+        not in the default YAML, will be ignored.
+        """
+        config_from_yaml = self._load_config_from_yaml(config_filepath)
+        self.config = deep_update(self.config, config_from_yaml)
 
     def _update_config_from_cli(self, args: argparse.Namespace):
         """ 
