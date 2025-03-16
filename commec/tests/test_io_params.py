@@ -34,7 +34,7 @@ def expected_defaults():
                 "diamond": {"path": "commec-dbs/nr_dmnd/nr.dmnd"}
             },
             "taxonomy": {
-                "taxonomy_directory": "commec-dbs/taxonomy/",
+                "path": "commec-dbs/taxonomy/",
                 "regulated_taxids": "commec-dbs/biorisk_db/reg_taxids.txt",
                 "benign_taxids": "commec-dbs/benign_db/vax_taxids.txt"
             }

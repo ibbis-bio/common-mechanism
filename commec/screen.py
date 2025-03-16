@@ -344,8 +344,10 @@ class Screen:
 
         check_for_regulated_pathogens(
             self.database_tools.regulated_protein.out_file,
-            #self.params.db_dir,
-            self.params
+            self.params.config["databases"]["taxonomy"]["path"],
+            self.params.config["databases"]["taxonomy"]["benign_taxids"],
+            self.params.config["databases"]["taxonomy"]["benign_taxids"],
+            self.params.config["threads"]
         )
 
     def screen_nucleotides(self):

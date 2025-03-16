@@ -18,8 +18,8 @@ databases:
     diamond:
       path: '{default}nr_dmnd/nr.dmnd'
   taxonomy:
-      taxonomy_directory: "{default}taxonomy/"
-      regulated_vaxids: "{default}biorisk_db/reg_taxids.txt"
+      path: "{default}taxonomy/"
+      regulated_taxids: "{default}biorisk_db/reg_taxids.txt"
       benign_taxids: "{default}benign_db/vax_taxids.txt"
 threads: 1
 diamond_jobs: null
