@@ -32,12 +32,12 @@ def expected_defaults():
             "regulated_protein": {
                 "blast": {"path": "commec-dbs/nr_blast/nr"},
                 "diamond": {"path": "commec-dbs/nr_dmnd/nr.dmnd"}
+            },
+            "taxonomy": {
+                "path": "commec-dbs/taxonomy/",
+                "regulated_taxids": "commec-dbs/biorisk_db/reg_taxids.txt",
+                "benign_taxids": "commec-dbs/benign_db/vax_taxids.txt"
             }
-        },
-        "taxonomy": {
-            "taxonomy_directory": "commec-dbs/taxonomy/",
-            "regulated_vaxids": "commec-dbs/biorisk_db/vaxids.txt",
-            "benign_taxids": "commec-dbs/benign_db/taxids.txt"
         },
         "threads": 1,
         "protein_search_tool": "blastx",
@@ -55,7 +55,7 @@ def custom_yaml_config():
     return {
         "databases": {
             "taxonomy": {
-                "regulated_vaxids" : "custom_path.txt"
+                "regulated_taxids" : "custom_path.txt"
             }
         },
         "in_fast_mode": True,
@@ -136,7 +136,7 @@ def test_cli_override(tmp_path, expected_defaults, custom_yaml_config):
            return dictionary.replace(str_to_override, override_str)
         return dictionary
     
-    expected_defaults = recursive_override(expected_defaults, db_str_to_override, str(tmp_path))
+    expected_defaults = recursive_override(expected_defaults, db_str_to_override, str(tmp_path) + "/")
 
     assert expected_defaults == params.config
 
@@ -150,6 +150,43 @@ def test_missing_default_config():
         
         with pytest.raises(FileNotFoundError, match="No default yaml found"):
             _ = ScreenIOParameters(args)
+
+
+
+@pytest.mark.parametrize(
+    "base_path, benign_path, expected_path",
+    [
+        # Expected (basepath has terminal separator)
+        ("commec-dbs/", "{default}benign_db/benign.cm", "commec-dbs/benign_db/benign.cm"),
+        # No separators
+        ("commec-dbs", "{default}benign_db/benign.cm", "commec-dbs/benign_db/benign.cm"),
+        # Subpath has separator
+        ("commec-dbs", "{default}/benign_db/benign.cm", "commec-dbs//benign_db/benign.cm"),
+        # Double separators
+        ("commec-dbs/", "{default}/benign_db/benign.cm", "commec-dbs//benign_db/benign.cm"),
+    ],
+)
+def test_format_config_paths(tmp_path, base_path, benign_path, expected_path):
+    config_yaml = {
+        "databases": {
+            "base_paths": {
+                "default": base_path
+            },
+            "benign": {
+                "path" : benign_path
+            }
+        }
+    }    
+    user_config_path = tmp_path / "user_config.yaml"
+    with open(user_config_path, 'w') as f:
+        yaml.dump(config_yaml, f)
+    
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
+    params = ScreenIOParameters(args)
+    
+    assert expected_path == params.config["databases"]["benign"]["path"]
 
 
 @pytest.mark.parametrize(
