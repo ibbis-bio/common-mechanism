@@ -1,0 +1,91 @@
+name: Update Version and SHA on Release Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  update-version-sha:
+    # Only run if the PR was merged (regardless of merge strategy) and it was from a release branch
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release-v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          ref: main  # Ensure we're on the main branch after merge
+          fetch-depth: 0  # Need full history
+
+      - name: Extract version from branch name
+        id: get_version
+        run: |
+          # Extract version from the release branch name (release-vX.Y.Z -> X.Y.Z)
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          VERSION=$(echo $BRANCH_NAME | sed 's/release-v//')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Extracted version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Extracted version: $VERSION"
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Update version files
+        run: |
+          # Update version in pyproject.toml
+          sed -i "s/^version = \".*\"/version = \"${{ env.VERSION }}\"/" pyproject.toml
+          
+          # Update version in meta.yaml
+          sed -i "s/{% set version = \".*\" %}/{% set version = \"${{ env.VERSION }}\" %}/" meta.yaml
+          
+          echo "Updated version to ${{ env.VERSION }} in files"
+
+      - name: Calculate SHA256 hash
+        id: calculate_sha
+        run: |
+          # Create source distribution
+          python -m pip install build
+          python -m build --sdist
+          
+          # Find the generated tar.gz file
+          SDIST_FILE=$(find dist -name "*.tar.gz" | head -n 1)
+          
+          if [ -z "$SDIST_FILE" ]; then
+            echo "ERROR: No tar.gz file found in dist directory"
+            exit 1
+          fi
+          
+          echo "Found sdist file: $SDIST_FILE"
+          
+          # Get the SHA256 hash of the generated tar.gz file
+          SHA256=$(sha256sum "$SDIST_FILE" | cut -d ' ' -f 1)
+          echo "SHA256=$SHA256" >> $GITHUB_ENV
+          echo "SHA256 hash: $SHA256"
+
+      - name: Update SHA in meta.yaml
+        run: |
+          # Update SHA256 in meta.yaml
+          sed -i "s/{% set sha256 = \".*\" %}/{% set sha256 = \"${{ env.SHA256 }}\" %}/" meta.yaml
+          echo "Updated SHA256 in meta.yaml"
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add pyproject.toml meta.yaml
+          git commit -m "Bump version to ${{ env.VERSION }} and update SHA [skip ci]"
+          git push
+          echo "Pushed changes to repository"
+
+      - name: Create version tag
+        run: |
+          git tag "v${{ env.VERSION }}"
+          git push origin "v${{ env.VERSION }}"
+          echo "Created and pushed tag v${{ env.VERSION }}"
