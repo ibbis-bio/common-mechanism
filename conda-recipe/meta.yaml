@@ -1,5 +1,5 @@
 {% set name = "commec" %}
-{% set version = "0.3.1" %}
+{% set version = "0.3.2" %}
 {% set sha256 = "77e86e6980138a9959ebe93d5595840e4451970d48ed15af5ccf59dd60edb378" %}
 
 package:
@@ -28,6 +28,7 @@ requirements:
     - pip
     - setuptools
   run:
+    - python >=3.10
     # Runtime Python dependencies
     - biopython
     - numpy
