@@ -120,6 +120,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
             target_description = ", ".join(set(unique_target_data['description'])) # First should be unique.
             must_flag = unique_target_data['Must flag'].iloc[0] # First should be unique.
             match_ranges = []
+            match_string = ""
             for _, region in unique_target_data.iterrows():
                 match_range = MatchRange(
                     float(region['E-value']),
@@ -127,17 +128,27 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
                     int(region['q. start']), int(region['q. end'])
                 )
                 match_ranges.append(match_range)
+                match_string += f"{match_range.query_start}-{match_range.query_end}, "
+
+            # Remove final ", "
+            match_string = match_string[:-2]
 
             target_recommendation : ScreenStatus = ScreenStatus.FLAG if must_flag > 0 else ScreenStatus.WARN
 
             biorisk_overall = compare(target_recommendation, biorisk_overall)
 
+            regulation_str : str = "Regulated Gene" if must_flag else "Virulance Factor"
+
             hit_data : HitResult = query_data.get_hit(affected_target)
             if hit_data:
                 hit_data.ranges.extend(match_ranges)
+                logger.info(
+                    "\t --> " + regulation_str +
+                    " found in " + affected_query[:-2] +
+                    " at coordinates: " + match_string + "."
+                )
                 continue
 
-            regulation_str : str = "Regulated Gene" if must_flag else "Virulance Factor"
             
             domain : str = _guess_domain(""+str(affected_target)+target_description)
             
@@ -153,16 +164,11 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
             )
             query_data.hits[affected_target] = new_hit
 
-            # TODO: Update this log message for modernity.
-            #logger.info(
-            #    "\t\t --> Biorisks: Regulated gene in bases "
-            #    + str(hmmer["q. start"][region])
-            #    + " to "
-            #    + str(hmmer["q. end"][region])
-            #    + ": FLAG\n\t\t     Gene: "
-            #    + ", ".join(set(hmmer["description"][hmmer["Must flag"] == True]))
-            #    + "\n"
-            #)
+            logger.info(
+                "\t --> " + regulation_str +
+                " found in " + affected_query[:-2] +
+                " at coordinates: " + match_string + "."
+            )
 
         # Update the recommendation for this query for biorisk.
         query_data.recommendation.biorisk_status = biorisk_overall

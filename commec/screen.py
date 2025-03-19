@@ -329,8 +329,6 @@ class Screen:
         except Exception as e:
             logger.info(" ERROR STEP 1: Biorisk search failed due to an error:\n %s", str(e))
             logger.info(" Traceback:\n%s", traceback.format_exc())
-            print(" ERROR STEP 1: Biorisk search failed due to an error:\n %s", str(e))
-            print(" Traceback:\n%s", traceback.format_exc())
             self.reset_biorisk_recommendations(ScreenStatus.ERROR)
 
         # Taxonomy screen (Protein)
@@ -345,8 +343,6 @@ class Screen:
             except Exception as e:
                 logger.info(" ERROR STEP 2: Protein search failed due to an error:\n %s", str(e))
                 logger.info(" Traceback:\n%s", traceback.format_exc())
-                print(" ERROR STEP 2: Protein search failed due to an error:\n %s", str(e))
-                print(" Traceback:\n%s", traceback.format_exc())
                 self.reset_protein_recommendations(ScreenStatus.ERROR)
         else:
             logger.info(" SKIPPING STEP 2: Protein search")
@@ -364,8 +360,6 @@ class Screen:
             except Exception as e:
                 logger.info(" ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
                 logger.info(" Traceback:\n%s", traceback.format_exc())
-                print(" ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
-                print(" Traceback:\n%s", traceback.format_exc())
                 self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
         else:
             logger.info(" SKIPPING STEP 3: Nucleotide search")
@@ -385,8 +379,6 @@ class Screen:
             except Exception as e:
                 logger.info(" ERROR STEP 4: Benign search failed due to an error:\n %s", str(e))
                 logger.info(" Traceback:\n%s", traceback.format_exc())
-                print(" ERROR STEP 4: Benign search failed due to an error:\n %s", str(e))
-                print(" Traceback:\n%s", traceback.format_exc())
                 self.reset_benign_recommendations(ScreenStatus.ERROR)
         else:
             logger.info(" SKIPPING STEP 4: Benign search")
