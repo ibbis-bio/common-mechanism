@@ -426,7 +426,7 @@ class Screen:
             "\t...checking %s results", self.params.config["protein_search_tool"]
         )
 
-        update_taxonomic_data_from_database(self.database_tools.regulated_protein,
+        exit_status = update_taxonomic_data_from_database(self.database_tools.regulated_protein,
                                             self.database_tools.benign_taxid_path,
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
@@ -434,7 +434,10 @@ class Screen:
                                             self.queries,
                                             ScreenStep.TAXONOMY_AA,
                                             self.params.config["threads"])
-
+        if exit_status != 0:
+            raise RuntimeError(
+                f"Output of protein taxonomy search could not be processed: {self.database_tools.regulated_protein.out_file}"
+            )
 
     def screen_nucleotides(self):
         """
@@ -479,7 +482,7 @@ class Screen:
 
         logger.debug("\t...checking blastn results")
         # Note: Currently noncoding coordinates are converted within update_taxonomic_data_from_database,
-        update_taxonomic_data_from_database(self.database_tools.regulated_nt,
+        exit_status = update_taxonomic_data_from_database(self.database_tools.regulated_nt,
                                             self.database_tools.benign_taxid_path,
                                             self.database_tools.biorisk_taxid_path,
                                             self.database_tools.taxonomy_path,
@@ -487,6 +490,11 @@ class Screen:
                                             self.queries,
                                             ScreenStep.TAXONOMY_NT,
                                             self.params.config["threads"])
+
+        if exit_status != 0:
+            raise RuntimeError(
+                f"Output of nucleotide taxonomy search could not be processed: {self.database_tools.regulated_nt.out_file}"
+            )
 
     def screen_benign(self):
         """
