@@ -1,0 +1,135 @@
+name: Update version + SHA for release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release version (without v prefix)'
+        required: true
+        default: ''
+
+jobs:
+  update-version-sha:
+    # Run if the PR was merged (not just closed) and it was from a release branch OR manually triggered
+    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release-v')) || 
+        github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          ref: main  # Ensure we're on the main branch after merge
+          fetch-depth: 0  # Need full history
+
+      - name: Extract version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # Extract version from the release branch name (release-vX.Y.Z -> X.Y.Z)
+            BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+            VERSION=$(echo $BRANCH_NAME | sed 's/release-v//')
+          else
+            # Use the manually provided version
+            VERSION="${{ github.event.inputs.release_version }}"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Version: $VERSION"
+
+      - name: Find pyproject.toml and meta.yaml files
+        id: find_files
+        run: |
+          PYPROJECT_PATH=$(find . -name "pyproject.toml" -type f | head -n 1)
+          if [ -z "$PYPROJECT_PATH" ]; then
+            echo "ERROR: pyproject.toml not found"
+            exit 1
+          fi
+          echo "Found pyproject.toml at: $PYPROJECT_PATH"
+          echo "PYPROJECT_PATH=$PYPROJECT_PATH" >> $GITHUB_ENV
+          
+          META_PATH=$(find . -name "meta.yaml" -type f | head -n 1)
+          if [ -z "$META_PATH" ]; then
+            echo "ERROR: meta.yaml not found"
+            exit 1
+          fi
+          echo "Found meta.yaml at: $META_PATH"
+          echo "META_PATH=$META_PATH" >> $GITHUB_ENV
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Update version in files
+        run: |
+          # Update version in pyproject.toml
+          sed -i "s/^version = \".*\"/version = \"${{ env.VERSION }}\"/" "${{ env.PYPROJECT_PATH }}"
+          echo "Updated version to ${{ env.VERSION }} in ${{ env.PYPROJECT_PATH }}"
+          
+          # Update version in meta.yaml
+          sed -i "s/{% set version = \".*\" %}/{% set version = \"${{ env.VERSION }}\" %}/" "${{ env.META_PATH }}"
+          echo "Updated version to ${{ env.VERSION }} in ${{ env.META_PATH }}"
+
+      - name: Calculate SHA256 hash
+        id: calculate_sha
+        run: |
+          # Create source distribution
+          python -m pip install build
+          python -m build --sdist
+          
+          # Find the generated tar.gz file
+          SDIST_FILE=$(find dist -name "*.tar.gz" | head -n 1)
+          
+          if [ -z "$SDIST_FILE" ]; then
+            echo "ERROR: No tar.gz file found in dist directory"
+            exit 1
+          fi          
+          echo "Found sdist file: $SDIST_FILE"
+          
+          # Get the SHA256 hash of the generated tar.gz file
+          SHA256=$(sha256sum "$SDIST_FILE" | cut -d ' ' -f 1)
+          echo "SHA256=$SHA256" >> $GITHUB_ENV
+          echo "SHA256 hash: $SHA256"
+
+      - name: Update SHA in meta.yaml
+        run: |
+          # Update SHA256 in meta.yaml
+          sed -i "s/{% set sha256 = \".*\" %}/{% set sha256 = \"${{ env.SHA256 }}\" %}/" "${{ env.META_PATH }}"
+          echo "Updated SHA256 in ${{ env.META_PATH }}"
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if git diff --quiet; then
+            echo "No changes detected"
+            echo "CHANGES_DETECTED=false" >> $GITHUB_ENV
+          else
+            echo "Changes detected"
+            echo "CHANGES_DETECTED=true" >> $GITHUB_ENV
+          fi
+
+      - name: Commit changes
+        if: env.CHANGES_DETECTED == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Add the files
+          git add "${{ env.PYPROJECT_PATH }}"
+          git add "${{ env.META_PATH }}"
+          
+          git commit -m "Bump version to ${{ env.VERSION }} and update SHA [skip ci]"
+          git push
+          echo "Pushed changes to repository"
+
+      - name: Create version tag
+        run: |
+          git tag "v${{ env.VERSION }}"
+          git push origin "v${{ env.VERSION }}"
+          echo "Created and pushed tag v${{ env.VERSION }}"

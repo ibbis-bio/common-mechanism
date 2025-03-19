@@ -407,6 +407,7 @@ class Screen:
         logger.debug("\t...checking hmmscan results")
         exit_status = update_biorisk_data_from_database(
             self.database_tools.biorisk_hmm,
+            self.database_tools.biorisk_annotations_csv,
             self.screen_data,
             self.queries)
         

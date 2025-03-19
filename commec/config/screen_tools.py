@@ -34,18 +34,22 @@ class ScreenTools:
         self.benign_taxid_path: str | os.PathLike = None
         self.biorisk_taxid_path: str | os.PathLike = None
 
+        self.biorisk_annotations_csv: str | os.PathLike = None
+
         # Paths for vaxid, taxids, and taxonomy directory, used for check_regulated_pathogens
-        # (Declared this way for backwards compatibility at this stage)
-        value = params.config.get("databases", {}).get("taxonomy", {}).get("taxonomy_directory")
+        # (Declared this way for backwards compatibility to old database structure at this stage)
+        value = params.config.get("databases", {}).get("taxonomy", {}).get("path")
         self.taxonomy_path = value if value is not None else params.db_dir + "/taxonomy/"
 
-        value = params.config.get("databases", {}).get("taxonomy", {}).get("regulated_vaxids")
+        value = params.config.get("databases", {}).get("taxonomy", {}).get("regulated_taxids")
         self.biorisk_taxid_path = value if value is not None else os.path.join(
             params.config["databases"]["biorisk_hmm"]["path"],"reg_taxids.txt")
 
         value = params.config.get("databases", {}).get("taxonomy", {}).get("benign_taxids")
         self.benign_taxid_path = value if value is not None else os.path.join(
             params.config["databases"]["benign"]["hmm"]["path"],"vax_taxids.txt")
+        
+        self.biorisk_annotations_csv = params.config["databases"]["biorisk_hmm"]["annotations"]
 
         # Database tools for Biorisks / Protein and NT screens / Benign screen:
         self.biorisk_hmm = HmmerHandler(

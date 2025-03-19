@@ -45,7 +45,10 @@ def _guess_domain(search_string : str) -> str:
         return "Eukaryote"
     return "not assigned"
 
-def update_biorisk_data_from_database(search_handle : HmmerHandler, data : ScreenResult, queries : dict[str, Query]):
+def update_biorisk_data_from_database(search_handle : HmmerHandler,
+                                      biorisk_annotations_file : str | os.PathLike,
+                                      data : ScreenResult,
+                                      queries : dict[str, Query]):
     """
     Takes an input database, reads its outputs, and updates the input data to contain
     biorisk hits from the database. Also requires passing of the biorisk annotations CSV file.
@@ -58,7 +61,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
     logger.debug("Directory: %s", search_handle.db_directory)
     logger.debug("Directory/file: %s", search_handle.db_file)
     #logger.debug("Directory/file: %s", search_handle.db_file)
-    hmm_folder_csv = os.path.join(search_handle.db_directory,"biorisk_annotations.csv")
+    hmm_folder_csv = biorisk_annotations_file #os.path.join(search_handle.db_directory,"biorisk_annotations.csv")
     if not os.path.exists(hmm_folder_csv):
         logger.error("\t...biorisk_annotations.csv does not exist\n %s", hmm_folder_csv)
         return 1
@@ -150,6 +153,17 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler, data : Scree
             )
             query_data.hits[affected_target] = new_hit
 
+            # TODO: Update this log message for modernity.
+            #logger.info(
+            #    "\t\t --> Biorisks: Regulated gene in bases "
+            #    + str(hmmer["q. start"][region])
+            #    + " to "
+            #    + str(hmmer["q. end"][region])
+            #    + ": FLAG\n\t\t     Gene: "
+            #    + ", ".join(set(hmmer["description"][hmmer["Must flag"] == True]))
+            #    + "\n"
+            #)
+
         # Update the recommendation for this query for biorisk.
         query_data.recommendation.biorisk_status = biorisk_overall
     return 0
@@ -209,7 +223,7 @@ def check_biorisk(hmmscan_input_file : str, biorisk_annotations_directory : str,
 
     if hmmer.shape[0] == 0:
         logger.info("\t\t --> Biorisks: no significant hits detected, PASS\n")
-        return
+        return 0
 
     if sum(hmmer["Must flag"]) > 0:
         for region in hmmer.index[hmmer["Must flag"] != 0]:
