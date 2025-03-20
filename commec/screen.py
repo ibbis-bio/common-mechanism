@@ -291,14 +291,18 @@ class Screen:
             logger.error(e)
             sys.exit()
 
-        for query in self.queries.values():
-            query.translate(self.params.nt_path, self.params.aa_path)
-            qr = QueryResult(query.original_name,
-                                 len(query.seq_record),
-                                 str(query.seq_record.seq))
-            self.screen_data.queries[query.name] = qr
-            query.result_handle = qr
-        
+        try:
+            for query in self.queries.values():
+                query.translate(self.params.nt_path, self.params.aa_path)
+                qr = QueryResult(query.original_name,
+                                    len(query.seq_record),
+                                    str(query.seq_record.seq))
+                self.screen_data.queries[query.name] = qr
+                query.result_handle = qr
+        except RuntimeError as e:
+            logger.error(e)
+            sys.exit()
+
         # Initialize the version info for all the databases
         _tools = self.database_tools
         _info = self.screen_data.commec_info

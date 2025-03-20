@@ -28,7 +28,7 @@ class Query:
         # TODO: Update line 53-55 of Check_Benign, to ensure that the query filter is using
         # The correct name, when filtering benign components.
         command = ["transeq", input_path, output_path, "-frame", "6", "-clean"]
-        result = subprocess.run(command, check = True,  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        result = subprocess.run(command, check = False, capture_output=True)
         if result.returncode != 0:
             raise RuntimeError(
                 f"Input FASTA {input_path} could not be translated:\n{result.stderr}"
