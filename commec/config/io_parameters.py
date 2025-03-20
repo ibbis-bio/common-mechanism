@@ -97,10 +97,18 @@ class ScreenIO:
         Parse queries from FASTA file.
         """
         records = []
+        queries = {}
 
-        with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
-            queries = {}
-            records = list(SeqIO.parse(fasta_file, "fasta"))
+        try:
+            with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
+                records = list(SeqIO.parse(fasta_file, "fasta"))
+        except ValueError as e:
+            raise IoValidationError(f"Input FASTA file: {self.input_fasta_path} "
+                                    "is not a valid fasta file.") from e
+
+        if len(records) == 0:
+            raise IoValidationError(f"Input FASTA file: {self.input_fasta_path} "
+                                    " contains no records!")
 
         for record in records:
             try:
@@ -313,6 +321,9 @@ class ScreenIO:
         Write a FASTA in which whitespace (including non-breaking spaces) and 
         illegal characters are replaced with underscores.
         """
+
+        
+
         with (
             open(self.input_fasta_path, "r", encoding="utf-8") as fin,
             open(self.nt_path, "w", encoding="utf-8") as fout,

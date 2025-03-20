@@ -59,7 +59,7 @@ import sys
 import traceback
 import pandas as pd
 
-from commec.config.io_parameters import ScreenIO
+from commec.config.io_parameters import ScreenIO, IoValidationError
 from commec.config.query import Query
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.logging import setup_console_logging, setup_file_logging, set_log_level
@@ -285,7 +285,12 @@ class Screen:
         logger.info("Input query file: %s", self.params.input_fasta_path)
 
         # Initialize the queries
-        self.queries = self.params.parse_input_fasta()
+        try:
+            self.queries = self.params.parse_input_fasta()
+        except IoValidationError as e:
+            logger.error(e)
+            sys.exit()
+
         for query in self.queries.values():
             query.translate(self.params.nt_path, self.params.aa_path)
             qr = QueryResult(query.original_name,
@@ -460,7 +465,7 @@ class Screen:
 
         # Skip if there is no non-coding information.
         if nc_fasta_sequences == "":
-            logger.debug(
+            logger.info(
                 "\t...skipping nucleotide search since no noncoding regions fetched"
             )
             self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
