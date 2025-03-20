@@ -257,6 +257,9 @@ class ScreenIO:
         Write a FASTA in which whitespace (including non-breaking spaces) and 
         illegal characters are replaced with underscores.
         """
+
+        
+
         with (
             open(self.input_fasta_path, "r", encoding="utf-8") as fin,
             open(self.nt_path, "w", encoding="utf-8") as fout,
