@@ -210,6 +210,17 @@ class HitResult:
             out = min(out, r.e_value)
         return out
 
+    def __str__(self) -> str:
+        output = (
+            f"{self.name}: {self.description}.\n{self.recommendation.from_step}"
+            f", {self.recommendation.status}. Ranges (#{len(self.ranges)})\n"
+            )
+        match_string = ""
+        for r in self.ranges:
+            match_string += f"{r.query_start}-{r.query_end}, "
+        match_string = match_string[:-2]
+
+        return output + "[" + match_string + "]"
 
 @dataclass
 class QueryScreenStatus:

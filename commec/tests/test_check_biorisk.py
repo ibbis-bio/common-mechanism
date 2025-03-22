@@ -4,7 +4,7 @@ import pandas as pd
 import os
 from Bio.SeqRecord import SeqRecord, Seq
 
-from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database, HmmerHandler
+from commec.screeners.check_biorisk import update_biorisk_data_from_database, HmmerHandler
 from commec.config.result import ScreenResult
 from commec.config.query import Query
 
@@ -55,8 +55,6 @@ def test_check_biorisk_return_codes(annotations_exists, is_empty, has_hits, expe
         results = ScreenResult()
         queries : dict[str,Query] = {"testname" : Query(SeqRecord(Seq("atgatgatgatgatgatgatg"),"testname","testname"))}
         # Run the function - input paths are unused given all the mocking above
-        #result = check_biorisk("/mock/path/test.hmmscan", "/mock/path/biorisk_db")
-
         result = update_biorisk_data_from_database(handler, "/mock/path/biorisk_db/biorisk_annotations.csv", results, queries)
 
         # Check the result

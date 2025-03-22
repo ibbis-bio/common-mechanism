@@ -72,7 +72,7 @@ from commec.config.result import (
 )
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
-from commec.screeners.check_biorisk import check_biorisk, update_biorisk_data_from_database
+from commec.screeners.check_biorisk import update_biorisk_data_from_database
 from commec.screeners.check_benign import update_benign_data_from_database
 from commec.screeners.check_reg_path import update_taxonomic_data_from_database
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
