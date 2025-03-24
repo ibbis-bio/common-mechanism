@@ -181,9 +181,9 @@ def test_functional_screen(tmp_path, request):
 
     print(test_result)
 
-    assert os.path.isfile(str(tmp_path / "functional.log"))
+    assert os.path.isfile(str(tmp_path / "functional.screen.log"))
 
-    with open(str(tmp_path / "functional.log"), "r", encoding = "utf-8") as file:
+    with open(str(tmp_path / "functional.screen.log"), "r", encoding = "utf-8") as file:
         while True:
             line = file.readline()
             if not line:  # Breaks loop when EOF is reached
