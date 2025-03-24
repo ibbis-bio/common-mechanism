@@ -80,8 +80,9 @@ def update_taxonomic_data_from_database(
     """
     Given a Taxonomic database screen output, update the screen data appropriately.
         search_handle : The handle of the search tool used to screen taxonomic data.
-        benign/biorisk_handlers : Only used to determine the location of taxid related information
-        taxonomy_directory : The location of taxonomy.
+        benign_taxid_path : Path to benign taxid csv.
+        biorisk_taxid_path : Path to regulated taxid csv.
+        taxonomy_directory : The location of taxonom directory.
         data : the Screen data object, to be updated.
         step : Which taxonomic step this is (Nucleotide, Protein, etc)
         n_threads : maximum number of available threads for allocation.
@@ -92,6 +93,17 @@ def update_taxonomic_data_from_database(
                          biorisk_taxid_path, taxonomy_directory):
         return 1
 
+    # The default is to pass, its up to the data to over-write this.
+    # Some Queries may already be set to skip, which we ignore.
+    if step == ScreenStep.TAXONOMY_AA:
+        for query in data.queries.values():
+            if query.recommendation.protein_taxonomy_status != ScreenStatus.SKIP:
+                query.recommendation.protein_taxonomy_status = ScreenStatus.PASS
+    if step == ScreenStep.TAXONOMY_NT:
+        for query in data.queries.values():
+            if query.recommendation.nucleotide_taxonomy_status != ScreenStatus.SKIP:
+                query.recommendation.nucleotide_taxonomy_status = ScreenStatus.PASS
+
     if not search_handle.has_hits(search_handle.out_file):
         logger.info("\t...no hits\n")
         return 0
@@ -100,28 +112,22 @@ def update_taxonomic_data_from_database(
     vax_taxids = pd.read_csv(benign_taxid_path, header=None).squeeze().astype(str).tolist()
     reg_taxids = pd.read_csv(biorisk_taxid_path, header=None).squeeze().astype(str).tolist()
 
-    # The default is to pass, its up to the data to over-write this.
-    if step == ScreenStep.TAXONOMY_AA:
-        for query in data.queries.values():
-            query.recommendation.protein_taxonomy_status = ScreenStatus.PASS
-    if step == ScreenStep.TAXONOMY_NT:
-        for query in data.queries.values():
-            query.recommendation.nucleotide_taxonomy_status = ScreenStatus.PASS
-
     blast = read_blast(search_handle.out_file)
+    logger.debug("%s Blast Import: shape: %s preview:\n%s", step, blast.shape, blast.head())
+
     blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)
+    logger.debug("%s TaxLabels: shape: %s preview:\n%s", step, blast.shape, blast.head())
+
     blast = blast[blast["species"] != ""]  # ignore submissions made above the species level
+    logger.debug("%s RemoveSpecies: shape: %s preview:\n%s", step, blast.shape, blast.head())
 
     # label each base with the top matching hit, but include different taxids attributed to same hit
     top_hits = get_top_hits(blast)
+    logger.debug("%s Top Hits: shape: %s preview:\n%s", step, top_hits.shape, top_hits.head())
 
     if top_hits["regulated"].sum() == 0:
         logger.info("\t...no regulated hits\n")
         return 0
-    
-    # The non-coding fasta appends (start, stop) info to the filenames. This counters that.
-    if step == ScreenStep.TAXONOMY_NT:
-        top_hits["query acc."] = top_hits["query acc."].str.split(" ").str[0]
     
     # if ANY of the trimmed hits are regulated
     with pd.option_context('display.max_rows', None,
@@ -130,19 +136,24 @@ def update_taxonomic_data_from_database(
                     ):
 
         unique_queries = top_hits['query acc.'].unique()
+        logger.debug("%s Unique Queries: shape: %s preview:\n%s", step, unique_queries.shape, unique_queries)
         for query in unique_queries:
+            logger.debug("\tProcessing query: %s", query)
             query_write = data.get_query(query)
             if not query_write:
-                logger.debug("Query during %s could not be found! [%s]", str(step), query)
+                logger.error("Query during %s could not be found! [%s]", str(step), query)
                 continue
 
             unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
             unique_query_data.dropna(subset = ['species'])
             regulated_only_data = unique_query_data[unique_query_data["regulated"] == True]
             regulated_hits = regulated_only_data['subject acc.'].unique()
+            logger.debug("\t%s Regulated hits: shape: %s preview:\n%s", step, regulated_hits.shape, regulated_hits)
 
             for hit in regulated_hits:
+                logger.debug("\t\tProcessing Hit: %s", hit)
                 regulated_hit_data : pd.DataFrame = regulated_only_data[regulated_only_data["subject acc."] == hit]
+                logger.debug("%s Regulated Hit Data: shape: %s preview:\n%s", step, regulated_hit_data.shape, regulated_hit_data.head())
                 hit_description = regulated_hit_data['subject title'].values[0]
 
                 n_regulated_bacteria = 0
@@ -161,7 +172,7 @@ def update_taxonomic_data_from_database(
                         int(region['s. start']), int(region['s. end']),
                         int(region['q. start']), int(region['q. end'])
                     )
-
+                    logger.debug("Processing region from hit: %s", region)
                     # Convert from non-coding to nt query coordinates if we're doing a NT taxonomy step.
                     if step == ScreenStep.TAXONOMY_NT:
                         match_range.query_start = queries[query].nc_to_nt_query_coords(match_range.query_start)
@@ -170,7 +181,10 @@ def update_taxonomic_data_from_database(
                     match_ranges.append(match_range)
 
                     # Filter shared_site based on 'q. start' or 'q. end' (Previously only shared starts were used)
-                    shared_site = top_hits[(top_hits['q. start'] == region['q. start']) | (top_hits['q. end'] == region['q. end'])]
+                    shared_site = top_hits[
+                        (top_hits['q. start'] == region['q. start']) |
+                        (top_hits['q. end'] == region['q. end'])
+                        ]
 
                     # Filter for regulated and non-regulated entries
                     regulated = shared_site[shared_site["regulated"] == True]
@@ -180,10 +194,13 @@ def update_taxonomic_data_from_database(
                     domain = region['superkingdom']
                     if domain == "Viruses":
                         n_regulated_virus += 1
+                        logger.debug("\t\t\tAdded Virus.")
                     if domain == "Bacteria":
                         n_regulated_bacteria +=1
+                        logger.debug("\t\t\tAdded Bacteria.")
                     if domain == "Eukaryota":
                         n_regulated_eukaryote+=1
+                        logger.debug("\t\t\tAdded Eukaryote.")
                     domains.append(domain)
 
                     # Collect unique species from both regulated and non-regulated
@@ -202,19 +219,32 @@ def update_taxonomic_data_from_database(
                 non_reg_taxids = list(set(non_reg_taxids))
                 match_ranges = list(set(match_ranges))
 
+                reg_species_text = ", ".join(reg_species)
+                reg_taxids_text = ", ".join(reg_taxids)
+                non_reg_taxids_text = ", ".join(non_reg_taxids)
+                match_ranges_text = ", ".join(map(str,match_ranges))
+                domains_text = ", ".join(set(domains))
+
                 reg_species.sort()
                 reg_taxids.sort()
                 non_reg_taxids.sort()
 
+                logger.debug("\t\tRegulated Species: %s", reg_species)
+                logger.debug("\t\tRegulated Taxids: %s", reg_taxids)
+                logger.debug("\t\tNon Regulated Taxids: %s", non_reg_taxids)
+                logger.debug("\t\tRanges: %s", match_ranges)
+
                 recommendation : ScreenStatus = ScreenStatus.FLAG
 
                 # TODO: Currently, we recapitulate old behaviour,
-                # # " no top hit exclusive to a regulated pathogen: PASS" 
+                # # " no top hit exclusive to a regulated pathogen: PASS"
                 #  however in the future:
                 # if all hits are in the same genus n_reg > 0, and n_total > n_reg, WARN, or other logic.
                 # the point is, this is where you do it.
 
+                logger.debug("Checking number of non regulated taxids: %i", len(non_reg_taxids))
                 if len(non_reg_taxids) > 0:
+                    logger.debug("Non-regulated taxids present, treating as MIXED result.")
                     recommendation = ScreenStatus.PASS
 
                 # Update the query level recommendation of this step.
@@ -236,6 +266,32 @@ def update_taxonomic_data_from_database(
                                    "non_regulated_taxids" : non_reg_taxids,
                                    "regulated_species" : reg_species}
 
+                #gene_names = ", ".join(set(subset["subject acc."]))
+                #coordinates = str(int()) + " - " + str(int(end))
+
+                ## MIXED:
+                #logger.info(
+                #    "\t --> Best match to %s at bases %s found in both regulated and non-regulated organisms\n",
+                #    gene_names, coordinates
+                #)
+                #logger.info(
+                #    "\t\t     Species: %s (taxid(s): %s) (%s percent identity to query)\n"
+                #    % (hit, taxid_list, percent_ids)
+                #)
+                #logger.info("\t\t     Description: %s\n" % (desc))
+
+                alt_text = "only " if recommendation == ScreenStatus.FLAG else "both regulated and non-"
+                ## REGULATED:
+                logger.info(
+                        "\t --> %s %s contains match to %s at bases (%s) found in %sregulated organisms (%s). Regulated Species: %s Regulated TaxIDs: %s",
+                        recommendation, query, hit, match_ranges_text, alt_text, domains_text, reg_species_text, reg_taxids_text
+                    )
+                    #logger.info(
+                    #    "\t\t     Species: %s (taxid(s): %s) (%s percent identity to query)\n"
+                    #    % (species_list, taxid_list, percent_ids)
+                    #)
+                    #logger.info("\t\t     Description: %s\n" % (desc))
+
                 # Append our hit information to Screen data.
                 new_hit = HitResult(
                     HitScreenStatus(
@@ -248,10 +304,12 @@ def update_taxonomic_data_from_database(
                     {"domain" : [domain],"regulation":[regulation_dict]},
                 )
 
+                logger.debug("Hit information summary: %s", new_hit)
+
                 if query_write.add_new_hit_information(new_hit):
                     write_hit = query_write.get_hit(hit)
                     if write_hit:
-                        write_hit.annotations["domain"] = domains # Always overwrite, better than our guess from biorisk.
+                        write_hit.annotations["domain"] = domains
                         write_hit.annotations["regulation"].append(regulation_dict)
                         write_hit.recommendation.status = compare(write_hit.recommendation.status, recommendation)
     return 0

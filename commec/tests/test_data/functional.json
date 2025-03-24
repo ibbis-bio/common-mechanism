@@ -1,6 +1,6 @@
 {
     "commec_info": {
-        "commec_version": "0.3.0",
+        "commec_version": "0.3.2",
         "json_output_version": "0.1",
         "biorisk_database_info": {
             "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -26,8 +26,8 @@
             "tool_info": "x.x.x",
             "database_info": "x.x.x"
         },
-        "time_taken": "00:00:02",
-        "date_run": "2025-03-06 16:54:11"
+        "time_taken": "00:00:00",
+        "date_run": "2025-03-26 23:33:43"
     },
     "queries": {
         "FCTEST1": {
@@ -36,7 +36,7 @@
             "sequence": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "recommendation": {
                 "screen_status": "Flag",
-                "biorisk_status": "Warning",
+                "biorisk_status": "Flag",
                 "protein_taxonomy_status": "Flag",
                 "nucleotide_taxonomy_status": "Error",
                 "benign_status": "Flag"

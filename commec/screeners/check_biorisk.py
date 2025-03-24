@@ -9,8 +9,14 @@ Usage:
 import logging
 import os
 import pandas as pd
-from commec.tools.hmmer import readhmmer, remove_overlaps, recalculate_hmmer_query_coordinates, append_nt_querylength_info, HmmerHandler
 from commec.config.query import Query
+from commec.tools.hmmer import (
+    readhmmer,
+    remove_overlaps,
+    recalculate_hmmer_query_coordinates,
+    append_nt_querylength_info,
+    HmmerHandler
+)
 from commec.config.result import (
     ScreenResult,
     HitResult,

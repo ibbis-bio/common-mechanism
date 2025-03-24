@@ -42,7 +42,7 @@ class ScreenIO:
         self.input_prefix = inputs
 
         # IO files
-        self.output_screen_file = f"{self.directory_prefix}.log"
+        self.output_screen_file = f"{self.directory_prefix}.screen.log"
         self.output_json = f"{self.directory_prefix}.output.json"
         self.nt_path = f"{self.input_prefix}.cleaned.fasta"
         self.aa_path = f"{self.input_prefix}.faa"
