@@ -109,9 +109,6 @@ class ScreenStatus(StrEnum):
             return ScreenStatus.CLEARED_FLAG
         return self
 
-    def update(self, other):
-        self = compare(self, other)
-
 
 def compare(a: ScreenStatus, b: ScreenStatus):
     """
@@ -188,6 +185,9 @@ class MatchRange:
             and self.query_start == other.query_start
             and self.query_end == other.query_end
         )
+    
+    def __str__(self):
+        return f"{self.query_start}-{self.query_end}"
 
 
 @dataclass
@@ -237,6 +237,7 @@ class QueryScreenStatus:
     def update_query_flag(self):
         """
         Parses the query status across all screening steps, then updates overall flag.
+        Designed to be called at any time after Step 1.
         """
         if self.benign_status in {
             ScreenStatus.CLEARED_FLAG,
@@ -338,17 +339,23 @@ class QueryResult:
         for hit in self.hits.values():
             match hit.recommendation.from_step:
                 case ScreenStep.BIORISK:
-                    self.recommendation.biorisk_status.update(hit.recommendation.status)
+                    self.recommendation.biorisk_status = compare(
+                        self.recommendation.biorisk_status, hit.recommendation.status)
                 case ScreenStep.TAXONOMY_AA:
-                    self.recommendation.biorisk_status.update(hit.recommendation.status)
+                    self.recommendation.protein_taxonomy_status = compare(
+                        self.recommendation.protein_taxonomy_status, hit.recommendation.status)
                 case ScreenStep.TAXONOMY_NT:
-                    self.recommendation.biorisk_status.update(hit.recommendation.status)
+                    self.recommendation.nucleotide_taxonomy_status = compare(
+                        self.recommendation.nucleotide_taxonomy_status, hit.recommendation.status)
                 case ScreenStep.BENIGN_PROTEIN:
-                    self.recommendation.biorisk_status.update(hit.recommendation.status)
+                    self.recommendation.benign_status = compare(
+                        self.recommendation.benign_status, hit.recommendation.status)
                 case ScreenStep.BENIGN_RNA:
-                    self.recommendation.biorisk_status.update(hit.recommendation.status)
+                    self.recommendation.benign_status = compare(
+                        self.recommendation.benign_status, hit.recommendation.status)
                 case ScreenStep.BENIGN_SYNBIO:
-                    self.recommendation.biorisk_status.update(hit.recommendation.status)
+                    self.recommendation.benign_status = compare(
+                        self.recommendation.benign_status, hit.recommendation.status)
 
         self.recommendation.update_query_flag()
 
@@ -443,3 +450,26 @@ class ScreenResult:
         for query in self.queries.values():
             for hit in query.hits.values():
                 yield query, hit
+
+    def get_flag_data(self) -> pd.DataFrame:
+
+        #columns = ["query", "overall", "biorisk", "taxonomy protein", "taxonomy nt", "benign"]
+
+        data = []
+
+        for query in self.queries.values():
+            data.append({
+                "query": query.query[:25],
+                "overall": query.recommendation.screen_status,
+                "biorisk": query.recommendation.biorisk_status,
+                "taxonomy protein": query.recommendation.protein_taxonomy_status,
+                "taxonomy nt": query.recommendation.nucleotide_taxonomy_status,
+                "benign": query.recommendation.benign_status
+            })
+        
+        output_data : pd.DataFrame = pd.DataFrame(data)
+        return output_data
+
+    def __str__(self):
+        df = self.get_flag_data()
+        return df.to_string()

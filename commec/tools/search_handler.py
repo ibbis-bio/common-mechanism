@@ -85,7 +85,7 @@ class SearchHandler(ABC):
          - If force is enabled.
         """
         if not self.force and self.check_output():
-            logger.info("%s expected output data already exists, "
+            logger.warning("%s expected output data already exists, "
                          "will use existing data found in:\n%s",
                          self.__class__.__name__, self.out_file)
             return
