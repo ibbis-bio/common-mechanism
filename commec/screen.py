@@ -268,6 +268,7 @@ class Screen:
         logger.debug("Parsing input parameters...")
 
         self.params: ScreenIO = ScreenIO(args)
+        self.params.setup()
 
         # Logging level may be overridden
         if self.params.config["verbose"]:
@@ -276,7 +277,6 @@ class Screen:
         # Update console log-level
         set_log_level(log_level, update_only_handler_type=logging.StreamHandler)
         logging.info(" Validating Inputs...")
-        self.params.setup()
         self.database_tools: ScreenTools = ScreenTools(self.params)
 
         # Needed to initialize parameters before logging to files
@@ -399,6 +399,9 @@ class Screen:
         logger.info(
             ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
+
+        self.screen_data.update()
+        logger.info("SUMMARY: \n%s", self.screen_data)
         self.success = True
 
 
@@ -438,14 +441,17 @@ class Screen:
             "\t...checking %s results", self.params.config["protein_search_tool"]
         )
 
-        exit_status = update_taxonomic_data_from_database(self.database_tools.regulated_protein,
-                                            self.database_tools.benign_taxid_path,
-                                            self.database_tools.biorisk_taxid_path,
-                                            self.database_tools.taxonomy_path,
-                                            self.screen_data,
-                                            self.queries,
-                                            ScreenStep.TAXONOMY_AA,
-                                            self.params.config["threads"])
+        exit_status = update_taxonomic_data_from_database(
+            self.database_tools.regulated_protein,
+            self.database_tools.benign_taxid_path,
+            self.database_tools.biorisk_taxid_path,
+            self.database_tools.taxonomy_path,
+            self.screen_data,
+            self.queries,
+            ScreenStep.TAXONOMY_AA,
+            self.params.config["threads"]
+        )
+
         if exit_status != 0:
             raise RuntimeError(
                 f"Output of protein taxonomy search could not be processed: {self.database_tools.regulated_protein.out_file}"
@@ -459,6 +465,8 @@ class Screen:
         then `check_reg_path.py` to screen regulated pathogen nucleotides in
         noncoding regions (i.e. that would not be found with protein search).
         """
+        # By Default, this should be overriden.
+        self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
 
         # Calculate non-coding information for each Query.
         calculate_noncoding_regions_per_query(
@@ -495,14 +503,16 @@ class Screen:
 
         logger.debug("\t...checking blastn results")
         # Note: Currently noncoding coordinates are converted within update_taxonomic_data_from_database,
-        exit_status = update_taxonomic_data_from_database(self.database_tools.regulated_nt,
-                                            self.database_tools.benign_taxid_path,
-                                            self.database_tools.biorisk_taxid_path,
-                                            self.database_tools.taxonomy_path,
-                                            self.screen_data,
-                                            self.queries,
-                                            ScreenStep.TAXONOMY_NT,
-                                            self.params.config.threads)
+        exit_status = update_taxonomic_data_from_database(
+            self.database_tools.regulated_nt,
+            self.database_tools.benign_taxid_path,
+            self.database_tools.biorisk_taxid_path,
+            self.database_tools.taxonomy_path,
+            self.screen_data,
+            self.queries,
+            ScreenStep.TAXONOMY_NT,
+            self.params.config["threads"]
+        )
 
         if exit_status != 0:
             raise RuntimeError(
@@ -527,11 +537,11 @@ class Screen:
             return
 
         # Run the benign tools:
-        logging.info("\t...running benign hmmscan")
+        logger.debug("\t...running benign hmmer.")
         self.database_tools.benign_hmm.search()
-        logging.info("\t...running benign blastn")
+        logger.debug("\t...running benign blastn")
         self.database_tools.benign_blastn.search()
-        logging.info("\t...running benign cmscan")
+        logger.debug("\t...running benign cmscan")
         self.database_tools.benign_cmscan.search()
 
 

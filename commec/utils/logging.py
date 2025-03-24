@@ -102,6 +102,7 @@ def setup_file_logging(filename, log_level=logging.INFO, log_mode="w"):
         formatter = TextWrapFormatter(
             fmt="%(asctime)s│ %(levelname)-8s│ %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",  # Full ISO-like format
+            line_width = 300, # Longer lines for debug purposes.
         )
     else:
         formatter = TextWrapFormatter("%(levelname)-8s│ %(message)s")

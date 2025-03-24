@@ -17,6 +17,7 @@ from Bio import SeqIO
 from commec.config.query import Query
 from commec.tools.blast_tools import get_high_identity_matches
 from commec.tools.search_handler import SearchHandler
+from commec.config.result import ScreenStatus
 
 logger = logging.getLogger(__name__)
 
@@ -164,15 +165,13 @@ def calculate_noncoding_regions_per_query(
     Does NOT write the non-coding dictionary.
     """
 
-    logging.info("Checking protein hits in: %s", protein_results)
-    nc_sequences = []
+    logger.debug("Checking protein hits in: %s", protein_results)
 
     if not SearchHandler.has_hits(protein_results):
         logging.info("No protein hits found, screening entire sequence.")
         for query in queries.values():
             _set_no_coding_regions(query)
-            nc_sequences.append(query.get_non_coding_regions_as_fasta())
-        return nc_sequences
+        return
 
     protein_matches = get_high_identity_matches(protein_results)
 
@@ -185,22 +184,22 @@ def calculate_noncoding_regions_per_query(
         if protein_matches_for_query.empty:
             logging.info("No protein hits found for %s, screening entire sequence.", query.name)
             _set_no_coding_regions(query)
-            nc_sequences.append(query.get_non_coding_regions_as_fasta())
             continue
 
-        logging.info("Protein hits found for %s, fetching nt regions not covered by a 90%% ID hit or better", query.name)
+        logger.debug("\t --> Protein hits found for %s, fetching nt regions not covered by a 90%% ID hit or better", query.name)
 
         ranges_to_screen = _get_ranges_with_no_hits(protein_matches_for_query)
         # if the entire sequence, save regions <50 bases, is covered with protein, skip nt scan
         if not ranges_to_screen:
-            logging.info("\t\t --> no noncoding regions >= 50 bases found for %s, skipping nt scan for this query\n", query.name)
+            logger.info("\t --> no noncoding regions >= 50 bases found for %s, skipping nt scan for query.", query.name)
+            query.result_handle.recommendation.nucleotide_taxonomy_status = ScreenStatus.SKIP
             continue
 
         # Update the list of start and end non-coding tuples for query.
         query.non_coding_regions.extend(ranges_to_screen)
 
         ranges_str = ", ".join(f"{start}-{end}" for start, end in ranges_to_screen)
-        logging.info("Identified noncoding regions [%s]", ranges_str)
+        logger.info("\t --> Identified noncoding regions for query %s: [%s]", query.name, ranges_str)
 
 
 def main():
