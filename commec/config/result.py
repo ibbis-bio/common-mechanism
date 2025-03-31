@@ -462,8 +462,8 @@ class ScreenResult:
                 "query": query.query[:25],
                 "overall": query.recommendation.screen_status,
                 "biorisk": query.recommendation.biorisk_status,
-                "taxonomy protein": query.recommendation.protein_taxonomy_status,
-                "taxonomy nt": query.recommendation.nucleotide_taxonomy_status,
+                "taxonomy_aa": query.recommendation.protein_taxonomy_status,
+                "taxonomy_nt": query.recommendation.nucleotide_taxonomy_status,
                 "benign": query.recommendation.benign_status
             })
         
