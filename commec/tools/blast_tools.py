@@ -292,16 +292,37 @@ def shift_hits_pos_strand(blast):
             blast.loc[j, "q. end"] = end
     return blast
 
-def _trim_edges(df):
+def _trim_edges(df : pd.DataFrame) -> tuple[pd.DataFrame, int]:
+    """
+    Function for filtering a Blast derived dataframe, removes weaker hits
+    (based on % identity) that have extents within that of stronger hits.
+    Also trims weaker hits to not overlap with stronger hits.
 
-    # Use this enumeration, instead of below, for pylint errors - needs testing first.
-    #for top, i in enumerate(df.index):  # run through each hit from the top
-    #    for next, j in enumerate(df.index[top + 1:], start=top + 1):  # compare to each below
+    input:
+        - df :: pd.Dataframe, containing 'q. start', 'q. end', and '% identity' information.
 
-    for top in range(len(df.index)):  # run through each hit from the top
-        i = df.index[top]
-        for next in range(top + 1, len(df.index)):  # compare to each below
-            j = df.index[next]
+    output:
+        - The altered dataframe.s
+        - Integer flag, 0 or 1, where 1 indicates a need to rerun _trim_edges()
+    """
+
+    assert "q. start" in df.columns, (
+        "Expected column \"q. start\" does not exist for _trim_edges().\n"
+        f"Existing columns: {', '.join(df.columns)}"
+    )
+
+    assert "q. end" in df.columns, (
+        "Expected column \"q. end\" does not exist for _trim_edges().\n"
+        f"Existing columns: {', '.join(df.columns)}"
+    )
+
+    assert "% identity" in df.columns, (
+        "Expected column \"query length\" does not exist for _trim_edges().\n"
+        f"Existing columns: {', '.join(df.columns)}"
+    )
+
+    for top, i in enumerate(df.index):  # run through each hit from the top
+        for _, j in enumerate(df.index[top + 1:], start=top + 1):  # compare to each below
             i_start = df.loc[i, "q. start"]
             i_end = df.loc[i, "q. end"]
             j_start = df.loc[j, "q. start"]
@@ -361,6 +382,11 @@ def get_top_hits(blast: pd.DataFrame):
     """
     Trim BLAST results down to the top hit for each base.
     """
+
+    if blast.empty:
+        logger.debug("Empty dataframe passed to Get Top Hits.")
+        return blast
+
     top_hits = _trim_overlapping(blast)
     top_hits = top_hits.sort_values("% identity", ascending=False)
 
