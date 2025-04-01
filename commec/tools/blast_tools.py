@@ -27,7 +27,7 @@ class BlastHandler(SearchHandler):
     """
 
     def read_output(self):
-        output_dataframe = []
+        output_dataframe = pd.DataFrame()
         if self.has_hits(self.out_file):
             output_dataframe = read_blast(self.out_file)
         return output_dataframe
@@ -374,6 +374,8 @@ def get_top_hits(blast: pd.DataFrame):
     """
     Trim BLAST results down to the top hit for each base.
     """
+
+    assert isinstance(blast, pd.DataFrame), "get_top_hits expects a pandas dataframe object."
 
     if blast.empty:
         logger.debug("Empty dataframe passed to Get Top Hits.")
