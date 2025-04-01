@@ -239,12 +239,15 @@ class QueryScreenStatus:
         Parses the query status across all screening steps, then updates overall flag.
         Designed to be called at any time after Step 1.
         """
-        if self.benign_status in {
-            ScreenStatus.CLEARED_FLAG,
-            ScreenStatus.CLEARED_WARN,
-            ScreenStatus.WARN,
-            ScreenStatus.PASS,
-        }:
+        if self.benign_status is not ScreenStatus.NULL:
+
+
+        #if self.benign_status in {
+        #    ScreenStatus.CLEARED_FLAG,
+        #    ScreenStatus.CLEARED_WARN,
+        #    ScreenStatus.WARN,
+        #    ScreenStatus.PASS,
+        #}:
             self.screen_status = self.benign_status
             return
 
