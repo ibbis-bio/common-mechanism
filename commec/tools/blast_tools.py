@@ -383,6 +383,8 @@ def get_top_hits(blast: pd.DataFrame):
     Trim BLAST results down to the top hit for each base.
     """
 
+    assert isinstance(blast, pd.DataFrame), "get_top_hits expects a pandas dataframe object."
+
     if blast.empty:
         logger.debug("Empty dataframe passed to Get Top Hits.")
         return blast

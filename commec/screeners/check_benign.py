@@ -238,26 +238,33 @@ def _update_benign_data_for_query(query : Query,
 
     logger.debug("\t\tProcessing benign data for query: %s", query.name)
 
+    benign_protein_for_query = pd.DataFrame()
+    benign_rna_for_query = pd.DataFrame()
+    benign_synbio_for_query = pd.DataFrame()
+
     # We only care about the benign data for this query.
-    benign_protein_for_query = benign_protein[
-        benign_protein["query name"].str.rsplit("_", n=1).str[0] == query.name
-    ]
-    benign_rna_for_query = benign_rna[
-        benign_rna["query name"] == query.name
-    ]
-    benign_synbio_for_query = benign_synbio[
-        benign_synbio["query acc."] == query.name
-    ]
+    if not benign_protein.empty:
+        benign_protein_for_query = benign_protein[
+            benign_protein["query name"].str.rsplit("_", n=1).str[0] == query.name
+        ]
+    else:
+        logger.info("\t\t...no housekeeping protein hits for %s", query.name)
+
+    if not benign_rna.empty:
+        benign_rna_for_query = benign_rna[
+            benign_rna["query name"] == query.name
+        ]
+    else:
+        logger.info("\t\t...no benign RNA hits for %s", query.name)
+
+    if not benign_synbio.empty:
+        benign_synbio_for_query = benign_synbio[
+            benign_synbio["query acc."] == query.name
+        ]
+    else:
+        logger.info("\t\t...no Synbio sequence hits for %s", query.name)
 
     new_benign_hits = []
-
-    # Early report if query has no benign hits per category:
-    if benign_protein_for_query.empty:
-        logger.info("\t\t...no housekeeping protein hits for %s", query.name)
-    if benign_rna_for_query.empty:
-        logger.info("\t\t...no benign RNA hits for %s", query.name)
-    if benign_synbio_for_query.empty:
-        logger.info("\t\t...no Synbio sequence hits for %s", query.name)
 
     # Check every region, of every hit that is a FLAG or WARN, against the Benign screen outcomes.
     for hit in query.result_handle.hits.values():
@@ -271,6 +278,7 @@ def _update_benign_data_for_query(query : Query,
             ):
             logger.debug("\t\t\tIgnoring %s [%s], not need to clear with benign.", hit.name, hit.recommendation.status)
             continue
+
         for region in hit.ranges:
 
             if not benign_protein_for_query.empty:
