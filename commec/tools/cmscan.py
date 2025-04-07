@@ -11,6 +11,7 @@ import re
 import pandas as pd
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
 
+
 class CmscanHandler(SearchHandler):
     """A Database handler specifically for use with Hmmer files for commec screening."""
 
@@ -91,7 +92,7 @@ def readcmscan(fileh):
 
     cmscan = []
 
-    with open(fileh, "r", encoding = "utf-8") as f:
+    with open(fileh, "r", encoding="utf-8") as f:
         for line in f:
             if "# Program:         cmscan" in line:
                 break

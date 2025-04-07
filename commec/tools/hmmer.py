@@ -14,6 +14,7 @@ from commec.config.query import Query
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
 from commec.utils.coordinates import convert_protein_to_nucleotide_coords
 
+
 class HmmerHandler(SearchHandler):
     """A Database handler specifically for use with Hmmer files for commec screening."""
 

@@ -126,7 +126,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
 
         query_data = data.get_query(affected_query)
         if not query_data:
-            logging.error("Query during hmmscan could not be found! [%s]", affected_query)
+            logger.error("Query during hmmscan could not be found! [%s]", affected_query)
             continue
 
         # Grab a list of unique queries, and targets for iteration.
