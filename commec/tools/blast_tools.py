@@ -3,8 +3,8 @@
 """
 Module for Blast related tools, a library for dealing with general blast file parsing tasks.
 Useful for reading any blast related outputs, for example from Blastx, Blastn, or diamond.
-(split_taxa, taxdist, readblast, trimblast, tophits)
-Also contains the abstract base class for blastX/N/Diamond database handlers.
+
+Also contains the abstract base class for blastX/N/Diamond database search handlers.
 """
 import os
 import logging
@@ -13,11 +13,7 @@ from typing import BinaryIO, TextIO
 import pytaxonkit
 import pandas as pd
 import numpy as np
-
-from commec.tools.search_handler import (
-    SearchHandler,
-    DatabaseValidationError
-)
+from commec.tools.search_handler import SearchHandler, DatabaseValidationError
 
 TAXID_SYNTHETIC_CONSTRUCTS = 32630
 TAXID_VECTORS = 29278
@@ -67,10 +63,6 @@ class BlastHandler(SearchHandler):
             raise DatabaseValidationError(f"Mandatory screening files with {filename}* not found.")
 
 def _split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
-    """
-    Some results will have multiple tax ids listed in a semicolon-separated list; split these into
-    multiple rows, each with their own taxon id.
-    """
     """
     Some results will have multiple tax ids listed in a semicolon-separated list; split these into
     multiple rows, each with their own taxon id.
@@ -158,7 +150,7 @@ def get_taxonomic_labels(
     # Check if any rows will be removed due to not finding a valid lineage for them
     rows_to_remove = blast[~blast[TAXIDS_COL].isin(lin["TaxID"])]
     if not rows_to_remove.empty:
-        logging.warning(
+        logger.warning(
             "Removing %i rows from BLAST results due to invalid taxID(s): %s"
             " - check that taxonomy and protein databases are up to date!",
             len(rows_to_remove),
