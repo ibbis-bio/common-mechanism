@@ -10,6 +10,7 @@ import subprocess
 from commec.tools.blast_tools import BlastHandler
 from commec.tools.search_handler import SearchToolVersion
 
+
 class BlastNHandler(BlastHandler):
     """
     A search handler specifically for BLASTN command-line during commec screening.

@@ -62,7 +62,11 @@ class ScreenIO:
             )
             sys.exit(1)
 
-        # Sanity check threads settings
+    def setup(self) -> bool:
+        """
+        Additional setup once the class has been instantiated (i.e. that requires logs).
+        """
+        # Make sure the number of threads provided by the user makes sense
         if self.config["threads"] > multiprocessing.cpu_count():
             logger.info(
                 "Requested allocated threads [%i] is greater"
@@ -82,6 +86,65 @@ class ScreenIO:
                 "--jobs is a diamond only parameter! Specifying -j (--jobs) without also"
                 " specifying -p (--protein-search-tool) as 'diamond' will have no effect!"
             )
+
+        # Write a clean FASTA that can be used downstream
+        self._write_clean_fasta()
+        return True
+
+
+    def parse_input_fasta(self) -> dict[str, Query]:
+        """
+        Parse queries from FASTA file.
+        """
+        records = []
+        queries = {}
+
+        try:
+            with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
+                records = list(SeqIO.parse(fasta_file, "fasta"))
+        except ValueError as e:
+            raise IoValidationError(f"Input FASTA file: {self.input_fasta_path} "
+                                    "is not a valid fasta file.") from e
+
+        if len(records) == 0:
+            raise IoValidationError(f"Input FASTA file: {self.input_fasta_path} "
+                                    " contains no records!")
+
+        for record in records:
+            try:
+                query = Query(record)
+                if query.name in queries:
+                    raise ValueError(f"Duplicate sequence identifier found: {query.name}")
+                queries[query.name] = query
+                # Override the original cleaned fasta, with updated names.
+                record.id = query.name
+                record.name = ""
+                record.description = ""
+            except Exception as e:
+                raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}") from e
+
+        with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
+            SeqIO.write(records, fasta_file, "fasta")
+
+        return queries
+
+    def clean(self):
+        """
+        Tidy up directories and temporary files after a run.
+        """
+        if self.config.do_cleanup:
+            for pattern in [
+                "reg_path_coords.csv",
+                "*hmmscan",
+                "*blastn",
+                "faa",
+                "*blastx",
+                "*dmnd",
+                "*.tmp",
+            ]:
+                for file in glob.glob(f"{self.output_prefix}.{pattern}"):
+                    if os.path.isfile(file):
+                        os.remove(file)
 
     def _read_config(self, args: argparse.Namespace):
         """
@@ -252,13 +315,12 @@ class ScreenIO:
         with open(output_filepath, "w", encoding="utf-8") as stream_out:
             yaml.safe_dump(self.config, stream_out, default_flow_style=False)
 
+
     def _write_clean_fasta(self) -> str:
         """
         Write a FASTA in which whitespace (including non-breaking spaces) and 
         illegal characters are replaced with underscores.
         """
-
-        
 
         with (
             open(self.input_fasta_path, "r", encoding="utf-8") as fin,
@@ -271,52 +333,6 @@ class ScreenIO:
                     for c in line
                 )
                 fout.write(f"{modified_line}{os.linesep}")
-
-    def parse_input_fasta(self) -> dict[str, Query]:
-        """
-        Parse queries from FASTA file.
-        """
-        records = []
-
-        with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
-            queries = {}
-            records = list(SeqIO.parse(fasta_file, "fasta"))
-
-        for record in records:
-            try:
-                query = Query(record)
-                if query.name in queries:
-                    raise ValueError(f"Duplicate sequence identifier found: {query.name}")
-                queries[query.name] = query
-                # Override the original cleaned fasta, with updated names.
-                record.id = query.name
-                record.name = ""
-                record.description = ""
-            except Exception as e:
-                raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}") from e
-
-        with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
-            SeqIO.write(records, fasta_file, "fasta")
-
-        return queries
-
-    def clean(self):
-        """
-        Tidy up directories and temporary files after a run.
-        """
-        if self.config["do_cleanup"]:
-            for pattern in [
-                "reg_path_coords.csv",
-                "*hmmscan",
-                "*blastn",
-                "faa",
-                "*blastx",
-                "*dmnd",
-                "*.tmp",
-            ]:
-                for file in glob.glob(f"{self.output_prefix}.{pattern}"):
-                    if os.path.isfile(file):
-                        os.remove(file)
 
     @property
     def should_do_protein_screening(self) -> bool:

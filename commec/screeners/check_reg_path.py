@@ -15,7 +15,7 @@ import re
 import sys
 import textwrap
 import pandas as pd
-from commec.config.screen_tools import ScreenIOParameters
+#from commec.config.screen_tools import ScreenIO
 from commec.tools.blast_tools import read_blast, get_taxonomic_labels, get_top_hits
 from commec.tools.blastn import BlastNHandler
 from commec.tools.search_handler import SearchHandler
@@ -32,6 +32,7 @@ from commec.config.result import (
 
 pd.set_option("display.max_colwidth", 10000)
 
+logger = logging.getLogger(__name__)
 
 def _check_inputs(
         search_handle : SearchHandler,
@@ -327,27 +328,30 @@ def main():
         "--database",
         dest="db",
         required=True,
-        help="database folder (must contain vax_taxids and reg_taxids file)",
+        help="top-level database folder (assumes /taxonomy, /benign_db, /biorisk_db dirs",
     )
     parser.add_argument("-t", "--threads", dest="threads", required=True, help="number of threads")
     args = parser.parse_args()
 
-    # Set up logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(message)s",
-        handlers=[logging.StreamHandler(sys.stdout)],
-    )
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(message)s",
-        handlers=[logging.StreamHandler(sys.stderr)],
-    )
+    # Legacy - assume hardcoded database locations; to adjust, call via screen.py
+    input_database_dir = args.db
+    taxonomy_db_path = f"{input_database_dir}/taxonomy/"
+    benign_taxid_path = f"{input_database_dir}/benign_db/vax_taxids.txt"
+    biorisk_taxid_path = f"{input_database_dir}/biorisk_db/reg_taxids.txt"
 
-    exit_code = check_for_regulated_pathogens(args.in_file, args.db, args.threads)
+    exit_code = check_for_regulated_pathogens(
+        args.in_file, taxonomy_db_path, benign_taxid_path, biorisk_taxid_path, args.threads
+    )
     sys.exit(exit_code)
 
-def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_threads: int):
+
+def check_for_regulated_pathogens(
+        input_file: str | os.PathLike,
+        taxonomy_path: str | os.PathLike,
+        benign_taxid_path: str | os.PathLike,
+        regulated_taxid_path: str | os.PathLike,
+        threads: int
+    ):
     """
     Check an input file (output from a database search) for regulated pathogens, from the benign and
     biorisk database taxids.
@@ -388,7 +392,7 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
         return 0
 
     blast = read_blast(input_file)
-    blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, input_database_dir + "/taxonomy/", n_threads)
+    blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_path, threads)
     blast = blast[blast["species"] != ""]  # ignore submissions made above the species level
 
     # label each base with the top matching hit, but include different taxids attributed to same hit
@@ -547,3 +551,6 @@ def check_for_regulated_pathogens(input_file: str, input_database_dir: str, n_th
 
     return 0
 
+
+if __name__ == "__main__":
+    main()

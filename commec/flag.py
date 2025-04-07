@@ -24,9 +24,8 @@ from enum import StrEnum
 import pandas as pd
 from commec.utils.file_utils import directory_arg
 
-DESCRIPTION = (
-    "Parse all .screen files in a directory and create two CSVs file of flags raised"
-)
+DESCRIPTION = "Parse all .screen files in a directory and create CSVs of flags raised"
+
 
 class Outcome(StrEnum):
     """Possible outcomes for each step of the screening process."""

@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 # Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
 """
-Script that checks whether there are any hits to nr for a query. If there aren't any over a given
-significance level, prints the whole sequence to a noncoding query file. If there are hits, fetches
-the nucleotide regions between these hits and singles them out for nucleotide screening
+Fetch parts of a query that had no high-quality protein matches for use in nucloetide screening.
 
 Usage:
     fetch_nc_bits.py query_name fasta_file_path
 """
-import shutil
 import argparse
-import re
 import logging
+import shutil
+import re
 import pandas as pd
 from Bio import SeqIO
 from commec.config.query import Query
@@ -20,7 +18,6 @@ from commec.tools.search_handler import SearchHandler
 from commec.config.result import ScreenStatus
 
 logger = logging.getLogger(__name__)
-
 
 def _get_ranges_with_no_hits(input_df : pd.DataFrame):
     """
@@ -168,7 +165,7 @@ def calculate_noncoding_regions_per_query(
     logger.debug("Checking protein hits in: %s", protein_results)
 
     if not SearchHandler.has_hits(protein_results):
-        logging.info("No protein hits found, screening entire sequence.")
+        logger.info("No protein hits found, screening entire sequence.")
         for query in queries.values():
             _set_no_coding_regions(query)
         return
@@ -182,7 +179,7 @@ def calculate_noncoding_regions_per_query(
         protein_matches_for_query = protein_matches[protein_matches[query_col] == query.name]
 
         if protein_matches_for_query.empty:
-            logging.info("No protein hits found for %s, screening entire sequence.", query.name)
+            logger.info("No protein hits found for %s, screening entire sequence.", query.name)
             _set_no_coding_regions(query)
             continue
 
@@ -203,16 +200,17 @@ def calculate_noncoding_regions_per_query(
 
 
 def main():
-    '''
+    """
     Wrapper for parsing arguments direction to fetch_nc_bits if called as main.
-    '''
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-i","--input", dest="in_file",
-        required=True, help="Input query file path")
-    parser.add_argument("-f","--fasta", dest="fasta_file",
-        required=True, help="HMM folder (must contain biorisk_annotations.csv)")
+    """
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(dest="protein_results", help="Results of a protein search")
+    parser.add_argument(
+        dest="fasta_file_path",
+        help="FASTA file from which to fetch regions with no protein hits",
+    )
     args = parser.parse_args()
-    fetch_noncoding_regions(args.in_file, args.fasta_file_path)
+    fetch_noncoding_regions(args.protein_results, args.fasta_file_path)
 
 if __name__ == "__main__":
     main()
