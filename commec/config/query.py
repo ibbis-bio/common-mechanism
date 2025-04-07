@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 # Copyright (c) 2021-2025 International Biosecurity and Biosafety Initiative for Science
-import os
-import logging
+
 import subprocess
 from Bio.SeqRecord import SeqRecord
-
 from commec.config.result import QueryResult
-
-logger = logging.getLogger(__name__)
 
 class Query:
     """

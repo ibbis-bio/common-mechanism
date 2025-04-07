@@ -28,7 +28,6 @@ from commec.config.result import (
     MatchRange,
     compare
 )
-logger = logging.getLogger(__name__)
 
 # Constants determining Commec's sensitivity for benign screen.
 BENIGN_PROTEIN_EVALUE_CUTOFF : float = 1e-20
@@ -36,6 +35,8 @@ MINIMUM_PEPTIDE_COVERAGE : int = 50 # Number is counted in NTs, not AA's.
 MINIMUM_QUERY_COVERAGE_FRACTION : float = 0.80
 MINIMUM_RNA_BASEPAIR_COVERAGE : int = 50
 MINIMUM_SYNBIO_COVERAGE_FRACTION : float = 0.80
+
+logger = logging.getLogger(__name__)
 
 def _filter_benign_proteins(query : Query,
                             hit : HitResult,

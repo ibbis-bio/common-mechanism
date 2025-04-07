@@ -54,12 +54,14 @@ import datetime
 import time
 import logging
 import shutil
+import os
 import sys
 import traceback
 import pandas as pd
 
 from commec.config.screen_io import ScreenIO, IoValidationError
 from commec.config.query import Query
+from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.logging import setup_console_logging, setup_file_logging, set_log_level
 from commec.config.screen_tools import ScreenTools
 from commec.config.result import (
@@ -125,11 +127,7 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     Add module arguments to an ArgumentParser object.
     """
 
-    parser.add_argument(
-        dest="fasta_file",
-        type=file_arg,
-        help="FASTA file to screen"
-    )
+    parser.add_argument(dest="fasta_file", type=file_arg, help="FASTA file to screen")
     parser.add_argument(
         "-d",
         "--databases",
@@ -222,7 +220,6 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
     return parser
 
-
 class Screen:
     """
     Handles the parsing of input arguments, the control of databases, and
@@ -260,8 +257,10 @@ class Screen:
             if self.params.config["do_cleanup"]:
                 self.params.clean()
 
-    def setup(self, args: argparse.ArgumentParser):
+    def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
+
+
         # Start logging to console
         log_level = logging.INFO if not args.verbose else logging.DEBUG
         setup_console_logging(log_level)
@@ -276,8 +275,6 @@ class Screen:
 
         # Update console log-level
         set_log_level(log_level, update_only_handler_type=logging.StreamHandler)
-        logging.info(" Validating Inputs...")
-        self.database_tools: ScreenTools = ScreenTools(self.params)
 
         # Needed to initialize parameters before logging to files
         setup_file_logging(self.params.output_screen_file, log_level)
@@ -322,7 +319,7 @@ class Screen:
         # Store start time.
         _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    def run(self, args: argparse.Namespace):
+    def run(self, args : argparse.Namespace):
         """
         Wrapper so that args be parsed in main() or commec.py interface.
         """
@@ -332,9 +329,9 @@ class Screen:
         
         # Biorisk screen
         try:
-            logging.info(">> STEP 1: Checking for biorisk genes...")
+            logger.info(">> STEP 1: Checking for biorisk genes...")
             self.screen_biorisks()
-            logging.info(
+            logger.info(
                 " STEP 1 completed at %s",
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             )
@@ -346,9 +343,9 @@ class Screen:
         # Taxonomy screen (Protein)
         if self.params.should_do_protein_screening:
             try:
-                logging.info(" >> STEP 2: Checking regulated pathogen proteins...")
+                logger.info(" >> STEP 2: Checking regulated pathogen proteins...")
                 self.screen_proteins()
-                logging.info(
+                logger.info(
                     " STEP 2 completed at %s",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
@@ -357,15 +354,15 @@ class Screen:
                 logger.info(" Traceback:\n%s", traceback.format_exc())
                 self.reset_protein_recommendations(ScreenStatus.ERROR)
         else:
-            logging.info(" SKIPPING STEP 2: Protein search")
+            logger.info(" SKIPPING STEP 2: Protein search")
             self.reset_protein_recommendations(ScreenStatus.SKIP)
 
         # Taxonomy screen (Nucleotide)
         if self.params.should_do_nucleotide_screening:
             try:
-                logging.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
+                logger.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
                 self.screen_nucleotides()
-                logging.info(
+                logger.info(
                     " STEP 3 completed at %s",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
@@ -374,17 +371,17 @@ class Screen:
                 logger.info(" Traceback:\n%s", traceback.format_exc())
                 self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
         else:
-            logging.info(" SKIPPING STEP 3: Nucleotide search")
+            logger.info(" SKIPPING STEP 3: Nucleotide search")
             self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
 
         # Benign Screen
         if self.params.should_do_benign_screening:
             try:
-                logging.info(
+                logger.info(
                     ">> STEP 4: Checking any pathogen regions for benign components..."
                 )
                 self.screen_benign()
-                logging.info(
+                logger.info(
                     ">> STEP 4 completed at %s",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
@@ -405,7 +402,6 @@ class Screen:
         self.success = True
 
 
-
     def screen_biorisks(self):
         """
         Call hmmscan` and `check_biorisk.py` to add biorisk results to `screen_file`.
@@ -415,6 +411,7 @@ class Screen:
         logger.debug("\t...checking hmmscan results")
         exit_status = update_biorisk_data_from_database(
             self.database_tools.biorisk_hmm,
+            self.database_tools.biorisk_annotations_csv,
             self.screen_data,
             self.queries)
         
@@ -487,8 +484,7 @@ class Screen:
             return
 
         # Create a non-coding fasta file.
-        noncoding_fasta = f"{self.params.output_prefix}.noncoding.fasta"
-        with open(noncoding_fasta, "w", encoding="utf-8") as output_file:
+        with open(self.params.nc_path, "w", encoding="utf-8") as output_file:
             output_file.writelines(nc_fasta_sequences)
 
         # Only run new blastn search if there are no previous results
@@ -532,7 +528,7 @@ class Screen:
                 break
 
         if not hits_to_clear:
-            logging.info("\t...no regulated regions to clear\n")
+            logger.info("\t...no regulated regions to clear\n")
             self.reset_benign_recommendations(ScreenStatus.SKIP)
             return
 
@@ -587,8 +583,7 @@ class Screen:
         for query in self.screen_data.queries.values():
             query.recommendation.nucleotide_taxonomy_status = new_recommendation
 
-
-def run(args: argparse.ArgumentParser):
+def run(args: argparse.Namespace):
     """
     Entry point from commec main. Passes args to Screen object, and runs.
     """
@@ -597,6 +592,7 @@ def run(args: argparse.ArgumentParser):
         my_screen.run(args)
     except KeyboardInterrupt:
         print(" >>> Commec Screen Terminated.")
+
 
 def main():
     """

@@ -17,9 +17,6 @@ dependencies:
   - emboss
   - hmmer
   - infernal
-  - parallel
-  - perl-list-moreutils
-  - taxonkit
   - plotly
   - yaml
   - mako
