@@ -23,8 +23,10 @@ import re
 from enum import StrEnum
 import pandas as pd
 from commec.utils.file_utils import directory_arg
+from commec.config.result import ScreenStatus, ScreenResult, ScreenStep
+from commec.config.json_io import get_screen_data_from_json
 
-DESCRIPTION = "Parse all .screen files in a directory and create CSVs of flags raised"
+DESCRIPTION = "Parse all .screen, or .json files in a directory and create CSVs of flags raised"
 
 
 class Outcome(StrEnum):
@@ -80,7 +82,79 @@ def add_args(parser: argparse.ArgumentParser):
     return parser
 
 
-def process_file(file_path) -> dict[str, str | set[str] | bool]:
+def process_json_file(file_path) -> list[dict[str, str | set[str] | bool]]:
+    """
+    Read input json file, split into steps, and prepare dict of results for CSV output.
+    """
+    filename_without_extension = os.path.splitext(os.path.basename(file_path))[0]
+
+    results = []
+
+    try:
+        print(file_path)
+        screen_data : ScreenResult = get_screen_data_from_json(file_path)
+    except KeyError as e:
+        print("The following json was not a Commec compatible json: ", file_path)
+        return []
+    except AttributeError as e:
+        print("The following json was not a Commec compatible json: ", file_path)
+        return []
+
+    for name, query in screen_data.queries.items():
+        
+        assert query
+
+        # Defaults are false, and are overwritten if a single 
+        virus_flag = 0
+        bacteria_flag = 0
+        eukaryote_flag = 0
+        benign_protein = False
+        benign_rna = False
+        benign_synbio = False
+
+        if (query.recommendation.protein_taxonomy_status
+            not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
+            for hit in query.hits.values():
+                if hit.recommendation.from_step == ScreenStep.TAXONOMY_AA:
+                    for info in hit.annotations["regulation"]:
+                        bacteria_flag += int(info["regulated_bacteria"]) > 0
+                        virus_flag += int(info["regulated_viruses"]) > 0
+                        eukaryote_flag += int(info["regulated_eukaryotes"]) > 0
+
+        # Which forms of benign hits are present?
+        if (query.recommendation.benign_status
+            not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
+            for hit in query.hits.values():
+                match hit.recommendation.from_step:
+                    case ScreenStep.BENIGN_PROTEIN:
+                        benign_protein = True
+                    case ScreenStep.BENIGN_RNA:
+                        benign_rna = True
+                    case ScreenStep.BENIGN_SYNBIO:
+                        benign_synbio = True
+                    case _:
+                        continue
+
+        results.append({
+        "name": name,
+        "filepath": file_path,
+        "flag": query.recommendation.screen_status,
+        "biorisk": query.recommendation.biorisk_status,
+        "protein": query.recommendation.protein_taxonomy_status,
+        "virus_flag": (virus_flag > 0),
+        "bacteria_flag": (bacteria_flag > 0),
+        "eukaryote_flag": (eukaryote_flag > 0),
+        "nucleotide": query.recommendation.nucleotide_taxonomy_status,
+        "benign": query.recommendation.benign_status,
+        "benign_protein": benign_protein,
+        "benign_rna": benign_rna,
+        "benign_dna": benign_synbio
+        })
+
+    return results
+
+
+def process_screen_file(file_path) -> dict[str, str | set[str] | bool]:
     """
     Read input screen file, split into steps, and prepare dict of results for CSV output.
     """
@@ -120,8 +194,21 @@ def process_file(file_path) -> dict[str, str | set[str] | bool]:
 
     results["flag"] = get_overall_flag(results)
 
-    return results
+    # We return the list of screen files, rather than the 
+    return [results]
 
+
+def process_file(file_path) -> dict[str, str | set[str] | bool]:
+    """
+    Wrapper to process either a json, or a screen log file.
+    """
+    _, extension = os.path.splitext(os.path.basename(file_path))
+    if extension == ".json":
+        return process_json_file(file_path)
+    if extension == ".screen":
+        return process_screen_file(file_path)
+    raise ValueError("Error: unrecognised file extension"
+                     f"(not .screen, or .json): {extension}")
 
 def get_biorisk_outcome(step_content: str) -> set[str]:
     """Process biorisk scan step from .screen file."""
@@ -364,12 +451,33 @@ def run(args: argparse.Namespace):
     search_recursive = args.recursive
     output_dir = args.output or os.path.dirname(search_dir)
 
+    search_pattern = "**/*.json" if search_recursive else "*.json"
+    screen_paths_json = glob.glob(os.path.join(search_dir, search_pattern), recursive=search_recursive)
+
+
     search_pattern = "**/*.screen" if search_recursive else "*.screen"
-    screen_paths = glob.glob(os.path.join(search_dir, search_pattern), recursive=search_recursive)
+    screen_paths_screen = glob.glob(os.path.join(search_dir, search_pattern), recursive=search_recursive)
+    
+    #screen_paths_json.extend(screen_paths_screen)
+    screen_paths = screen_paths_screen + screen_paths_json
+
+    print(screen_paths)
+    #print(screen_paths_json)
+    #print(screen_paths_screen)
+
     if not screen_paths:
         raise FileNotFoundError(f"No .screen files were found in directory: {search_dir}")
 
-    screen_status = [process_file(file_path) for file_path in sorted(screen_paths)]
+    # .screen files support a single query, (although can also be run with two), whereas json support multifastas...
+#    screen_status = [process_file(file_path) for file_path in sorted(screen_paths)]
+    screen_status = []
+    for file_path in sorted(screen_paths):
+        result = process_file(file_path)
+        if isinstance(result, list):
+            screen_status.extend(result)  # Appends all items in the list
+        else:
+            screen_status.append(result)  # Adds a single dict
+
     screen_flags = [get_flags_from_status(status) for status in screen_status]
     recommendations = [
         (status["filepath"], get_recommendation(status["flag"])) for status in screen_status
