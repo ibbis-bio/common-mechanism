@@ -162,7 +162,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
 
             biorisk_overall = compare(target_recommendation, biorisk_overall)
 
-            regulation_str : str = "Regulated Gene" if must_flag else "Virulance Factor"
+            regulation_str : str = "Regulated Gene" if must_flag else "Virulence Factor"
 
             hit_data : HitResult = query_data.get_hit(affected_target)
             if hit_data:
