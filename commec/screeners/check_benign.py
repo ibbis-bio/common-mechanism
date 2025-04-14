@@ -220,7 +220,7 @@ def _filter_benign_synbio(query : Query,
     logger.debug("Processing Benign Hit: %s", benign_hit_outcome)
     
     if hit.recommendation.status not in {ScreenStatus.CLEARED_FLAG, ScreenStatus.CLEARED_WARN}:
-        logger.info("\t --> Clearing %s %s region %i-%i as Synthetic, for %s, with Synthetic %s",
+        logger.info("\t --> Clearing %s %s region %i-%i as Benign Nucleotide, for %s, with Synthetic Biology Part %s",
                         hit.recommendation.status, hit.name, region.query_start, region.query_end, query.name, benign_hit_outcome.name)
         hit.recommendation.status = hit.recommendation.status.clear()
 

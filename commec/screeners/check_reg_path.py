@@ -283,7 +283,7 @@ def update_taxonomic_data_from_database(
                 alt_text = "only " if recommendation == ScreenStatus.FLAG else "both regulated and non-"
                 ## REGULATED:
                 logger.info(
-                        "\t --> %s %s contains match to %s at bases (%s) found in %sregulated organisms (%s). Regulated Species: %s Regulated TaxIDs: %s",
+                        "\t --> %s %s contains match to %s at bases (%s) found in %sregulated organisms (%s). (Regulated Species: %s. Regulated TaxID(s): %s)",
                         recommendation, query, hit, match_ranges_text, alt_text, domains_text, reg_species_text, reg_taxids_text
                     )
                     #logger.info(
