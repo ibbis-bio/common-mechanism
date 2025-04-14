@@ -414,10 +414,6 @@ class ScreenResult:
     commec_info: ScreenRunInfo = field(default_factory=ScreenRunInfo)
     queries: dict[str, QueryResult] = field(default_factory=dict)
 
-    def format(self):
-        """Format this ScreenResult as a json string to pass to a standard out if desired."""
-        return str(asdict(self))
-
     def get_query(self, query_name: str) -> QueryResult:
         """
         Wrapper for Query get logic.
@@ -475,4 +471,7 @@ class ScreenResult:
 
     def __str__(self):
         df = self.get_flag_data()
-        return df.to_string()
+        return df.to_string(index=False, col_space = 12)
+    
+    def __repr__(self):
+        return str(asdict(self))

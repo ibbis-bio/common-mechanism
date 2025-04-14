@@ -332,11 +332,11 @@ class Screen:
             logger.info(" >> STEP 1: Checking for biorisk genes...")
             self.screen_biorisks()
             logger.info(
-                " >> STEP 1 completed at %s",
+                "STEP 1 completed at %s",
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             )
         except Exception as e:
-            logger.info(" ERROR STEP 1: Biorisk search failed due to an error:\n %s", str(e))
+            logger.error("STEP 1: Biorisk search failed due to an error:\n %s", str(e))
             logger.info(" Traceback:\n%s", traceback.format_exc())
             self.reset_biorisk_recommendations(ScreenStatus.ERROR)
 
@@ -346,15 +346,15 @@ class Screen:
                 logger.info(" >> STEP 2: Checking regulated pathogen proteins...")
                 self.screen_proteins()
                 logger.info(
-                    " >> STEP 2 completed at %s",
+                    "STEP 2 completed at %s",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
             except Exception as e:
-                logger.info(" ERROR STEP 2: Protein search failed due to an error:\n %s", str(e))
+                logger.error("STEP 2: Protein search failed due to an error:\n %s", str(e))
                 logger.info(" Traceback:\n%s", traceback.format_exc())
                 self.reset_protein_recommendations(ScreenStatus.ERROR)
         else:
-            logger.info(" >> SKIPPING STEP 2: Protein search")
+            logger.info("SKIPPING STEP 2: Protein search")
             self.reset_protein_recommendations(ScreenStatus.SKIP)
 
         # Taxonomy screen (Nucleotide)
@@ -363,15 +363,15 @@ class Screen:
                 logger.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
                 self.screen_nucleotides()
                 logger.info(
-                    " >> STEP 3 completed at %s",
+                    "STEP 3 completed at %s",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
             except Exception as e:
-                logger.info(" ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
+                logger.error("ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
                 logger.info(" Traceback:\n%s", traceback.format_exc())
                 self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
         else:
-            logger.info(" >> SKIPPING STEP 3: Nucleotide search")
+            logger.info("SKIPPING STEP 3: Nucleotide search")
             self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
 
         # Benign Screen
@@ -382,15 +382,15 @@ class Screen:
                 )
                 self.screen_benign()
                 logger.info(
-                    " >> STEP 4 completed at %s",
+                    "STEP 4 completed at %s",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
             except Exception as e:
-                logger.info(" ERROR STEP 4: Benign search failed due to an error:\n %s", str(e))
+                logger.error("STEP 4: Benign search failed due to an error:\n %s", str(e))
                 logger.info(" Traceback:\n%s", traceback.format_exc())
                 self.reset_benign_recommendations(ScreenStatus.ERROR)
         else:
-            logger.info(" >> SKIPPING STEP 4: Benign search")
+            logger.info(" << SKIPPING STEP 4: Benign search")
             self.reset_benign_recommendations(ScreenStatus.SKIP)
 
         logger.info(
