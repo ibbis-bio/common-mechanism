@@ -379,30 +379,25 @@ class QueryResult:
         self.hits = dict(sorted_items_desc)
         self._update_step_flags()
 
-        
+@dataclass 
+class SearchToolInfo:
+    """ Container to hold version info for search tools and databases used. """
+    biorisk_search_info:        SearchToolVersion = field(default_factory=SearchToolVersion)
+    protein_search_info:        SearchToolVersion = field(default_factory=SearchToolVersion)
+    nucleotide_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
+    benign_protein_search_info: SearchToolVersion = field(default_factory=SearchToolVersion)
+    benign_rna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
+    benign_dna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
+
 
 @dataclass
 class ScreenRunInfo:
     """Container dataclass to hold general run information for a commec screen"""
-
     commec_version: str = str(COMMEC_VERSION)
     json_output_version: str = JSON_COMMEC_FORMAT_VERSION
-    biorisk_database_info: SearchToolVersion = field(default_factory=SearchToolVersion)
-    protein_database_info: SearchToolVersion = field(default_factory=SearchToolVersion)
-    nucleotide_database_info: SearchToolVersion = field(
-        default_factory=SearchToolVersion
-    )
-    benign_protein_database_info: SearchToolVersion = field(
-        default_factory=SearchToolVersion
-    )
-    benign_rna_database_info: SearchToolVersion = field(
-        default_factory=SearchToolVersion
-    )
-    benign_synbio_database_info: SearchToolVersion = field(
-        default_factory=SearchToolVersion
-    )
     time_taken: str = ""
     date_run: str = ""
+    search_tool_info: SearchToolInfo = field(default_factory=SearchToolInfo)
 
 
 @dataclass

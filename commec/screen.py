@@ -305,16 +305,16 @@ class Screen:
 
         # Initialize the version info for all the databases
         _tools = self.database_tools
-        _info = self.screen_data.commec_info
-        _info.biorisk_database_info = _tools.biorisk_hmm.get_version_information()
+        _info = self.screen_data.commec_info.search_tool_info
+        _info.biorisk_search_info = _tools.biorisk_hmm.get_version_information()
         if self.params.should_do_protein_screening:
-            _info.protein_database_info = _tools.regulated_protein.get_version_information()
+            _info.protein_search_info = _tools.regulated_protein.get_version_information()
         if self.params.should_do_nucleotide_screening:
-            _info.nucleotide_database_info = _tools.regulated_nt.get_version_information()
+            _info.nucleotide_search_info = _tools.regulated_nt.get_version_information()
         if self.params.should_do_benign_screening:
-            _info.benign_protein_database_info = _tools.benign_hmm.get_version_information()
-            _info.benign_rna_database_info = _tools.benign_cmscan.get_version_information()
-            _info.benign_synbio_database_info = _tools.benign_blastn.get_version_information()
+            _info.benign_protein_search_info = _tools.benign_hmm.get_version_information()
+            _info.benign_rna_search_info = _tools.benign_cmscan.get_version_information()
+            _info.benign_dna_search_info = _tools.benign_blastn.get_version_information()
 
         # Store start time.
         _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -394,7 +394,7 @@ class Screen:
             self.reset_benign_recommendations(ScreenStatus.SKIP)
 
         logger.info(
-            " >> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            " >> Commec Screen completed at %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
 
         self.screen_data.update()

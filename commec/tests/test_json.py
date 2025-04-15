@@ -12,14 +12,16 @@ def test_screendata():
         commec_info = ScreenRunInfo(
             commec_version="0.1.2",
             json_output_version=JSON_COMMEC_FORMAT_VERSION,
-            biorisk_database_info=SearchToolVersion("HMM 0.0.0","DB 0.0.0"),
-            protein_database_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-            nucleotide_database_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-            benign_protein_database_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-            benign_rna_database_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-            benign_synbio_database_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
             time_taken="00:00:00:00",
             date_run="1.1.2024",
+            search_tool_info= SearchToolInfo(
+                biorisk_search_info=SearchToolVersion("HMM 0.0.0","DB 0.0.0"),
+                protein_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                nucleotide_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                benign_protein_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                benign_rna_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                benign_dna_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+            )
         ),
         queries= {
             "Query1":
