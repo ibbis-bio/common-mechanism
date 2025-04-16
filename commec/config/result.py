@@ -30,8 +30,8 @@ import re
 from dataclasses import dataclass, asdict, field
 from typing import List, Iterator, Tuple
 from enum import StrEnum
-import pandas as pd
 from importlib.metadata import version, PackageNotFoundError
+import pandas as pd
 from commec.tools.search_handler import SearchToolVersion
 
 try:
@@ -240,14 +240,6 @@ class QueryScreenStatus:
         Designed to be called at any time after Step 1.
         """
         if self.benign_status is not ScreenStatus.NULL:
-
-
-        #if self.benign_status in {
-        #    ScreenStatus.CLEARED_FLAG,
-        #    ScreenStatus.CLEARED_WARN,
-        #    ScreenStatus.WARN,
-        #    ScreenStatus.PASS,
-        #}:
             self.screen_status = self.benign_status
             return
 
@@ -362,7 +354,6 @@ class QueryResult:
 
         self.recommendation.update_query_flag()
 
-
     def update(self):
         """
         Call this before exporting to file.
@@ -378,6 +369,7 @@ class QueryResult:
         )
         self.hits = dict(sorted_items_desc)
         self._update_step_flags()
+
 
 @dataclass 
 class SearchToolInfo:
@@ -446,11 +438,11 @@ class ScreenResult:
                 yield query, hit
 
     def get_flag_data(self) -> pd.DataFrame:
-
-        #columns = ["query", "overall", "biorisk", "taxonomy protein", "taxonomy nt", "benign"]
-
+        """
+        Returns a dataframe containing the status' from each screen step.
+        Useful for printing summary information.
+        """
         data = []
-
         for query in self.queries.values():
             data.append({
                 "query": query.query[:25],
