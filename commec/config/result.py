@@ -124,12 +124,12 @@ class ScreenStep(StrEnum):
     Enumeration of the Steps for Commec screening
     """
 
-    BIORISK = "Biorisk Screen"
-    TAXONOMY_NT = "Nucleotide Taxonomy Screen"
-    TAXONOMY_AA = "Protein Taxonomy Screen"
-    BENIGN_PROTEIN = "Benign Protein Screen"
-    BENIGN_RNA = "Benign RNA Screen"
-    BENIGN_SYNBIO = "Benign SynBio Screen"
+    BIORISK = "Biorisk Search"
+    TAXONOMY_NT = "Nucleotide Taxonomy Search"
+    TAXONOMY_AA = "Protein Taxonomy Search"
+    BENIGN_PROTEIN = "Benign Protein Search"
+    BENIGN_RNA = "Benign RNA Search"
+    BENIGN_DNA = "Benign DNA Search"
 
 
 @dataclass
@@ -356,7 +356,7 @@ class QueryResult:
                 case ScreenStep.BENIGN_RNA:
                     self.recommendation.benign_status = compare(
                         self.recommendation.benign_status, hit.recommendation.status)
-                case ScreenStep.BENIGN_SYNBIO:
+                case ScreenStep.BENIGN_DNA:
                     self.recommendation.benign_status = compare(
                         self.recommendation.benign_status, hit.recommendation.status)
 

@@ -168,49 +168,49 @@ def _filter_benign_rna(query : Query,
                     hit.name, hit.recommendation.status, MINIMUM_RNA_BASEPAIR_COVERAGE, query.name)
     return []
 
-def _filter_benign_synbio(query : Query,
+def _filter_benign_dna(query : Query,
                           hit : HitResult,
                           region : MatchRange,
-                          benign_synbio_for_query : pd.DataFrame) -> list:
+                          benign_dna_for_query : pd.DataFrame) -> list:
     logger.debug("\t\t\tChecking query (%s) hit %s for benign Synbio",  query.name, hit.name)
 
     # Filter benign SynBio for relevance...
-    benign_synbio_for_query_trimmed = _trim_to_region(benign_synbio_for_query, region).copy()
-    if benign_synbio_for_query_trimmed.empty:
+    benign_dna_for_query_trimmed = _trim_to_region(benign_dna_for_query, region).copy()
+    if benign_dna_for_query_trimmed.empty:
         logger.debug("\t\t\tNo overlapping benign Synbio regions for %s (%i-%i)",
                      hit.name, region.query_start, region.query_end)
         return []
 
-    benign_synbio_for_query_trimmed = _calculate_coverage(benign_synbio_for_query_trimmed, region)
+    benign_dna_for_query_trimmed = _calculate_coverage(benign_dna_for_query_trimmed, region)
     logger.debug("\t\t\tCoverage Data for %s: shape: %s preview:\n%s", 
-                     hit.name, benign_synbio_for_query_trimmed.shape, 
-                     benign_synbio_for_query_trimmed[["coverage_nt", "coverage_ratio"]].head())
+                     hit.name, benign_dna_for_query_trimmed.shape, 
+                     benign_dna_for_query_trimmed[["coverage_nt", "coverage_ratio"]].head())
 
-    benign_synbio_for_query_trimmed = benign_synbio_for_query_trimmed[
-        benign_synbio_for_query_trimmed["coverage_ratio"] > MINIMUM_SYNBIO_COVERAGE_FRACTION]
-    benign_synbio_for_query_trimmed = benign_synbio_for_query_trimmed.reset_index(drop=True)
+    benign_dna_for_query_trimmed = benign_dna_for_query_trimmed[
+        benign_dna_for_query_trimmed["coverage_ratio"] > MINIMUM_SYNBIO_COVERAGE_FRACTION]
+    benign_dna_for_query_trimmed = benign_dna_for_query_trimmed.reset_index(drop=True)
     logger.debug("\t\t\tFiltered Coverage Synbio for %s: shape: %s preview:\n%s",
-                     hit.name, benign_synbio_for_query_trimmed.shape,
-                     benign_synbio_for_query_trimmed.head())
+                     hit.name, benign_dna_for_query_trimmed.shape,
+                     benign_dna_for_query_trimmed.head())
 
-    if benign_synbio_for_query_trimmed.empty:
+    if benign_dna_for_query_trimmed.empty:
         logger.info("\t --> Synbio sequences <80%% coverage achieved over hit %s over %i-%i for query %s.",
                         hit.name, region.query_start, region.query_end, query.name)
         return []
 
-    benign_hit = benign_synbio_for_query_trimmed["subject title"][0]
-    benign_hit_description =  benign_synbio_for_query_trimmed["subject title"][0]
+    benign_hit = benign_dna_for_query_trimmed["subject title"][0]
+    benign_hit_description =  benign_dna_for_query_trimmed["subject title"][0]
     match_ranges = [
         MatchRange(
-        float(benign_synbio_for_query_trimmed['evalue'][0]),
-        int(benign_synbio_for_query_trimmed['s. start'][0]), int(benign_synbio_for_query_trimmed['s. end'][0]),
-        int(benign_synbio_for_query_trimmed['q. start'][0]), int(benign_synbio_for_query_trimmed['q. end'][0])
+        float(benign_dna_for_query_trimmed['evalue'][0]),
+        int(benign_dna_for_query_trimmed['s. start'][0]), int(benign_dna_for_query_trimmed['s. end'][0]),
+        int(benign_dna_for_query_trimmed['q. start'][0]), int(benign_dna_for_query_trimmed['q. end'][0])
         )
     ]
     benign_hit_outcome = HitResult(
             HitScreenStatus(
                 ScreenStatus.PASS,
-                ScreenStep.BENIGN_SYNBIO
+                ScreenStep.BENIGN_DNA
             ),
             benign_hit,
             benign_hit_description,
@@ -229,7 +229,7 @@ def _filter_benign_synbio(query : Query,
 def _update_benign_data_for_query(query : Query,
                                   benign_protein : pd.DataFrame,
                                   benign_rna : pd.DataFrame,
-                                  benign_synbio : pd.DataFrame,
+                                  benign_dna : pd.DataFrame,
                                   benign_descriptions : pd.DataFrame):
     """
     For a single query, look at all three benign database outputs, and update the 
@@ -241,7 +241,7 @@ def _update_benign_data_for_query(query : Query,
 
     benign_protein_for_query = pd.DataFrame()
     benign_rna_for_query = pd.DataFrame()
-    benign_synbio_for_query = pd.DataFrame()
+    benign_dna_for_query = pd.DataFrame()
 
     # We only care about the benign data for this query.
     if not benign_protein.empty:
@@ -258,9 +258,9 @@ def _update_benign_data_for_query(query : Query,
     else:
         logger.info("\t\t...no benign RNA hits for %s", query.name)
 
-    if not benign_synbio.empty:
-        benign_synbio_for_query = benign_synbio[
-            benign_synbio["query acc."] == query.name
+    if not benign_dna.empty:
+        benign_dna_for_query = benign_dna[
+            benign_dna["query acc."] == query.name
         ]
     else:
         logger.info("\t\t...no Synbio sequence hits for %s", query.name)
@@ -295,10 +295,10 @@ def _update_benign_data_for_query(query : Query,
                                        benign_rna_for_query)
                 )
                 
-            if not benign_synbio_for_query.empty:
+            if not benign_dna_for_query.empty:
                 new_benign_hits.extend(
-                    _filter_benign_synbio(query, hit, region,
-                                          benign_synbio_for_query)
+                    _filter_benign_dna(query, hit, region,
+                                          benign_dna_for_query)
                     )
 
     logger.debug("\tNew benign hits added: %i", len(new_benign_hits))
@@ -308,7 +308,7 @@ def _update_benign_data_for_query(query : Query,
 
 def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                      benign_rna_handle : CmscanHandler,
-                                     benign_synbio_handle : BlastNHandler,
+                                     benign_dna_handle : BlastNHandler,
                                      queries : dict[str,Query],
                                      benign_desc : pd.DataFrame):
     """
@@ -327,16 +327,16 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
     logger.debug("\tBenign RNA Data: shape: %s preview:\n%s",
                 benign_rna_screen_data.shape, benign_rna_screen_data.head())
     
-    benign_synbio_screen_data = benign_synbio_handle.read_output()
-    benign_synbio_screen_data = get_top_hits(benign_synbio_screen_data)
+    benign_dna_screen_data = benign_dna_handle.read_output()
+    benign_dna_screen_data = get_top_hits(benign_dna_screen_data)
     logger.debug("\tBenign Synbio Top Hits Data: shape: %s preview:\n%s",
-                benign_synbio_screen_data.shape, benign_synbio_screen_data.head())
+                benign_dna_screen_data.shape, benign_dna_screen_data.head())
     
     for query in queries.values():
         _update_benign_data_for_query(query,
                                       benign_protein_screen_data,
                                       benign_rna_screen_data,
-                                      benign_synbio_screen_data,
+                                      benign_dna_screen_data,
                                       benign_desc)
 
         # Calculate the Benign Screen outcomes for each query.

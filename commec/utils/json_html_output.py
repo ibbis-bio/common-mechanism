@@ -50,7 +50,7 @@ def color_from_hit(hit : HitResult) -> CommecPalette:
         return CommecPalette.RED
     if (hit.recommendation.from_step == ScreenStep.BENIGN_PROTEIN or
         hit.recommendation.from_step == ScreenStep.BENIGN_RNA or
-        hit.recommendation.from_step == ScreenStep.BENIGN_SYNBIO):
+        hit.recommendation.from_step == ScreenStep.BENIGN_DNA):
         return CommecPalette.LT_BLUE
     if hit.recommendation.from_step == ScreenStep.TAXONOMY_AA:
         return CommecPalette.ORANGE
