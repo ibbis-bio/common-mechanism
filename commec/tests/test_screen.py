@@ -197,6 +197,10 @@ def test_functional_screen(tmp_path, request):
     output_result.commec_info = None
     test_result.commec_info = None
 
+    # Pytest increments the filename version, so ignore the input file.
+    output_result.query_info.file = "REPLACED"
+    test_result.query_info.file = "REPLACED"
+
 
     # Convert both original and retrieved data to dictionaries and compare
     assert asdict(output_result) == asdict(test_result), (

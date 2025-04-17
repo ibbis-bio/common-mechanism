@@ -76,10 +76,15 @@ def generate_html_from_screen_data(input_data : ScreenResult, output_file : str)
         html = fig.to_html(file_name, full_html = False, include_plotlyjs='cdn')
         figures_html.append(html)
 
+    # Additional template information
+    n_query = input_data.query_info.number_of_queries
+    plural = "y" if n_query == 1 else "ies"
+    html_title = f"Commec Screen Summary: {n_query} Quer{plural}."
+
     # Construct the composite HTML
     template_path = str(importlib.resources.files("commec").joinpath("utils").joinpath("template.html"))
     template = Template(filename = template_path)
-    rendered_html = template.render(figures_html=figures_html)
+    rendered_html = template.render(figures_html=figures_html, page_title=html_title)
 
     # Save the combined HTML output
     output_filename = output_file.strip()+".html"
