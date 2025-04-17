@@ -108,7 +108,18 @@ class ScreenStatus(StrEnum):
         if self == ScreenStatus.FLAG:
             return ScreenStatus.CLEARED_FLAG
         return self
+    
+    def __gt__(self, value):
+        return self.importance > value.importance
 
+    def __lt__(self, value):
+        return self.importance < value.importance
+
+    def __ge__(self, value):
+        return self.importance >= value.importance
+
+    def __le__(self, value):
+        return self.importance <= value.importance
 
 def compare(a: ScreenStatus, b: ScreenStatus):
     """

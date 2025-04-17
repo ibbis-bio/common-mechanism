@@ -17,6 +17,7 @@ from commec.config.result import (
     QueryResult,
     HitResult,
     ScreenStep,
+    ScreenStatus,
 )
 
 class CommecPalette():
@@ -30,6 +31,7 @@ class CommecPalette():
     # Yellow and Red are not official Commec colours.
     YELLOW = [241,168,29]
     RED = [207,27,81]
+    BLACK = [0,0,0]
 
     @staticmethod
     def mod(modulate, alpha: int = 255, multiplier : float = 1.0) -> str:
@@ -44,8 +46,24 @@ class CommecPalette():
     rgba_YELLOW = 'rgba(241,80,36,255)'
     rgba_RED = 'rgba(207,27,81,255)'
 
+def color_from_status(status : ScreenStatus) -> CommecPalette:
+    """ 
+    Convert a Screen step into an associated Colour.
+    Previously, colours were based on step, now they are based on outcome.
+    """
+    if status >= ScreenStatus.FLAG:
+        return CommecPalette.RED
+    if status == ScreenStatus.WARN:
+        return CommecPalette.ORANGE
+    return CommecPalette.LT_BLUE
+
 def color_from_hit(hit : HitResult) -> CommecPalette:
-    """ Convert a Screen step into an associated Colour."""
+    """ 
+    Convert a Screen step into an associated Colour.
+    Previously, colours were based on step, now they are based on outcome.
+    """
+    return color_from_status(hit.recommendation.status)
+
     if hit.recommendation.from_step == ScreenStep.BIORISK:
         return CommecPalette.RED
     if (hit.recommendation.from_step == ScreenStep.BENIGN_PROTEIN or
@@ -57,6 +75,37 @@ def color_from_hit(hit : HitResult) -> CommecPalette:
     if hit.recommendation.from_step == ScreenStep.TAXONOMY_NT:
         return CommecPalette.YELLOW
     return CommecPalette.DK_BLUE
+
+def constrast_color_from_hit(hit : HitResult):
+    """ 
+    Convert a Screen step into an associated Colour.
+    This is now always white, which works well with all outcome colours.
+    As this colour is meant for text, and not box objects, its associated
+    allowed values are restricted to hex, or built-in strings.
+    """
+    return "#FFFFFF"
+    if (hit.recommendation.from_step == ScreenStep.TAXONOMY_NT):
+        return "#000000"
+    return "#FFFFFF"
+
+def overlay_text_from_hit(hit : HitResult):
+    outcome = str(hit.recommendation.status)
+    outcome = outcome.replace("Warning", "Warn")
+    outcome = outcome.replace("(Cleared)","")
+    step = hit.recommendation.from_step
+    match step:
+        case ScreenStep.BIORISK:
+            return "Biorisk "+outcome
+        case ScreenStep.TAXONOMY_AA:
+            return "Protein "+outcome
+        case ScreenStep.TAXONOMY_NT:
+            return "Nucl. "+outcome
+        case ScreenStep.BENIGN_PROTEIN:
+            return "Benign Protein"
+        case ScreenStep.BENIGN_RNA:
+            return "Benign RNA"
+        case ScreenStep.BENIGN_DNA:
+            return "Benign DNA"
 
 def generate_html_from_screen_data(input_data : ScreenResult, output_file : str):
     """
@@ -101,13 +150,19 @@ def update_layout(fig, query_to_draw : QueryResult, stacks):
     figure_base_height = 180
     figure_stack_height = 30
 
+    r,g,b = color_from_status(query_to_draw.recommendation.screen_status)
+    css_color = f"rgb({r},{g},{b})"
+
     fig.update_layout(showlegend=False)
     # Update layout to display X-axis on top and hide Y-axis labels for specified subplot
     fig.update_layout({
         # General layout properties
         'height': figure_base_height + (figure_stack_height * stacks),
-        'title': f"{query_to_draw.recommendation.screen_status} :"
-                 f" {query_to_draw.query}  ({query_to_draw.length} b.p.)",
+        'title' : (
+            f"<span style='background-color:{css_color};padding:6px 10px;"
+            f"border-radius:6px;color:{css_color};font-weight:bold;'>"
+            f"{query_to_draw.recommendation.screen_status}</span> : {query_to_draw.query} ({query_to_draw.length} b.p.)"
+        ),
         'barmode': 'overlay',
         'template': 'plotly_white',
         'plot_bgcolor': 'rgba(0,0,0,0)',  # Transparent plot area
@@ -120,6 +175,7 @@ def update_layout(fig, query_to_draw : QueryResult, stacks):
             showgrid=True,
             fixedrange=True,
             zeroline=False,
+            side="top",
         ),
         "yaxis": dict(
             title="",
@@ -132,6 +188,7 @@ def update_layout(fig, query_to_draw : QueryResult, stacks):
         ),
         'bargap': 0.01,
     })
+
 
 def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
     """
@@ -204,13 +261,15 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
     """
     # Interpret the QueryResult into bars for the plot.
     graph_data = [
-        {"label": query_to_draw.query[:25], 
+        {"label": query_to_draw.query, 
          "label_verbose": query_to_draw.query, 
          "outcome" : f"Commec Recommendation for this query: {query_to_draw.recommendation.screen_status}",
          "outcome_verbose":"",
          "start": 1, "stop": query_to_draw.length, 
          "color" : CommecPalette.DK_BLUE, 
-         "stack" : 0},
+         "stack" : 0,
+         "text" : query_to_draw.query[:25],
+         "text_color" : "#FFFFFF",}
     ]
 
     # Keep track of how many vertical stacks this image has.
@@ -220,7 +279,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
         for match in hit.ranges:
             # Find the best vertical position to reduce collisions, and fill all space.
             collision_free = False
-            stack_write = 0
+            stack_write = 1 # 1 gives a bit of space between the query and the data.
             while not collision_free:
                 stack_write += 1
                 collision_free = True
@@ -242,7 +301,9 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
                     "start" : match.query_start,
                     "stop" : match.query_end,
                     "color" : color_from_hit(hit),
-                    "stack" : stack_write
+                    "stack" : stack_write,
+                    "text" : overlay_text_from_hit(hit),
+                    "text_color" : constrast_color_from_hit(hit),
                 }
             )
 
@@ -280,6 +341,26 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
                 name=bar_data['label'],
                 width = 1.0,
             ),
+        )
+
+        # Compute x center for horizontal bar
+        bar_center_x = bar_data['start'] + (bar_data['stop'] - bar_data['start']) / 2
+        bar_y = bar_data['stack']
+
+        fig.add_annotation(
+            x=bar_center_x,
+            y=bar_y,
+            text=f"<b>{bar_data['text']}</b>",
+            showarrow=False,
+            font=dict(
+                color=bar_data['text_color'],
+                size=13,
+            ),
+            xanchor='center',
+            yanchor='middle',
+            align='center',
+            xref='x',
+            yref='y',
         )
 
     return n_stacks
