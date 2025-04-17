@@ -68,8 +68,8 @@ def _filter_benign_proteins(query : Query,
         benign_protein_for_query_trimmed["coverage_nt"] > MINIMUM_PEPTIDE_COVERAGE]
 
     if benign_protein_for_query_trimmed.empty:
-        logger.info("Not enough housekeeping protein coverage to clear %s found in %s",
-        hit.name, query.name)
+        logger.info("\t --> Insufficient coverage (<%i bp) for housekeeping protein to clear %s (%i-%i).",
+        int(MINIMUM_PEPTIDE_COVERAGE), hit.name, region.query_start, region.query_end)
         return []
 
     # Ensure that this benign hit covers at least 80% of the regulated region.
@@ -79,8 +79,8 @@ def _filter_benign_proteins(query : Query,
     benign_protein_for_query_trimmed = benign_protein_for_query_trimmed.reset_index(drop=True)
 
     if benign_protein_for_query_trimmed.empty:
-        logger.info("\t --> Housekeeping protein to clear %s (%i-%i), insufficiently covers query %s",
-        hit.name, region.query_start, region.query_end, query.name)
+        logger.info("\t --> Insufficient coverage (<%i%%) for housekeeping protein to clear %s (%i-%i).",
+        int(MINIMUM_QUERY_COVERAGE_FRACTION*100), hit.name, region.query_start, region.query_end)
         return []
 
     # Report top hit for Protein / RNA / Synbio
@@ -106,8 +106,8 @@ def _filter_benign_proteins(query : Query,
 
     # Rarely, something can be cleared that is already cleared, no need to report on that.
     if hit.recommendation.status not in {ScreenStatus.CLEARED_FLAG, ScreenStatus.CLEARED_WARN}:
-        logger.info("\t --> Clearing %s (%s) as house-keeping protein, for %s with Housekeeping Protein %s",
-                        hit.name, hit.recommendation.status, query.name, benign_hit_outcome.name)
+        logger.info("\t --> Clearing %s (%s) with house-keeping protein, %s",
+                        hit.name, hit.recommendation.status, benign_hit_outcome.name)
         hit.recommendation.status = hit.recommendation.status.clear()
 
     return [benign_hit_outcome]
@@ -159,13 +159,13 @@ def _filter_benign_rna(query : Query,
             )
         
         if hit.recommendation.status not in {ScreenStatus.CLEARED_FLAG, ScreenStatus.CLEARED_WARN}:
-            logger.info("\t --> Clearing %s %s (region %i-%i) for %s, with benign RNA %s",
-                        hit.recommendation.status, hit.name, region.query_start, region.query_end, query.name, benign_hit_outcome.name)
+            logger.info("\t --> Clearing %s %s (region %i-%i), with Benign RNA %s",
+                        hit.recommendation.status, hit.name, region.query_start, region.query_end, benign_hit_outcome.name)
             hit.recommendation.status = hit.recommendation.status.clear()
         return [benign_hit_outcome]
     
-    logger.info("Clear failed for %s (%s) as Benign RNA >%i bases unaccounted for, for %s",
-                    hit.name, hit.recommendation.status, MINIMUM_RNA_BASEPAIR_COVERAGE, query.name)
+    logger.info("Clear failed for %s (%s) as Benign RNA >%i bases unaccounted for.",
+                    hit.name, hit.recommendation.status, MINIMUM_RNA_BASEPAIR_COVERAGE)
     return []
 
 def _filter_benign_dna(query : Query,
@@ -177,7 +177,7 @@ def _filter_benign_dna(query : Query,
     # Filter benign SynBio for relevance...
     benign_dna_for_query_trimmed = _trim_to_region(benign_dna_for_query, region).copy()
     if benign_dna_for_query_trimmed.empty:
-        logger.debug("\t\t\tNo overlapping benign Synbio regions for %s (%i-%i)",
+        logger.debug("\t ... No overlapping benign DNA regions for %s (%i-%i)",
                      hit.name, region.query_start, region.query_end)
         return []
 
@@ -194,8 +194,8 @@ def _filter_benign_dna(query : Query,
                      benign_dna_for_query_trimmed.head())
 
     if benign_dna_for_query_trimmed.empty:
-        logger.info("\t --> Synbio sequences <80%% coverage achieved over hit %s over %i-%i for query %s.",
-                        hit.name, region.query_start, region.query_end, query.name)
+        logger.info("\t --> Synbio sequences <80%% coverage achieved over hit %s over %i-%i.",
+                        hit.name, region.query_start, region.query_end)
         return []
 
     benign_hit = benign_dna_for_query_trimmed["subject title"][0]
@@ -220,8 +220,8 @@ def _filter_benign_dna(query : Query,
     logger.debug("Processing Benign Hit: %s", benign_hit_outcome)
     
     if hit.recommendation.status not in {ScreenStatus.CLEARED_FLAG, ScreenStatus.CLEARED_WARN}:
-        logger.info("\t --> Clearing %s %s region %i-%i as Benign Nucleotide, for %s, with Synthetic Biology Part %s",
-                        hit.recommendation.status, hit.name, region.query_start, region.query_end, query.name, benign_hit_outcome.name)
+        logger.info("\t --> Clearing %s %s region %i-%i as Benign DNA, with synthetic biology part %s",
+                        hit.recommendation.status, hit.name, region.query_start, region.query_end, benign_hit_outcome.name)
         hit.recommendation.status = hit.recommendation.status.clear()
 
     return [benign_hit_outcome]
@@ -243,29 +243,29 @@ def _update_benign_data_for_query(query : Query,
     benign_rna_for_query = pd.DataFrame()
     benign_dna_for_query = pd.DataFrame()
 
-    # We only care about the benign data for this query.
+    logger.info(" Benign checks for %s", query.name)
+
+    # We only care about the benign data for this query, but we need to check for size.
     if not benign_protein.empty:
         benign_protein_for_query = benign_protein[
             benign_protein["query name"].str.rsplit("_", n=1).str[0] == query.name
         ]
-    else:
-        logger.info("\t\t...no housekeeping protein hits for %s", query.name)
 
     if not benign_rna.empty:
         benign_rna_for_query = benign_rna[
             benign_rna["query name"] == query.name
         ]
-    else:
-        logger.info("\t\t...no benign RNA hits for %s", query.name)
 
     if not benign_dna.empty:
         benign_dna_for_query = benign_dna[
             benign_dna["query acc."] == query.name
         ]
-    else:
-        logger.info("\t\t...no Synbio sequence hits for %s", query.name)
 
     new_benign_hits = []
+    # Separated for logging purposes only.
+    new_benign_protein_hits = []
+    new_benign_rna_hits = []
+    new_benign_dna_hits = []
 
     # Check every region, of every hit that is a FLAG or WARN, against the Benign screen outcomes.
     for hit in query.result_handle.hits.values():
@@ -283,23 +283,35 @@ def _update_benign_data_for_query(query : Query,
         for region in hit.ranges:
 
             if not benign_protein_for_query.empty:
-                new_benign_hits.extend(
+                new_benign_protein_hits.extend(
                     _filter_benign_proteins(query, hit, region,
                                             benign_protein_for_query,
                                             benign_descriptions)
                     )
             
             if not benign_rna_for_query.empty:
-                new_benign_hits.extend(
+                new_benign_rna_hits.extend(
                     _filter_benign_rna(query, hit, region,
                                        benign_rna_for_query)
                 )
                 
             if not benign_dna_for_query.empty:
-                new_benign_hits.extend(
+                new_benign_dna_hits.extend(
                     _filter_benign_dna(query, hit, region,
                                           benign_dna_for_query)
                     )
+                
+    # Report Query Specific lack of hits.
+    if len(new_benign_protein_hits) == 0:
+        logger.info("\t ... no housekeeping protein hits.")
+    if len(new_benign_rna_hits) == 0:
+        logger.info("\t ... no benign RNA hits.")
+    if len(new_benign_dna_hits) == 0:
+        logger.info("\t ... no benign DNA hits.")
+
+    new_benign_hits.extend(new_benign_protein_hits)
+    new_benign_hits.extend(new_benign_rna_hits)
+    new_benign_hits.extend(new_benign_dna_hits)
 
     logger.debug("\tNew benign hits added: %i", len(new_benign_hits))
     for benign_addition in new_benign_hits:
