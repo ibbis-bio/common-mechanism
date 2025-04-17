@@ -144,7 +144,7 @@
                         "domain": [
                             "Viruses"
                         ],
-                        "regulation": [
+                        "regulated_taxonomy": [
                             {
                                 "number_of_regulated_taxids": "1",
                                 "number_of_unregulated_taxids": "0",
@@ -182,7 +182,7 @@
                         "domain": [
                             "Viruses"
                         ],
-                        "regulation": [
+                        "regulated_taxonomy": [
                             {
                                 "number_of_regulated_taxids": "1",
                                 "number_of_unregulated_taxids": "0",
@@ -220,7 +220,7 @@
                         "domain": [
                             "Viruses"
                         ],
-                        "regulation": [
+                        "regulated_taxonomy": [
                             {
                                 "number_of_regulated_taxids": "1",
                                 "number_of_unregulated_taxids": "2",
@@ -261,7 +261,7 @@
                         "domain": [
                             "Viruses"
                         ],
-                        "regulation": [
+                        "regulated_taxonomy": [
                             {
                                 "number_of_regulated_taxids": "1",
                                 "number_of_unregulated_taxids": "0",
@@ -299,7 +299,7 @@
                         "domain": [
                             "Viruses"
                         ],
-                        "regulation": [
+                        "regulated_taxonomy": [
                             {
                                 "number_of_regulated_taxids": "1",
                                 "number_of_unregulated_taxids": "0",
@@ -337,7 +337,7 @@
                         "domain": [
                             "Viruses"
                         ],
-                        "regulation": [
+                        "regulated_taxonomy": [
                             {
                                 "number_of_regulated_taxids": "1",
                                 "number_of_unregulated_taxids": "0",
@@ -375,7 +375,7 @@
                         "domain": [
                             "Viruses"
                         ],
-                        "regulation": [
+                        "regulated_taxonomy": [
                             {
                                 "number_of_regulated_taxids": "1",
                                 "number_of_unregulated_taxids": "0",
@@ -413,7 +413,7 @@
                         "domain": [
                             "Viruses"
                         ],
-                        "regulation": [
+                        "regulated_taxonomy": [
                             {
                                 "number_of_regulated_taxids": "1",
                                 "number_of_unregulated_taxids": "0",

@@ -152,8 +152,8 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
         non_regulated_taxids = []
         regulated_species = []
 
-        if "regulation" in hit.annotations:
-            reg = hit.annotations["regulation"]
+        if "regulated_taxonomy" in hit.annotations:
+            reg = hit.annotations["regulated_taxonomy"]
             for r in reg:
                 n_regulated_eukaryotes += int(r["regulated_eukaryotes"])
                 n_regulated_bacteria += int(r["regulated_bacteria"])
