@@ -2,38 +2,44 @@
     "commec_info": {
         "commec_version": "0.3.2",
         "json_output_version": "0.1",
-        "biorisk_database_info": {
-            "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
-            "database_info": "HMMER3/f [3.4 | Aug 2023]"
-        },
-        "protein_database_info": {
-            "tool_info": "blastx: 2.16.0+\n Package: blast 2.16.0, build Dec 14 2024 23:05:40",
-            "database_info": "BLASTDB Version: 5Date: Sep 3, 2024  12:32 AM\tLongest sequence: 2,882 residues"
-        },
-        "nucleotide_database_info": {
-            "tool_info": "blastn: 2.16.0+\n Package: blast 2.16.0, build Dec 14 2024 23:05:40",
-            "database_info": "BLASTDB Version: 5Date: Sep 3, 2024  12:16 AM\tLongest sequence: 8,669 bases"
-        },
-        "benign_protein_database_info": {
-            "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
-            "database_info": "HMMER3/f [3.4 | Aug 2023]"
-        },
-        "benign_rna_database_info": {
-            "tool_info": "INFERNAL 1.1.5 (Sep 2023)",
-            "database_info": "INFERNAL1/a [1.1.5 | Sep 2023]"
-        },
-        "benign_dna_database_info": {
-            "tool_info": "x.x.x",
-            "database_info": "x.x.x"
-        },
-        "time_taken": "00:00:00",
-        "date_run": "2025-03-26 23:33:43"
+        "time_taken": "00:00:01",
+        "date_run": "",
+        "search_tool_info": {
+            "biorisk_search_info": {
+                "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
+                "database_info": "HMMER3/f [3.4 | Aug 2023]"
+            },
+            "protein_search_info": {
+                "tool_info": "blastx: 2.16.0+\n Package: blast 2.16.0, build Mar 28 2025 16:30:45",
+                "database_info": "BLASTDB Version: 5Date: Sep 3, 2024  12:32 AM\tLongest sequence: 2,882 residues"
+            },
+            "nucleotide_search_info": {
+                "tool_info": "blastn: 2.16.0+\n Package: blast 2.16.0, build Mar 28 2025 16:30:45",
+                "database_info": "BLASTDB Version: 5Date: Sep 3, 2024  12:16 AM\tLongest sequence: 8,669 bases"
+            },
+            "benign_protein_search_info": {
+                "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
+                "database_info": "HMMER3/f [3.4 | Aug 2023]"
+            },
+            "benign_rna_search_info": {
+                "tool_info": "INFERNAL 1.1.5 (Sep 2023)",
+                "database_info": "INFERNAL1/a [1.1.5 | Sep 2023]"
+            },
+            "benign_dna_search_info": {
+                "tool_info": "x.x.x",
+                "database_info": "x.x.x"
+            }
+        }
+    },
+    "query_info": {
+        "file": "/tmp/pytest-of-root/pytest-25/test_functional_screen0/functional.fasta",
+        "number_of_queries": 1,
+        "total_query_length": 600
     },
     "queries": {
         "FCTEST1": {
             "query": "FCTEST1",
             "length": 600,
-            "sequence": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "recommendation": {
                 "screen_status": "Flag",
                 "biorisk_status": "Flag",
@@ -451,24 +457,6 @@
                         "Coverage: ": 0.9833333333333333
                     }
                 },
-                "BENIGNSYNBIO": {
-                    "recommendation": {
-                        "status": "Pass",
-                        "from_step": "Benign DNA Search"
-                    },
-                    "name": "BENIGNSYNBIO",
-                    "description": "BENIGNSYNBIO",
-                    "ranges": [
-                        {
-                            "e_value": 0.0,
-                            "match_start": 10,
-                            "match_end": 100,
-                            "query_start": 410,
-                            "query_end": 480
-                        }
-                    ],
-                    "annotations": {}
-                },
                 "BENIGNRNA": {
                     "recommendation": {
                         "status": "Pass",
@@ -483,6 +471,24 @@
                             "match_end": 200,
                             "query_start": 50,
                             "query_end": 150
+                        }
+                    ],
+                    "annotations": {}
+                },
+                "BENIGNSYNBIO": {
+                    "recommendation": {
+                        "status": "Pass",
+                        "from_step": "Benign DNA Search"
+                    },
+                    "name": "BENIGNSYNBIO",
+                    "description": "BENIGNSYNBIO",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 10,
+                            "match_end": 100,
+                            "query_start": 410,
+                            "query_end": 480
                         }
                     ],
                     "annotations": {}

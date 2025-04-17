@@ -23,12 +23,17 @@ def test_screendata():
                 benign_dna_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
             )
         ),
+        query_info = ScreenQueryInfo(
+            file="no file",
+            number_of_queries=1,
+            total_query_length=10
+        ),
         queries= {
             "Query1":
             QueryResult(
                 query="Query1",
                 length=10,
-                sequence="ABCDEFGHIJ",
+                #sequence="ABCDEFGHIJ",
                 recommendation = QueryScreenStatus(),
                 hits = {
                     "ImportantProtein1":
@@ -119,7 +124,7 @@ def test_adding_data_to_existing():
         input_query.recommendation.biorisk_status = ScreenStatus.PASS
     
     new_screen_data = ScreenResult()
-    new_screen_data.queries["test01"] = QueryResult("test01", 10, "ATGCATGCAT", ScreenStatus.FLAG)
+    new_screen_data.queries["test01"] = QueryResult("test01", 10, ScreenStatus.FLAG)
     write_query = new_screen_data.get_query("test01")
     write_info(write_query)
     assert new_screen_data.queries["test01"].recommendation.biorisk_status == ScreenStatus.PASS

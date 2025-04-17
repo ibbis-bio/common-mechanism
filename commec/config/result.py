@@ -280,7 +280,7 @@ class QueryResult:
 
     query: str = ""
     length: int = 0
-    sequence: str = ""
+    #sequence: str = ""
     recommendation: QueryScreenStatus = field(default_factory=QueryScreenStatus)
     hits: dict[str, HitResult] = field(default_factory=dict)
 
@@ -391,14 +391,20 @@ class ScreenRunInfo:
     date_run: str = ""
     search_tool_info: SearchToolInfo = field(default_factory=SearchToolInfo)
 
+@dataclass
+class ScreenQueryInfo:
+    """ Container for summarising the query input data """
+    file: str = ""
+    number_of_queries: int = 0
+    total_query_length: int = 0
 
 @dataclass
 class ScreenResult:
     """
     Root dataclass to hold all data related to the screening of an individual query by commec.
     """
-
     commec_info: ScreenRunInfo = field(default_factory=ScreenRunInfo)
+    query_info: ScreenQueryInfo = field(default_factory=ScreenQueryInfo)
     queries: dict[str, QueryResult] = field(default_factory=dict)
 
     def get_query(self, query_name: str) -> QueryResult:
