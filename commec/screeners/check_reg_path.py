@@ -108,6 +108,9 @@ def update_taxonomic_data_from_database(
         logger.info("\t...no hits\n")
         return 0
 
+    # We delay non-debug logging to sort messages via query.
+    log_container = {key : [] for key in data.queries.keys()}
+
     # Read in lists of regulated and benign tax ids
     vax_taxids = pd.read_csv(benign_taxid_path, header=None).squeeze().astype(str).tolist()
     reg_taxids = pd.read_csv(biorisk_taxid_path, header=None).squeeze().astype(str).tolist()
@@ -266,31 +269,15 @@ def update_taxonomic_data_from_database(
                                    "non_regulated_taxids" : non_reg_taxids,
                                    "regulated_species" : reg_species}
 
-                #gene_names = ", ".join(set(subset["subject acc."]))
-                #coordinates = str(int()) + " - " + str(int(end))
-
-                ## MIXED:
-                #logger.info(
-                #    "\t --> Best match to %s at bases %s found in both regulated and non-regulated organisms\n",
-                #    gene_names, coordinates
-                #)
-                #logger.info(
-                #    "\t\t     Species: %s (taxid(s): %s) (%s percent identity to query)\n"
-                #    % (hit, taxid_list, percent_ids)
-                #)
-                #logger.info("\t\t     Description: %s\n" % (desc))
-
+                # Logging logic.
                 alt_text = "only " if recommendation == ScreenStatus.FLAG else "both regulated and non-"
-                ## REGULATED:
-                logger.info(
-                        "\t --> %s %s contains match to %s at bases (%s) found in %sregulated organisms (%s). (Regulated Species: %s. Regulated TaxID(s): %s)",
-                        recommendation, query, hit, match_ranges_text, alt_text, domains_text, reg_species_text, reg_taxids_text
-                    )
-                    #logger.info(
-                    #    "\t\t     Species: %s (taxid(s): %s) (%s percent identity to query)\n"
-                    #    % (species_list, taxid_list, percent_ids)
-                    #)
-                    #logger.info("\t\t     Description: %s\n" % (desc))
+                s = "" if len(reg_taxids) == 1 else "'s"
+                log_message = (
+                    f"\t --> {recommendation} at bases ({match_ranges_text}) found in {alt_text}regulated {domains_text}.\n"
+                    f"\t   (Regulated Species: {reg_species_text}. Regulated TaxID{s}: {reg_taxids_text})"
+                )
+                logger.debug(log_message)
+                log_container[query].append(log_message)
 
                 # Append our hit information to Screen data.
                 new_hit = HitResult(
@@ -301,7 +288,7 @@ def update_taxonomic_data_from_database(
                     hit,
                     hit_description,
                     match_ranges,
-                    {"domain" : [domain],"regulation":[regulation_dict]},
+                    {"domain" : [domain],"regulated_taxonomy":[regulation_dict]},
                 )
 
                 logger.debug("Hit information summary: %s", new_hit)
@@ -312,6 +299,17 @@ def update_taxonomic_data_from_database(
                         write_hit.annotations["domain"] = domains
                         write_hit.annotations["regulation"].append(regulation_dict)
                         write_hit.recommendation.status = compare(write_hit.recommendation.status, recommendation)
+
+    # Do all non-verbose logging in order of query:
+    for query_name, log_list in log_container.items():
+        if len(log_list) == 0:
+            continue
+        s = "" if len(log_list) == 1 else "s"
+        taxtype = "protein" if step == ScreenStep.TAXONOMY_AA else "nucleotide"
+        logger.info(f" Regulated {taxtype}{s} in {query_name}:")
+        for log_text in log_list:
+            logger.info(log_text)
+    
     return 0
 
 def main():
