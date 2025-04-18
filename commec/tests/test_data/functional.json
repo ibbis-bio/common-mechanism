@@ -2,7 +2,7 @@
     "commec_info": {
         "commec_version": "0.3.2",
         "json_output_version": "0.1",
-        "time_taken": "00:00:01",
+        "time_taken": "00:00:02",
         "date_run": "",
         "search_tool_info": {
             "biorisk_search_info": {
@@ -32,7 +32,7 @@
         }
     },
     "query_info": {
-        "file": "/tmp/pytest-of-root/pytest-25/test_functional_screen0/functional.fasta",
+        "file": "/tmp/pytest-of-root/pytest-67/test_functional_screen0/functional.fasta",
         "number_of_queries": 1,
         "total_query_length": 600
     },
@@ -44,7 +44,7 @@
                 "screen_status": "Flag",
                 "biorisk_status": "Flag",
                 "protein_taxonomy_status": "Flag",
-                "nucleotide_taxonomy_status": "Error",
+                "nucleotide_taxonomy_status": "Flag",
                 "benign_status": "Flag"
             },
             "hits": {
@@ -130,12 +130,12 @@
                         ]
                     }
                 },
-                "NR_HIT_FLAG4": {
+                "        NR_HIT_FLAG4": {
                     "recommendation": {
                         "status": "Flag (Cleared)",
                         "from_step": "Protein Taxonomy Search"
                     },
-                    "name": "NR_HIT_FLAG4",
+                    "name": "        NR_HIT_FLAG4",
                     "description": "ShouldClear",
                     "ranges": [
                         {
@@ -168,12 +168,12 @@
                         ]
                     }
                 },
-                "NR_HIT_FLAG1": {
+                "    NR_HIT_FLAG1": {
                     "recommendation": {
                         "status": "Flag",
                         "from_step": "Protein Taxonomy Search"
                     },
-                    "name": "NR_HIT_FLAG1",
+                    "name": "    NR_HIT_FLAG1",
                     "description": "ShouldntClear",
                     "ranges": [
                         {
@@ -206,12 +206,12 @@
                         ]
                     }
                 },
-                "NR_HIT_MIXED": {
+                "    NR_HIT_MIXED": {
                     "recommendation": {
                         "status": "Pass",
                         "from_step": "Protein Taxonomy Search"
                     },
-                    "name": "NR_HIT_MIXED",
+                    "name": "    NR_HIT_MIXED",
                     "description": "ShouldMixedReg",
                     "ranges": [
                         {
@@ -285,12 +285,12 @@
                         ]
                     }
                 },
-                "NR_HIT_FLAG3": {
+                "    NR_HIT_FLAG3": {
                     "recommendation": {
                         "status": "Flag",
                         "from_step": "Protein Taxonomy Search"
                     },
-                    "name": "NR_HIT_FLAG3",
+                    "name": "    NR_HIT_FLAG3",
                     "description": "ShouldntClear",
                     "ranges": [
                         {
@@ -430,6 +430,46 @@
                                     "12345"
                                 ],
                                 "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "species"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "NT_HIT_MIXED": {
+                    "recommendation": {
+                        "status": "Pass",
+                        "from_step": "Nucleotide Taxonomy Search"
+                    },
+                    "name": "NT_HIT_MIXED",
+                    "description": "Main",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 100,
+                            "query_start": 501,
+                            "query_end": 581
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "1",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "12345"
+                                ],
+                                "non_regulated_taxids": [
+                                    "12346"
+                                ],
                                 "regulated_species": [
                                     "species"
                                 ]
