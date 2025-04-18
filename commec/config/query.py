@@ -51,13 +51,20 @@ class Query:
             )
 
     @staticmethod
-    def create_id(name : str) -> str:
+    def create_id(input_name : str) -> str:
         """
         Parse the Fasta SeqRecord string ID into 
         a 25 digit maximum Unique Identification.
         For internal Commec Screen Use only.
         Original Fasta name IDs are used during JSON output.
         """
+        # Protections on split name conventions for translation output:
+        name = input_name.split('|')[0]
+
+        # Protection on accidentally ending with _
+        if name.endswith("_"):
+            name = name[:-1]
+
         if len(name) < 26:
             return name
         
@@ -68,7 +75,7 @@ class Query:
             if len(testname) > 25:
                 break
             output = testname
-        
+
         return output
     
 
