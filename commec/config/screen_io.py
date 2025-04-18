@@ -225,7 +225,7 @@ class ScreenIO:
                 default: path/to/databases/
             databases:
                 regulated_nt:
-                    path: '{default}nt_blast/nt'
+                    path: '{default}nt_blast/core_nt'
 
         This script will update the dictionary to propagate these substitutions.
         If a database directory is provided, it will override the base_path provided in the yaml.

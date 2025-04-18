@@ -67,7 +67,7 @@ class CliSetup:
         self.download_blastnr: bool = False
         self.blastnr_database: str = "nr"
         self.download_blastnt: bool = False
-        self.blastnt_database: str = "nt"
+        self.blastnt_database: str = "core_nt"
 
         self.download_example_blastnr: bool = False
         self.download_example_blastnt: bool = False
@@ -470,9 +470,9 @@ class CliSetup:
                 self.biorisk_download_url,
             )
         if self.download_blastnr:
-            print(" -> Protein NR database will be downloaded.")
+            print(" -> Protein database will be downloaded.")
         if self.download_blastnt:
-            print(" -> Nucleotide NT database will be downloaded.")
+            print(" -> Nucleotide database will be downloaded.")
         if self.download_taxonomy:
             print(
                 " -> Taxonomy database will be downloaded," "\n    from URL: ",
