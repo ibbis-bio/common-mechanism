@@ -295,6 +295,7 @@ class Screen:
 
         try:
             for query in self.queries.values():
+                logger.debug("Processing query: %s, (%s)", query.name, query.original_name)
                 query.translate(self.params.nt_path, self.params.aa_path)
                 total_query_length += len(query.seq_record)
                 qr = QueryResult(query.original_name,
