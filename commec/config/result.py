@@ -27,12 +27,15 @@ Set of containers for storing information important to screen
              recommendation (per hit)
 """
 import re
+import logging
 from dataclasses import dataclass, asdict, field
 from typing import List, Iterator, Tuple
 from enum import StrEnum
 from importlib.metadata import version, PackageNotFoundError
 import pandas as pd
 from commec.tools.search_handler import SearchToolVersion
+
+logger = logging.getLogger(__name__)
 
 try:
     COMMEC_VERSION = version("commec")
@@ -298,6 +301,20 @@ class QueryResult:
     def get_hit(self, match_name: str) -> HitResult:
         """Wrapper for get logic."""
         return self.hits.get(match_name)
+    
+    def check_hit_range(self, input_region : MatchRange):
+        """
+        Checks all existing hits for whether there is an similar query coordinate region.
+        Returns the relevant hit, or None.
+        """
+        for hit in self.hits.values():
+            for region in hit.ranges:
+                if (
+                    input_region.query_start == region.query_start
+                    and input_region.query_end == region.query_end
+                ):
+                    return hit
+        return None
 
     def add_new_hit_information(self, new_hit: HitResult) -> bool:
         """
@@ -305,11 +322,22 @@ class QueryResult:
         Returns True if the hit was not unique, but added unique info to the hit.
         """
         existing_hit = self.hits.get(new_hit.name)
+        hits_is_updated: bool = False
+
+        # Nothing matches in Name, try a matched region.
+        if not existing_hit:
+            for region in new_hit.ranges:
+                existing_hit = self.check_hit_range(region)
+                if existing_hit:
+                    logger.debug("Using existing hit from shared region: %s", existing_hit)
+                    hits_is_updated = True # We want to append info if new hit is differently named.
+                    break
+
+        # Nothing matches in Name or region... new hit!
         if not existing_hit:
             self.hits[new_hit.name] = new_hit
             return False
 
-        hits_is_updated: bool = False
         for new_region in new_hit.ranges:
             is_unique_region = True
             for existing_region in existing_hit.ranges:

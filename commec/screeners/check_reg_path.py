@@ -299,6 +299,7 @@ def update_taxonomic_data_from_database(
                         write_hit.annotations["domain"] = domains
                         write_hit.annotations["regulated_taxonomy"].append(regulation_dict)
                         write_hit.recommendation.status = compare(write_hit.recommendation.status, recommendation)
+                        write_hit.description += ","+hit_description
 
     # Do all non-verbose logging in order of query:
     for query_name, log_list in log_container.items():
