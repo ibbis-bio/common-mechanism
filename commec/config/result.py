@@ -253,7 +253,19 @@ class QueryScreenStatus:
         Parses the query status across all screening steps, then updates overall flag.
         Designed to be called at any time after Step 1.
         """
-        if self.benign_status is not ScreenStatus.NULL:
+        if ScreenStatus.ERROR in {
+            self.biorisk_status,
+            self.protein_taxonomy_status,
+            self.nucleotide_taxonomy_status,
+            self.benign_status
+        }:
+            self.screen_status = ScreenStatus.ERROR
+            return
+
+        if self.benign_status not in {
+            ScreenStatus.NULL, 
+            ScreenStatus.SKIP
+        }:
             self.screen_status = self.benign_status
             return
 
