@@ -100,7 +100,7 @@ def process_json_file(file_path) -> list[dict[str, str | set[str] | bool]]:
         print("The following json was not a Commec compatible json: ", file_path)
         return []
     except IoVersionError as e:
-        print("The following json is an incorrect version for reading: ", file_path)
+        print(e)
         return []
 
     for name, query in screen_data.queries.items():

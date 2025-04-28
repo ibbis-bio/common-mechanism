@@ -140,7 +140,7 @@ def get_screen_data_from_json(input_json_filepath: string) -> ScreenResult:
     # Check version of imported json.
     input_version = my_data["commec_info"]["json_output_version"]
     if not input_version == JSON_COMMEC_FORMAT_VERSION:
-        raise IoVersionError("Version difference between input (v.{input_version}) and"
-                            "expected (v.{JSON_COMMEC_FORMAT_VERSION}) : "
-                            "JSON state file: {input_json_filepath}")
+        raise IoVersionError(f"Version difference between input (v.{input_version}) and"
+                            f" expected (v.{JSON_COMMEC_FORMAT_VERSION})"
+                            f": {input_json_filepath}")
     return encode_dict_to_screen_data(my_data)
