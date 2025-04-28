@@ -75,24 +75,24 @@ def test_functional_screen(tmp_path, request):
     )
     blastnr_to_parse = textwrap.dedent(
         """\
-        #query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	s.len	s. start	s. end
-        FCTEST1	ShouldntClear	NR_HIT_FLAG1	12345	    0.0	    BITSCORE	99.999	    500	    320	    380	    100	    1	        100
-        FCTEST1	ShouldClearBySynbio	NR_HIT_FLAG2	12345	    0.0	    BITSCORE	99.999	    500	    410	    490	    100	    1	        100
-        FCTEST1	ShouldntClear	NR_HIT_FLAG3	12345	    0.0	    BITSCORE	99.999	    500	    410	    500	    100	    1	        100
-        FCTEST1	ShouldClear	NR_HIT_FLAG4	12345	    0.0	    BITSCORE	99.999	    500	    310	    370	    100	    1	        100
-        FCTEST1	ShouldMixedReg	NR_HIT_MIXED	12345	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
-        FCTEST1	ShouldMixednonReg	NR_HIT_MIXED	12346	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
-        FCTEST1	ShouldMixedNonReg	NR_HIT_MIXED	12347	    0.0	    BITSCORE	99.999	    500	    340	    390	    100	    1	        100
+        #query acc.	title	        subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	s.len	s. start	s. end
+        FCTEST1	ShouldntClear	    NR_HIT_FLAG1	12345	    0.0	    BITSCORE	99.999	    600	    320	    380	    100	    1	        100
+        FCTEST1	ShouldClearBySynbio	NR_HIT_FLAG2	12345	    0.0	    BITSCORE	99.999	    600	    410	    490	    100	    1	        100
+        FCTEST1	ShouldntClear	    NR_HIT_FLAG3	12345	    0.0	    BITSCORE	99.999	    600	    410	    500	    100	    1	        100
+        FCTEST1	ShouldClear	        NR_HIT_FLAG4	12345	    0.0	    BITSCORE	99.999	    600	    310	    370	    100	    1	        100
+        FCTEST1	ShouldMixedReg	    NR_HIT_MIXED	12345	    0.0	    BITSCORE	99.999	    600	    340	    390	    100	    1	        100
+        FCTEST1	ShouldMixednonReg	NR_HIT_MIXED	12346	    0.0	    BITSCORE	99.999	    600	    340	    390	    100	    1	        100
+        FCTEST1	ShouldMixedNonReg	NR_HIT_MIXED	12347	    0.0	    BITSCORE	99.999	    600	    340	    390	    100	    1	        100
         """
     )
     blastnt_to_parse = textwrap.dedent(
         """\
         #query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start 	q.end	s.len	s. start	s. end
-        FCTEST1	SUBJECT	NT_HIT_FLAG1	    12345	    0.0	    BITSCORE	99.999	    500	    220	    280	     60	    1	        100
-        FCTEST1	SUBJECT	NT_HIT_FLAG2	    12345	    0.0	    BITSCORE	99.999	    500	    110	    190	     80	    1	        100
-        FCTEST1	SUBJECT	NT_HIT_FLAG3	    12345	    0.0	    BITSCORE	99.999	    500	    110	    200	     90	    1	        100
-        FCTEST1	SUBJECT	NT_HIT_MIXED	12345	    0.0	    BITSCORE	99.999	    500	    350	    410	    100	    1	        100
-        FCTEST1	SUBJECT	NT_HIT_MIXED	12346	    0.0	    BITSCORE	99.999	    500	    350	    410	    100	    1	        100
+        FCTEST1	SUBJECT	NT_HIT_FLAG1	    12345	    0.0	    BITSCORE	99.999	    600	    220	    280	     60	    1	        100
+        FCTEST1	SUBJECT	NT_HIT_FLAG2	    12345	    0.0	    BITSCORE	99.999	    600	    110	    190	     80	    1	        100
+        FCTEST1	SUBJECT	NT_HIT_FLAG3	    12345	    0.0	    BITSCORE	99.999	    600	    110	    200	     90	    1	        100
+        FCTEST1	Main	NT_HIT_MIXED	    12345	    0.0	    BITSCORE	99.999	    600	    310	    390	    100	    1	        100
+        FCTEST1	NonRegMixedWithMain	NT_HIT_MIXED2	    12346	    0.0	    BITSCORE	99.999	    600	    310	    390	    100	    1	        100
         """
     )
 
@@ -196,6 +196,10 @@ def test_functional_screen(tmp_path, request):
     # But also potentially blast versions etc.
     output_result.commec_info = None
     test_result.commec_info = None
+
+    # Pytest increments the filename version, so ignore the input file.
+    output_result.query_info.file = "REPLACED"
+    test_result.query_info.file = "REPLACED"
 
 
     # Convert both original and retrieved data to dictionaries and compare

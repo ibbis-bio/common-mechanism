@@ -32,7 +32,7 @@ class ScreenIO:
     def __init__(self, args: argparse.Namespace):
         # Inputs that do no have a package-level default, since they are specific to each run
         self.db_dir = args.database_dir
-        self.input_fasta_path = args.fasta_file
+        self.input_fasta_path = os.path.abspath(args.fasta_file)
         output_prefix = args.output_prefix
 
         # Output folder hierarchy
