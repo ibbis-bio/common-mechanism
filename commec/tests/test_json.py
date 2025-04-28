@@ -12,21 +12,28 @@ def test_screendata():
         commec_info = ScreenRunInfo(
             commec_version="0.1.2",
             json_output_version=JSON_COMMEC_FORMAT_VERSION,
-            biorisk_database_info=SearchToolVersion("HMM 0.0.0","DB 0.0.0"),
-            protein_database_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-            nucleotide_database_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-            benign_protein_database_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-            benign_rna_database_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-            benign_synbio_database_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
             time_taken="00:00:00:00",
             date_run="1.1.2024",
+            search_tool_info= SearchToolInfo(
+                biorisk_search_info=SearchToolVersion("HMM 0.0.0","DB 0.0.0"),
+                protein_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                nucleotide_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                benign_protein_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                benign_rna_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                benign_dna_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+            )
+        ),
+        query_info = ScreenQueryInfo(
+            file="no file",
+            number_of_queries=1,
+            total_query_length=10
         ),
         queries= {
             "Query1":
             QueryResult(
                 query="Query1",
                 length=10,
-                sequence="ABCDEFGHIJ",
+                #sequence="ABCDEFGHIJ",
                 recommendation = QueryScreenStatus(),
                 hits = {
                     "ImportantProtein1":
@@ -117,7 +124,7 @@ def test_adding_data_to_existing():
         input_query.recommendation.biorisk_status = ScreenStatus.PASS
     
     new_screen_data = ScreenResult()
-    new_screen_data.queries["test01"] = QueryResult("test01", 10, "ATGCATGCAT", ScreenStatus.FLAG)
+    new_screen_data.queries["test01"] = QueryResult("test01", 10, ScreenStatus.FLAG)
     write_query = new_screen_data.get_query("test01")
     write_info(write_query)
     assert new_screen_data.queries["test01"].recommendation.biorisk_status == ScreenStatus.PASS

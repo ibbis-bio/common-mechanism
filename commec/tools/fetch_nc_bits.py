@@ -175,13 +175,15 @@ def calculate_noncoding_regions_per_query(
     query_col = "query acc."
 
     for query in queries.values():
-        #record = query.seq_record
-        protein_matches_for_query = protein_matches[protein_matches[query_col] == query.name]
+        protein_matches_for_query = protein_matches[protein_matches[query_col] == query.name].copy()
 
         if protein_matches_for_query.empty:
             logger.info("No protein hits found for %s, screening entire sequence.", query.name)
             _set_no_coding_regions(query)
             continue
+
+        # Correcting query length in nc coordinate output.
+        protein_matches_for_query.loc[:, "q.len"] = len(query.seq_record.seq)
 
         logger.debug("\t --> Protein hits found for %s, fetching nt regions not covered by a 90%% ID hit or better", query.name)
 

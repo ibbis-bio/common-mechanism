@@ -27,12 +27,15 @@ Set of containers for storing information important to screen
              recommendation (per hit)
 """
 import re
+import logging
 from dataclasses import dataclass, asdict, field
 from typing import List, Iterator, Tuple
 from enum import StrEnum
-import pandas as pd
 from importlib.metadata import version, PackageNotFoundError
+import pandas as pd
 from commec.tools.search_handler import SearchToolVersion
+
+logger = logging.getLogger(__name__)
 
 try:
     COMMEC_VERSION = version("commec")
@@ -40,7 +43,7 @@ except PackageNotFoundError:
     COMMEC_VERSION = "error"
 
 # Seperate versioning for the output JSON.
-JSON_COMMEC_FORMAT_VERSION = "0.1"
+JSON_COMMEC_FORMAT_VERSION = "0.2"
 
 
 class ScreenStatus(StrEnum):
@@ -108,7 +111,18 @@ class ScreenStatus(StrEnum):
         if self == ScreenStatus.FLAG:
             return ScreenStatus.CLEARED_FLAG
         return self
+    
+    def __gt__(self, value):
+        return self.importance > value.importance
 
+    def __lt__(self, value):
+        return self.importance < value.importance
+
+    def __ge__(self, value):
+        return self.importance >= value.importance
+
+    def __le__(self, value):
+        return self.importance <= value.importance
 
 def compare(a: ScreenStatus, b: ScreenStatus):
     """
@@ -124,12 +138,12 @@ class ScreenStep(StrEnum):
     Enumeration of the Steps for Commec screening
     """
 
-    BIORISK = "Biorisk Screen"
-    TAXONOMY_NT = "Nucleotide Taxonomy Screen"
-    TAXONOMY_AA = "Protein Taxonomy Screen"
-    BENIGN_PROTEIN = "Benign Protein Screen"
-    BENIGN_RNA = "Benign RNA Screen"
-    BENIGN_SYNBIO = "Benign SynBio Screen"
+    BIORISK = "Biorisk Search"
+    TAXONOMY_NT = "Nucleotide Taxonomy Search"
+    TAXONOMY_AA = "Protein Taxonomy Search"
+    BENIGN_PROTEIN = "Benign Protein Search"
+    BENIGN_RNA = "Benign RNA Search"
+    BENIGN_DNA = "Benign DNA Search"
 
 
 @dataclass
@@ -239,15 +253,19 @@ class QueryScreenStatus:
         Parses the query status across all screening steps, then updates overall flag.
         Designed to be called at any time after Step 1.
         """
-        if self.benign_status is not ScreenStatus.NULL:
+        if ScreenStatus.ERROR in {
+            self.biorisk_status,
+            self.protein_taxonomy_status,
+            self.nucleotide_taxonomy_status,
+            self.benign_status
+        }:
+            self.screen_status = ScreenStatus.ERROR
+            return
 
-
-        #if self.benign_status in {
-        #    ScreenStatus.CLEARED_FLAG,
-        #    ScreenStatus.CLEARED_WARN,
-        #    ScreenStatus.WARN,
-        #    ScreenStatus.PASS,
-        #}:
+        if self.benign_status not in {
+            ScreenStatus.NULL, 
+            ScreenStatus.SKIP
+        }:
             self.screen_status = self.benign_status
             return
 
@@ -288,13 +306,27 @@ class QueryResult:
 
     query: str = ""
     length: int = 0
-    sequence: str = ""
+    #sequence: str = ""
     recommendation: QueryScreenStatus = field(default_factory=QueryScreenStatus)
     hits: dict[str, HitResult] = field(default_factory=dict)
 
     def get_hit(self, match_name: str) -> HitResult:
         """Wrapper for get logic."""
         return self.hits.get(match_name)
+    
+    def check_hit_range(self, input_region : MatchRange):
+        """
+        Checks all existing hits for whether there is an similar query coordinate region.
+        Returns the relevant hit, or None.
+        """
+        for hit in self.hits.values():
+            for region in hit.ranges:
+                if (
+                    input_region.query_start == region.query_start
+                    and input_region.query_end == region.query_end
+                ):
+                    return hit
+        return None
 
     def add_new_hit_information(self, new_hit: HitResult) -> bool:
         """
@@ -302,11 +334,22 @@ class QueryResult:
         Returns True if the hit was not unique, but added unique info to the hit.
         """
         existing_hit = self.hits.get(new_hit.name)
+        hits_is_updated: bool = False
+
+        # Nothing matches in Name, try a matched region.
+        if not existing_hit:
+            for region in new_hit.ranges:
+                existing_hit = self.check_hit_range(region)
+                if existing_hit:
+                    logger.debug("Using existing hit from shared region: %s", existing_hit)
+                    hits_is_updated = True # We want to append info if new hit is differently named.
+                    break
+
+        # Nothing matches in Name or region... new hit!
         if not existing_hit:
             self.hits[new_hit.name] = new_hit
             return False
 
-        hits_is_updated: bool = False
         for new_region in new_hit.ranges:
             is_unique_region = True
             for existing_region in existing_hit.ranges:
@@ -356,12 +399,11 @@ class QueryResult:
                 case ScreenStep.BENIGN_RNA:
                     self.recommendation.benign_status = compare(
                         self.recommendation.benign_status, hit.recommendation.status)
-                case ScreenStep.BENIGN_SYNBIO:
+                case ScreenStep.BENIGN_DNA:
                     self.recommendation.benign_status = compare(
                         self.recommendation.benign_status, hit.recommendation.status)
 
         self.recommendation.update_query_flag()
-
 
     def update(self):
         """
@@ -379,44 +421,42 @@ class QueryResult:
         self.hits = dict(sorted_items_desc)
         self._update_step_flags()
 
-        
+
+@dataclass 
+class SearchToolInfo:
+    """ Container to hold version info for search tools and databases used. """
+    biorisk_search_info:        SearchToolVersion = field(default_factory=SearchToolVersion)
+    protein_search_info:        SearchToolVersion = field(default_factory=SearchToolVersion)
+    nucleotide_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
+    benign_protein_search_info: SearchToolVersion = field(default_factory=SearchToolVersion)
+    benign_rna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
+    benign_dna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
+
 
 @dataclass
 class ScreenRunInfo:
     """Container dataclass to hold general run information for a commec screen"""
-
     commec_version: str = str(COMMEC_VERSION)
     json_output_version: str = JSON_COMMEC_FORMAT_VERSION
-    biorisk_database_info: SearchToolVersion = field(default_factory=SearchToolVersion)
-    protein_database_info: SearchToolVersion = field(default_factory=SearchToolVersion)
-    nucleotide_database_info: SearchToolVersion = field(
-        default_factory=SearchToolVersion
-    )
-    benign_protein_database_info: SearchToolVersion = field(
-        default_factory=SearchToolVersion
-    )
-    benign_rna_database_info: SearchToolVersion = field(
-        default_factory=SearchToolVersion
-    )
-    benign_synbio_database_info: SearchToolVersion = field(
-        default_factory=SearchToolVersion
-    )
     time_taken: str = ""
     date_run: str = ""
+    search_tool_info: SearchToolInfo = field(default_factory=SearchToolInfo)
 
+@dataclass
+class ScreenQueryInfo:
+    """ Container for summarising the query input data """
+    file: str = ""
+    number_of_queries: int = 0
+    total_query_length: int = 0
 
 @dataclass
 class ScreenResult:
     """
     Root dataclass to hold all data related to the screening of an individual query by commec.
     """
-
     commec_info: ScreenRunInfo = field(default_factory=ScreenRunInfo)
+    query_info: ScreenQueryInfo = field(default_factory=ScreenQueryInfo)
     queries: dict[str, QueryResult] = field(default_factory=dict)
-
-    def format(self):
-        """Format this ScreenResult as a json string to pass to a standard out if desired."""
-        return str(asdict(self))
 
     def get_query(self, query_name: str) -> QueryResult:
         """
@@ -455,11 +495,11 @@ class ScreenResult:
                 yield query, hit
 
     def get_flag_data(self) -> pd.DataFrame:
-
-        #columns = ["query", "overall", "biorisk", "taxonomy protein", "taxonomy nt", "benign"]
-
+        """
+        Returns a dataframe containing the status' from each screen step.
+        Useful for printing summary information.
+        """
         data = []
-
         for query in self.queries.values():
             data.append({
                 "query": query.query[:25],
@@ -475,4 +515,7 @@ class ScreenResult:
 
     def __str__(self):
         df = self.get_flag_data()
-        return df.to_string()
+        return df.to_string(index=False, col_space = 12)
+    
+    def __repr__(self):
+        return str(asdict(self))

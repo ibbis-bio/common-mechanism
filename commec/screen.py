@@ -291,30 +291,38 @@ class Screen:
             logger.error(e)
             sys.exit()
 
+        total_query_length = 0
+
         try:
             for query in self.queries.values():
+                logger.debug("Processing query: %s, (%s)", query.name, query.original_name)
                 query.translate(self.params.nt_path, self.params.aa_path)
+                total_query_length += len(query.seq_record)
                 qr = QueryResult(query.original_name,
-                                    len(query.seq_record),
-                                    str(query.seq_record.seq))
+                                    len(query.seq_record))
+                                    #str(query.seq_record.seq))
                 self.screen_data.queries[query.name] = qr
                 query.result_handle = qr
         except RuntimeError as e:
             logger.error(e)
             sys.exit()
 
+        self.screen_data.query_info.file = self.params.input_fasta_path
+        self.screen_data.query_info.number_of_queries = len(self.queries.values())
+        self.screen_data.query_info.total_query_length = total_query_length
+
         # Initialize the version info for all the databases
         _tools = self.database_tools
-        _info = self.screen_data.commec_info
-        _info.biorisk_database_info = _tools.biorisk_hmm.get_version_information()
+        _info = self.screen_data.commec_info.search_tool_info
+        _info.biorisk_search_info = _tools.biorisk_hmm.get_version_information()
         if self.params.should_do_protein_screening:
-            _info.protein_database_info = _tools.regulated_protein.get_version_information()
+            _info.protein_search_info = _tools.regulated_protein.get_version_information()
         if self.params.should_do_nucleotide_screening:
-            _info.nucleotide_database_info = _tools.regulated_nt.get_version_information()
+            _info.nucleotide_search_info = _tools.regulated_nt.get_version_information()
         if self.params.should_do_benign_screening:
-            _info.benign_protein_database_info = _tools.benign_hmm.get_version_information()
-            _info.benign_rna_database_info = _tools.benign_cmscan.get_version_information()
-            _info.benign_synbio_database_info = _tools.benign_blastn.get_version_information()
+            _info.benign_protein_search_info = _tools.benign_hmm.get_version_information()
+            _info.benign_rna_search_info = _tools.benign_cmscan.get_version_information()
+            _info.benign_dna_search_info = _tools.benign_blastn.get_version_information()
 
         # Store start time.
         _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -329,14 +337,14 @@ class Screen:
         
         # Biorisk screen
         try:
-            logger.info(">> STEP 1: Checking for biorisk genes...")
+            logger.info(" >> STEP 1: Checking for biorisk genes...")
             self.screen_biorisks()
             logger.info(
-                " STEP 1 completed at %s",
+                "STEP 1 completed at %s",
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             )
         except Exception as e:
-            logger.info(" ERROR STEP 1: Biorisk search failed due to an error:\n %s", str(e))
+            logger.error("STEP 1: Biorisk search failed due to an error:\n %s", str(e))
             logger.info(" Traceback:\n%s", traceback.format_exc())
             self.reset_biorisk_recommendations(ScreenStatus.ERROR)
 
@@ -346,15 +354,15 @@ class Screen:
                 logger.info(" >> STEP 2: Checking regulated pathogen proteins...")
                 self.screen_proteins()
                 logger.info(
-                    " STEP 2 completed at %s",
+                    "STEP 2 completed at %s",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
             except Exception as e:
-                logger.info(" ERROR STEP 2: Protein search failed due to an error:\n %s", str(e))
+                logger.error("STEP 2: Protein search failed due to an error:\n %s", str(e))
                 logger.info(" Traceback:\n%s", traceback.format_exc())
                 self.reset_protein_recommendations(ScreenStatus.ERROR)
         else:
-            logger.info(" SKIPPING STEP 2: Protein search")
+            logger.info("SKIPPING STEP 2: Protein search")
             self.reset_protein_recommendations(ScreenStatus.SKIP)
 
         # Taxonomy screen (Nucleotide)
@@ -363,42 +371,42 @@ class Screen:
                 logger.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
                 self.screen_nucleotides()
                 logger.info(
-                    " STEP 3 completed at %s",
+                    "STEP 3 completed at %s",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
             except Exception as e:
-                logger.info(" ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
+                logger.error("ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
                 logger.info(" Traceback:\n%s", traceback.format_exc())
                 self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
         else:
-            logger.info(" SKIPPING STEP 3: Nucleotide search")
+            logger.info("SKIPPING STEP 3: Nucleotide search")
             self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
 
         # Benign Screen
         if self.params.should_do_benign_screening:
             try:
                 logger.info(
-                    ">> STEP 4: Checking any pathogen regions for benign components..."
+                    " >> STEP 4: Checking any pathogen regions for benign components..."
                 )
                 self.screen_benign()
                 logger.info(
-                    ">> STEP 4 completed at %s",
+                    "STEP 4 completed at %s",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 )
             except Exception as e:
-                logger.info(" ERROR STEP 4: Benign search failed due to an error:\n %s", str(e))
+                logger.error("STEP 4: Benign search failed due to an error:\n %s", str(e))
                 logger.info(" Traceback:\n%s", traceback.format_exc())
                 self.reset_benign_recommendations(ScreenStatus.ERROR)
         else:
-            logger.info(" SKIPPING STEP 4: Benign search")
+            logger.info(" << SKIPPING STEP 4: Benign search")
             self.reset_benign_recommendations(ScreenStatus.SKIP)
 
         logger.info(
-            ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            " >> Commec Screen completed at %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
 
         self.screen_data.update()
-        logger.info("SUMMARY: \n%s", self.screen_data)
+        logger.info(" >> SUMMARY: \n%s", self.screen_data)
         self.success = True
 
 
