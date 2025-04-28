@@ -43,7 +43,7 @@ except PackageNotFoundError:
     COMMEC_VERSION = "error"
 
 # Seperate versioning for the output JSON.
-JSON_COMMEC_FORMAT_VERSION = "0.1"
+JSON_COMMEC_FORMAT_VERSION = "0.2"
 
 
 class ScreenStatus(StrEnum):
