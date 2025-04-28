@@ -82,6 +82,9 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
         logger.error("\t...ERROR: biorisk search results empty\n")
         return 1
 
+    # We delay non-debug logging to sort messages via query.
+    log_container = {key : [] for key in data.queries.keys()}
+
     for query in data.queries.values():
         query.recommendation.biorisk_status = ScreenStatus.PASS
 
@@ -162,14 +165,17 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
 
             biorisk_overall = compare(target_recommendation, biorisk_overall)
 
-            regulation_str : str = "Regulated Gene" if must_flag else "Virulance Factor"
+            # Precalculate some logging information...
+            regulation_str : str = "Regulated Gene" if must_flag else "Virulence Factor"
+            log_message = f"\t --> {regulation_str} found at coordinates: {match_string}."
+            logger.debug(f"{affected_query[:-2]:<25}" + log_message)
+            log_container[affected_query[:-2]].append(log_message)
 
+            # Deal with whether this biorisk should collapse into an existing hit or not.
             hit_data : HitResult = query_data.get_hit(affected_target)
             if hit_data:
-                logger.debug("\t\tHit already exists! Extending hit data ranges only...")
+                logger.debug("\t\tHit already existed! Extending hit data ranges only...")
                 hit_data.ranges.extend(match_ranges)
-                logger.info("\t --> %s found in %s at coordinates: %s.",
-                    regulation_str, affected_query[:-2], match_string)
                 logger.debug("Updated hit: %s", hit_data)
                 continue
 
@@ -185,13 +191,21 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
                 match_ranges,
                 {"domain" : [domain],"regulated":[regulation_str]},
             )
+            logger.debug("\t\tHit was unique, creating new hit result information...\n%s", new_hit)
             query_data.hits[affected_target] = new_hit
 
-            logger.debug("\t\tHit unique, creating new hit result information...\n%s", new_hit)
 
-            logger.info("\t --> %s found in %s at coordinates: %s.",
-                        regulation_str, affected_query[:-2], match_string)
 
         # Update the recommendation for this query for biorisk.
         query_data.recommendation.biorisk_status = biorisk_overall
+
+    # Do all non-verbose logging in order of query:
+    for query_name, log_list in log_container.items():
+        if len(log_list) == 0:
+            continue
+        s = "" if len(log_list) == 1 else "s"
+        logger.info(f" Biorisk{s} in {query_name}:")
+        for log_text in log_list:
+            logger.info(log_text)
+
     return 0
