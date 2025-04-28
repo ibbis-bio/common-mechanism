@@ -24,7 +24,7 @@ from enum import StrEnum
 import pandas as pd
 from commec.utils.file_utils import directory_arg
 from commec.config.result import ScreenStatus, ScreenResult, ScreenStep
-from commec.config.json_io import get_screen_data_from_json
+from commec.config.json_io import get_screen_data_from_json, IoVersionError
 
 DESCRIPTION = "Parse all .screen, or .json files in a directory and create CSVs of flags raised"
 
@@ -98,6 +98,9 @@ def process_json_file(file_path) -> list[dict[str, str | set[str] | bool]]:
         return []
     except AttributeError as e:
         print("The following json was not a Commec compatible json: ", file_path)
+        return []
+    except IoVersionError as e:
+        print("The following json is an incorrect version for reading: ", file_path)
         return []
 
     for name, query in screen_data.queries.items():
