@@ -86,17 +86,16 @@ def process_json_file(file_path) -> list[dict[str, str | set[str] | bool]]:
     """
     Read input json file, split into steps, and prepare dict of results for CSV output.
     """
-    filename_without_extension = os.path.splitext(os.path.basename(file_path))[0]
 
     results = []
 
     try:
         print(file_path)
         screen_data : ScreenResult = get_screen_data_from_json(file_path)
-    except KeyError as e:
+    except KeyError:
         print("The following json was not a Commec compatible json: ", file_path)
         return []
-    except AttributeError as e:
+    except AttributeError:
         print("The following json was not a Commec compatible json: ", file_path)
         return []
     except IoVersionError as e:
@@ -119,7 +118,7 @@ def process_json_file(file_path) -> list[dict[str, str | set[str] | bool]]:
             not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
             for hit in query.hits.values():
                 if hit.recommendation.from_step == ScreenStep.TAXONOMY_AA:
-                    for info in hit.annotations["regulation"]:
+                    for info in hit.annotations["regulated_taxonomy"]:
                         bacteria_flag += int(info["regulated_bacteria"]) > 0
                         virus_flag += int(info["regulated_viruses"]) > 0
                         eukaryote_flag += int(info["regulated_eukaryotes"]) > 0
@@ -133,7 +132,7 @@ def process_json_file(file_path) -> list[dict[str, str | set[str] | bool]]:
                         benign_protein = True
                     case ScreenStep.BENIGN_RNA:
                         benign_rna = True
-                    case ScreenStep.BENIGN_SYNBIO:
+                    case ScreenStep.BENIGN_DNA:
                         benign_synbio = True
                     case _:
                         continue
