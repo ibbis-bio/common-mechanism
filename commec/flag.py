@@ -90,17 +90,18 @@ def process_json_file(file_path) -> list[dict[str, str | set[str] | bool]]:
     results = []
 
     try:
-        print(file_path)
         screen_data : ScreenResult = get_screen_data_from_json(file_path)
     except KeyError:
-        print("The following json was not a Commec compatible json: ", file_path)
+        #print("The following json was not Commec compatible: ", file_path)
         return []
     except AttributeError:
-        print("The following json was not a Commec compatible json: ", file_path)
+        #print("The following json was not Commec compatible: ", file_path)
         return []
     except IoVersionError as e:
         print(e)
         return []
+
+    #print("Processing", file_path, " ... ")
 
     for name, query in screen_data.queries.items():
         
@@ -462,10 +463,6 @@ def run(args: argparse.Namespace):
     
     #screen_paths_json.extend(screen_paths_screen)
     screen_paths = screen_paths_screen + screen_paths_json
-
-    print(screen_paths)
-    #print(screen_paths_json)
-    #print(screen_paths_screen)
 
     if not screen_paths:
         raise FileNotFoundError(f"No .screen files were found in directory: {search_dir}")
