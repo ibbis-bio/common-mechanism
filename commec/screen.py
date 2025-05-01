@@ -62,7 +62,13 @@ import pandas as pd
 from commec.config.screen_io import ScreenIO, IoValidationError
 from commec.config.query import Query
 from commec.utils.file_utils import file_arg, directory_arg
-from commec.utils.logging import setup_console_logging, setup_file_logging, set_log_level
+from commec.utils.logger import (
+    setup_console_logging, 
+    setup_file_logging, 
+    set_log_level, 
+    INDENT_START, 
+    INDENT_END
+)
 from commec.config.screen_tools import ScreenTools
 from commec.config.result import (
     ScreenResult,
@@ -260,12 +266,12 @@ class Screen:
     def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
 
-
         # Start logging to console
         log_level = logging.INFO if not args.verbose else logging.DEBUG
         setup_console_logging(log_level)
-        logger.debug("Parsing input parameters...")
+        logger.noformat(INDENT_START + " The Common Mechanism : Screen")
 
+        logger.debug("Parsing input parameters...")
         self.params: ScreenIO = ScreenIO(args)
         self.params.setup()
 
@@ -282,7 +288,8 @@ class Screen:
         logger.info("Validating input query and databases...")
         self.database_tools: ScreenTools = ScreenTools(self.params)
 
-        logger.info("Input query file: %s", self.params.input_fasta_path)
+        logger.info("Input query file: ")
+        logger.noformat(INDENT_END + "\n" + self.params.input_fasta_path + "\n" + INDENT_START)
 
         # Initialize the queries
         try:
@@ -406,7 +413,7 @@ class Screen:
         )
 
         self.screen_data.update()
-        logger.info(" >> SUMMARY: \n%s", self.screen_data)
+        logger.noformat(INDENT_END + "\nSUMMARY: \n%s", self.screen_data)
         self.success = True
 
 
