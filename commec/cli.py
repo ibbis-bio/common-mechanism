@@ -12,7 +12,8 @@ Command-line usage:
     - commec screen -d /path/to/databases input.fasta
     - commec flag /path/to/directory/with/output.screen 
     - commec split input.fasta
-    - commec version
+    - commec -h, --help
+    - commec -v, --version
 """
 from commec.flag import (
     DESCRIPTION as flag_DESCRIPTION,
