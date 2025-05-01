@@ -269,7 +269,7 @@ class Screen:
         # Start logging to console
         log_level = logging.INFO if not args.verbose else logging.DEBUG
         setup_console_logging(log_level)
-        logger.noformat(INDENT_START + " The Common Mechanism : Screen")
+        logger.info(" The Common Mechanism : Screen", extra={"no_fmt": True, "cap_down" : True})
 
         logger.debug("Parsing input parameters...")
         self.params: ScreenIO = ScreenIO(args)
@@ -289,7 +289,7 @@ class Screen:
         self.database_tools: ScreenTools = ScreenTools(self.params)
 
         logger.info("Input query file: ")
-        logger.noformat(INDENT_END + "\n" + self.params.input_fasta_path + "\n" + INDENT_START)
+        logger.info(self.params.input_fasta_path, extra={"no_fmt":True,"cap":True})
 
         # Initialize the queries
         try:
@@ -413,7 +413,7 @@ class Screen:
         )
 
         self.screen_data.update()
-        logger.noformat(INDENT_END + "\nSUMMARY: \n%s", self.screen_data)
+        logger.info("SUMMARY: \n%s", self.screen_data, extra={"no_fmt" : True, "cap_up":True})
         self.success = True
 
 
