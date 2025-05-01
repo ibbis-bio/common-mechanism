@@ -52,7 +52,7 @@ def main():
         dest="version",
         action="store_true",
         default=False,
-        help="Print version information and exit.",
+        help="show version information and exit",
     )
 
     # Setup sub parsers:
