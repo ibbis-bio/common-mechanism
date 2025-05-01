@@ -19,7 +19,7 @@ from yaml.parser import ParserError
 from Bio import SeqIO
 
 from commec.config.query import Query
-from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
+from commec.config.constants import DEFAULT_CONFIG_YAML_PATH, MINIMUM_QUERY_LENGTH_NT
 from commec.utils.file_utils import expand_and_normalize
 from commec.utils.dict_utils import deep_update
 
@@ -105,6 +105,9 @@ class ScreenIO:
         except ValueError as e:
             raise IoValidationError(f"Input FASTA file: {self.input_fasta_path} "
                                     "is not a valid fasta file.") from e
+
+        # Trim the input records according to Commec Criteria.
+        records = [record for record in records if ScreenIO.is_valid_record(record)]
 
         if len(records) == 0:
             raise IoValidationError(f"Input FASTA file: {self.input_fasta_path} "
@@ -345,7 +348,25 @@ class ScreenIO:
     @property
     def should_do_benign_screening(self) -> bool:
         return True
+    
+    @staticmethod
+    def is_valid_record(record):
+        """ 
+        Handles logic on a valid SeqRecord object to ensure it is 
+        appropriate for screening.
 
+        At the moment the only consideration is that the query length is not too small.
+        Overriding the minimum cut-off for query length may give inaccurate or insensitive screen results.
+        """
+        qlen = len(record.seq)
+        # Note, its important to check for non-zero, as zero might indicate an
+        # issue with the fasta file or user error and raises an important exception.
+        if qlen < MINIMUM_QUERY_LENGTH_NT and not qlen == 0:
+            logger.warning("Input query %s was removed from screen! "
+                           "(Sequence length less than minimum cut-off of %i nucleotides)",
+                            record.name, MINIMUM_QUERY_LENGTH_NT)
+            return False
+        return True
 
 class IoValidationError(ValueError):
     """Custom exception for errors when handling input and output with `ScreenIO`."""
