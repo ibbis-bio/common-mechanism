@@ -12,6 +12,7 @@ Command-line usage:
     - commec screen -d /path/to/databases input.fasta
     - commec flag /path/to/directory/with/output.screen 
     - commec split input.fasta
+    - commec version
 """
 from commec.flag import (
     DESCRIPTION as flag_DESCRIPTION,
@@ -35,6 +36,8 @@ from commec.setup import (
     run as setup_run,
 )
 
+from commec.config.result import COMMEC_VERSION
+
 def main():
     """
     Parse the command line arguments and call the relevant sub-command.
@@ -42,6 +45,17 @@ def main():
     parser = ScreenArgumentParser(
         prog="commec", description="Command-line entrypoint for the Common Mechanism"
     )
+    # Sub argument for version information
+    parser.add_argument(
+        "-v",
+        "--version",
+        dest="version",
+        action="store_true",
+        default=False,
+        help="Print version information and exit.",
+    )
+
+    # Setup sub parsers:
     subparsers = parser.add_subparsers(dest="command")
 
     # Sub-command for "screen"
@@ -70,6 +84,11 @@ def main():
         split_run(args)
     elif args.command == "setup":
         setup_run(args)
+    elif args.version:
+        print( "Commec  : The Common Mechanism\n"
+              f"Version : {COMMEC_VERSION}\n"
+              "Copyright IBBIS (c) 2021-2025\n"
+              "International Biosecurity and Biosafety Initiative for Science")
     else:
         parser.print_help()
 
