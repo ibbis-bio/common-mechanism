@@ -8,7 +8,6 @@ import os
 from dataclasses import dataclass
 import subprocess
 import logging
-from commec.utils.logger import INDENT_START,INDENT_END
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +89,7 @@ class SearchHandler(ABC):
             logger.warning("%s expected output data already exists, "
                          "will use existing data found in:",
                          self.__class__.__name__)
-            logger.warning(INDENT_END + "\n" + self.out_file + "\n" + INDENT_START, extra = {"no_fmt" : True})
+            logger.warning(self.out_file, extra = {"no_fmt" : True, "cap":True})
             return
         self._search()
 

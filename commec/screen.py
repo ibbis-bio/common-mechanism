@@ -63,11 +63,9 @@ from commec.config.screen_io import ScreenIO, IoValidationError
 from commec.config.query import Query
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.logger import (
-    setup_console_logging, 
-    setup_file_logging, 
-    set_log_level, 
-    INDENT_START, 
-    INDENT_END
+    setup_console_logging,
+    setup_file_logging,
+    set_log_level,
 )
 from commec.config.screen_tools import ScreenTools
 from commec.config.result import (
