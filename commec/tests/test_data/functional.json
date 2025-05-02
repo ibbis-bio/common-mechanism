@@ -2,7 +2,7 @@
     "commec_info": {
         "commec_version": "0.3.2",
         "json_output_version": "0.2",
-        "time_taken": "00:00:02",
+        "time_taken": "00:00:00",
         "date_run": "",
         "search_tool_info": {
             "biorisk_search_info": {
@@ -32,7 +32,7 @@
         }
     },
     "query_info": {
-        "file": "/tmp/pytest-of-root/pytest-67/test_functional_screen0/functional.fasta",
+        "file": "/tmp/pytest-of-root/pytest-16/test_functional_screen0/functional.fasta",
         "number_of_queries": 1,
         "total_query_length": 600
     },
@@ -45,7 +45,8 @@
                 "biorisk_status": "Flag",
                 "protein_taxonomy_status": "Flag",
                 "nucleotide_taxonomy_status": "Flag",
-                "benign_status": "Flag"
+                "benign_status": "Flag",
+                "rationale": "A known biorisk was detected"
             },
             "hits": {
                 "Toxin1": {
@@ -479,7 +480,7 @@
                 },
                 "Benign1": {
                     "recommendation": {
-                        "status": "Pass",
+                        "status": "Flag (Cleared)",
                         "from_step": "Benign Protein Search"
                     },
                     "name": "Benign1",
@@ -499,7 +500,7 @@
                 },
                 "BENIGNRNA": {
                     "recommendation": {
-                        "status": "Pass",
+                        "status": "Flag (Cleared)",
                         "from_step": "Benign RNA Search"
                     },
                     "name": "BENIGNRNA",
@@ -517,7 +518,7 @@
                 },
                 "BENIGNSYNBIO": {
                     "recommendation": {
-                        "status": "Pass",
+                        "status": "Flag (Cleared)",
                         "from_step": "Benign DNA Search"
                     },
                     "name": "BENIGNSYNBIO",
