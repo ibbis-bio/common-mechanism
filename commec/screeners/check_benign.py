@@ -109,6 +109,7 @@ def _filter_benign_proteins(query : Query,
         logger.info("\t --> Clearing %s (%s) with house-keeping protein, %s",
                         hit.name, hit.recommendation.status, benign_hit_outcome.name)
         hit.recommendation.status = hit.recommendation.status.clear()
+        benign_hit_outcome.recommendation.status = hit.recommendation.status
 
     return [benign_hit_outcome]
 
@@ -162,6 +163,8 @@ def _filter_benign_rna(query : Query,
             logger.info("\t --> Clearing %s %s (region %i-%i), with Benign RNA %s",
                         hit.recommendation.status, hit.name, region.query_start, region.query_end, benign_hit_outcome.name)
             hit.recommendation.status = hit.recommendation.status.clear()
+            benign_hit_outcome.recommendation.status = hit.recommendation.status
+
         return [benign_hit_outcome]
     
     logger.info("Clear failed for %s (%s) as Benign RNA >%i bases unaccounted for.",
@@ -223,7 +226,7 @@ def _filter_benign_dna(query : Query,
         logger.info("\t --> Clearing %s %s region %i-%i as Benign DNA, with synthetic biology part %s",
                         hit.recommendation.status, hit.name, region.query_start, region.query_end, benign_hit_outcome.name)
         hit.recommendation.status = hit.recommendation.status.clear()
-
+        benign_hit_outcome.recommendation.status = hit.recommendation.status
     return [benign_hit_outcome]
 
 def _update_benign_data_for_query(query : Query,
@@ -283,6 +286,7 @@ def _update_benign_data_for_query(query : Query,
         for region in hit.ranges:
 
             if not benign_protein_for_query.empty:
+                query.no_hits_warning = False
                 new_benign_protein_hits.extend(
                     _filter_benign_proteins(query, hit, region,
                                             benign_protein_for_query,
@@ -290,12 +294,14 @@ def _update_benign_data_for_query(query : Query,
                     )
             
             if not benign_rna_for_query.empty:
+                query.no_hits_warning = False
                 new_benign_rna_hits.extend(
                     _filter_benign_rna(query, hit, region,
                                        benign_rna_for_query)
                 )
                 
             if not benign_dna_for_query.empty:
+                query.no_hits_warning = False
                 new_benign_dna_hits.extend(
                     _filter_benign_dna(query, hit, region,
                                           benign_dna_for_query)

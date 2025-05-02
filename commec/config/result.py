@@ -245,6 +245,7 @@ class QueryScreenStatus:
     protein_taxonomy_status: ScreenStatus = ScreenStatus.NULL
     nucleotide_taxonomy_status: ScreenStatus = ScreenStatus.NULL
     benign_status: ScreenStatus = ScreenStatus.NULL
+    rationale : str = "-"
 
     def update_query_flag(self):
         """
@@ -258,28 +259,52 @@ class QueryScreenStatus:
             self.benign_status
         }:
             self.screen_status = ScreenStatus.ERROR
+            self.rationale = "There was an error during screening"
+            return
+                
+        if self.benign_status == ScreenStatus.CLEARED_FLAG:
+            self.screen_status = self.benign_status
+            self.rationale = "A sequence of concern was cleared as benign"
             return
 
-        if self.benign_status not in {
-            ScreenStatus.NULL, 
-            ScreenStatus.SKIP
-        }:
+        if self.benign_status == ScreenStatus.CLEARED_WARN:
             self.screen_status = self.benign_status
+            self.rationale = "A mixed sequence of concern was cleared as benign"
+            return
+
+        if self.benign_status == ScreenStatus.PASS:
+            self.screen_status = self.benign_status
+            self.rationale = "No regulated regions of concern"
             return
 
         if self.biorisk_status == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
+            self.rationale = "A known biorisk was detected"
             return
 
-        if (
-            self.protein_taxonomy_status == ScreenStatus.FLAG
-            or self.nucleotide_taxonomy_status == ScreenStatus.FLAG
-        ):
+        if self.protein_taxonomy_status == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
+            self.rationale = "A regulated protein sequence was detected"
+            return
+
+        if self.nucleotide_taxonomy_status == ScreenStatus.FLAG:
+            self.screen_status = ScreenStatus.FLAG
+            self.rationale = "A regulated nucleotide sequence was detected"
             return
 
         if self.biorisk_status == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
+            self.rationale = "A known virulance factor was detected"
+            return
+
+        if self.protein_taxonomy_status == ScreenStatus.WARN:
+            self.screen_status = ScreenStatus.WARN
+            self.rationale = "A mixture of regulated and non-regulated protein was detected"
+            return
+
+        if self.nucleotide_taxonomy_status == ScreenStatus.WARN:
+            self.screen_status = ScreenStatus.WARN
+            self.rationale = "A mixture of regulated and non-regulated nucleotide was detected"
             return
 
         if (
@@ -294,6 +319,9 @@ class QueryScreenStatus:
         # We will need earlier checks to maintain the error status of future steps however.
         if self.screen_status == ScreenStatus.NULL:
             self.screen_status = self.biorisk_status
+
+        if self.screen_status == ScreenStatus.PASS:
+            self.rationale = "No regulated regions of concern"
 
 
 @dataclass
@@ -380,6 +408,25 @@ class QueryResult:
         Updates the steps within QueryScreenStatus to be congruent for every hit.
         Then updates the Query flag to consolidate all.
         """
+        logger.debug("Updating step status flags for query %s", self.query)
+        logger.debug("Current status %s", {
+            "Biorisk":str(self.recommendation.biorisk_status),
+            "Protein":str(self.recommendation.protein_taxonomy_status),
+            "Nucleot":str(self.recommendation.nucleotide_taxonomy_status),
+            "benign ":str(self.recommendation.benign_status)})
+        
+        ignored_status = {ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.PASS}
+        
+        if self.recommendation.biorisk_status not in ignored_status:
+            self.recommendation.biorisk_status = ScreenStatus.NULL
+        if self.recommendation.protein_taxonomy_status not in ignored_status:
+            self.recommendation.protein_taxonomy_status = ScreenStatus.NULL
+        if self.recommendation.nucleotide_taxonomy_status not in ignored_status:
+            self.recommendation.nucleotide_taxonomy_status = ScreenStatus.NULL
+        if self.recommendation.benign_status not in ignored_status:
+            self.recommendation.benign_status = ScreenStatus.NULL
+
+        # Update Biorisks, and Taxonomy:
         for hit in self.hits.values():
             match hit.recommendation.from_step:
                 case ScreenStep.BIORISK:
@@ -400,6 +447,20 @@ class QueryResult:
                 case ScreenStep.BENIGN_DNA:
                     self.recommendation.benign_status = compare(
                         self.recommendation.benign_status, hit.recommendation.status)
+        
+        # Update Benign outcome based on the worst step.
+        self.recommendation.benign_status = compare(
+                        self.recommendation.benign_status, self.recommendation.biorisk_status)
+        self.recommendation.benign_status = compare(
+                        self.recommendation.benign_status, self.recommendation.protein_taxonomy_status)
+        self.recommendation.benign_status = compare(
+                        self.recommendation.benign_status, self.recommendation.nucleotide_taxonomy_status)
+
+        logger.debug("Updated status %s", {
+            "Biorisk":str(self.recommendation.biorisk_status),
+            "Protein":str(self.recommendation.protein_taxonomy_status),
+            "Nucleot":str(self.recommendation.nucleotide_taxonomy_status),
+            "benign ":str(self.recommendation.benign_status)})
 
         self.recommendation.update_query_flag()
 
@@ -466,12 +527,16 @@ class ScreenResult:
 
         return self.queries.get(search_term)
 
-    def update(self):
+    def update(self, queries):
         """
         Propagate update to all children dataclasses.
         """
-        for query in self.queries.values():
+        for query_name, query in self.queries.items():
             query.update()
+            if queries[query_name].no_hits_warning:
+                logger.warning("%s has no homology with any known sequence.", query_name)
+                query.recommendation.screen_status = ScreenStatus.WARN
+                query.recommendation.rationale = "No homology with any known sequence"
 
     def regions(self) -> Iterator[Tuple[QueryResult, HitResult, MatchRange]]:
         """
@@ -502,10 +567,11 @@ class ScreenResult:
             data.append({
                 "query": query.query[:25],
                 "overall": query.recommendation.screen_status,
-                "biorisk": query.recommendation.biorisk_status,
-                "taxonomy_aa": query.recommendation.protein_taxonomy_status,
-                "taxonomy_nt": query.recommendation.nucleotide_taxonomy_status,
-                "benign": query.recommendation.benign_status
+                "rationale": query.recommendation.rationale,
+                #"biorisk": query.recommendation.biorisk_status,
+                #"taxonomy_aa": query.recommendation.protein_taxonomy_status,
+                #"taxonomy_nt": query.recommendation.nucleotide_taxonomy_status,
+                #"benign": query.recommendation.benign_status
             })
         
         output_data : pd.DataFrame = pd.DataFrame(data)
@@ -513,7 +579,7 @@ class ScreenResult:
 
     def __str__(self):
         df = self.get_flag_data()
-        return df.to_string(index=False, col_space = 12)
+        return df.to_string(index=False, col_space = 12, line_width=2048)
     
     def __repr__(self):
         return str(asdict(self))

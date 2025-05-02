@@ -252,7 +252,7 @@ class Screen:
         hours, rem = divmod(time_taken, 3600)
         minutes, seconds = divmod(rem, 60)
         self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
-        self.screen_data.update()
+        self.screen_data.update(self.queries)
         encode_screen_data_to_json(self.screen_data, self.params.output_json)
 
         # Only output the HTML, and cleanup if this was a successful run:
@@ -410,8 +410,9 @@ class Screen:
             " >> Commec Screen completed at %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
 
-        self.screen_data.update()
-        logger.info("SUMMARY: \n%s", self.screen_data, extra={"no_prefix" : True, "box_up":True})
+        self.screen_data.update(self.queries)
+
+        logger.info(" >> SUMMARY: \n%s", self.screen_data, extra={"no_prefix" : True, "box_up":True})
         self.success = True
 
 
