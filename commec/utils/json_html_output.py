@@ -161,7 +161,7 @@ def update_layout(fig, query_to_draw : QueryResult, stacks):
         'title' : (
             f"<span style='background-color:{css_color};padding:6px 10px;"
             f"border-radius:6px;color:{css_color};font-weight:bold;'>"
-            f"{query_to_draw.recommendation.screen_status}</span> : {query_to_draw.query} ({query_to_draw.length} b.p.) {query_to_draw.recommendation.rationale}"
+            f"{query_to_draw.recommendation.screen_status}</span> : {query_to_draw.query} ({query_to_draw.length} b.p.) <br>{query_to_draw.recommendation.rationale}"
         ),
         'barmode': 'overlay',
         'template': 'plotly_white',

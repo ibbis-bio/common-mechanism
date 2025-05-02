@@ -534,7 +534,7 @@ class ScreenResult:
         for query_name, query in self.queries.items():
             query.update()
             if queries[query_name].no_hits_warning:
-                logger.warning("%s has no homology with any known sequence.", query_name)
+                logger.debug("%s has no homology with any known sequence.", query_name)
                 query.recommendation.screen_status = ScreenStatus.WARN
                 query.recommendation.rationale = "No homology with any known sequence"
 
