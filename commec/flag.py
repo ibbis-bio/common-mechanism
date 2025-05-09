@@ -138,17 +138,40 @@ def process_json_file(file_path) -> list[dict[str, str | set[str] | bool]]:
                     case _:
                         continue
 
+        mixed_aa_taxonomy = False
+        mixed_nt_taxonomy = False
+        for hit in query.hits.values():
+            match hit.recommendation.from_step:
+                case ScreenStep.TAXONOMY_AA:
+                    if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN]:
+                        reg_dicts = hit.annotations["regulated_taxonomy"]
+                        for r in reg_dicts:
+                            if r["non_regulated_taxids"] > 0:
+                                mixed_aa_taxonomy = True
+
+                case ScreenStep.TAXONOMY_NT:
+                    if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN]:
+                        reg_dicts = hit.annotations["regulated_taxonomy"]
+                        for r in reg_dicts:
+                            if r["non_regulated_taxids"] > 0:
+                                mixed_nt_taxonomy = True
+                case _:
+                    continue
+
+        protein_status = Outcome.MIX if mixed_aa_taxonomy else status_to_outcome(query.recommendation.protein_taxonomy_status)
+        nucleotide_status = Outcome.MIX if mixed_nt_taxonomy else status_to_outcome(query.recommendation.nucleotide_taxonomy_status)
+
         results.append({
         "name": name,
         "filepath": file_path,
-        "flag": query.recommendation.screen_status,
-        "biorisk": query.recommendation.biorisk_status,
-        "protein": query.recommendation.protein_taxonomy_status,
+        "flag": status_to_outcome(query.recommendation.screen_status),
+        "biorisk": status_to_outcome(query.recommendation.biorisk_status),
+        "protein": protein_status,
         "virus_flag": (virus_flag > 0),
         "bacteria_flag": (bacteria_flag > 0),
         "eukaryote_flag": (eukaryote_flag > 0),
-        "nucleotide": query.recommendation.nucleotide_taxonomy_status,
-        "benign": query.recommendation.benign_status,
+        "nucleotide": nucleotide_status,
+        "benign": status_to_outcome(query.recommendation.benign_status),
         "benign_protein": benign_protein,
         "benign_rna": benign_rna,
         "benign_dna": benign_synbio
@@ -212,6 +235,7 @@ def process_file(file_path) -> dict[str, str | set[str] | bool]:
         return process_screen_file(file_path)
     raise ValueError("Error: unrecognised file extension"
                      f"(not .screen, or .json): {extension}")
+
 
 def get_biorisk_outcome(step_content: str) -> set[str]:
     """Process biorisk scan step from .screen file."""
@@ -396,6 +420,18 @@ def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> dict[str
     if Outcome.ERROR in results["benign"]:
         benign = Flag.ERROR
 
+    # JSON converts into outcomes, which are parsed here.
+    if Outcome.PASS in results["benign"]:
+        benign = Flag.PASS
+    if Outcome.WARN in results["benign"]:
+        benign = Flag.FLAG
+    if Outcome.FLAG in results["benign"]:
+        benign = Flag.FLAG
+
+    # Debug for when this benign process goes wrong.
+    if benign == Flag.NOT_RUN:
+        print("Unset benign! Existing benign = ", results["benign"])
+
     return {
         "filename": results["filepath"],
         "biorisk": biorisk,
@@ -407,6 +443,21 @@ def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> dict[str
         "benign": benign,
     }
 
+def status_to_outcome(result: ScreenStatus) -> Outcome:
+    """
+    Map between a ScreenStatus result from json, and the outcome.
+    """
+    mapping = {
+        ScreenStatus.FLAG: Outcome.FLAG,
+        ScreenStatus.WARN: Outcome.WARN,
+        ScreenStatus.CLEARED_FLAG: Outcome.CLEARED,
+        ScreenStatus.CLEARED_WARN: Outcome.CLEARED,
+        ScreenStatus.PASS: Outcome.PASS,
+        ScreenStatus.SKIP: Outcome.SKIP,
+        ScreenStatus.ERROR: Outcome.ERROR,
+        ScreenStatus.NULL: Outcome.NOT_RUN,
+    }
+    return mapping.get(result, Outcome.ERROR)
 
 def get_recommendation(flag: str) -> str:
     """
@@ -414,8 +465,12 @@ def get_recommendation(flag: str) -> str:
     """
     flag_map = {
         Outcome.FLAG: Flag.FLAG,
+        Outcome.WARN: Flag.FLAG,
         Outcome.PASS: Flag.PASS,
         Outcome.ERROR: Flag.ERROR,
+        ScreenStatus.FLAG: Flag.FLAG,
+        ScreenStatus.PASS: Flag.PASS,
+        ScreenStatus.ERROR: Flag.ERROR,
     }
     return flag_map.get(flag, Flag.NOT_RUN)
 
@@ -456,7 +511,6 @@ def run(args: argparse.Namespace):
 
     search_pattern = "**/*.json" if search_recursive else "*.json"
     screen_paths_json = glob.glob(os.path.join(search_dir, search_pattern), recursive=search_recursive)
-
 
     search_pattern = "**/*.screen" if search_recursive else "*.screen"
     screen_paths_screen = glob.glob(os.path.join(search_dir, search_pattern), recursive=search_recursive)
