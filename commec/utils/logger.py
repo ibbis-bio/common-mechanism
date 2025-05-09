@@ -8,14 +8,13 @@ import logging
 import sys
 import textwrap
 
-
 class TextWrapFormatter(logging.Formatter):
     """
-    Format multi-line log messages with proper vertical alignment, configurable styling,
-    and text wrapping for longer messages.
+    Format multi-line log messages with proper vertical alignment, 
+    configurable styling, and text wrapping for longer messages.
     """
 
-    def __init__(self, fmt=None, *args, continuation_marker="│ ", line_width=120, **kwargs):
+    def __init__(self, *args, fmt=None, continuation_marker="│ ", line_width=120, **kwargs):
         if fmt is None:
             fmt = f"%(levelname)-8s{continuation_marker}%(message)s"
         super().__init__(fmt, *args, **kwargs)
@@ -23,8 +22,8 @@ class TextWrapFormatter(logging.Formatter):
         self.line_width = line_width
 
         # String to prepended to all lines of wrapped output except the first
-        indent_size = self._find_message_start() - len(self.continuation_marker)
-        self.indent = " " * indent_size + self.continuation_marker
+        self.indent_size = self._find_message_start() - len(self.continuation_marker)
+        self.indent = " " * self.indent_size + self.continuation_marker
 
     def _find_message_start(self):
         """
@@ -44,7 +43,40 @@ class TextWrapFormatter(logging.Formatter):
         return sample_formatted.find(sample.msg)
 
     def format(self, record):
+        """
+        Custom formatter for Commec logging.
+
+        Accepts the following keywords in the `extra` dictionary:
+
+        - **no_wrap**:
+        Skips text wrapping.
+        
+        - **no_prefix**:
+        Skips the `INFO    │ ` prefixes.
+        
+        - **box**, **box_up**, **box_down**:
+        Use Unicode box-drawing characters (e.g., `"─┘"` or `"─┐"`) to tie off
+        formatted prefixes when switching to no-prefix lines.
+        """
+
+        # Check extra options for format removal:
+        if getattr(record, "no_prefix", False):
+            box_up = getattr(record, "box_up", False)
+            box_down = getattr(record, "box_down", False)
+            if getattr(record, "cap", False):
+                box_up = True
+                box_down = True
+
+            prefix = self.indent_size * "─" + "┘\n" if box_up else ""
+            suffix = "\n" + self.indent_size * "─" + "┐" if box_down else ""
+
+            return prefix + record.getMessage() + suffix # No formatting
+
         message = super().format(record)
+
+        if getattr(record, "no_wrap", False):
+            return message
+
         lines = message.splitlines()
 
         formatted_lines = []
