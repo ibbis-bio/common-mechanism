@@ -10,11 +10,11 @@ import textwrap
 
 class TextWrapFormatter(logging.Formatter):
     """
-    Format multi-line log messages with proper vertical alignment, configurable styling,
-    and text wrapping for longer messages.
+    Format multi-line log messages with proper vertical alignment, 
+    configurable styling, and text wrapping for longer messages.
     """
 
-    def __init__(self, fmt=None, *args, continuation_marker="│ ", line_width=120, **kwargs):
+    def __init__(self, *args, fmt=None, continuation_marker="│ ", line_width=120, **kwargs):
         if fmt is None:
             fmt = f"%(levelname)-8s{continuation_marker}%(message)s"
         super().__init__(fmt, *args, **kwargs)
@@ -52,7 +52,7 @@ class TextWrapFormatter(logging.Formatter):
         Skips text wrapping.
         
         - **no_prefix**:
-        Skips the `%(asctime)s│ %(levelname)-8s│ %` prefixes.
+        Skips the `INFO    │ ` prefixes.
         
         - **box**, **box_up**, **box_down**:
         Use Unicode box-drawing characters (e.g., `"─┘"` or `"─┐"`) to tie off
