@@ -44,11 +44,10 @@ class TextWrapFormatter(logging.Formatter):
 
     def format(self, record):
         """
-        Custom formattor for Commec purposes.
-        Accepts keywords in the extra dictionary:
-        one_line : skips text wrapping.
-        no_fmt : Skips the "WARNING | " prefixes.
-        cap, cap_up, cap_down : Neatly ties off formatted prefixes.
+        Custom formatter for Commec logging.  Accepts the following keywords in the extra dictionary:
+        no_wrap : skips text wrapping.
+        no_prefix: Skips the "%(asctime)s│ %(levelname)-8s│ % " prefixes.
+        box, box_up, box_down: Use unicode box-drawing characters ( "─┘" or "─┐") to tie off formatted prefixes when switching to no-prefix lines.
         """
 
         # Check extra options for format removal:
