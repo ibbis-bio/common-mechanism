@@ -37,7 +37,7 @@ from commec.setup import (
     run as setup_run,
 )
 
-from commec.config.result import COMMEC_VERSION
+from commec import __version__ as COMMEC_VERSION
 
 def main():
     """

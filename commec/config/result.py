@@ -34,13 +34,11 @@ from enum import StrEnum
 from importlib.metadata import version, PackageNotFoundError
 import pandas as pd
 from commec.tools.search_handler import SearchToolVersion
+from commec import __version__ as COMMEC_VERSION
 
 logger = logging.getLogger(__name__)
 
-try:
-    COMMEC_VERSION = version("commec")
-except PackageNotFoundError:
-    COMMEC_VERSION = "error"
+
 
 # Seperate versioning for the output JSON.
 JSON_COMMEC_FORMAT_VERSION = "0.2"
