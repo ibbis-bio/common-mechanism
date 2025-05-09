@@ -89,7 +89,7 @@ class SearchHandler(ABC):
             logger.warning("%s expected output data already exists, "
                          "will use existing data found in:",
                          self.__class__.__name__)
-            logger.warning(self.out_file, extra = {"no_fmt" : True, "cap":True})
+            logger.warning(self.out_file, extra = {"no_prefix" : True, "cap":True})
             return
         self._search()
 
@@ -172,7 +172,7 @@ class SearchHandler(ABC):
         Run a command using subprocess.run, piping stdout and stderr to `out_file`.
         """
         logger.debug("SUBPROCESS: %s", " ".join(command))
-        logger.debug(" ".join(command), extra = {"no_fmt":True,"cap":True})
+        logger.debug(" ".join(command), extra = {"no_prefix":True,"cap":True})
 
         with open(out_file, "a", encoding="utf-8") as f:
             result = subprocess.run(

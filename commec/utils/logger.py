@@ -44,28 +44,37 @@ class TextWrapFormatter(logging.Formatter):
 
     def format(self, record):
         """
-        Custom formatter for Commec logging.  Accepts the following keywords in the extra dictionary:
-        no_wrap : skips text wrapping.
-        no_prefix: Skips the "%(asctime)s│ %(levelname)-8s│ % " prefixes.
-        box, box_up, box_down: Use unicode box-drawing characters ( "─┘" or "─┐") to tie off formatted prefixes when switching to no-prefix lines.
+        Custom formatter for Commec logging.
+
+        Accepts the following keywords in the `extra` dictionary:
+
+        - **no_wrap**:
+        Skips text wrapping.
+        
+        - **no_prefix**:
+        Skips the `%(asctime)s│ %(levelname)-8s│ %` prefixes.
+        
+        - **box**, **box_up**, **box_down**:
+        Use Unicode box-drawing characters (e.g., `"─┘"` or `"─┐"`) to tie off
+        formatted prefixes when switching to no-prefix lines.
         """
 
         # Check extra options for format removal:
-        if getattr(record, "no_fmt", False):
-            cap_up = getattr(record, "cap_up", False)
-            cap_down = getattr(record, "cap_down", False)
+        if getattr(record, "no_prefix", False):
+            box_up = getattr(record, "box_up", False)
+            box_down = getattr(record, "box_down", False)
             if getattr(record, "cap", False):
-                cap_up = True
-                cap_down = True
+                box_up = True
+                box_down = True
 
-            prefix = self.indent_size * "─" + "┘\n" if cap_up else ""
-            suffix = "\n" + self.indent_size * "─" + "┐" if cap_down else ""
+            prefix = self.indent_size * "─" + "┘\n" if box_up else ""
+            suffix = "\n" + self.indent_size * "─" + "┐" if box_down else ""
 
             return prefix + record.getMessage() + suffix # No formatting
 
         message = super().format(record)
 
-        if getattr(record, "one_line", False):
+        if getattr(record, "no_wrap", False):
             return message
 
         lines = message.splitlines()
