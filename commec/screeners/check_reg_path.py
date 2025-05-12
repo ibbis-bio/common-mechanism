@@ -95,6 +95,7 @@ def update_taxonomic_data_from_database(
 
     # The default is to pass, its up to the data to over-write this.
     # Some Queries may already be set to skip, which we ignore.
+    # (Only queries with no information from database would be skipped)
     if step == ScreenStep.TAXONOMY_AA:
         for query in data.queries.values():
             if query.recommendation.protein_taxonomy_status != ScreenStatus.SKIP:

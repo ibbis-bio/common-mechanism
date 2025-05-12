@@ -106,9 +106,6 @@ class ScreenIO:
             raise IoValidationError(f"Input FASTA file: {self.input_fasta_path} "
                                     "is not a valid fasta file.") from e
 
-        # Trim the input records according to Commec Criteria.
-        records = [record for record in records if ScreenIO.is_valid_record(record)]
-
         if len(records) == 0:
             raise IoValidationError(f"Input FASTA file: {self.input_fasta_path} "
                                     " contains no records!")
@@ -125,6 +122,9 @@ class ScreenIO:
                 record.description = ""
             except Exception as e:
                 raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}") from e
+
+        # Trim the input records according to Commec Criteria.
+        records = [record for record in records if ScreenIO.is_valid_record(record)]
 
         with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
             SeqIO.write(records, fasta_file, "fasta")

@@ -22,7 +22,8 @@ class Query:
         self.non_coding_regions : list[tuple[int, int]] = [] # 1 based coordinates for Non-Coding Regions.
         self.result_handle : QueryResult = None
 
-    def translate(self, input_path, output_path) -> None:
+    @staticmethod
+    def translate(input_path, output_path) -> None:
         """Run command transeq, to translate our input sequences."""
 
         # TODO: Update line 53-55 of Check_Benign, to ensure that the query filter is using

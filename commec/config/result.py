@@ -253,6 +253,12 @@ class QueryScreenStatus:
         Parses the query status across all screening steps, then updates overall flag.
         Designed to be called at any time after Step 1.
         """
+
+        # If we skipped biorisk, then we skipped Screen, and we can garuntee
+        # that we have already set this query's skipped result.
+        if self.biorisk_status == ScreenStatus.SKIP:
+            return
+
         if ScreenStatus.ERROR in {
             self.biorisk_status,
             self.protein_taxonomy_status,

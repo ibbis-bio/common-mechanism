@@ -294,15 +294,27 @@ class Screen:
         total_query_length = 0
 
         try:
+            logger.debug("Translating queries...")
+            Query.translate(self.params.nt_path, self.params.aa_path)
             for query in self.queries.values():
                 logger.debug("Processing query: %s, (%s)", query.name, query.original_name)
-                query.translate(self.params.nt_path, self.params.aa_path)
                 total_query_length += len(query.seq_record)
                 qr = QueryResult(query.original_name,
                                     len(query.seq_record))
                                     #str(query.seq_record.seq))
                 self.screen_data.queries[query.name] = qr
                 query.result_handle = qr
+
+                # This query was not added to the fasta, and should be skipped.
+                # It is likely too small!
+                if not ScreenIO.is_valid_record(query.seq_record):
+                    logger.info("This query sequence is not valid, will skip screening, and warn overall. %s", query.name)
+                    query.result_handle.recommendation.screen_status = ScreenStatus.WARN
+                    query.result_handle.recommendation.biorisk_status = ScreenStatus.SKIP
+                    query.result_handle.recommendation.protein_taxonomy_status = ScreenStatus.SKIP
+                    query.result_handle.recommendation.nucleotide_taxonomy_status = ScreenStatus.SKIP
+                    query.result_handle.recommendation.benign_status = ScreenStatus.SKIP
+
         except RuntimeError as e:
             logger.error(e)
             sys.exit()

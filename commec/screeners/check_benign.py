@@ -345,6 +345,8 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                 benign_dna_screen_data.shape, benign_dna_screen_data.head())
     
     for query in queries.values():
+        if query.result_handle.recommendation.benign_status == ScreenStatus.SKIP:
+            continue
         _update_benign_data_for_query(query,
                                       benign_protein_screen_data,
                                       benign_rna_screen_data,
