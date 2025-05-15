@@ -5,9 +5,12 @@ As well as acting as a Commec Tool for calling foldseek
 """
 import os
 import logging
-from transformers import T5ForConditionalGeneration, T5Tokenizer
+from requests import get, post
+import sys
+from time import sleep
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+import pandas as pd
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
 
 logger = logging.getLogger(__name__)
@@ -17,58 +20,80 @@ class FoldseekHandler(SearchHandler):
     Database handler for FoldSeek.
     """
 
-    def search(self):
-        command = [
-            "foldseek",
-            "search",
-            self.input_file,
-            self.db_file,
-            self.out_file,
-            self.out_file + "_tmp/"
-        ]
-        self.run_as_subprocess(command, self.temp_log_file)
+    def _search(self):
+        """
+        Foldseek provides an API for dealing with remote request to their servers.
+        Here is an example of an API request:
+        
+        curl -X POST -F q=@PATH_TO_FILE -F 'mode=3diaa' -F 'database[]=BFVD' -F 'database[]=afdb50' -F 'database[]=afdb-swissprot' -F 'database[]=afdb-proteome' -F 'database[]=bfmd' -F 'database[]=cath50' -F 'database[]=mgnify_esm30' -F 'database[]=pdb100' -F 'database[]=gmgcl_id' https://search.foldseek.com/api/ticket
+
+        This provides a ticket number, which is also used for further API status checking, as well as requesting the download.
+        """
+        api = "https://search.foldseek.com/api/"
+        #api = "https://search.mmseqs.com/api/"
+        api_ticket = api + "ticket"
+        api_result = api + "result"
+
+        response = ""
+        data = ""
+
+        #'BFVD', 'afdb50', 'afdb-swissprot', 'afdb-proteome',
+        #'bfmd', 'cath50', 'mgnify_esm30', 'pdb100', 'gmgcl_id'
+
+        clean_seq = "MPKIIEAIYENGVFKPLQKVDLKEGE"
+
+        print(f"Requesting 3Di prediction for sequence of length {len(clean_seq)}...")
+        url = f"https://3di.foldseek.com/predict/{clean_seq}"
+        response = get(url)
+        print(response)
+        print(response.json())
+
+        response = post(
+            api_ticket,
+            files={'q': open("input.fasta", 'rb')},
+            data={
+                'mode': '3diaa',
+                'database[]': ['pdb100'],
+                'email':'tomichaelbarnett@gmail.com'},
+            #timeout=1000,
+        )
+                
+        print(data)
+        
+        print(response)
+        ticket_data = response.json()
+        print("Ticket Data:")
+        print(ticket_data)
+        ticket = ticket_data['id']
+        #progress_url = f"https://search.foldseek.com/api/status?ticket={ticket}"
+        #status = get('https://search.mmseqs.com/api/ticket/' + ticket['id']).json()
+        while True:
+            #progress_data = get(progress_url)
+            #print(progress_data)
+            progress_data = get(api_ticket + "/" + ticket)
+            progress = progress_data.json()
+            print(progress)
+            if progress['status'] == 'COMPLETE':
+                break
+            elif progress['status'] == 'ERROR':
+                print("Response :\n", progress_data)
+                raise RuntimeError("Foldseek job failed.")
+            print("waiting...")
+            sleep(5)
+
+        result_url = f"https://search.foldseek.com/api/result/ticket={ticket}"
+        result = get(result_url)
+
+        with open(self.out_file, "wb") as f:
+            f.write(result.content)
+                
     
     def read_output(self):
         ...
 
     def get_version_information(self):
         return SearchToolVersion("FOLDSEEK", "FOLDSEEK")
-    
-def _readfoldseek(filename : str | os.PathLike):
+
+
+def _readfoldseek(filename : str | os.PathLike) -> pd.DataFrame:
     ...
-
-def _generate_3di(model : T5ForConditionalGeneration,
-                  tokenizer : T5Tokenizer,
-                  aa_sequence : str) -> str:
-    input_text = f"translate amino to 3di: {aa_sequence}"
-    inputs = tokenizer(input_text, return_tensors = "pt")
-    outputs = model.generate(**inputs)
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-def convert_aa_to_3di(fasta_aa : str | os.PathLike, output_3di : str | os.PathLike):
-    """
-    Takes an input fasta file, containing aminoacid sequences, and converts it using
-    the ProstT5 model into 3Di sequences, which represent the structure of the query.
-    Outputs are written into a new fasta file.
-    """
-    logger.info("Generating Structural 3Di data ...")
-    try:
-        model_name = "Rostlab/ProstT5"
-        model = T5ForConditionalGeneration.from_pretrained(model_name)
-        tokenizer = T5Tokenizer.from_pretrained(model_name)
-
-        # Read in the input fasta.
-        records : list[SeqRecord] = []
-        with open(fasta_aa, "r", encoding = "utf-8") as fasta_file:
-            records = list(SeqIO.parse(fasta_file, "fasta"))
-
-        for record in records:
-            aa_seq = record.seq
-            threedi_seq = _generate_3di(model, tokenizer,aa_seq)
-            record.seq = threedi_seq
-        
-        with open(output_3di, "w", encoding = "utf-8") as fasta_output:
-            SeqIO.write(records, fasta_output, "fasta")
-
-    except OSError as e:
-        logger.error("Error generating 3Di data (likely due to a lack of RAM): %s", str(e))

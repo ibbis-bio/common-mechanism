@@ -340,6 +340,19 @@ class Screen:
         self.setup(args)
         self.params.output_yaml(self.params.input_prefix + "_config.yaml")
         
+        logger.info("Attempting to INIT a foldseek!")
+        # Foldseek testing:
+        from commec.tools.foldseek import FoldseekHandler
+        foldseek_tool = FoldseekHandler(
+            database_file = self.params.config["databases"]["biorisk_hmm"]["path"],
+            input_file = self.params.aa_path,
+            out_file = f"{self.params.output_prefix}.foldseek.out.tsv",
+            force = self.params.config["force"],
+        )
+
+        logger.info("Attempting to run a foldseek!")
+        foldseek_tool.search()
+
         # Biorisk screen
         try:
             logger.info(" >> STEP 1: Checking for biorisk genes...")
