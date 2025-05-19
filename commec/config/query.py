@@ -3,6 +3,7 @@
 
 import subprocess
 from Bio.SeqRecord import SeqRecord
+from dataclasses import dataclass
 from commec.config.result import QueryResult
 
 class Query:
@@ -16,11 +17,23 @@ class Query:
 
     def __init__(self, seq_record: SeqRecord):
         Query.validate_sequence_record(seq_record)
-        self.original_name = seq_record.id
+        self._seq_record = seq_record
         self.name = self.create_id(seq_record.id)
-        self.seq_record = seq_record
         self.non_coding_regions : list[tuple[int, int]] = [] # 1 based coordinates for Non-Coding Regions.
         self.result_handle : QueryResult = None
+        self.translations: list[QueryTranslation] = []
+
+    @property
+    def original_name(self) -> str:
+        return str(self._seq_record.id)
+
+    @property
+    def length(self) -> int:
+        return len(self._seq_record.seq)
+
+    @property
+    def sequence(self) -> str:
+        return str(self._seq_record.seq)
 
     def translate(self, input_path, output_path) -> None:
         """Run command transeq, to translate our input sequences."""
@@ -90,7 +103,7 @@ class Query:
         sequence : str = ""
         for start, stop in self.non_coding_regions:
             heading+=f" ({start}-{stop})"
-            sequence+=f"{self.seq_record.seq[int(start)-1: int(stop)]}"
+            sequence+=f"{self._seq_record.seq[int(start)-1: int(stop)]}"
         return f"{heading}\n{sequence}\n"
 
     def nc_to_nt_query_coords(self, index : int) -> int:
@@ -112,6 +125,19 @@ class Query:
             f"Non-coding index provided  ({index}) for {self.name}"
             f"which is out-of-bounds for any known NC start-end tuple: {self.non_coding_regions}"
             )
+
+@dataclass
+class QueryTranslation:
+    """
+    Represents a single frame translation of a nucleotide sequence.
+
+    Attributes:
+        sequence (str): The translated amino acid sequence
+        frame (int): Frame number following transeq convention (1-3: forward, 4-6: reverse)
+    """
+
+    sequence: str
+    frame: int
 
 class QueryValueError(ValueError):
     """Custom exception for errors when validating a `Query`."""

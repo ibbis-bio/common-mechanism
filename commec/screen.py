@@ -302,10 +302,8 @@ class Screen:
             for query in self.queries.values():
                 logger.debug("Processing query: %s, (%s)", query.name, query.original_name)
                 query.translate(self.params.nt_path, self.params.aa_path)
-                total_query_length += len(query.seq_record)
-                qr = QueryResult(query.original_name,
-                                    len(query.seq_record))
-                                    #str(query.seq_record.seq))
+                total_query_length += query.length
+                qr = QueryResult(query.original_name,query.length)
                 self.screen_data.queries[query.name] = qr
                 query.result_handle = qr
         except RuntimeError as e:
