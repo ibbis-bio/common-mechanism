@@ -175,19 +175,19 @@ class FoldseekHandler(SearchHandler):
             logger.error("A completed Foldseek result download failed.")
             return
 
-        # Decode as UTF-8 and wrap in StringIO for pandas
-        #decoded = result.content.decode("utf-8")
-        #df = pd.read_csv(StringIO(decoded), sep="\t")
-
-        ## NOTE - THE FILE IS GZIPPED _ UNZIP USING GZIP IMPORT THEN WRITE THE TSV!
-        # Decompress the gzip stream
-        df = pd.DataFrame()
-
+        # Process the downloaded file into the more managable
         with gzip.open(BytesIO(result.content), 'rt', encoding='utf-8') as f:
             df = pd.read_csv(f, sep='\t')
-
         df.to_csv(record.output_file, sep="\t", index=False, encoding="utf-8")
+        
+        # Assume `result.content` is gzip-compressed binary data
+        #with gzip.open(BytesIO(result.content), 'rt', encoding='utf-8') as gz_file:
+        #    text = gz_file.read()
 
+        # Now write the decompressed text to a regular UTF-8 file
+        #with open(record.output_file, 'w', encoding='utf-8') as out_file:
+        #    out_file.write(text)
+            
         record.downloaded = True
 
     def _merge_output_data(self, records : list[SeqRecord]):
