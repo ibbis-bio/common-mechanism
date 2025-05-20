@@ -135,18 +135,35 @@ def test_ambigious():
     | **V**            | A or C or G       | not T                          |
     | **N**            | A or C or G or T  | any base (completely unknown)  |
     | --------------------------------------------------------------------- |
+    | Codon | Ambiguity | Expansions         | Amino Acid |
+    | ----- | --------- | ------------------ | ---------- |
+    | AAR   | R=A/G     | AAA, AAG           | Lys        |
+    | TAY   | Y=C/T     | TAC, TAT           | Tyr        |
+    | GCN   | N=A/C/G/T | GCA, GCC, GCG, GCT | Ala        |
+    | AAY   | Y=C/T     | AAC, AAT           | Asn        |
+    | GAR   | R=A/G     | GAA, GAG           | Glu        |
+    | ACM   | M=A/C     | ACA, ACC           | Thr        |
+    | CCS   | S=C/G     | CCC, CCG           | Pro        |
+    | GGW   | W=A/T     | GGA, GGT           | Gly        |
+    | GTK   | K=G/T     | GTG, GTT           | Val        |
+    | ATH   | H=A/C/T   | ATA, ATC, ATT      | Ile        |
+    | GTD   | D=A/G/T   | GTA, GTG, GTT      | Val        |
+    | CCB   | B=C/G/T   | CCC, CCG, CCT      | Pro        |
+    | GTV   | V=A/C/G   | GTA, GTC, GTG      | Val        |
     """
     # 11nt query
     #query = Query(SeqRecord(Seq("atntnccatgg"), id="test"))
-    query = Query(SeqRecord(Seq("ATGAARTAYGCNAAYGARACNABGGADCAHGAVACNTGG"), id="test"))
+    #query = Query(SeqRecord(Seq("ATGAARTAYGCNAAYGARACNABGGADCAHGAVACNTGG"), id="test"))
+    query = Query(SeqRecord(Seq("ATGAARTAYGCNAAYGARACMCCSGGWGTKATHGTDCCBGTV"), id="test"))
+
     expected_translations = [
-        QueryTranslation(frame=1, sequence="MKYANETXXXXTW"),
-        QueryTranslation(frame=2, sequence="XXXXXXXXXXXX"),
-        QueryTranslation(frame=3, sequence="EXXXXBXGXXXX"),
-        QueryTranslation(frame=4, sequence="PXXXXXXXXXXXH"),
-        QueryTranslation(frame=5, sequence="XXXXPXXXXXXS"),
-        QueryTranslation(frame=6, sequence="XVSXSXVSXAYF"),
+        QueryTranslation(frame=1, sequence="MKYANETPGVIVPV"),
+        QueryTranslation(frame=2, sequence="XXXXXXXXXXXXX"),
+        QueryTranslation(frame=3, sequence="EXXXXBXXXXXXX"),
+        QueryTranslation(frame=4, sequence="XXXXXXXXXXXXXH"),
+        QueryTranslation(frame=5, sequence="XXXXXXXXXXXXS"),
+        QueryTranslation(frame=6, sequence="TGTITPGVSXAYF"),
     ]
 
     query._translate()
-    assert expected_translations == query.translations, query.translations
+    assert expected_translations == query.translations, query.translations[2:4]
