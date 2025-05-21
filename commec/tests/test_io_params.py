@@ -28,7 +28,7 @@ def expected_defaults():
                 "annotations": 'commec-dbs/biorisk_db/biorisk_annotations.csv'
             },
             "regulated_nt": {
-                "path": "commec-dbs/nt_blast/nt"
+                "path": "commec-dbs/nt_blast/core_nt"
             },
             "regulated_protein": {
                 "blast": {"path": "commec-dbs/nr_blast/nr"},
@@ -81,7 +81,7 @@ def expected_updated_from_custom_yaml():
                 "annotations": 'commec-dbs/biorisk_db/biorisk_annotations.csv'
             },
             "regulated_nt": {
-                "path": "commec-dbs/nt_blast/nt"
+                "path": "commec-dbs/nt_blast/core_nt"
             },
             "regulated_protein": {
                 "blast": {"path": "commec-dbs/nr_blast/nr"},
