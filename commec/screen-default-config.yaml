@@ -12,7 +12,7 @@ databases:
     path: '{default}biorisk_db/biorisk.hmm'
     annotations: '{default}biorisk_db/biorisk_annotations.csv'
   regulated_nt:
-    path: '{default}nt_blast/nt'
+    path: '{default}nt_blast/core_nt'
   regulated_protein:
     blast:
       path: '{default}nr_blast/nr'
