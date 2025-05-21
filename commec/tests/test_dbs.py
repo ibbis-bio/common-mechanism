@@ -16,7 +16,7 @@ DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs")
 
 databases_to_implement = [
     [DiamondHandler, "nr_dmnd", "nr"],
-    [BlastNHandler, "nt_blast", "nt"],
+    [BlastNHandler, "nt_blast", "core_nt"],
     [BlastXHandler, "nr_blast", "nr"],
     [HmmerHandler, "benign_db", "benign.hmm"],
     [CmscanHandler, "benign_db", "benign.cm"],
