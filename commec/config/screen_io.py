@@ -12,6 +12,7 @@ import argparse
 import logging
 import multiprocessing
 import importlib.resources
+from pprint import pformat
 
 import yaml
 from yaml.parser import ParserError
@@ -176,6 +177,11 @@ class ScreenIO:
 
         # Update paths in configuration using appropriate string substitution
         self._format_config_paths(self.db_dir)
+
+        logger.debug("Importing the following argument namespace:")
+        logger.debug(pformat(vars(args)))
+        logger.debug("Running Screen with the following parameter set:")
+        logger.debug(pformat(self.config))
 
     def _load_config_from_yaml(self, config_filepath: str | os.PathLike) -> dict:
         """
