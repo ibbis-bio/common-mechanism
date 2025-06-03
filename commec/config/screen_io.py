@@ -12,6 +12,7 @@ import argparse
 import logging
 import multiprocessing
 import importlib.resources
+from pprint import pformat
 
 import yaml
 from yaml.parser import ParserError
@@ -169,6 +170,7 @@ class ScreenIO:
         # Override configuration with any in user-provided YAML file
         cli_config_yaml=args.config_yaml.strip()
         if os.path.exists(cli_config_yaml):
+            logger.debug(f"Overriding defaults in {default_yaml} with values from {cli_config_yaml}")
             self._update_config_from_yaml(cli_config_yaml)
 
         # Override configuration with any user-provided CLI arguments
@@ -176,6 +178,9 @@ class ScreenIO:
 
         # Update paths in configuration using appropriate string substitution
         self._format_config_paths(self.db_dir)
+
+        logger.debug("Running Screen with the following parameter set:")
+        logger.debug(pformat(self.config))
 
     def _load_config_from_yaml(self, config_filepath: str | os.PathLike) -> dict:
         """
@@ -210,8 +215,12 @@ class ScreenIO:
             )
 
         # Update the YAML default values in the configuration dictionary
+        logger.debug("Using the following CLI configuration arguments:")
+        logger.debug(pformat(args.user_specified_args))
+
         for arg in args.user_specified_args:
-             if arg in self.config and hasattr(args, arg):
+            if arg in self.config and hasattr(args, arg):
+                logger.debug(f"Command line arguments updated '{arg}' to: {getattr(args,arg)}")
                 self.config[arg] = getattr(args, arg)
 
     def _format_config_paths(self,
@@ -234,6 +243,7 @@ class ScreenIO:
             try:
                 base_paths = self.config["base_paths"]
                 if db_dir_override is not None:
+                    logger.debug(f"Command line arguments updated base databases directory: {db_dir_override}")
                     base_paths["default"] = db_dir_override
                 else:
                     self.db_dir = base_paths["default"]
