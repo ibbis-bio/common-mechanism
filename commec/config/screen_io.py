@@ -220,7 +220,7 @@ class ScreenIO:
 
         for arg in args.user_specified_args:
             if arg in self.config and hasattr(args, arg):
-                logger.debug(f"Command line arguments updated {arg} to {getattr(args,arg)}")
+                logger.debug(f"Command line arguments updated '{arg}' to: {getattr(args,arg)}")
                 self.config[arg] = getattr(args, arg)
 
     def _format_config_paths(self,
