@@ -279,7 +279,7 @@ class QueryScreenStatus:
 
         if self.biorisk_status == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
-            self.rationale = "A known biorisk was detected"
+            self.rationale = "Matched a sequence with pathogenic or toxic function"
             return
 
         if self.protein_taxonomy_status == ScreenStatus.FLAG:
@@ -294,7 +294,7 @@ class QueryScreenStatus:
 
         if self.biorisk_status == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
-            self.rationale = "A known virulence factor was detected"
+            self.rationale = "Matched a sequence with virulence factor"
             return
 
         if self.protein_taxonomy_status == ScreenStatus.WARN:
