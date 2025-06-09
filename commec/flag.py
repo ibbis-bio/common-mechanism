@@ -104,7 +104,9 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         benign_rna = False
         benign_synbio = False
 
-        if (query.recommendation.protein_taxonomy_status
+        QR = query.recommendation
+
+        if (QR.protein_taxonomy_status
             not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
             for hit in query.hits.values():
                 if hit.recommendation.from_step == ScreenStep.TAXONOMY_AA:
@@ -114,7 +116,7 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
                         eukaryote_flag |= (int(info["regulated_eukaryotes"]) > 0)
 
         # Which forms of benign hits are present?
-        if (query.recommendation.benign_status
+        if (QR.benign_status
             not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
             for hit in query.hits.values():
                 match hit.recommendation.from_step:
@@ -147,8 +149,8 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
                 case _:
                     continue
 
-        protein_status = Outcome.MIX if mixed_aa_taxonomy else status_to_outcome(query.recommendation.protein_taxonomy_status)
-        nucleotide_status = Outcome.MIX if mixed_nt_taxonomy else status_to_outcome(query.recommendation.nucleotide_taxonomy_status)
+        protein_status = Outcome.MIX if mixed_aa_taxonomy else status_to_outcome(QR.protein_taxonomy_status)
+        nucleotide_status = Outcome.MIX if mixed_nt_taxonomy else status_to_outcome(QR.nucleotide_taxonomy_status)
 
         results.append({
         "name": name,
@@ -418,10 +420,6 @@ def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> dict[str
     if Outcome.FLAG in results["benign"]:
         benign = Flag.FLAG
 
-    # Debug for when this benign process goes wrong.
-    if benign == Flag.NOT_RUN:
-        print("Unset benign! Existing benign = ", results["benign"])
-
     return {
         "filename": results["filepath"],
         "biorisk": biorisk,
@@ -511,8 +509,6 @@ def run(args: argparse.Namespace):
     if not screen_paths:
         raise FileNotFoundError(f"No .screen files were found in directory: {search_dir}")
 
-    # .screen files support a single query, (although can also be run with two), whereas json support multifastas...
-#    screen_status = [process_file(file_path) for file_path in sorted(screen_paths)]
     screen_status = []
     for file_path in sorted(screen_paths):
         result = process_file(file_path)
