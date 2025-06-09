@@ -86,31 +86,20 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
     """
     Read JSON screen output and prepare screen_pipline_status CSV.
     """
-
     results = []
-
     try:
         screen_data : ScreenResult = get_screen_data_from_json(file_path)
-    except KeyError:
-        #print("The following json was not Commec compatible: ", file_path)
-        return []
-    except AttributeError:
-        #print("The following json was not Commec compatible: ", file_path)
+    except (KeyError, AttributeError):
         return []
     except IoVersionError as e:
-        print(e)
+        print(f"The following json was not a compatible version ({file_path}): {e}")
         return []
 
-    #print("Processing", file_path, " ... ")
-
     for name, query in screen_data.queries.items():
-        
-        assert query
-
-        # Defaults are false, and are overwritten if a single 
-        virus_flag = 0
-        bacteria_flag = 0
-        eukaryote_flag = 0
+        # Defaults are false, and are overwritten if a single hit occurs.
+        virus_flag = False
+        bacteria_flag = False
+        eukaryote_flag = False
         benign_protein = False
         benign_rna = False
         benign_synbio = False
@@ -120,9 +109,9 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
             for hit in query.hits.values():
                 if hit.recommendation.from_step == ScreenStep.TAXONOMY_AA:
                     for info in hit.annotations["regulated_taxonomy"]:
-                        bacteria_flag += int(info["regulated_bacteria"]) > 0
-                        virus_flag += int(info["regulated_viruses"]) > 0
-                        eukaryote_flag += int(info["regulated_eukaryotes"]) > 0
+                        bacteria_flag  |= (int(info["regulated_bacteria"]) > 0)
+                        virus_flag     |= (int(info["regulated_viruses"]) > 0)
+                        eukaryote_flag |= (int(info["regulated_eukaryotes"]) > 0)
 
         # Which forms of benign hits are present?
         if (query.recommendation.benign_status
@@ -167,9 +156,9 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         "flag": status_to_outcome(query.recommendation.screen_status),
         "biorisk": status_to_outcome(query.recommendation.biorisk_status),
         "protein": protein_status,
-        "virus_flag": (virus_flag > 0),
-        "bacteria_flag": (bacteria_flag > 0),
-        "eukaryote_flag": (eukaryote_flag > 0),
+        "virus_flag": virus_flag,
+        "bacteria_flag": bacteria_flag,
+        "eukaryote_flag": eukaryote_flag,
         "nucleotide": nucleotide_status,
         "benign": status_to_outcome(query.recommendation.benign_status),
         "benign_protein": benign_protein,
@@ -209,8 +198,8 @@ def read_flags_from_screen(file_path) -> dict[str, str | set[str] | bool]:
         "benign": get_benign_outcome(steps[3]),
     }
 
-    # Add regulated flags - only check protein, since nucleotide may have been skipped due to
-    # having no noconding regions
+    # Add regulated flags - only check protein, since nucleotide may 
+    # have been skipped due to having no noconding regions.
     if step_ran_successfully(results["protein"]):
         results.update(get_regulated_taxa(content))
 
@@ -220,7 +209,8 @@ def read_flags_from_screen(file_path) -> dict[str, str | set[str] | bool]:
 
     results["flag"] = get_overall_flag(results)
 
-    # We return the list of screen files, rather than the 
+    # We return the list of screen files, rather than an individual,
+    # As we append results due to multiquery fastas.
     return [results]
 
 
