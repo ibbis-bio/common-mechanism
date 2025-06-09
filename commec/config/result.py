@@ -284,7 +284,7 @@ class QueryScreenStatus:
 
         if self.protein_taxonomy_status == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
-            self.rationale = "A regulated protein sequence was detected"
+            self.rationale = "Matched a protein sequence from a regulated organism"
             return
 
         if self.nucleotide_taxonomy_status == ScreenStatus.FLAG:
