@@ -137,14 +137,14 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
                     if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN]:
                         reg_dicts = hit.annotations["regulated_taxonomy"]
                         for r in reg_dicts:
-                            if r["non_regulated_taxids"] > 0:
+                            if len(r["non_regulated_taxids"]) > 0:
                                 mixed_aa_taxonomy = True
 
                 case ScreenStep.TAXONOMY_NT:
                     if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN]:
                         reg_dicts = hit.annotations["regulated_taxonomy"]
                         for r in reg_dicts:
-                            if r["non_regulated_taxids"] > 0:
+                            if len(r["non_regulated_taxids"]) > 0:
                                 mixed_nt_taxonomy = True
                 case _:
                     continue
@@ -158,11 +158,11 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         "flag": status_to_outcome(query.recommendation.screen_status),
         "biorisk": status_to_outcome(query.recommendation.biorisk_status),
         "protein": protein_status,
+        "nucleotide": nucleotide_status,
+        "benign": status_to_outcome(query.recommendation.benign_status),
         "virus_flag": virus_flag,
         "bacteria_flag": bacteria_flag,
         "eukaryote_flag": eukaryote_flag,
-        "nucleotide": nucleotide_status,
-        "benign": status_to_outcome(query.recommendation.benign_status),
         "benign_protein": benign_protein,
         "benign_rna": benign_rna,
         "benign_dna": benign_synbio
