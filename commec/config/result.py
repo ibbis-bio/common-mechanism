@@ -289,7 +289,7 @@ class QueryScreenStatus:
 
         if self.nucleotide_taxonomy_status == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
-            self.rationale = "A regulated nucleotide sequence was detected"
+            self.rationale = "Matched a nucleotide sequence from a regulated organism"
             return
 
         if self.biorisk_status == ScreenStatus.WARN:
