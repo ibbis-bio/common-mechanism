@@ -259,7 +259,7 @@ class QueryScreenStatus:
             self.benign_status
         }:
             self.screen_status = ScreenStatus.ERROR
-            self.rationale = "There was an error during screening"
+            self.rationale = "There was an error during " + self.get_error_stepname()
             return
                 
         if self.benign_status == ScreenStatus.CLEARED_FLAG:
@@ -322,6 +322,21 @@ class QueryScreenStatus:
 
         if self.screen_status == ScreenStatus.PASS:
             self.rationale = "No regions flagged as matches to regulated organisms or other sequences of concern"
+
+    def get_error_stepname(self):
+        """
+        Returns a text step name of the first error occurance for use in logging.
+        """
+        if self.biorisk_status == ScreenStatus.ERROR:
+            return "Biorisk Screening"
+        if self.protein_taxonomy_status == ScreenStatus.ERROR:
+            return "Protein Taxonomy Screening"
+        if self.nucleotide_taxonomy_status == ScreenStatus.ERROR:
+            return "Nucleotide Taxonomy Screening"
+        if self.benign_status == ScreenStatus.ERROR:
+            return "Benign Screening"
+
+        return "Screening" # General Error at some stage.
 
 
 @dataclass
