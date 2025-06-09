@@ -264,7 +264,7 @@ class QueryScreenStatus:
                 
         if self.benign_status == ScreenStatus.CLEARED_FLAG:
             self.screen_status = self.benign_status
-            self.rationale = "A sequence of concern was cleared as benign"
+            self.rationale = "No regions of concern; all earlier flags were cleared as common or non-hazardous"
             return
 
         if self.benign_status == ScreenStatus.CLEARED_WARN:
