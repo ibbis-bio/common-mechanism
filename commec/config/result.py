@@ -321,7 +321,7 @@ class QueryScreenStatus:
             self.screen_status = self.biorisk_status
 
         if self.screen_status == ScreenStatus.PASS:
-            self.rationale = "No regulated regions of concern"
+            self.rationale = "No regions flagged as matches to regulated organisms or other sequences of concern"
 
 
 @dataclass
