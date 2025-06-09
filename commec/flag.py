@@ -82,9 +82,9 @@ def add_args(parser: argparse.ArgumentParser):
     return parser
 
 
-def process_json_file(file_path) -> list[dict[str, str | set[str] | bool]]:
+def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
     """
-    Read input json file, split into steps, and prepare dict of results for CSV output.
+    Read JSON screen output and prepare screen_pipline_status CSV.
     """
 
     results = []
@@ -180,9 +180,9 @@ def process_json_file(file_path) -> list[dict[str, str | set[str] | bool]]:
     return results
 
 
-def process_screen_file(file_path) -> dict[str, str | set[str] | bool]:
+def read_flags_from_screen(file_path) -> dict[str, str | set[str] | bool]:
     """
-    Read input screen file, split into steps, and prepare dict of results for CSV output.
+    Read log .screen output and prepare screen_pipline_status CSV.
     """
     with open(file_path, "r", encoding="utf-8") as file:
         content = file.read()
@@ -230,9 +230,9 @@ def process_file(file_path) -> dict[str, str | set[str] | bool]:
     """
     _, extension = os.path.splitext(os.path.basename(file_path))
     if extension == ".json":
-        return process_json_file(file_path)
+        return read_flags_from_json(file_path)
     if extension == ".screen":
-        return process_screen_file(file_path)
+        return read_flags_from_screen(file_path)
     raise ValueError("Error: unrecognised file extension"
                      f"(not .screen, or .json): {extension}")
 
