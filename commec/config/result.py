@@ -299,12 +299,12 @@ class QueryScreenStatus:
 
         if self.protein_taxonomy_status == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
-            self.rationale = "A mixture of regulated and non-regulated protein was detected"
+            self.rationale = "Equally-good match to protein sequences from regulated and non-regulated organisms"
             return
 
         if self.nucleotide_taxonomy_status == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
-            self.rationale = "A mixture of regulated and non-regulated nucleotide was detected"
+            self.rationale = "Equally-good match to nucleotide sequences from regulated and non-regulated organisms"
             return
 
         if (
