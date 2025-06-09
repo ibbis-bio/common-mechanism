@@ -428,7 +428,7 @@ class QueryResult:
             "Biorisk   ":str(self.recommendation.biorisk_status),
             "Protein   ":str(self.recommendation.protein_taxonomy_status),
             "Nucleotide":str(self.recommendation.nucleotide_taxonomy_status),
-            "benign    ":str(self.recommendation.benign_status)})
+            "Benign    ":str(self.recommendation.benign_status)})
         
         ignored_status = {ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.PASS}
         
