@@ -425,10 +425,10 @@ class QueryResult:
         """
         logger.debug("Updating step status flags for query %s", self.query)
         logger.debug("Current status %s", {
-            "Biorisk":str(self.recommendation.biorisk_status),
-            "Protein":str(self.recommendation.protein_taxonomy_status),
-            "Nucleot":str(self.recommendation.nucleotide_taxonomy_status),
-            "benign ":str(self.recommendation.benign_status)})
+            "Biorisk   ":str(self.recommendation.biorisk_status),
+            "Protein   ":str(self.recommendation.protein_taxonomy_status),
+            "Nucleotide":str(self.recommendation.nucleotide_taxonomy_status),
+            "benign    ":str(self.recommendation.benign_status)})
         
         ignored_status = {ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.PASS}
         
