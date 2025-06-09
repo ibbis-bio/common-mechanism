@@ -294,7 +294,7 @@ class QueryScreenStatus:
 
         if self.biorisk_status == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
-            self.rationale = "A known virulance factor was detected"
+            self.rationale = "A known virulence factor was detected"
             return
 
         if self.protein_taxonomy_status == ScreenStatus.WARN:
