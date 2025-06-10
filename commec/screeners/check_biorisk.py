@@ -132,8 +132,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
             logger.error("Query during hmmscan could not be found! [%s]", affected_query)
             continue
 
-        # There are hits for this query.
-        queries[affected_query[:-2]].no_hits_warning = False
+        queries[affected_query[:-2]].confirm_has_hits()
 
         # Grab a list of unique queries, and targets for iteration.
         unique_query_data : pd.DataFrame = hmmer[hmmer['query name'] == affected_query]

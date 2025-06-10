@@ -286,7 +286,7 @@ def _update_benign_data_for_query(query : Query,
         for region in hit.ranges:
 
             if not benign_protein_for_query.empty:
-                query.no_hits_warning = False
+                query.confirm_has_hits()
                 new_benign_protein_hits.extend(
                     _filter_benign_proteins(query, hit, region,
                                             benign_protein_for_query,
@@ -294,14 +294,14 @@ def _update_benign_data_for_query(query : Query,
                     )
             
             if not benign_rna_for_query.empty:
-                query.no_hits_warning = False
+                query.confirm_has_hits()
                 new_benign_rna_hits.extend(
                     _filter_benign_rna(query, hit, region,
                                        benign_rna_for_query)
                 )
                 
             if not benign_dna_for_query.empty:
-                query.no_hits_warning = False
+                query.confirm_has_hits()
                 new_benign_dna_hits.extend(
                     _filter_benign_dna(query, hit, region,
                                           benign_dna_for_query)

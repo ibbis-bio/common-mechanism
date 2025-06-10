@@ -147,8 +147,7 @@ def update_taxonomic_data_from_database(
                 logger.error("Query during %s could not be found! [%s]", str(step), query)
                 continue
 
-            # There is some level of hit for this query.
-            queries[query].no_hits_warning = False
+            queries[query].confirm_has_hits()
 
             unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
             unique_query_data.dropna(subset = ['species'])

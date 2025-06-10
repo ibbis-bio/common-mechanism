@@ -546,7 +546,7 @@ class ScreenResult:
             if queries[query_name].no_hits_warning:
                 logger.debug("%s has no homology with any known sequence.", query_name)
                 query.recommendation.screen_status = ScreenStatus.WARN
-                query.recommendation.rationale = "No homology with any known sequence"
+                query.recommendation.rationale = "No sequence matches at any step."
 
     def regions(self) -> Iterator[Tuple[QueryResult, HitResult, MatchRange]]:
         """

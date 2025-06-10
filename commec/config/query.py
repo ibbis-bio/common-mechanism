@@ -113,6 +113,17 @@ class Query:
             f"Non-coding index provided  ({index}) for {self.name}"
             f"which is out-of-bounds for any known NC start-end tuple: {self.non_coding_regions}"
             )
+    
+    def confirm_has_hits(self):
+        """
+        Confirm that this query has had a valid hit, and therefore, has some
+        sort of homology to something. 
+        
+        TODO: In the future, this could also be passed
+        coordinate information to mark some areas of the query identified compared
+        to other areas.
+        """
+        self.no_hits_warning = False
 
 class QueryValueError(ValueError):
     """Custom exception for errors when validating a `Query`."""
