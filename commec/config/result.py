@@ -264,17 +264,12 @@ class QueryScreenStatus:
                 
         if self.benign_status == ScreenStatus.CLEARED_FLAG:
             self.screen_status = self.benign_status
-            self.rationale = "No regions of concern; all flags were cleared as common or non-hazardous"
+            self.rationale = "No regions of concern; flags cleared as common or non-hazardous"
             return
 
         if self.benign_status == ScreenStatus.CLEARED_WARN:
             self.screen_status = self.benign_status
-            self.rationale = "No regions of concern; all warnings were cleared as common or non-hazardous"
-            return
-
-        if self.benign_status == ScreenStatus.PASS:
-            self.screen_status = self.benign_status
-            self.rationale = "No regulated regions of concern"
+            self.rationale = "No regions of concern; warnings cleared as common or non-hazardous"
             return
 
         if self.biorisk_status == ScreenStatus.FLAG:
@@ -294,7 +289,7 @@ class QueryScreenStatus:
 
         if self.biorisk_status == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
-            self.rationale = "Matched a sequence with virulence factor"
+            self.rationale = "Matched a sequence with a virulence factor"
             return
 
         if self.protein_taxonomy_status == ScreenStatus.WARN:
@@ -321,7 +316,7 @@ class QueryScreenStatus:
             self.screen_status = self.biorisk_status
 
         if self.screen_status == ScreenStatus.PASS:
-            self.rationale = "No regions flagged as matches to regulated organisms or other sequences of concern"
+            self.rationale = "No regions of concern"
 
     def get_error_stepname(self):
         """
