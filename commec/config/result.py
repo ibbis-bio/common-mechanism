@@ -234,6 +234,48 @@ class HitResult:
 
         return output + "[" + match_string + "]"
 
+class Rationale(StrEnum):
+    """
+    Container for rationale texts in Commec outputs in one place.
+    Doesn't include Errors.
+
+    When reporting rationale, the primary (see ScreenStatus.importance attribute)
+    status is always reported first. After this, secondary less important statuses are
+    reported in the rationale.
+    """
+    NULL = "-"
+    ERROR = "There was an error during "
+
+    # Start rationale
+    START_PRIMARY = "Matches "
+    START_PASS = "No regions of concern"
+
+    # pre types:
+    BIORISK_FLAG = "pathogenic or toxin function"
+    BIORISK_WARN = "virulence factor"
+
+    PR = "protein"
+    NT = "nucleotide"
+
+    BODY = "sequence with"
+
+    # post Types:
+    TAX_FLAG = " regulated organisms"
+    TAX_WARN = " equally-good matches to regulated and non-regulated organisms"
+
+
+    # Outcomes:
+    NOTHING = ("No matches to sequences from any step."
+                 "Unknown or potential risk factor."
+                 "Sequence may be too short, or in silco de novo")[0]
+
+    FLAG = " flags"
+    WARN = " warnings"
+    FLAGWARN = " flags and warnings"
+    CLEARED = " cleared as common or non-hazardous"
+
+    START_SECONDARY = "; as well as "
+
 @dataclass
 class QueryScreenStatus:
     """
@@ -247,11 +289,12 @@ class QueryScreenStatus:
     benign_status: ScreenStatus = ScreenStatus.NULL
     rationale : str = "-"
 
-    def update_query_flag(self):
+    def update_screen_status(self, query_data):
         """
-        Parses the query status across all screening steps, then updates overall flag.
-        Designed to be called at any time after Step 1.
+        Parses the query status across all screening steps, 
+        then updates overall status flag.
         """
+
         if ScreenStatus.ERROR in {
             self.biorisk_status,
             self.protein_taxonomy_status,
@@ -259,64 +302,80 @@ class QueryScreenStatus:
             self.benign_status
         }:
             self.screen_status = ScreenStatus.ERROR
-            self.rationale = "There was an error during " + self.get_error_stepname()
+            #self.rationale = Rationale.ERROR + self.get_error_stepname()
             return
                 
         if self.benign_status == ScreenStatus.CLEARED_FLAG:
             self.screen_status = self.benign_status
-            self.rationale = "No regions of concern; flags cleared as common or non-hazardous"
+            #self.rationale = "No regions of concern; flags cleared as common or non-hazardous"
             return
 
         if self.benign_status == ScreenStatus.CLEARED_WARN:
             self.screen_status = self.benign_status
-            self.rationale = "No regions of concern; warnings cleared as common or non-hazardous"
+            #self.rationale = "No regions of concern; warnings cleared as common or non-hazardous"
             return
 
         if self.biorisk_status == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
-            self.rationale = "Matched a sequence with pathogenic or toxic function"
+            #self.rationale = "Matched a sequence with pathogenic or toxic function"
             return
 
         if self.protein_taxonomy_status == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
-            self.rationale = "Matched a protein sequence from a regulated organism"
+            #self.rationale = "Matched a protein sequence from a regulated organism"
             return
 
         if self.nucleotide_taxonomy_status == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
-            self.rationale = "Matched a nucleotide sequence from a regulated organism"
+            #self.rationale = "Matched a nucleotide sequence from a regulated organism"
             return
 
         if self.biorisk_status == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
-            self.rationale = "Matched a sequence with a virulence factor"
+            #self.rationale = "Matched a sequence with a virulence factor"
             return
 
         if self.protein_taxonomy_status == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
-            self.rationale = "Equally-good match to protein sequences from regulated and non-regulated organisms"
+            #self.rationale = "Equally-good match to protein sequences from regulated and non-regulated organisms"
             return
 
         if self.nucleotide_taxonomy_status == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
-            self.rationale = "Equally-good match to nucleotide sequences from regulated and non-regulated organisms"
+            #self.rationale = "Equally-good match to nucleotide sequences from regulated and non-regulated organisms"
             return
 
-        if (
-            self.protein_taxonomy_status == ScreenStatus.WARN
-            or self.nucleotide_taxonomy_status == ScreenStatus.WARN
-        ):
+        if (self.protein_taxonomy_status == ScreenStatus.WARN
+            or self.nucleotide_taxonomy_status == ScreenStatus.WARN):
+            self.screen_status = ScreenStatus.WARN
+            return
+        
+        # If everything is happy, and he haven't hit anything, time to be suspicious.
+        if (self.biorisk_status == ScreenStatus.PASS and
+            self.protein_taxonomy_status == ScreenStatus.PASS and
+            self.nucleotide_taxonomy_status == ScreenStatus.PASS and 
+            query_data.no_hits_warning):
             self.screen_status = ScreenStatus.WARN
             return
 
-        # At the moment we only get here when biorisk screen is just run.
-        # this will set the global recommend to pass or error, after biorisk is done.
-        # We will need earlier checks to maintain the error status of future steps however.
-        if self.screen_status == ScreenStatus.NULL:
-            self.screen_status = self.biorisk_status
 
-        if self.screen_status == ScreenStatus.PASS:
-            self.rationale = "No regions of concern"
+        logger.debug("Update called on recommendation, however no status update occured."
+                     " Setting status to Biorisk output [%s] (Should be PASS, or NULL)",
+                     self.biorisk_status)
+        assert self.biorisk_status in [ScreenStatus.PASS, ScreenStatus.NULL]
+        self.screen_status = self.biorisk_status
+
+
+    def __str__(self) -> str:
+        output = f"""
+                Overall    : {self.screen_status}\n
+                Biorisk    : {self.biorisk_status}\n
+                Protein    : {self.protein_taxonomy_status}\n
+                Nucleotide : {self.nucleotide_taxonomy_status}\n
+                Benign     : {self.benign_status}\n
+                {self.rationale}
+                """
+        return output
 
     def get_error_stepname(self):
         """
@@ -413,17 +472,13 @@ class QueryResult:
         ]
         return flagged_and_warnings_data
 
-    def _update_step_flags(self):
+    def _update_step_flags(self, query_data):
         """
         Updates the steps within QueryScreenStatus to be congruent for every hit.
         Then updates the Query flag to consolidate all.
         """
         logger.debug("Updating step status flags for query %s", self.query)
-        logger.debug("Current status %s", {
-            "Biorisk   ":str(self.recommendation.biorisk_status),
-            "Protein   ":str(self.recommendation.protein_taxonomy_status),
-            "Nucleotide":str(self.recommendation.nucleotide_taxonomy_status),
-            "Benign    ":str(self.recommendation.benign_status)})
+        logger.debug("Current status %s", self.recommendation)
         
         ignored_status = {ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.PASS}
         
@@ -436,27 +491,38 @@ class QueryResult:
         if self.recommendation.benign_status not in ignored_status:
             self.recommendation.benign_status = ScreenStatus.NULL
 
-        # Update Biorisks, and Taxonomy:
+        biorisk_status_set = set()
+        tax_aa_status_set = set()
+        tax_nt_status_set = set()
+        benign_status_set = set()
+
+        # Collapse data from all hits:
         for hit in self.hits.values():
             match hit.recommendation.from_step:
                 case ScreenStep.BIORISK:
                     self.recommendation.biorisk_status = compare(
                         self.recommendation.biorisk_status, hit.recommendation.status)
+                    biorisk_status_set.add(hit.recommendation.status)
                 case ScreenStep.TAXONOMY_AA:
                     self.recommendation.protein_taxonomy_status = compare(
                         self.recommendation.protein_taxonomy_status, hit.recommendation.status)
+                    tax_aa_status_set.add(hit.recommendation.status)
                 case ScreenStep.TAXONOMY_NT:
                     self.recommendation.nucleotide_taxonomy_status = compare(
                         self.recommendation.nucleotide_taxonomy_status, hit.recommendation.status)
+                    tax_nt_status_set.add(hit.recommendation.status)
                 case ScreenStep.BENIGN_PROTEIN:
                     self.recommendation.benign_status = compare(
                         self.recommendation.benign_status, hit.recommendation.status)
+                    benign_status_set.add(hit.recommendation.status)
                 case ScreenStep.BENIGN_RNA:
                     self.recommendation.benign_status = compare(
                         self.recommendation.benign_status, hit.recommendation.status)
+                    benign_status_set.add(hit.recommendation.status)
                 case ScreenStep.BENIGN_DNA:
                     self.recommendation.benign_status = compare(
                         self.recommendation.benign_status, hit.recommendation.status)
+                    benign_status_set.add(hit.recommendation.status)
         
         # Update Benign outcome based on the worst step.
         self.recommendation.benign_status = compare(
@@ -466,29 +532,147 @@ class QueryResult:
         self.recommendation.benign_status = compare(
                         self.recommendation.benign_status, self.recommendation.nucleotide_taxonomy_status)
 
-        logger.debug("Updated status %s", {
-            "Biorisk":str(self.recommendation.biorisk_status),
-            "Protein":str(self.recommendation.protein_taxonomy_status),
-            "Nucleot":str(self.recommendation.nucleotide_taxonomy_status),
-            "benign ":str(self.recommendation.benign_status)})
+        self.recommendation.update_screen_status(query_data)
+        self._update_rationale(biorisk_status_set,
+                               tax_aa_status_set,
+                               tax_nt_status_set)
 
-        self.recommendation.update_query_flag()
+        logger.debug("Updated status %s", self.recommendation)
 
-    def update(self):
+    def _update_rationale(self,
+                          biorisks : set[ScreenStatus],
+                          tax_aa : set[ScreenStatus],
+                          tax_nt : set[ScreenStatus]):
+        """ 
+        Check existing statuses, and updates rationale accordingly.
+        Requires sets containing unique statuses from each step, as
+        each step is the primary status only. Passing all options 
+        allows for more depth in rationale texts.
+        """
+
+        logger.debug("Biorisk set: %s", biorisks)
+        logger.debug("TAX AA set: %s", tax_aa)
+        logger.debug("TAX NT set: %s", tax_nt)
+
+        state = self.recommendation # Shorthand, accessor to be updated
+        tax_all = tax_aa | tax_nt # Check both Taxonomy steps at once
+
+        has_flags = state.screen_status == ScreenStatus.FLAG
+        has_warns = ScreenStatus.WARN in biorisks | tax_aa | tax_nt
+
+        logger.debug("%s has flags [%s], and has warnings [%s]",
+                     self.query, has_flags, has_warns)
+
+        if state.screen_status == ScreenStatus.ERROR:
+            state.rationale = Rationale.ERROR + state.get_error_stepname()
+            return
+
+        # Unique circumstance, where there are no hits at all.
+        if (state.screen_status == ScreenStatus.WARN and
+            state.biorisk_status == ScreenStatus.PASS and
+            state.protein_taxonomy_status == ScreenStatus.PASS and
+            state.nucleotide_taxonomy_status == ScreenStatus.PASS and
+            state.benign_status == ScreenStatus.PASS):
+            state.rationale = Rationale.NOTHING
+            return
+
+        # Handle simple passes
+        if state.screen_status == ScreenStatus.PASS:
+            state.rationale = Rationale.START_PASS + "."
+            return
+
+        # Handle cleared ouputs
+        if state.screen_status in [
+            ScreenStatus.CLEARED_FLAG,
+            ScreenStatus.CLEARED_WARN]:
+            types = ""
+            if ScreenStatus.CLEARED_FLAG in tax_all:
+                types = Rationale.FLAG
+            if ScreenStatus.CLEARED_WARN in tax_all:
+                types = Rationale.WARN
+            if (ScreenStatus.CLEARED_FLAG in tax_all and
+                ScreenStatus.CLEARED_WARN in tax_all):
+                types = Rationale.FLAGWARN
+            state.rationale = Rationale.START_PASS + ", " + types + Rationale.CLEARED
+            return
+        
+        # Handle complex outputs:
+
+        # Start creating rationale message:
+        output = Rationale.START_PRIMARY
+    
+        types = []
+        tax_types = []
+
+        if has_flags:
+            # "Matches FLAGS as well as WARNS"
+
+            prebody = ""
+
+            if ScreenStatus.FLAG in biorisks:
+                logger.debug("Adding Biorisk Flag to primary.")
+                types.append(Rationale.BIORISK_FLAG)
+                prebody = Rationale.BODY + " "
+
+            if ScreenStatus.FLAG in tax_aa:
+                tax_types.append(Rationale.PR)
+            if ScreenStatus.FLAG in tax_nt:
+                tax_types.append(Rationale.NT)
+            tax_types = " and ".join(tax_types)
+
+            if ScreenStatus.FLAG in tax_aa | tax_nt:
+                types.append(tax_types + " " + Rationale.BODY + Rationale.TAX_FLAG)
+            
+            output += prebody + oxford_comma(types)
+
+            if has_warns:
+                output += Rationale.START_SECONDARY
+
+        types = []
+        tax_types = []
+
+        if has_warns:
+            # "Matches WARNS"
+            prebody = ""
+            if ScreenStatus.WARN in biorisks:
+                types.append(Rationale.BIORISK_WARN)
+                prebody = Rationale.BODY + " "
+
+
+            if ScreenStatus.WARN in tax_aa:
+                tax_types.append(Rationale.PR)
+            if ScreenStatus.WARN in tax_nt:
+                tax_types.append(Rationale.NT)
+            tax_types = " and ".join(tax_types)
+
+            if ScreenStatus.WARN in tax_aa | tax_nt:
+                types.append(tax_types + " " + Rationale.BODY + Rationale.TAX_WARN)
+
+            if has_flags:
+                prebody = ""
+
+            output += prebody + oxford_comma(types)
+
+        state.rationale = output + "."
+        return
+
+    
+    def update(self, query_data):
         """
         Call this before exporting to file.
         Ensures 
         Sorts the hits based on E-values,
         Updates the commec recommendation based on all hits recommendations.
         """
+        
+        assert hasattr(query_data, "no_hits_warning")
+
         # A rare instance where we want our dictionary to be sorted
-        # So we convert it to a list, and recreate a dictionary - which maintains the order.
-        # Thankfully we only do this once per Query at the end.
         sorted_items_desc = sorted(
             self.hits.items(), key=lambda item: item[1].get_e_value(), reverse=True
         )
         self.hits = dict(sorted_items_desc)
-        self._update_step_flags()
+        self._update_step_flags(query_data)
 
 
 @dataclass 
@@ -537,16 +721,16 @@ class ScreenResult:
 
         return self.queries.get(search_term)
 
-    def update(self, queries):
+    def update(self, queries_data):
         """
         Propagate update to all children dataclasses.
         """
         for query_name, query in self.queries.items():
-            query.update()
-            if queries[query_name].no_hits_warning:
-                logger.debug("%s has no homology with any known sequence.", query_name)
-                query.recommendation.screen_status = ScreenStatus.WARN
-                query.recommendation.rationale = "No sequence matches from any step"
+            query.update(queries_data[query_name])
+            #if queries_data[query_name].no_hits_warning:
+                #logger.debug("%s has no homology with any known sequence.", query_name)
+                #query.recommendation.screen_status = ScreenStatus.WARN
+                #query.recommendation.rationale = "No sequence matches from any step"
 
     def regions(self) -> Iterator[Tuple[QueryResult, HitResult, MatchRange]]:
         """
@@ -577,11 +761,27 @@ class ScreenResult:
             data.append({
                 "query": query.query[:25],
                 "overall": query.recommendation.screen_status,
+                "biorisk": query.recommendation.biorisk_status,
+                "taxonomy_aa": query.recommendation.protein_taxonomy_status,
+                "taxonomy_nt": query.recommendation.nucleotide_taxonomy_status,
+                "benign": query.recommendation.benign_status
+            })
+        
+        output_data : pd.DataFrame = pd.DataFrame(data)
+        return output_data
+    
+    def get_rationale_data(self) -> pd.DataFrame:
+        """
+        Returns a dataframe containing the overall statuse across steps,
+        as well as a human readable rationale text.
+        Useful for printing summary information.
+        """
+        data = []
+        for query in self.queries.values():
+            data.append({
+                "query": query.query[:25],
+                "overall": query.recommendation.screen_status,
                 "rationale": query.recommendation.rationale,
-                #"biorisk": query.recommendation.biorisk_status,
-                #"taxonomy_aa": query.recommendation.protein_taxonomy_status,
-                #"taxonomy_nt": query.recommendation.nucleotide_taxonomy_status,
-                #"benign": query.recommendation.benign_status
             })
         
         output_data : pd.DataFrame = pd.DataFrame(data)
@@ -593,3 +793,21 @@ class ScreenResult:
     
     def __repr__(self):
         return str(asdict(self))
+
+def oxford_comma(inputs : list[str]) -> str:
+    """
+    Takes a list of strings: 
+        * `[a,b,c]`, 
+    and outputs a single formatted string:
+        * `\"a, b, and c\"`
+    """
+    if len(inputs) == 0:
+        return ""
+    if len(inputs) == 1:
+        return inputs[0]
+    #if len(inputs) == 2:
+    #    return inputs[0] + ", and " + inputs[1]
+    output = ""
+    for text in inputs[:-1]:
+        output += text + ", "
+    return output + "and " + inputs[-1]
