@@ -15,7 +15,7 @@
             },
             "nucleotide_search_info": {
                 "tool_info": "blastn: 2.16.0+\n Package: blast 2.16.0, build Mar 28 2025 16:30:45",
-                "database_info": "BLASTDB Version: 5Date: Sep 3, 2024  12:16 AM\tLongest sequence: 8,669 bases"
+                "database_info": "BLASTDB Version: 5Date: May 21, 2025  8:12 AM\tLongest sequence: 8,669 bases"
             },
             "benign_protein_search_info": {
                 "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -32,7 +32,7 @@
         }
     },
     "query_info": {
-        "file": "/tmp/pytest-of-root/pytest-13/test_functional_screen0/functional.fasta",
+        "file": "/tmp/pytest-of-root/pytest-7/test_functional_screen0/functional.fasta",
         "number_of_queries": 1,
         "total_query_length": 600
     },
@@ -46,7 +46,7 @@
                 "protein_taxonomy_status": "Flag",
                 "nucleotide_taxonomy_status": "Flag",
                 "benign_status": "Flag",
-                "rationale": "Matched a sequence with pathogenic or toxic function"
+                "rationale": "Matches sequence with pathogenic or toxin function, and protein and nucleotide sequence with regulated organisms; as well as virulence factor; as well as flags cleared as common or non-hazardous."
             },
             "hits": {
                 "Toxin1": {
