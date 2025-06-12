@@ -237,11 +237,10 @@ class HitResult:
 class Rationale(StrEnum):
     """
     Container for rationale texts in Commec outputs in one place.
-    Doesn't include Errors.
 
     When reporting rationale, the primary (see ScreenStatus.importance attribute)
     status is always reported first. After this, secondary less important statuses are
-    reported in the rationale.
+    reported (usually warnings) in the rationale.
     """
     NULL = "-"
     ERROR = "There was an error during "
@@ -249,11 +248,13 @@ class Rationale(StrEnum):
     # Start rationale
     START_PRIMARY = "Matches "
     START_PASS = "No regions of concern"
+    START_SECONDARY = "; as well as "
 
     # pre types:
     BIORISK_FLAG = "pathogenic or toxin function"
     BIORISK_WARN = "virulence factor"
 
+    # Taxonomy types
     PR = "protein"
     NT = "nucleotide"
 
@@ -266,15 +267,14 @@ class Rationale(StrEnum):
 
     # Outcomes:
     NOTHING = ("No matches to sequences from any step."
-                 "Unknown or potential risk factor."
-                 "Sequence may be too short, or in silco de novo")[0]
+                " Unknown or potential risk factor."
+                " Sequence may be too short, or in silco de novo.")
 
     FLAG = " flags"
     WARN = " warnings"
     FLAGWARN = " flags and warnings"
     CLEARED = " cleared as common or non-hazardous"
 
-    START_SECONDARY = "; as well as "
 
 @dataclass
 class QueryScreenStatus:
@@ -559,9 +559,11 @@ class QueryResult:
 
         has_flags = state.screen_status == ScreenStatus.FLAG
         has_warns = ScreenStatus.WARN in biorisks | tax_aa | tax_nt
+        has_clears = (ScreenStatus.CLEARED_FLAG in tax_all or
+                      ScreenStatus.CLEARED_WARN in tax_all)
 
-        logger.debug("%s has flags [%s], and has warnings [%s]",
-                     self.query, has_flags, has_warns)
+        logger.debug("%s has flags [%s], and has warnings [%s], and has clears [%s]",
+                     self.query, has_flags, has_warns, has_clears)
 
         if state.screen_status == ScreenStatus.ERROR:
             state.rationale = Rationale.ERROR + state.get_error_stepname()
@@ -581,19 +583,21 @@ class QueryResult:
             state.rationale = Rationale.START_PASS + "."
             return
 
-        # Handle cleared ouputs
-        if state.screen_status in [
-            ScreenStatus.CLEARED_FLAG,
-            ScreenStatus.CLEARED_WARN]:
-            types = ""
-            if ScreenStatus.CLEARED_FLAG in tax_all:
-                types = Rationale.FLAG
-            if ScreenStatus.CLEARED_WARN in tax_all:
-                types = Rationale.WARN
-            if (ScreenStatus.CLEARED_FLAG in tax_all and
-                ScreenStatus.CLEARED_WARN in tax_all):
-                types = Rationale.FLAGWARN
-            state.rationale = Rationale.START_PASS + ", " + types + Rationale.CLEARED
+        # Calculate any cleared outputs:
+        tokens = ""
+        if ScreenStatus.CLEARED_FLAG in tax_all:
+            tokens = Rationale.FLAG
+        if ScreenStatus.CLEARED_WARN in tax_all:
+            tokens = Rationale.WARN
+        if (ScreenStatus.CLEARED_FLAG in tax_all and
+            ScreenStatus.CLEARED_WARN in tax_all):
+            tokens = Rationale.FLAGWARN
+        cleared_sentence = tokens + Rationale.CLEARED
+
+        # Handle ONLY cleared outputs
+        if state.screen_status in [ScreenStatus.CLEARED_FLAG,
+                                   ScreenStatus.CLEARED_WARN]:
+            state.rationale = Rationale.START_PASS + cleared_sentence
             return
         
         # Handle complex outputs:
@@ -606,7 +610,6 @@ class QueryResult:
 
         if has_flags:
             # "Matches FLAGS as well as WARNS"
-
             prebody = ""
 
             if ScreenStatus.FLAG in biorisks:
@@ -652,6 +655,9 @@ class QueryResult:
                 prebody = ""
 
             output += prebody + oxford_comma(types)
+        
+        if has_clears:
+            output += Rationale.START_SECONDARY[:-1] + cleared_sentence
 
         state.rationale = output + "."
         return
@@ -766,10 +772,10 @@ class ScreenResult:
                 "taxonomy_nt": query.recommendation.nucleotide_taxonomy_status,
                 "benign": query.recommendation.benign_status
             })
-        
+
         output_data : pd.DataFrame = pd.DataFrame(data)
         return output_data
-    
+
     def get_rationale_data(self) -> pd.DataFrame:
         """
         Returns a dataframe containing the overall statuse across steps,
@@ -783,14 +789,22 @@ class ScreenResult:
                 "overall": query.recommendation.screen_status,
                 "rationale": query.recommendation.rationale,
             })
-        
+
         output_data : pd.DataFrame = pd.DataFrame(data)
         return output_data
+    
+    def rationale(self) -> str:
+        output = ""
+        for row in self.get_rationale_data().itertuples(index=False):
+            output += f"{row.query:<26}: {row.overall:<12} --> {row.rationale}\n"
+        return output
+
+    def flag(self) -> str:
+        return self.get_flag_data().to_string(index=False, col_space = 12, line_width=2048)
 
     def __str__(self):
-        df = self.get_flag_data()
-        return df.to_string(index=False, col_space = 12, line_width=2048)
-    
+        return self.flag()
+
     def __repr__(self):
         return str(asdict(self))
 

@@ -255,6 +255,11 @@ class Screen:
         self.screen_data.update(self.queries)
         encode_screen_data_to_json(self.screen_data, self.params.output_json)
 
+        logger.info("\n >> SUMMARY : \n%s",
+                    self.screen_data.flag(), extra={"no_prefix" : True, "box_up":True})
+        logger.info("\n >> RATIONALE : \n%s",
+                    self.screen_data.rationale(), extra={"no_prefix" : True})
+
         # Only output the HTML, and cleanup if this was a successful run:
         if self.success:
             generate_html_from_screen_data(self.screen_data, self.params.directory_prefix+"_summary")
@@ -412,7 +417,10 @@ class Screen:
 
         self.screen_data.update(self.queries)
 
-        logger.info(" >> SUMMARY: \n%s", self.screen_data, extra={"no_prefix" : True, "box_up":True})
+        logger.info("\n >> SUMMARY : \n%s",
+                    self.screen_data.flag(), extra={"no_prefix" : True, "box_up":True})
+        logger.info("\n >> RATIONALE : \n%s",
+                    self.screen_data.rationale(), extra={"no_prefix" : True})
         self.success = True
 
 
