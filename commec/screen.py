@@ -256,9 +256,9 @@ class Screen:
         encode_screen_data_to_json(self.screen_data, self.params.output_json)
 
         logger.debug("\n >> EXPORT JSON SUMMARY : \n%s",
-                    self.screen_data.flag(), extra={"no_prefix" : True})
+                    self.screen_data.flag_text(), extra={"no_prefix" : True})
         logger.debug("\n >> RATIONALE : \n%s",
-                    self.screen_data.rationale(), extra={"no_prefix" : True})
+                    self.screen_data.rationale_text(), extra={"no_prefix" : True})
 
         # Only output the HTML, and cleanup if this was a successful run:
         if self.success:
@@ -418,9 +418,9 @@ class Screen:
         self.screen_data.update(self.queries)
 
         logger.info("\n >> SUMMARY : \n%s",
-                    self.screen_data.flag(), extra={"no_prefix" : True, "box_up":True})
+                    self.screen_data.flag_text(), extra={"no_prefix" : True, "box_up":True})
         logger.info("\n >> RATIONALE : \n%s",
-                    self.screen_data.rationale(), extra={"no_prefix" : True})
+                    self.screen_data.rationale_text(), extra={"no_prefix" : True})
         self.success = True
 
 

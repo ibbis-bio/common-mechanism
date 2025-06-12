@@ -302,55 +302,46 @@ class QueryScreenStatus:
             self.benign_status
         }:
             self.screen_status = ScreenStatus.ERROR
-            #self.rationale = Rationale.ERROR + self.get_error_stepname()
             return
                 
         if self.benign_status == ScreenStatus.CLEARED_FLAG:
             self.screen_status = self.benign_status
-            #self.rationale = "No regions of concern; flags cleared as common or non-hazardous"
             return
 
         if self.benign_status == ScreenStatus.CLEARED_WARN:
             self.screen_status = self.benign_status
-            #self.rationale = "No regions of concern; warnings cleared as common or non-hazardous"
             return
 
         if self.biorisk_status == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
-            #self.rationale = "Matched a sequence with pathogenic or toxic function"
             return
 
         if self.protein_taxonomy_status == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
-            #self.rationale = "Matched a protein sequence from a regulated organism"
             return
 
         if self.nucleotide_taxonomy_status == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
-            #self.rationale = "Matched a nucleotide sequence from a regulated organism"
             return
 
         if self.biorisk_status == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
-            #self.rationale = "Matched a sequence with a virulence factor"
             return
 
         if self.protein_taxonomy_status == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
-            #self.rationale = "Equally-good match to protein sequences from regulated and non-regulated organisms"
             return
 
         if self.nucleotide_taxonomy_status == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
-            #self.rationale = "Equally-good match to nucleotide sequences from regulated and non-regulated organisms"
             return
 
-        if (self.protein_taxonomy_status == ScreenStatus.WARN
-            or self.nucleotide_taxonomy_status == ScreenStatus.WARN):
+        if (self.protein_taxonomy_status == ScreenStatus.WARN or
+            self.nucleotide_taxonomy_status == ScreenStatus.WARN):
             self.screen_status = ScreenStatus.WARN
             return
         
-        # If everything is happy, and he haven't hit anything, time to be suspicious.
+        # If everything is happy, but we haven't hit anything, time to be suspicious...
         if (self.biorisk_status == ScreenStatus.PASS and
             self.protein_taxonomy_status == ScreenStatus.PASS and
             self.nucleotide_taxonomy_status == ScreenStatus.PASS and 
@@ -358,8 +349,7 @@ class QueryScreenStatus:
             self.screen_status = ScreenStatus.WARN
             return
 
-
-        logger.debug("Update called on recommendation, however no status update occured."
+        logger.debug("Update called on recommendation, however no issuesome status updates occured."
                      " Setting status to Biorisk output [%s] (Should be PASS, or NULL)",
                      self.biorisk_status)
         assert self.biorisk_status in [ScreenStatus.PASS, ScreenStatus.NULL]
@@ -494,7 +484,6 @@ class QueryResult:
         biorisk_status_set = set()
         tax_aa_status_set = set()
         tax_nt_status_set = set()
-        benign_status_set = set()
 
         # Collapse data from all hits:
         for hit in self.hits.values():
@@ -514,15 +503,12 @@ class QueryResult:
                 case ScreenStep.BENIGN_PROTEIN:
                     self.recommendation.benign_status = compare(
                         self.recommendation.benign_status, hit.recommendation.status)
-                    benign_status_set.add(hit.recommendation.status)
                 case ScreenStep.BENIGN_RNA:
                     self.recommendation.benign_status = compare(
                         self.recommendation.benign_status, hit.recommendation.status)
-                    benign_status_set.add(hit.recommendation.status)
                 case ScreenStep.BENIGN_DNA:
                     self.recommendation.benign_status = compare(
                         self.recommendation.benign_status, hit.recommendation.status)
-                    benign_status_set.add(hit.recommendation.status)
         
         # Update Benign outcome based on the worst step.
         self.recommendation.benign_status = compare(
@@ -623,7 +609,7 @@ class QueryResult:
                 tax_types.append(Rationale.NT)
             tax_types = " and ".join(tax_types)
 
-            if ScreenStatus.FLAG in tax_aa | tax_nt:
+            if ScreenStatus.FLAG in tax_all:
                 types.append(tax_types + " " + Rationale.BODY + Rationale.TAX_FLAG)
             
             output += prebody + oxford_comma(types)
@@ -648,7 +634,7 @@ class QueryResult:
                 tax_types.append(Rationale.NT)
             tax_types = " and ".join(tax_types)
 
-            if ScreenStatus.WARN in tax_aa | tax_nt:
+            if ScreenStatus.WARN in tax_all:
                 types.append(tax_types + " " + Rationale.BODY + Rationale.TAX_WARN)
 
             if has_flags:
@@ -681,7 +667,7 @@ class QueryResult:
         self._update_step_flags(query_data)
 
 
-@dataclass 
+@dataclass
 class SearchToolInfo:
     """ Container to hold version info for search tools and databases used. """
     biorisk_search_info:        SearchToolVersion = field(default_factory=SearchToolVersion)
@@ -733,10 +719,6 @@ class ScreenResult:
         """
         for query_name, query in self.queries.items():
             query.update(queries_data[query_name])
-            #if queries_data[query_name].no_hits_warning:
-                #logger.debug("%s has no homology with any known sequence.", query_name)
-                #query.recommendation.screen_status = ScreenStatus.WARN
-                #query.recommendation.rationale = "No sequence matches from any step"
 
     def regions(self) -> Iterator[Tuple[QueryResult, HitResult, MatchRange]]:
         """
@@ -793,17 +775,19 @@ class ScreenResult:
         output_data : pd.DataFrame = pd.DataFrame(data)
         return output_data
     
-    def rationale(self) -> str:
+    def rationale_text(self) -> str:
+        """ Outputs the rationale data as formatted text. """
         output = ""
         for row in self.get_rationale_data().itertuples(index=False):
             output += f"{row.query:<26}: {row.overall:<12} --> {row.rationale}\n"
         return output
 
-    def flag(self) -> str:
+    def flag_text(self) -> str:
+        """ Outputs the flag table data as formatted text."""
         return self.get_flag_data().to_string(index=False, col_space = 12, line_width=2048)
 
     def __str__(self):
-        return self.flag()
+        return self.flag_text()
 
     def __repr__(self):
         return str(asdict(self))
@@ -819,8 +803,6 @@ def oxford_comma(inputs : list[str]) -> str:
         return ""
     if len(inputs) == 1:
         return inputs[0]
-    #if len(inputs) == 2:
-    #    return inputs[0] + ", and " + inputs[1]
     output = ""
     for text in inputs[:-1]:
         output += text + ", "
