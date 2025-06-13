@@ -99,6 +99,8 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
                     case _:
                         continue
 
+        # Figure out if there were any mixed with non-regulated.
+        # Note, at the moment, Taxonomy is not WARN when there is a Mix.
         mixed_aa_taxonomy = False
         mixed_nt_taxonomy = False
         for hit in query.hits.values():
