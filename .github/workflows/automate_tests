@@ -1,0 +1,30 @@
+name: Test Commec
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Conda environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: commec-env
+          environment-file: environment.yaml
+          auto-activate-base: false
+          python-version: 3.10  # Specify your project's Python version
+
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          conda activate commec-env
+          pytest -vv
