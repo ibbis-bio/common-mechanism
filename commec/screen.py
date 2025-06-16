@@ -11,7 +11,7 @@ Screening involves (up to) four steps:
   4. Benign scan:       three different scans (against conserved proteins, housekeeping RNAs, and
                         synbio parts) to see if hits identified in homology search can be cleared.
 
-In "fast" mode, only the biorisk scan is run. By default, all four steps are run, but the nucleotide
+In "skip-taxonomy" mode, only the biorisk scan is run. By default, all four steps are run, but the nucleotide
 search is only run for regions that do not have any protein hits with a high sequence identity. The
 benign search is not permitted to clear biorisk scan hits, only protein or nucleotide hits. Whether
 or not a homology scan hit is from a regulated pathogen is determined by referencing the taxonomy
@@ -29,7 +29,7 @@ options:
   -v, --verbose         Output verbose (i.e. DEBUG-level) logs
 
 Screen run logic:
-  -f, --fast            Run in fast mode and skip protein and nucleotide homology search
+  -f, --skip-taxonomy   Skip taxonomy homology search (only toxins and other proteins includes in the biorisk database will be flagged)
   -p {blastx,diamond}, --protein-search-tool {blastx,diamond}
                         Tool for protein homology search to identify regulated pathogens
   -n, --skip-nt         Skip nucleotide search (regulated pathogens will only be identified based on
@@ -157,10 +157,19 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     screen_logic_group = parser.add_argument_group("Screen run logic")
     screen_logic_group.add_argument(
         "-f",
-        "--fast",
-        dest="in_fast_mode",
+        "--skip-taxonomy",
+        dest="skip_taxonomy_search",
         action="store_true",
-        help="Run in fast mode and skip protein and nucleotide homology search",
+        help=("Skip taxonomy homology search (only toxins and other proteins"
+              " included in the biorisk database will be flagged)"),
+    )
+    screen_logic_group.add_argument(
+        "-n",
+        "--skip-nt",
+        dest="skip_nt_search",
+        action="store_true",
+        help=("Skip nucleotide search (regulated pathogens will only be"
+              " identified based on biorisk database and protein hits)"),
     )
     screen_logic_group.add_argument(
         "-p",
@@ -168,13 +177,6 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         dest="protein_search_tool",
         choices=["blastx", "diamond"],
         help="Tool for protein homology search to identify regulated pathogens",
-    )
-    screen_logic_group.add_argument(
-        "-n",
-        "--skip-nt",
-        dest="skip_nt_search",
-        action="store_true",
-        help="Skip nucleotide search (regulated pathogens will only be identified based on protein hits)",
     )
     parallel_group = parser.add_argument_group("Parallelisation")
     parallel_group.add_argument(
