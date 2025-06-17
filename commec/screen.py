@@ -31,8 +31,8 @@ options:
 Screen run logic:
   -p {blastx,diamond}, --protein-search-tool {blastx,diamond}
                         Tool for protein homology search to identify regulated pathogens
-  -f, --skip-taxonomy   Skip taxonomy homology search (only toxins and other proteins included in the biorisk database will be flagged)
-    -n, --skip-nt         Skip nucleotide search (regulated pathogens will only be identified based on
+  --skip-tx             Skip taxonomy homology search (only toxins and other proteins included in the biorisk database will be flagged)
+  --skip-nt             Skip nucleotide search (regulated pathogens will only be identified based on
                         protein hits)
 
 Parallelisation:
@@ -156,21 +156,20 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
     screen_logic_group = parser.add_argument_group("Screen run logic")
     screen_logic_group.add_argument(
-        "-f",
-        "--skip-taxonomy",
+        "--skip-tx",
         dest="skip_taxonomy_search",
         action="store_true",
         help=("Skip taxonomy homology search (only toxins and other proteins"
               " included in the biorisk database will be flagged)"),
     )
     screen_logic_group.add_argument(
-        "-n",
         "--skip-nt",
         dest="skip_nt_search",
         action="store_true",
         help=("Skip nucleotide search (regulated pathogens will only be"
               " identified based on biorisk database and protein hits)"),
     )
+
     screen_logic_group.add_argument(
         "-p",
         "--protein-search-tool",
@@ -178,6 +177,13 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         choices=["blastx", "diamond"],
         help="Tool for protein homology search to identify regulated pathogens",
     )
+
+    screen_logic_group.add_argument('-f', '--fast-mode', action="store_true", deprecated=True,
+                                    help=("(DEPRECATED: legacy commands for --fast-mode, please use"
+                                          " --skip-tx to skip the taxonomy step instead.)"))
+    screen_logic_group.add_argument('-n', action = "store_true", deprecated=True,
+                                    help="(DEPRECATED: shorthand for --skip-nt, use --skip-nt instead.)")
+
     parallel_group = parser.add_argument_group("Parallelisation")
     parallel_group.add_argument(
         "-t",

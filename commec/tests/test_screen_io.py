@@ -30,7 +30,7 @@ def test_default_parameters(fasta_name, test_data_dir, database_dir, tmp_path):
     input_fasta = os.path.join(test_data_dir, fasta_name)
     with patch(
         "sys.argv",
-        ["test.py", "-f", input_fasta, "-d", database_dir, "-o", str(tmp_path)],
+        ["test.py", "--skip-tx", input_fasta, "-d", database_dir, "-o", str(tmp_path)],
     ):
         parser = ScreenArgumentParser()
         add_args(parser)
@@ -51,7 +51,7 @@ def test_parse_input_fasta(
     input_fasta = os.path.join(test_data_dir, fasta_name)
     with patch(
         "sys.argv",
-        ["test.py", "-f", input_fasta, "-d", database_dir, "-o", str(tmp_path)],
+        ["test.py", "--skip-tx", input_fasta, "-d", database_dir, "-o", str(tmp_path)],
     ):
         parser = ScreenArgumentParser()
         add_args(parser)
@@ -74,7 +74,7 @@ def test_parse_invalid_input_fasta(fasta_name, test_data_dir, database_dir, tmp_
     input_fasta = os.path.join(test_data_dir, fasta_name)
     with patch(
         "sys.argv",
-        ["test.py", "-f", input_fasta, "-d", database_dir, "-o", str(tmp_path)],
+        ["test.py", "--skip-tx", input_fasta, "-d", database_dir, "-o", str(tmp_path)],
     ):
         parser = ScreenArgumentParser()
         add_args(parser)

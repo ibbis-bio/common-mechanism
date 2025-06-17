@@ -147,7 +147,7 @@ def test_cli_override(tmp_path, expected_updated_from_custom_yaml, custom_yaml_c
         INPUT_QUERY,
         "--config",
         str(user_config_path),
-        "-f", # skip taxonomy
+        "--skip-tx", # skip taxonomy
         "--skip-nt", # skip nt search
         "-c", # do_cleanup
         "-d",
