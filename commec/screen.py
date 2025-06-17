@@ -29,10 +29,10 @@ options:
   -v, --verbose         Output verbose (i.e. DEBUG-level) logs
 
 Screen run logic:
-  -f, --skip-taxonomy   Skip taxonomy homology search (only toxins and other proteins includes in the biorisk database will be flagged)
   -p {blastx,diamond}, --protein-search-tool {blastx,diamond}
                         Tool for protein homology search to identify regulated pathogens
-  -n, --skip-nt         Skip nucleotide search (regulated pathogens will only be identified based on
+  -f, --skip-taxonomy   Skip taxonomy homology search (only toxins and other proteins included in the biorisk database will be flagged)
+    -n, --skip-nt         Skip nucleotide search (regulated pathogens will only be identified based on
                         protein hits)
 
 Parallelisation:
