@@ -37,7 +37,6 @@ requirements:
     - pyyaml
     # Runtime non-Python dependencies
     - blast >=2.16
-    - emboss
     - diamond >=2.1
     - hmmer
     - infernal

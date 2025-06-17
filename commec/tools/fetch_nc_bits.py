@@ -149,7 +149,7 @@ def fetch_noncoding_regions(protein_results, query_fasta):
     _write_nc_sequences(ranges_to_screen, records[0], outfile)
 
 def _set_no_coding_regions(query : Query):
-    query.non_coding_regions.append((1, len(query.seq_record.seq)))
+    query.non_coding_regions.append((1, query.length))
 
 def calculate_noncoding_regions_per_query(
         protein_results : str,
@@ -183,7 +183,7 @@ def calculate_noncoding_regions_per_query(
             continue
 
         # Correcting query length in nc coordinate output.
-        protein_matches_for_query.loc[:, "q.len"] = len(query.seq_record.seq)
+        protein_matches_for_query.loc[:, "q.len"] = query.length
 
         logger.debug("\t --> Protein hits found for %s, fetching nt regions not covered by a 90%% ID hit or better", query.name)
 
