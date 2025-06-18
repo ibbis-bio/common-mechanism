@@ -253,7 +253,7 @@ class CliSetup:
                         "\n -> type yes,y or no,n to indicate decision.",
                         "\n  (The Commec databases consist of a currated biorisk",
                         "\n  and benign database, which are required for commec to run",
-                        '\n  and are the only databases used in "--fast-mode")',
+                        '\n  and are the only databases used in "--skip-taxonomy")',
                     ]
                 )
                 continue
@@ -326,7 +326,7 @@ class CliSetup:
                     [
                         "\n -> type yes,y or no,n to indicate decision.",
                         "\n   (The Blast non-redundant protein database is used to screen",
-                        '\n   translated queries when not in "--fast-mode", and is ',
+                        '\n   translated queries when not in "--skip-taxonomy", and is ',
                         "\n   around 530 GB in size.)",
                     ]
                 )
@@ -362,7 +362,7 @@ class CliSetup:
                     [
                         "\n -> type yes,y or no,n to indicate decision.",
                         "\n   (The Blast Nucleotide database is used to screen",
-                        '\n   non-coding regions of queries when not in "--fast-mode",'
+                        '\n   non-coding regions of queries, unless the user specifies to skip taxonomy or nt search,'
                         "\n   and is around 580 GB in size.)",
                     ]
                 )
@@ -394,7 +394,7 @@ class CliSetup:
                     [
                         "\n -> type yes,y or no,n to indicate decision.",
                         "\n   (A Taxonomy database is used to check taxonomy IDs",
-                        '\n   for regulation when not in "--fast-mode",'
+                        '\n   against a list of regulated pathogens",'
                         "\n   and is around 500 MB in size.)",
                     ]
                 )
