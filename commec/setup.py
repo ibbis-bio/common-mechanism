@@ -362,7 +362,7 @@ class CliSetup:
                     [
                         "\n -> type yes,y or no,n to indicate decision.",
                         "\n   (The Blast Nucleotide database is used to screen",
-                        '\n   non-coding regions of queries when not in "--skip-taxonomy",'
+                        '\n   non-coding regions of queries, unless the user specifies to skip taxonomy or nt search,'
                         "\n   and is around 580 GB in size.)",
                     ]
                 )
