@@ -26,7 +26,7 @@ threads: 1
 diamond_jobs: null
 do_cleanup: False
 force: False
-in_fast_mode: False
+skip_taxonomy_search: False
 protein_search_tool: 'blastx'
 resume: False
 skip_nt_search: False
