@@ -394,7 +394,7 @@ class CliSetup:
                     [
                         "\n -> type yes,y or no,n to indicate decision.",
                         "\n   (A Taxonomy database is used to check taxonomy IDs",
-                        '\n   for regulation when not in "--skip-taxonomy",'
+                        '\n   against a list of regulated pathogens",'
                         "\n   and is around 500 MB in size.)",
                     ]
                 )
