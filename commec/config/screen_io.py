@@ -349,11 +349,11 @@ class ScreenIO:
 
     @property
     def should_do_protein_screening(self) -> bool:
-        return not self.config["in_fast_mode"]
+        return not self.config["skip_taxonomy_search"]
 
     @property
     def should_do_nucleotide_screening(self) -> bool:
-        return not (self.config["in_fast_mode"] or self.config["skip_nt_search"])
+        return not (self.config["skip_taxonomy_search"] or self.config["skip_nt_search"])
 
     @property
     def should_do_benign_screening(self) -> bool:
