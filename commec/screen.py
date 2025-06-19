@@ -323,9 +323,9 @@ class Screen:
                 query.result_handle = qr
 
                 # Determine short querys as skipped:
-                if len(query.seq_record.seq) < MINIMUM_QUERY_LENGTH:
+                if query.length < MINIMUM_QUERY_LENGTH:
                     logger.debug("%s length %i is less than %i",
-                                    query.name, len(query.seq_record.seq), MINIMUM_QUERY_LENGTH)
+                                    query.name, query.length, MINIMUM_QUERY_LENGTH)
                     qr.skip()
                     continue
 
