@@ -86,7 +86,8 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
     log_container = {key : [] for key in data.queries.keys()}
 
     for query in data.queries.values():
-        query.recommendation.biorisk_status = ScreenStatus.PASS
+        if not query.recommendation.biorisk_status == ScreenStatus.SKIP:
+            query.recommendation.biorisk_status = ScreenStatus.PASS
 
     if not search_handle.has_hits(search_handle.out_file):
         return 0

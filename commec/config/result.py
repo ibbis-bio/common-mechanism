@@ -269,6 +269,7 @@ class Rationale(StrEnum):
     NOTHING = ("No matches to sequences from any step."
                 " Unknown or potential risk factor."
                 " Sequence may be too short, or in silco de novo.")
+    TOO_SHORT = "Query is too short, and was skipped."
 
     FLAG = " flags"
     WARN = " warnings"
@@ -344,9 +345,14 @@ class QueryScreenStatus:
         # If everything is happy, but we haven't hit anything, time to be suspicious...
         if (self.biorisk_status == ScreenStatus.PASS and
             self.protein_taxonomy_status == ScreenStatus.PASS and
-            self.nucleotide_taxonomy_status == ScreenStatus.PASS and 
+            self.nucleotide_taxonomy_status == ScreenStatus.PASS and
             query_data.no_hits_warning):
             self.screen_status = ScreenStatus.WARN
+            return
+
+        # If biorisk is skipped then it is skipped overall - likely query is too short...
+        if (self.biorisk_status == ScreenStatus.SKIP):
+            self.screen_status = ScreenStatus.SKIP
             return
 
         logger.debug("Update called on recommendation, however no issuesome status updates occured."
@@ -555,6 +561,10 @@ class QueryResult:
             state.rationale = Rationale.ERROR + state.get_error_stepname()
             return
 
+        if state.screen_status == ScreenStatus.SKIP:
+            state.rationale = Rationale.TOO_SHORT
+            return
+
         # Unique circumstance, where there are no hits at all.
         if (state.screen_status == ScreenStatus.WARN and
             state.biorisk_status == ScreenStatus.PASS and
@@ -665,6 +675,17 @@ class QueryResult:
         )
         self.hits = dict(sorted_items_desc)
         self._update_step_flags(query_data)
+
+    def skip(self):
+        """
+        Called to skip this query, sets all recommendations to skip.
+        """
+        self.recommendation.screen_status = ScreenStatus.SKIP
+        self.recommendation.biorisk_status = ScreenStatus.SKIP
+        self.recommendation.protein_taxonomy_status = ScreenStatus.SKIP
+        self.recommendation.nucleotide_taxonomy_status = ScreenStatus.SKIP
+        self.recommendation.benign_status = ScreenStatus.SKIP
+        logger.debug("Query %s has all statuses assigned to SKIP.", self.query)
 
 
 @dataclass

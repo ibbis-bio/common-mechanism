@@ -351,6 +351,22 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                 benign_dna_screen_data.shape, benign_dna_screen_data.head())
     
     for query in queries.values():
+
+        skip = True
+        for hit in query.result_handle.hits.values():
+            if hit.recommendation.status in {
+                ScreenStatus.FLAG,
+                ScreenStatus.WARN
+            }:
+                skip = False
+
+        if skip:
+            query.result_handle.recommendation.benign_status = ScreenStatus.SKIP
+        
+        if query.result_handle.recommendation.benign_status == ScreenStatus.SKIP:
+            logger.debug("Skipping query %s, no regulated regions to clear.", query.name)
+            continue
+        
         _update_benign_data_for_query(query,
                                       benign_protein_screen_data,
                                       benign_rna_screen_data,

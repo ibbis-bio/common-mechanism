@@ -81,6 +81,7 @@ from commec.screeners.check_benign import update_benign_data_from_database
 from commec.screeners.check_reg_path import update_taxonomic_data_from_database
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.config.json_io import encode_screen_data_to_json
+from commec.config.constants import MINIMUM_QUERY_LENGTH
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -306,13 +307,24 @@ class Screen:
         try:
             for query in self.queries.values():
                 logger.debug("Processing query: %s, (%s)", query.name, query.original_name)
-                query.translate(self.params.nt_path, self.params.aa_path)
-                total_query_length += len(query.seq_record)
+
+                # Link query to the output data.
                 qr = QueryResult(query.original_name,
                                     len(query.seq_record))
-                                    #str(query.seq_record.seq))
                 self.screen_data.queries[query.name] = qr
                 query.result_handle = qr
+
+                # Determine short querys as skipped:
+                if len(query.seq_record.seq) < MINIMUM_QUERY_LENGTH:
+                    logger.debug("%s length %i is less than %i",
+                                    query.name, len(query.seq_record.seq), MINIMUM_QUERY_LENGTH)
+                    qr.skip()
+                    continue
+
+                # Only translate if valid.
+                query.translate(self.params.nt_path, self.params.aa_path)
+                total_query_length += len(query.seq_record)
+
         except RuntimeError as e:
             logger.error(e)
             sys.exit()
@@ -495,6 +507,8 @@ class Screen:
         # Generate the non-coding fasta.
         nc_fasta_sequences = ""
         for query in self.queries.values():
+            if query.result_handle.recommendation.nucleotide_taxonomy_status == ScreenStatus.SKIP:
+                continue
             nc_fasta_sequences += query.get_non_coding_regions_as_fasta()
 
         # Skip if there is no non-coding information.
@@ -582,6 +596,8 @@ class Screen:
         apply a single recommendation to the whole benign step 
         for every query."""
         for query in self.screen_data.queries.values():
+            if query.recommendation.biorisk_status == ScreenStatus.SKIP:
+                continue
             query.recommendation.biorisk_status = new_recommendation
 
     def reset_benign_recommendations(self, new_recommendation : ScreenStatus):
@@ -589,6 +605,8 @@ class Screen:
         apply a single recommendation to the whole benign step 
         for every query."""
         for query in self.screen_data.queries.values():
+            if query.recommendation.benign_status == ScreenStatus.SKIP:
+                continue
             query.recommendation.benign_status = new_recommendation
 
     def reset_protein_recommendations(self, new_recommendation : ScreenStatus):
@@ -596,6 +614,8 @@ class Screen:
         apply a single recommendation to the whole protein taxonomy step 
         for every query."""
         for query in self.screen_data.queries.values():
+            if query.recommendation.protein_taxonomy_status == ScreenStatus.SKIP:
+                continue
             query.recommendation.protein_taxonomy_status = new_recommendation
 
     def reset_nucleotide_recommendations(self, new_recommendation : ScreenStatus):
@@ -603,6 +623,8 @@ class Screen:
         apply a single recommendation to the whole nucleotide taxonomy step 
         for every query."""
         for query in self.screen_data.queries.values():
+            if query.recommendation.nucleotide_taxonomy_status == ScreenStatus.SKIP:
+                continue
             query.recommendation.nucleotide_taxonomy_status = new_recommendation
 
 def run(args: argparse.Namespace):
