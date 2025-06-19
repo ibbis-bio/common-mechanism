@@ -79,7 +79,7 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         if (qr.protein_taxonomy_status
             not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
             for hit in query.hits.values():
-                if hit.recommendation.from_step == ScreenStep.TAXONOMY_AA:
+                if hit.recommendation.from_step in {ScreenStep.TAXONOMY_AA, ScreenStep.TAXONOMY_NT}:
                     for info in hit.annotations["regulated_taxonomy"]:
                         bacteria_flag  |= (int(info["regulated_bacteria"]) > 0)
                         virus_flag     |= (int(info["regulated_viruses"]) > 0)
@@ -106,7 +106,7 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         for hit in query.hits.values():
             match hit.recommendation.from_step:
                 case ScreenStep.TAXONOMY_AA:
-                    if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN]:
+                    if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN, ScreenStatus.PASS]:
                         reg_dicts = hit.annotations["regulated_taxonomy"]
                         for r in reg_dicts:
                             if len(r["non_regulated_taxids"]) > 0:
@@ -121,8 +121,12 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
                 case _:
                     continue
 
-        protein_status = "Mixed" if mixed_aa_taxonomy else qr.protein_taxonomy_status
-        nucleotide_status = "Mixed" if mixed_nt_taxonomy else qr.nucleotide_taxonomy_status
+        protein_status = ("Mixed" if
+                            (mixed_aa_taxonomy and qr.protein_taxonomy_status == ScreenStatus.PASS) 
+                        else qr.protein_taxonomy_status)
+        nucleotide_status = ("Mixed" if
+                            (mixed_nt_taxonomy and qr.nucleotide_taxonomy_status == ScreenStatus.PASS) 
+                        else qr.nucleotide_taxonomy_status)
 
         results.append({
         "name": name,
