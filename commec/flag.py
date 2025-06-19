@@ -121,12 +121,14 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
                 case _:
                     continue
 
-        protein_status = ("Mixed" if
-                            (mixed_aa_taxonomy and qr.protein_taxonomy_status == ScreenStatus.PASS) 
-                        else qr.protein_taxonomy_status)
-        nucleotide_status = ("Mixed" if
-                            (mixed_nt_taxonomy and qr.nucleotide_taxonomy_status == ScreenStatus.PASS) 
-                        else qr.nucleotide_taxonomy_status)
+        # Update Protein and/or nucleotide statuses to Mixed, in the case where
+        # they are otherwise a Pass, and there were mixed regulated and non-regulated.
+        protein_status = qr.protein_taxonomy_status
+        if mixed_aa_taxonomy and protein_status == ScreenStatus.PASS:
+            protein_status = "Mixed"
+        nucleotide_status = qr.nucleotide_taxonomy_status
+        if mixed_nt_taxonomy and nucleotide_status == ScreenStatus.PASS:
+            nucleotide_status = "Mixed"
 
         results.append({
         "name": name,
