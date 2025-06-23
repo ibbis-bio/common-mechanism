@@ -266,9 +266,9 @@ class Rationale(StrEnum):
 
 
     # Outcomes:
-    NOTHING = ("No matches to sequences from any step."
-                " Unknown or potential risk factor."
-                " Sequence may be too short, or in silco de novo.")
+    NOTHING = ("No matches found during any stage of analysis. "
+                "Sequence may represent an unknown or emerging risk. "
+                "Possibly generated de novo in silico.")
     TOO_SHORT = "Query is too short, and was skipped."
 
     FLAG = " flags"
