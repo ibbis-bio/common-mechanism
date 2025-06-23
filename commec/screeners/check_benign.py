@@ -44,19 +44,19 @@ def _filter_benign_proteins(query : Query,
                             benign_protein_for_query : pd.DataFrame,
                             benign_descriptions : pd.DataFrame) -> list:
     """
-    Performs the logic of a benign housekeeping protein dataframe for a
+    Performs the logic of a non-concern housekeeping protein dataframe for a
     specific query, and determines whether it contains the criteria to clear 
     a specified hit, for a specified region.
 
     Benign proteins should have a coverage of at least 80% of the region they are 
     aiming to cover, as well as be at least 50 nucleotide in length.
     """
-    logger.debug("\t\tChecking hit %s for benign proteins: ", hit.name)
+    logger.debug("\t\tChecking hit %s for proteins of non-concern: ", hit.name)
 
     # Ignore this region, if there are no overlapping hits.
     benign_protein_for_query_trimmed = _trim_to_region(benign_protein_for_query, region).copy()
     if benign_protein_for_query_trimmed.empty:
-        logger.debug("\t\tNo overlapping benign Protein regions for %s", hit.name)
+        logger.debug("\t\tNo overlapping Proteins of non-concern for %s", hit.name)
         return []
 
     benign_protein_for_query_trimmed = _calculate_coverage(benign_protein_for_query_trimmed, region)
@@ -116,12 +116,12 @@ def _filter_benign_rna(query : Query,
                             hit : HitResult,
                             region : MatchRange,
                             benign_rna_for_query : pd.DataFrame) -> list:
-    logger.debug("\t\t\tChecking query (%s) hit %s for benign RNA",  query.name, hit.name)
+    logger.debug("\t\t\tChecking query (%s) hit %s for RNA of non-concern",  query.name, hit.name)
     
     # Filter benign RNA for relevance...
     benign_rna_for_query_trimmed = _trim_to_region(benign_rna_for_query, region).copy()
     if benign_rna_for_query_trimmed.empty:
-        logger.debug("\t\t\tNo overlapping benign RNA regions for %s (%i-%i)",
+        logger.debug("\t\t\tNo overlapping non-concern RNA regions for %s (%i-%i)",
                      hit.name, region.query_start, region.query_end)
         return []
 
@@ -134,7 +134,7 @@ def _filter_benign_rna(query : Query,
         (region.length() - benign_rna_for_query_trimmed["coverage_nt"]) < MINIMUM_RNA_BASEPAIR_COVERAGE]
     benign_rna_for_query_passed = benign_rna_for_query_passed.reset_index(drop=True)
 
-    logger.debug("\t\tSummary Benign RNA for %s: shape: %s preview:\n%s", 
+    logger.debug("\t\tSummary RNA of non-concern for %s: shape: %s preview:\n%s", 
                 hit.name, benign_rna_for_query_trimmed.shape,
                 benign_rna_for_query_trimmed[["coverage_nt", "coverage_ratio"]].head())
     
@@ -159,12 +159,12 @@ def _filter_benign_rna(query : Query,
             )
         
         if hit.recommendation.status not in {ScreenStatus.CLEARED_FLAG, ScreenStatus.CLEARED_WARN}:
-            logger.info("\t --> Clearing %s %s (region %i-%i), with Benign RNA %s",
+            logger.info("\t --> Clearing %s %s (region %i-%i), with RNA of non-concern %s",
                         hit.recommendation.status, hit.name, region.query_start, region.query_end, benign_hit_outcome.name)
             hit.recommendation.status = hit.recommendation.status.clear()
         return [benign_hit_outcome]
     
-    logger.info("Clear failed for %s (%s) as Benign RNA >%i bases unaccounted for.",
+    logger.info("Clear failed for %s (%s) as RNA of non-concern has >%i bases unaccounted for.",
                     hit.name, hit.recommendation.status, MINIMUM_RNA_BASEPAIR_COVERAGE)
     return []
 
@@ -172,12 +172,12 @@ def _filter_benign_dna(query : Query,
                           hit : HitResult,
                           region : MatchRange,
                           benign_dna_for_query : pd.DataFrame) -> list:
-    logger.debug("\t\t\tChecking query (%s) hit %s for benign Synbio",  query.name, hit.name)
+    logger.debug("\t\t\tChecking query (%s) hit %s for low-concern Synbio",  query.name, hit.name)
 
     # Filter benign SynBio for relevance...
     benign_dna_for_query_trimmed = _trim_to_region(benign_dna_for_query, region).copy()
     if benign_dna_for_query_trimmed.empty:
-        logger.debug("\t ... No overlapping benign DNA regions for %s (%i-%i)",
+        logger.debug("\t ... No overlapping low-concern DNA regions for %s (%i-%i)",
                      hit.name, region.query_start, region.query_end)
         return []
 
@@ -217,10 +217,10 @@ def _filter_benign_dna(query : Query,
             match_ranges,
         )
     
-    logger.debug("Processing Benign Hit: %s", benign_hit_outcome)
+    logger.debug("Processing low-concern Hit: %s", benign_hit_outcome)
     
     if hit.recommendation.status not in {ScreenStatus.CLEARED_FLAG, ScreenStatus.CLEARED_WARN}:
-        logger.info("\t --> Clearing %s %s region %i-%i as Benign DNA, with synthetic biology part %s",
+        logger.info("\t --> Clearing %s %s region %i-%i as low-concern DNA, with synthetic biology part %s",
                         hit.recommendation.status, hit.name, region.query_start, region.query_end, benign_hit_outcome.name)
         hit.recommendation.status = hit.recommendation.status.clear()
 
@@ -237,13 +237,13 @@ def _update_benign_data_for_query(query : Query,
     any overlapping WARN or FLAG hits.
     """
 
-    logger.debug("\t\tProcessing benign data for query: %s", query.name)
+    logger.debug("\t\tProcessing low-concern data for query: %s", query.name)
 
     benign_protein_for_query = pd.DataFrame()
     benign_rna_for_query = pd.DataFrame()
     benign_dna_for_query = pd.DataFrame()
 
-    logger.info(" Benign checks for %s", query.name)
+    logger.info(" Low-concern checks for %s", query.name)
 
     # We only care about the benign data for this query, but we need to check for size.
     if not benign_protein.empty:
@@ -277,7 +277,7 @@ def _update_benign_data_for_query(query : Query,
             or
             (hit.recommendation.from_step == ScreenStep.BIORISK)
             ):
-            logger.debug("\t\t\tIgnoring %s [%s], not need to clear with benign.", hit.name, hit.recommendation.status)
+            logger.debug("\t\t\tIgnoring %s [%s], cannot clear step 1.", hit.name, hit.recommendation.status)
             continue
 
         for region in hit.ranges:
@@ -305,18 +305,18 @@ def _update_benign_data_for_query(query : Query,
     if len(new_benign_protein_hits) == 0:
         logger.info("\t ... no housekeeping protein hits.")
     if len(new_benign_rna_hits) == 0:
-        logger.info("\t ... no benign RNA hits.")
+        logger.info("\t ... no low-concern RNA hits.")
     if len(new_benign_dna_hits) == 0:
-        logger.info("\t ... no benign DNA hits.")
+        logger.info("\t ... no low-concern DNA hits.")
 
     new_benign_hits.extend(new_benign_protein_hits)
     new_benign_hits.extend(new_benign_rna_hits)
     new_benign_hits.extend(new_benign_dna_hits)
 
-    logger.debug("\tNew benign hits added: %i", len(new_benign_hits))
+    logger.debug("\tNew low-concern hits added: %i", len(new_benign_hits))
     for benign_addition in new_benign_hits:
         query.result_handle.add_new_hit_information(benign_addition)
-        logger.debug("\t\tAdding Benign Hit: %s", benign_addition)
+        logger.debug("\t\tAdding low-concern Hit: %s", benign_addition)
 
 def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                      benign_rna_handle : CmscanHandler,
@@ -332,16 +332,16 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
     benign_protein_screen_data = benign_protein_handle.read_output()
     append_nt_querylength_info(benign_protein_screen_data, queries)
     recalculate_hmmer_query_coordinates(benign_protein_screen_data)
-    logger.debug("\tBenign Protein Data: shape: %s preview:\n%s",
+    logger.debug("\tLow-concern Protein Data: shape: %s preview:\n%s",
                  benign_protein_screen_data.shape, benign_protein_screen_data.head())
     
     benign_rna_screen_data = benign_rna_handle.read_output()
-    logger.debug("\tBenign RNA Data: shape: %s preview:\n%s",
+    logger.debug("\tLow-concern RNA Data: shape: %s preview:\n%s",
                 benign_rna_screen_data.shape, benign_rna_screen_data.head())
     
     benign_dna_screen_data = benign_dna_handle.read_output()
     benign_dna_screen_data = get_top_hits(benign_dna_screen_data)
-    logger.debug("\tBenign Synbio Top Hits Data: shape: %s preview:\n%s",
+    logger.debug("\tLow-concern Synbio Top Hits Data: shape: %s preview:\n%s",
                 benign_dna_screen_data.shape, benign_dna_screen_data.head())
     
     for query in queries.values():
