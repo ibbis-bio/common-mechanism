@@ -99,21 +99,21 @@ class ScreenTools:
             self.benign_hmm = HmmerHandler(
                 params.config["databases"]["low_concern"]["hmm"]["path"],
                 input_file=params.aa_path,
-                out_file=f"{params.output_prefix}.benign.hmmscan",
+                out_file=f"{params.output_prefix}.low_concern.hmmscan",
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
             self.benign_blastn = BlastNHandler(
                 params.config["databases"]["low_concern"]["fasta"]["path"],
                 input_file=params.nt_path,
-                out_file=f"{params.output_prefix}.benign.blastn",
+                out_file=f"{params.output_prefix}.low_concern.blastn",
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
             self.benign_cmscan = CmscanHandler(
                 params.config["databases"]["low_concern"]["cm"]["path"],
                 input_file=params.nt_path,
-                out_file=f"{params.output_prefix}.benign.cmscan",
+                out_file=f"{params.output_prefix}.low_concern.cmscan",
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
