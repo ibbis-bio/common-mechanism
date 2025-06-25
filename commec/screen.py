@@ -13,7 +13,7 @@ Screening involves (up to) four steps:
 
 In "skip-taxonomy" mode, only the biorisk scan is run. By default, all four steps are run, but the nucleotide
 search is only run for regions that do not have any protein hits with a high sequence identity. The
-benign search is not permitted to clear biorisk scan hits, only protein or nucleotide hits. Whether
+low-concern search is not permitted to clear biorisk scan hits, only protein or nucleotide hits. Whether
 or not a homology scan hit is from a regulated pathogen is determined by referencing the taxonomy
 ids assoicated with each accession that returns a hit, then looking at their lineages.
 
@@ -397,7 +397,7 @@ class Screen:
         if self.params.should_do_benign_screening:
             try:
                 logger.info(
-                    " >> STEP 4: Checking any pathogen regions for benign components..."
+                    " >> STEP 4: Checking any pathogen regions for low-concern components..."
                 )
                 self.screen_benign()
                 logger.info(
@@ -409,7 +409,7 @@ class Screen:
                 logger.info(" Traceback:\n%s", traceback.format_exc())
                 self.reset_benign_recommendations(ScreenStatus.ERROR)
         else:
-            logger.info(" << SKIPPING STEP 4: Benign search")
+            logger.info(" << SKIPPING STEP 4: Low-concern search")
             self.reset_benign_recommendations(ScreenStatus.SKIP)
 
         logger.info(
