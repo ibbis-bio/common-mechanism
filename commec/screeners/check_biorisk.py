@@ -55,7 +55,7 @@ def _guess_domain(search_string : str) -> str:
     logger.debug("Could not guess domain from \"%s\"", search_string)
     return "not assigned"
 
-def update_biorisk_data_from_database(search_handle : HmmerHandler,
+def parse_biorisk_hits(search_handle : HmmerHandler,
                                       biorisk_annotations_file : str | os.PathLike,
                                       data : ScreenResult,
                                       queries : dict[str, Query]):

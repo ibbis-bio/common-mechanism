@@ -318,9 +318,9 @@ def _update_benign_data_for_query(query : Query,
         query.result_handle.add_new_hit_information(benign_addition)
         logger.debug("\t\tAdding low-concern Hit: %s", benign_addition)
 
-def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
-                                     benign_rna_handle : CmscanHandler,
-                                     benign_dna_handle : BlastNHandler,
+def parse_low_concern_hits(benign_protein_handler : HmmerHandler,
+                                     benign_rna_handler : CmscanHandler,
+                                     benign_dna_handler : BlastNHandler,
                                      queries : dict[str,Query],
                                      benign_desc : pd.DataFrame):
     """
@@ -329,17 +329,17 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
     as cleared if benign screen passes them.
     """
     # Reading empty outcomes should result in empty DataFrames, not errors.
-    benign_protein_screen_data = benign_protein_handle.read_output()
+    benign_protein_screen_data = benign_protein_handler.read_output()
     append_nt_querylength_info(benign_protein_screen_data, queries)
     recalculate_hmmer_query_coordinates(benign_protein_screen_data)
     logger.debug("\tLow-concern Protein Data: shape: %s preview:\n%s",
                  benign_protein_screen_data.shape, benign_protein_screen_data.head())
     
-    benign_rna_screen_data = benign_rna_handle.read_output()
+    benign_rna_screen_data = benign_rna_handler.read_output()
     logger.debug("\tLow-concern RNA Data: shape: %s preview:\n%s",
                 benign_rna_screen_data.shape, benign_rna_screen_data.head())
     
-    benign_dna_screen_data = benign_dna_handle.read_output()
+    benign_dna_screen_data = benign_dna_handler.read_output()
     benign_dna_screen_data = get_top_hits(benign_dna_screen_data)
     logger.debug("\tLow-concern Synbio Top Hits Data: shape: %s preview:\n%s",
                 benign_dna_screen_data.shape, benign_dna_screen_data.head())

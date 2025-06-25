@@ -145,11 +145,11 @@ def test_functional_screen(tmp_path, request):
     nt_db_output_path.write_text(blastnt_to_parse)
 
     # BENIGN FILES:
-    benign_hmm_output_path = tmp_path / "output_functional/functional.benign.hmmscan"
+    benign_hmm_output_path = tmp_path / "output_functional/functional.low_concern.hmmscan"
     benign_hmm_output_path.write_text(benign_hmmscan_to_parse)
-    benign_cmscan_output_path = tmp_path / "output_functional/functional.benign.cmscan"
+    benign_cmscan_output_path = tmp_path / "output_functional/functional.low_concern.cmscan"
     benign_cmscan_output_path.write_text(benign_cmscan_to_parse)
-    benign_nt_output_path = tmp_path / "output_functional/functional.benign.blastn"
+    benign_nt_output_path = tmp_path / "output_functional/functional.low_concern.blastn"
     benign_nt_output_path.write_text(benign_blastnt_to_parse)
 
     # We patch taxonomic labels to avoid making a mini-taxonomy database.

@@ -30,15 +30,15 @@ from typing import Dict, Type, get_origin, Any, get_args
 from enum import StrEnum
 from commec.config.result import ScreenResult, JSON_COMMEC_FORMAT_VERSION
 
-def encode_screen_data_to_json(input_screendata: ScreenResult,
+def encode_screen_data_to_json(input_result: ScreenResult,
                                output_json_filepath: string = "output.json") -> None:
     ''' Converts a ScreenResult class object into a JSON file at the given filepath.'''
     try:
         with open(output_json_filepath, "w", encoding="utf-8") as json_file:
-            json.dump(asdict(input_screendata), json_file, indent=4)
+            json.dump(asdict(input_result), json_file, indent=4)
     except TypeError as e:
         print("Error outputting JSON:", e)
-        print(input_screendata)
+        print(input_result)
 
 def encode_dict_to_screen_data(input_dict : dict) -> ScreenResult:
     ''' Converts a dictionary into a ScreenResult object,

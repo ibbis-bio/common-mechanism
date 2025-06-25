@@ -76,9 +76,9 @@ from commec.config.result import (
 )
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
-from commec.screeners.check_biorisk import update_biorisk_data_from_database
-from commec.screeners.check_benign import update_benign_data_from_database
-from commec.screeners.check_reg_path import update_taxonomic_data_from_database
+from commec.screeners.check_biorisk import parse_biorisk_hits
+from commec.screeners.check_benign import parse_low_concern_hits
+from commec.screeners.check_reg_path import parse_taxonomy_hits
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.config.json_io import encode_screen_data_to_json
 
@@ -428,7 +428,7 @@ class Screen:
         logger.debug("\t...running hmmscan")
         self.database_tools.biorisk_hmm.search()
         logger.debug("\t...checking hmmscan results")
-        exit_status = update_biorisk_data_from_database(
+        exit_status = parse_biorisk_hits(
             self.database_tools.biorisk_hmm,
             self.database_tools.biorisk_annotations_csv,
             self.screen_data,
@@ -457,7 +457,7 @@ class Screen:
             "\t...checking %s results", self.params.config["protein_search_tool"]
         )
 
-        exit_status = update_taxonomic_data_from_database(
+        exit_status = parse_taxonomy_hits(
             self.database_tools.regulated_protein,
             self.database_tools.benign_taxid_path,
             self.database_tools.biorisk_taxid_path,
@@ -517,8 +517,8 @@ class Screen:
             )
 
         logger.debug("\t...checking blastn results")
-        # Note: Currently noncoding coordinates are converted within update_taxonomic_data_from_database,
-        exit_status = update_taxonomic_data_from_database(
+        # Note: Currently noncoding coordinates are converted within parse_taxonomy_hits,
+        exit_status = parse_taxonomy_hits(
             self.database_tools.regulated_nt,
             self.database_tools.benign_taxid_path,
             self.database_tools.biorisk_taxid_path,
@@ -566,7 +566,7 @@ class Screen:
             sep="\t",
         )
 
-        update_benign_data_from_database(
+        parse_low_concern_hits(
             self.database_tools.benign_hmm,
             self.database_tools.benign_cmscan,
             self.database_tools.benign_blastn,
