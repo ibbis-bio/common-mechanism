@@ -239,7 +239,7 @@ class CliSetup:
             return
 
     def decide_commec_dbs(self):
-        """Decide whether the Commec Benign/risks database needs to be downloaded."""
+        """Decide whether the Commec Biorisks and low-concern databases need to be downloaded."""
         self.print_step_header(2,1)
         print(
             "Do you want to download the " "mandatory Commec databases? (~1.2 GB)",
@@ -252,7 +252,7 @@ class CliSetup:
                     [
                         "\n -> type yes,y or no,n to indicate decision.",
                         "\n  (The Commec databases consist of a currated biorisk",
-                        "\n  and benign database, which are required for commec to run",
+                        "\n  and low-concern database, which are required for commec to run",
                         '\n  and are the only databases used in "--skip-taxonomy")',
                     ]
                 )
