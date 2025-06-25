@@ -587,7 +587,7 @@ class CliSetup:
             )
             nt_directory = os.path.join(self.database_directory, "nt_blast")
             os.makedirs(nt_directory, exist_ok=True)
-            print(nr_directory)
+            print(nt_directory)
             command = ["update_blastdb.pl", "--decompress", self.blastnt_database]
             subprocess.run(command, cwd=nt_directory, check=True)
 
