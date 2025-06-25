@@ -17,15 +17,15 @@
                 "tool_info": "blastn: 2.16.0+\n Package: blast 2.16.0, build Mar 28 2025 16:30:45",
                 "database_info": "BLASTDB Version: 5Date: Sep 3, 2024  12:16 AM\tLongest sequence: 8,669 bases"
             },
-            "benign_protein_search_info": {
+            "low_concern_protein_search_info": {
                 "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
                 "database_info": "HMMER3/f [3.4 | Aug 2023]"
             },
-            "benign_rna_search_info": {
+            "low_concern_rna_search_info": {
                 "tool_info": "INFERNAL 1.1.5 (Sep 2023)",
                 "database_info": "INFERNAL1/a [1.1.5 | Sep 2023]"
             },
-            "benign_dna_search_info": {
+            "low_concern_dna_search_info": {
                 "tool_info": "x.x.x",
                 "database_info": "x.x.x"
             }
@@ -45,7 +45,7 @@
                 "biorisk_status": "Flag",
                 "protein_taxonomy_status": "Flag",
                 "nucleotide_taxonomy_status": "Flag",
-                "benign_status": "Flag"
+                "low_concern_status": "Flag"
             },
             "hits": {
                 "Toxin1": {

@@ -331,9 +331,9 @@ class Screen:
         if self.params.should_do_nucleotide_screening:
             _info.nucleotide_search_info = _tools.regulated_nt.get_version_information()
         if self.params.should_do_benign_screening:
-            _info.benign_protein_search_info = _tools.benign_hmm.get_version_information()
-            _info.benign_rna_search_info = _tools.benign_cmscan.get_version_information()
-            _info.benign_dna_search_info = _tools.benign_blastn.get_version_information()
+            _info.low_concern_protein_search_info = _tools.benign_hmm.get_version_information()
+            _info.low_concern_rna_search_info = _tools.benign_cmscan.get_version_information()
+            _info.low_concern_dna_search_info = _tools.benign_blastn.get_version_information()
 
         # Store start time.
         _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -586,7 +586,7 @@ class Screen:
         apply a single recommendation to the whole low-concern step 
         for every query."""
         for query in self.screen_data.queries.values():
-            query.recommendation.benign_status = new_recommendation
+            query.recommendation.low_concern_status = new_recommendation
 
     def reset_protein_recommendations(self, new_recommendation : ScreenStatus):
         """ Helper function

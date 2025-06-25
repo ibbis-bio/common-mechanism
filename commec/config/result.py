@@ -69,14 +69,14 @@ class ScreenStatus(StrEnum):
             ),
             ScreenStatus.SKIP: (
                 "Screening step intentionally skipped (e.g. skipping taxonomy screen in FAST mode,"
-                " skipping benign screen when there are no flags to clear)"
+                " skipping low-concern screen when there are no flags to clear)"
             ),
             ScreenStatus.PASS: "Query was not flagged in this screening step; biosecurity review may not be needed",
             ScreenStatus.CLEARED_WARN: (
-                "Warning was cleared, since query region was identified as benign"
+                "Warning was cleared, since query region was identified as low-concern"
                 " (e.g. housekeeping gene, common synbio part)"),
             ScreenStatus.CLEARED_FLAG: (
-                "Flag was cleared, since query region was identified as benign"
+                "Flag was cleared, since query region was identified as low-concern"
                 " (e.g. housekeeping gene, common synbio part)"),
             ScreenStatus.WARN: (
                 "Possible sequence of concern identified, but with low confidence"
@@ -244,7 +244,7 @@ class QueryScreenStatus:
     biorisk_status: ScreenStatus = ScreenStatus.NULL
     protein_taxonomy_status: ScreenStatus = ScreenStatus.NULL
     nucleotide_taxonomy_status: ScreenStatus = ScreenStatus.NULL
-    benign_status: ScreenStatus = ScreenStatus.NULL
+    low_concern_status: ScreenStatus = ScreenStatus.NULL
 
     def update_query_flag(self):
         """
@@ -255,16 +255,16 @@ class QueryScreenStatus:
             self.biorisk_status,
             self.protein_taxonomy_status,
             self.nucleotide_taxonomy_status,
-            self.benign_status
+            self.low_concern_status
         }:
             self.screen_status = ScreenStatus.ERROR
             return
 
-        if self.benign_status not in {
+        if self.low_concern_status not in {
             ScreenStatus.NULL, 
             ScreenStatus.SKIP
         }:
-            self.screen_status = self.benign_status
+            self.screen_status = self.low_concern_status
             return
 
         if self.biorisk_status == ScreenStatus.FLAG:
@@ -365,7 +365,7 @@ class QueryResult:
     def get_flagged_hits(self) -> List[HitResult]:
         """
         Calculates and returns the list of hits, for all Warnings or Flags.
-        Typically used as the regions to check against for benign screens.
+        Typically used as the regions to check against for low-concern screens.
         """
         flagged_and_warnings_data = [
             flagged_hit
@@ -392,14 +392,14 @@ class QueryResult:
                     self.recommendation.nucleotide_taxonomy_status = compare(
                         self.recommendation.nucleotide_taxonomy_status, hit.recommendation.status)
                 case ScreenStep.BENIGN_PROTEIN:
-                    self.recommendation.benign_status = compare(
-                        self.recommendation.benign_status, hit.recommendation.status)
+                    self.recommendation.low_concern_status = compare(
+                        self.recommendation.low_concern_status, hit.recommendation.status)
                 case ScreenStep.BENIGN_RNA:
-                    self.recommendation.benign_status = compare(
-                        self.recommendation.benign_status, hit.recommendation.status)
+                    self.recommendation.low_concern_status = compare(
+                        self.recommendation.low_concern_status, hit.recommendation.status)
                 case ScreenStep.BENIGN_DNA:
-                    self.recommendation.benign_status = compare(
-                        self.recommendation.benign_status, hit.recommendation.status)
+                    self.recommendation.low_concern_status = compare(
+                        self.recommendation.low_concern_status, hit.recommendation.status)
 
         self.recommendation.update_query_flag()
 
@@ -426,9 +426,9 @@ class SearchToolInfo:
     biorisk_search_info:        SearchToolVersion = field(default_factory=SearchToolVersion)
     protein_search_info:        SearchToolVersion = field(default_factory=SearchToolVersion)
     nucleotide_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
-    benign_protein_search_info: SearchToolVersion = field(default_factory=SearchToolVersion)
-    benign_rna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
-    benign_dna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
+    low_concern_protein_search_info: SearchToolVersion = field(default_factory=SearchToolVersion)
+    low_concern_rna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
+    low_concern_dna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
 
 
 @dataclass
@@ -505,7 +505,7 @@ class ScreenResult:
                 "biorisk": query.recommendation.biorisk_status,
                 "taxonomy_aa": query.recommendation.protein_taxonomy_status,
                 "taxonomy_nt": query.recommendation.nucleotide_taxonomy_status,
-                "benign": query.recommendation.benign_status
+                "cleared": query.recommendation.low_concern_status
             })
         
         output_data : pd.DataFrame = pd.DataFrame(data)

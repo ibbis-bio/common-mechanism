@@ -352,12 +352,12 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                       benign_desc)
 
         # Calculate the Benign Screen outcomes for each query.
-        query.result_handle.recommendation.benign_status = ScreenStatus.PASS
+        query.result_handle.recommendation.low_concern_status = ScreenStatus.PASS
         # If any hits are still warnings, or flags, propagate that to the benign step.
         for flagged_hit in query.result_handle.get_flagged_hits():
-            query.result_handle.recommendation.benign_status = compare(
+            query.result_handle.recommendation.low_concern_status = compare(
                 flagged_hit.recommendation.status,
-                query.result_handle.recommendation.benign_status
+                query.result_handle.recommendation.low_concern_status
                 )
 
 def _trim_to_region(data : pd.DataFrame, region : MatchRange):
