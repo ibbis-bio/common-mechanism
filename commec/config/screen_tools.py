@@ -45,9 +45,9 @@ class ScreenTools:
         self.biorisk_taxid_path = value if value is not None else os.path.join(
             params.config["databases"]["biorisk_hmm"]["path"],"reg_taxids.txt")
 
-        value = params.config.get("databases", {}).get("taxonomy", {}).get("benign_taxids")
+        value = params.config.get("databases", {}).get("taxonomy", {}).get("low_concern_taxids")
         self.benign_taxid_path = value if value is not None else os.path.join(
-            params.config["databases"]["benign"]["hmm"]["path"],"vax_taxids.txt")
+            params.config["databases"]["low_concern"]["hmm"]["path"],"vax_taxids.txt")
         
         self.biorisk_annotations_csv = params.config["databases"]["biorisk_hmm"]["annotations"]
 
@@ -97,21 +97,21 @@ class ScreenTools:
 
         if params.should_do_benign_screening:
             self.benign_hmm = HmmerHandler(
-                params.config["databases"]["benign"]["hmm"]["path"],
+                params.config["databases"]["low_concern"]["hmm"]["path"],
                 input_file=params.aa_path,
                 out_file=f"{params.output_prefix}.benign.hmmscan",
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
             self.benign_blastn = BlastNHandler(
-                params.config["databases"]["benign"]["fasta"]["path"],
+                params.config["databases"]["low_concern"]["fasta"]["path"],
                 input_file=params.nt_path,
                 out_file=f"{params.output_prefix}.benign.blastn",
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
             self.benign_cmscan = CmscanHandler(
-                params.config["databases"]["benign"]["cm"]["path"],
+                params.config["databases"]["low_concern"]["cm"]["path"],
                 input_file=params.nt_path,
                 out_file=f"{params.output_prefix}.benign.cmscan",
                 threads=params.config["threads"],

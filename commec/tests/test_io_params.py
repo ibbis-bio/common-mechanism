@@ -18,7 +18,7 @@ def expected_defaults():
             "default": "commec-dbs/"
         },
         "databases": {
-            "benign": {
+            "low_concern": {
                 "cm": {"path": "commec-dbs/benign_db/benign.cm"},
                 "fasta": {"path": "commec-dbs/benign_db/benign.fasta"},
                 "hmm": {"path": "commec-dbs/benign_db/benign.hmm"}
@@ -37,7 +37,7 @@ def expected_defaults():
             "taxonomy": {
                 "path": "commec-dbs/taxonomy/",
                 "regulated_taxids": "commec-dbs/biorisk_db/reg_taxids.txt",
-                "benign_taxids": "commec-dbs/benign_db/vax_taxids.txt"
+                "low_concern_taxids": "commec-dbs/benign_db/vax_taxids.txt"
             }
         },
         "threads": 1,
@@ -71,7 +71,7 @@ def expected_updated_from_custom_yaml():
             "default": "commec-dbs/"
         },
         "databases": {
-            "benign": {
+            "low_concern": {
                 "cm": {"path": "commec-dbs/benign_db/benign.cm"},
                 "fasta": {"path": "commec-dbs/benign_db/benign.fasta"},
                 "hmm": {"path": "commec-dbs/benign_db/benign.hmm"}
@@ -90,7 +90,7 @@ def expected_updated_from_custom_yaml():
             "taxonomy": {
                 "path": "commec-dbs/taxonomy/",
                 "regulated_taxids" : "custom_path.txt",
-                "benign_taxids": "commec-dbs/benign_db/vax_taxids.txt"
+                "low_concern_taxids": "commec-dbs/benign_db/vax_taxids.txt"
             }
         },
         "threads": 8,
@@ -213,7 +213,7 @@ def test_format_config_paths(tmp_path, base_path, benign_path, expected_path):
             "default": base_path
         },
         "databases": {
-            "benign" : {
+            "low_concern" : {
                 "cm" : {
                     "path": benign_path
                 }
@@ -229,7 +229,7 @@ def test_format_config_paths(tmp_path, base_path, benign_path, expected_path):
     args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
     params = ScreenIO(args)
     
-    assert expected_path == params.config["databases"]["benign"]["cm"]["path"]
+    assert expected_path == params.config["databases"]["low_concern"]["cm"]["path"]
 
 
 @pytest.mark.parametrize(

@@ -1,7 +1,7 @@
 base_paths:
   default: commec-dbs/
 databases:
-  benign:
+  low_concern:
     cm:
       path: '{default}benign_db/benign.cm'
     fasta:
@@ -21,7 +21,7 @@ databases:
   taxonomy:
       path: "{default}taxonomy/"
       regulated_taxids: "{default}biorisk_db/reg_taxids.txt"
-      benign_taxids: "{default}benign_db/vax_taxids.txt"
+      low_concern_taxids: "{default}benign_db/vax_taxids.txt"
 threads: 1
 diamond_jobs: null
 do_cleanup: False

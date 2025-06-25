@@ -80,7 +80,7 @@ def update_taxonomic_data_from_database(
     """
     Given a Taxonomic database screen output, update the screen data appropriately.
         search_handle : The handle of the search tool used to screen taxonomic data.
-        benign_taxid_path : Path to benign taxid csv.
+        benign_taxid_path : Path to low-concern taxid csv.
         biorisk_taxid_path : Path to regulated taxid csv.
         taxonomy_directory : The location of taxonom directory.
         data : the Screen data object, to be updated.
