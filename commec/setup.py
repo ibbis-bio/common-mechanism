@@ -60,7 +60,7 @@ class CliSetup:
 
         self.download_biorisk: bool = True
         self.default_biorisk_download_url: str = (
-            "https://f005.backblazeb2.com/file/common-mechanism-dbs/common-mechanism-dbs.zip"
+            "https://github.com/ibbis-bio/commec-databases/releases/download/v1.0.0/commec-dbs.zip"
         )
         self.biorisk_download_url: str = self.default_biorisk_download_url
 
