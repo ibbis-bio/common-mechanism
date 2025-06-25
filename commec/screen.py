@@ -552,11 +552,11 @@ class Screen:
             return
 
         # Run the benign tools:
-        logger.debug("\t...running benign hmmer.")
+        logger.debug("\t...running low-concern hmmer.")
         self.database_tools.benign_hmm.search()
-        logger.debug("\t...running benign blastn")
+        logger.debug("\t...running low-concern blastn")
         self.database_tools.benign_blastn.search()
-        logger.debug("\t...running benign cmscan")
+        logger.debug("\t...running low-concern cmscan")
         self.database_tools.benign_cmscan.search()
 
 
@@ -576,14 +576,14 @@ class Screen:
 
     def reset_biorisk_recommendations(self, new_recommendation : ScreenStatus):
         """ Helper function 
-        apply a single recommendation to the whole benign step 
+        apply a single recommendation to the whole Biorisk step 
         for every query."""
         for query in self.screen_data.queries.values():
             query.recommendation.biorisk_status = new_recommendation
 
     def reset_benign_recommendations(self, new_recommendation : ScreenStatus):
         """ Helper function 
-        apply a single recommendation to the whole benign step 
+        apply a single recommendation to the whole low-concern step 
         for every query."""
         for query in self.screen_data.queries.values():
             query.recommendation.benign_status = new_recommendation

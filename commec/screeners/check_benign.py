@@ -44,19 +44,19 @@ def _filter_benign_proteins(query : Query,
                             benign_protein_for_query : pd.DataFrame,
                             benign_descriptions : pd.DataFrame) -> list:
     """
-    Performs the logic of a non-concern housekeeping protein dataframe for a
+    Performs the logic of a low-concern housekeeping protein dataframe for a
     specific query, and determines whether it contains the criteria to clear 
     a specified hit, for a specified region.
 
     Benign proteins should have a coverage of at least 80% of the region they are 
     aiming to cover, as well as be at least 50 nucleotide in length.
     """
-    logger.debug("\t\tChecking hit %s for proteins of non-concern: ", hit.name)
+    logger.debug("\t\tChecking hit %s for proteins of low-concern: ", hit.name)
 
     # Ignore this region, if there are no overlapping hits.
     benign_protein_for_query_trimmed = _trim_to_region(benign_protein_for_query, region).copy()
     if benign_protein_for_query_trimmed.empty:
-        logger.debug("\t\tNo overlapping Proteins of non-concern for %s", hit.name)
+        logger.debug("\t\tNo overlapping Proteins of low-concern for %s", hit.name)
         return []
 
     benign_protein_for_query_trimmed = _calculate_coverage(benign_protein_for_query_trimmed, region)
@@ -116,12 +116,12 @@ def _filter_benign_rna(query : Query,
                             hit : HitResult,
                             region : MatchRange,
                             benign_rna_for_query : pd.DataFrame) -> list:
-    logger.debug("\t\t\tChecking query (%s) hit %s for RNA of non-concern",  query.name, hit.name)
+    logger.debug("\t\t\tChecking query (%s) hit %s for RNA of low-concern",  query.name, hit.name)
     
     # Filter benign RNA for relevance...
     benign_rna_for_query_trimmed = _trim_to_region(benign_rna_for_query, region).copy()
     if benign_rna_for_query_trimmed.empty:
-        logger.debug("\t\t\tNo overlapping non-concern RNA regions for %s (%i-%i)",
+        logger.debug("\t\t\tNo overlapping low-concern RNA regions for %s (%i-%i)",
                      hit.name, region.query_start, region.query_end)
         return []
 
@@ -134,7 +134,7 @@ def _filter_benign_rna(query : Query,
         (region.length() - benign_rna_for_query_trimmed["coverage_nt"]) < MINIMUM_RNA_BASEPAIR_COVERAGE]
     benign_rna_for_query_passed = benign_rna_for_query_passed.reset_index(drop=True)
 
-    logger.debug("\t\tSummary RNA of non-concern for %s: shape: %s preview:\n%s", 
+    logger.debug("\t\tSummary RNA of low-concern for %s: shape: %s preview:\n%s", 
                 hit.name, benign_rna_for_query_trimmed.shape,
                 benign_rna_for_query_trimmed[["coverage_nt", "coverage_ratio"]].head())
     
@@ -159,12 +159,12 @@ def _filter_benign_rna(query : Query,
             )
         
         if hit.recommendation.status not in {ScreenStatus.CLEARED_FLAG, ScreenStatus.CLEARED_WARN}:
-            logger.info("\t --> Clearing %s %s (region %i-%i), with RNA of non-concern %s",
+            logger.info("\t --> Clearing %s %s (region %i-%i), with RNA of low-concern %s",
                         hit.recommendation.status, hit.name, region.query_start, region.query_end, benign_hit_outcome.name)
             hit.recommendation.status = hit.recommendation.status.clear()
         return [benign_hit_outcome]
     
-    logger.info("Clear failed for %s (%s) as RNA of non-concern has >%i bases unaccounted for.",
+    logger.info("Clear failed for %s (%s) as RNA of low-concern has >%i bases unaccounted for.",
                     hit.name, hit.recommendation.status, MINIMUM_RNA_BASEPAIR_COVERAGE)
     return []
 

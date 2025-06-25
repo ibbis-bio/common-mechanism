@@ -50,11 +50,11 @@ def _check_inputs(
         return False
 
     if not os.path.exists(benign_taxid_path):
-        logger.error("\t...benign db file %s does not exist\n", benign_taxid_path)
+        logger.error("\t...low-concern database file %s does not exist\n", benign_taxid_path)
         return False
 
     if not os.path.exists(biorisk_taxid_path):
-        logger.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
+        logger.error("\t...biorisk database file %s does not exist\n", biorisk_taxid_path)
         return False
     
     if not os.path.exists(taxonomy_directory):
@@ -352,8 +352,8 @@ def check_for_regulated_pathogens(
         threads: int
     ):
     """
-    Check an input file (output from a database search) for regulated pathogens, from the benign and
-    biorisk database taxids.
+    Check an input file (output from a database search) for regulated pathogens, from the biorisk and
+    low-concern database taxids.
     """
     logger = logging.getLogger(__name__)
 
@@ -365,7 +365,7 @@ def check_for_regulated_pathogens(
 
     # Read in lists of regulated and benign tax ids
     if not os.path.exists(benign_taxid_path):
-        logger.error("\t...List of benign taxids %s does not exist\n", benign_taxid_path)
+        logger.error("\t...List of low-concern taxids %s does not exist\n", benign_taxid_path)
         return 1
     vax_taxids = pd.read_csv(benign_taxid_path, header=None).squeeze().astype(str).tolist()
 
