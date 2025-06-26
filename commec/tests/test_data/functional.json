@@ -40,12 +40,12 @@
         "FCTEST1": {
             "query": "FCTEST1",
             "length": 600,
-            "recommendation": {
+            "status": {
                 "screen_status": "Flag",
-                "biorisk_status": "Flag",
-                "protein_taxonomy_status": "Flag",
-                "nucleotide_taxonomy_status": "Flag",
-                "benign_status": "Flag",
+                "biorisk": "Flag",
+                "protein_taxonomy": "Flag",
+                "nucleotide_taxonomy": "Flag",
+                "benign": "Flag",
                 "rationale": "Matches sequence with pathogenic or toxin function, and protein and nucleotide sequence with regulated organisms; as well as virulence factor; as well as flags cleared as common or non-hazardous."
             },
             "hits": {

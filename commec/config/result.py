@@ -284,91 +284,124 @@ class QueryScreenStatus:
     """
 
     screen_status: ScreenStatus = ScreenStatus.NULL
-    biorisk_status: ScreenStatus = ScreenStatus.NULL
-    protein_taxonomy_status: ScreenStatus = ScreenStatus.NULL
-    nucleotide_taxonomy_status: ScreenStatus = ScreenStatus.NULL
-    benign_status: ScreenStatus = ScreenStatus.NULL
+    biorisk: ScreenStatus = ScreenStatus.NULL
+    protein_taxonomy: ScreenStatus = ScreenStatus.NULL
+    nucleotide_taxonomy: ScreenStatus = ScreenStatus.NULL
+    benign: ScreenStatus = ScreenStatus.NULL
     rationale : str = "-"
 
-    def update_screen_status(self, query_data):
+    # Mapping between screen steps and the fields above
+    STEP_TO_STATUS_FIELD = {
+        ScreenStep.BIORISK: 'biorisk',
+        ScreenStep.TAXONOMY_NT: 'nucleotide_taxonomy', 
+        ScreenStep.TAXONOMY_AA: 'protein_taxonomy',
+        ScreenStep.BENIGN_PROTEIN: 'benign',
+        ScreenStep.BENIGN_RNA: 'benign',
+        ScreenStep.BENIGN_DNA: 'benign',
+    }
+
+    def update_step_status(self, step: ScreenStep, status: ScreenStatus, override_skip: bool = False) -> None:
+        """
+        Update the query screen status for a particular step if the proposed status is more
+        important than the current one.
+        """
+        _, current_status = self._get_step_field_and_status(step)
+        if status.importance > current_status.importance:
+            self.set_step_status(step, status, override_skip)
+
+    def set_step_status(self, step: ScreenStep, status: ScreenStatus, override_skip: bool = False) -> None:
+        """
+        Set the query screen status for a particular step.
+
+        In most cases, query steps that have already been skipped should not be updated.
+        """
+        field_name, current_status = self._get_step_field_and_status(step)
+        if override_skip or current_status != ScreenStatus.SKIP:
+            setattr(self, field_name, status)
+
+    def _get_step_field_and_status(self, step: ScreenStep) -> tuple[str, ScreenStatus]:
+        field_name = QueryScreenStatus.STEP_TO_STATUS_FIELD.get(step)
+        return field_name, getattr(self, field_name)
+
+    def update(self, query_data):
         """
         Parses the query status across all screening steps, 
         then updates overall status flag.
         """
 
         if ScreenStatus.ERROR in {
-            self.biorisk_status,
-            self.protein_taxonomy_status,
-            self.nucleotide_taxonomy_status,
-            self.benign_status
+            self.biorisk,
+            self.protein_taxonomy,
+            self.nucleotide_taxonomy,
+            self.benign
         }:
             self.screen_status = ScreenStatus.ERROR
             return
                 
-        if self.benign_status == ScreenStatus.CLEARED_FLAG:
-            self.screen_status = self.benign_status
+        if self.benign == ScreenStatus.CLEARED_FLAG:
+            self.screen_status = self.benign
             return
 
-        if self.benign_status == ScreenStatus.CLEARED_WARN:
-            self.screen_status = self.benign_status
+        if self.benign == ScreenStatus.CLEARED_WARN:
+            self.screen_status = self.benign
             return
 
-        if self.biorisk_status == ScreenStatus.FLAG:
+        if self.biorisk == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
             return
 
-        if self.protein_taxonomy_status == ScreenStatus.FLAG:
+        if self.protein_taxonomy == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
             return
 
-        if self.nucleotide_taxonomy_status == ScreenStatus.FLAG:
+        if self.nucleotide_taxonomy == ScreenStatus.FLAG:
             self.screen_status = ScreenStatus.FLAG
             return
 
-        if self.biorisk_status == ScreenStatus.WARN:
+        if self.biorisk == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
             return
 
-        if self.protein_taxonomy_status == ScreenStatus.WARN:
+        if self.protein_taxonomy == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
             return
 
-        if self.nucleotide_taxonomy_status == ScreenStatus.WARN:
+        if self.nucleotide_taxonomy == ScreenStatus.WARN:
             self.screen_status = ScreenStatus.WARN
             return
 
-        if (self.protein_taxonomy_status == ScreenStatus.WARN or
-            self.nucleotide_taxonomy_status == ScreenStatus.WARN):
+        if (self.protein_taxonomy == ScreenStatus.WARN or
+            self.nucleotide_taxonomy == ScreenStatus.WARN):
             self.screen_status = ScreenStatus.WARN
             return
         
         # If everything is happy, but we haven't hit anything, time to be suspicious...
-        if (self.biorisk_status == ScreenStatus.PASS and
-            self.protein_taxonomy_status == ScreenStatus.PASS and
-            self.nucleotide_taxonomy_status == ScreenStatus.PASS and
+        if (self.biorisk == ScreenStatus.PASS and
+            self.protein_taxonomy == ScreenStatus.PASS and
+            self.nucleotide_taxonomy == ScreenStatus.PASS and
             query_data.no_hits_warning):
             self.screen_status = ScreenStatus.WARN
             return
 
         # If biorisk is skipped then it is skipped overall - likely query is too short...
-        if (self.biorisk_status == ScreenStatus.SKIP):
+        if (self.biorisk == ScreenStatus.SKIP):
             self.screen_status = ScreenStatus.SKIP
             return
 
-        logger.debug("Update called on recommendation, however no issuesome status updates occured."
-                     " Setting status to Biorisk output [%s] (Should be PASS, or NULL)",
-                     self.biorisk_status)
-        assert self.biorisk_status in [ScreenStatus.PASS, ScreenStatus.NULL]
-        self.screen_status = self.biorisk_status
+        logger.debug("Update called, but no query status updates occurred."
+                     " Setting status to biorisk search output: [%s] (Should be PASS or NULL)",
+                     self.biorisk)
+        assert self.biorisk in [ScreenStatus.PASS, ScreenStatus.NULL]
+        self.screen_status = self.biorisk
 
 
     def __str__(self) -> str:
         output = f"""
                 Overall    : {self.screen_status}\n
-                Biorisk    : {self.biorisk_status}\n
-                Protein    : {self.protein_taxonomy_status}\n
-                Nucleotide : {self.nucleotide_taxonomy_status}\n
-                Benign     : {self.benign_status}\n
+                Biorisk    : {self.biorisk}\n
+                Protein    : {self.protein_taxonomy}\n
+                Nucleotide : {self.nucleotide_taxonomy}\n
+                Benign     : {self.benign}\n
                 {self.rationale}
                 """
         return output
@@ -377,13 +410,13 @@ class QueryScreenStatus:
         """
         Returns a text step name of the first error occurance for use in logging.
         """
-        if self.biorisk_status == ScreenStatus.ERROR:
+        if self.biorisk == ScreenStatus.ERROR:
             return "Biorisk Screening"
-        if self.protein_taxonomy_status == ScreenStatus.ERROR:
+        if self.protein_taxonomy == ScreenStatus.ERROR:
             return "Protein Taxonomy Screening"
-        if self.nucleotide_taxonomy_status == ScreenStatus.ERROR:
+        if self.nucleotide_taxonomy == ScreenStatus.ERROR:
             return "Nucleotide Taxonomy Screening"
-        if self.benign_status == ScreenStatus.ERROR:
+        if self.benign == ScreenStatus.ERROR:
             return "Benign Screening"
 
         return "Screening" # General Error at some stage.
@@ -394,11 +427,9 @@ class QueryResult:
     """
     Container to hold screening result data pertinant to a single Query
     """
-
     query: str = ""
     length: int = 0
-    #sequence: str = ""
-    recommendation: QueryScreenStatus = field(default_factory=QueryScreenStatus)
+    status: QueryScreenStatus = field(default_factory=QueryScreenStatus)
     hits: dict[str, HitResult] = field(default_factory=dict)
 
     def get_hit(self, match_name: str) -> HitResult:
@@ -474,62 +505,50 @@ class QueryResult:
         Then updates the Query flag to consolidate all.
         """
         logger.debug("Updating step status flags for query %s", self.query)
-        logger.debug("Current status %s", self.recommendation)
+        logger.debug("Current status %s", self.status)
         
         ignored_status = {ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.PASS}
         
-        if self.recommendation.biorisk_status not in ignored_status:
-            self.recommendation.biorisk_status = ScreenStatus.NULL
-        if self.recommendation.protein_taxonomy_status not in ignored_status:
-            self.recommendation.protein_taxonomy_status = ScreenStatus.NULL
-        if self.recommendation.nucleotide_taxonomy_status not in ignored_status:
-            self.recommendation.nucleotide_taxonomy_status = ScreenStatus.NULL
-        if self.recommendation.benign_status not in ignored_status:
-            self.recommendation.benign_status = ScreenStatus.NULL
+        if self.status.biorisk not in ignored_status:
+            self.status.biorisk = ScreenStatus.NULL
+        if self.status.protein_taxonomy not in ignored_status:
+            self.status.protein_taxonomy = ScreenStatus.NULL
+        if self.status.nucleotide_taxonomy not in ignored_status:
+            self.status.nucleotide_taxonomy = ScreenStatus.NULL
+        if self.status.benign not in ignored_status:
+            self.status.benign = ScreenStatus.NULL
 
-        biorisk_status_set = set()
-        tax_aa_status_set = set()
-        tax_nt_status_set = set()
+        # Track status sets for rationale (only for specific steps that need it)
+        status_sets = {
+            ScreenStep.BIORISK: set(),
+            ScreenStep.TAXONOMY_AA: set(), 
+            ScreenStep.TAXONOMY_NT: set(),
+        }
 
         # Collapse data from all hits:
         for hit in self.hits.values():
-            match hit.recommendation.from_step:
-                case ScreenStep.BIORISK:
-                    self.recommendation.biorisk_status = compare(
-                        self.recommendation.biorisk_status, hit.recommendation.status)
-                    biorisk_status_set.add(hit.recommendation.status)
-                case ScreenStep.TAXONOMY_AA:
-                    self.recommendation.protein_taxonomy_status = compare(
-                        self.recommendation.protein_taxonomy_status, hit.recommendation.status)
-                    tax_aa_status_set.add(hit.recommendation.status)
-                case ScreenStep.TAXONOMY_NT:
-                    self.recommendation.nucleotide_taxonomy_status = compare(
-                        self.recommendation.nucleotide_taxonomy_status, hit.recommendation.status)
-                    tax_nt_status_set.add(hit.recommendation.status)
-                case ScreenStep.BENIGN_PROTEIN:
-                    self.recommendation.benign_status = compare(
-                        self.recommendation.benign_status, hit.recommendation.status)
-                case ScreenStep.BENIGN_RNA:
-                    self.recommendation.benign_status = compare(
-                        self.recommendation.benign_status, hit.recommendation.status)
-                case ScreenStep.BENIGN_DNA:
-                    self.recommendation.benign_status = compare(
-                        self.recommendation.benign_status, hit.recommendation.status)
+            step = hit.recommendation.from_step
+            hit_status = hit.recommendation.status
         
+            self.status.update_step_status(step, hit_status, override_skip=True)
+
+            if step in status_sets:
+                status_sets[step].add(hit_status)
+
         # Update Benign outcome based on the worst step.
-        self.recommendation.benign_status = compare(
-                        self.recommendation.benign_status, self.recommendation.biorisk_status)
-        self.recommendation.benign_status = compare(
-                        self.recommendation.benign_status, self.recommendation.protein_taxonomy_status)
-        self.recommendation.benign_status = compare(
-                        self.recommendation.benign_status, self.recommendation.nucleotide_taxonomy_status)
+        self.status.benign = max(
+            self.status.benign,
+            self.status.biorisk, 
+            self.status.protein_taxonomy,
+            self.status.nucleotide_taxonomy
+        )
 
-        self.recommendation.update_screen_status(query_data)
-        self._update_rationale(biorisk_status_set,
-                               tax_aa_status_set,
-                               tax_nt_status_set)
+        self.status.update(query_data)
+        self._update_rationale(status_sets[ScreenStep.BIORISK],
+                               status_sets[ScreenStep.TAXONOMY_AA],
+                               status_sets[ScreenStep.TAXONOMY_NT])
 
-        logger.debug("Updated status %s", self.recommendation)
+        logger.debug("Updated status %s", self.status)
 
     def _update_rationale(self,
                           biorisks : set[ScreenStatus],
@@ -546,7 +565,7 @@ class QueryResult:
         logger.debug("TAX AA set: %s", tax_aa)
         logger.debug("TAX NT set: %s", tax_nt)
 
-        state = self.recommendation # Shorthand, accessor to be updated
+        state = self.status # Shorthand, accessor to be updated
         tax_all = tax_aa | tax_nt # Check both Taxonomy steps at once
 
         has_flags = state.screen_status == ScreenStatus.FLAG
@@ -567,10 +586,10 @@ class QueryResult:
 
         # Unique circumstance, where there are no hits at all.
         if (state.screen_status == ScreenStatus.WARN and
-            state.biorisk_status == ScreenStatus.PASS and
-            state.protein_taxonomy_status == ScreenStatus.PASS and
-            state.nucleotide_taxonomy_status == ScreenStatus.PASS and
-            state.benign_status == ScreenStatus.PASS):
+            state.biorisk == ScreenStatus.PASS and
+            state.protein_taxonomy == ScreenStatus.PASS and
+            state.nucleotide_taxonomy == ScreenStatus.PASS and
+            state.benign == ScreenStatus.PASS):
             state.rationale = Rationale.NOTHING
             return
 
@@ -680,11 +699,11 @@ class QueryResult:
         """
         Called to skip this query, sets all recommendations to skip.
         """
-        self.recommendation.screen_status = ScreenStatus.SKIP
-        self.recommendation.biorisk_status = ScreenStatus.SKIP
-        self.recommendation.protein_taxonomy_status = ScreenStatus.SKIP
-        self.recommendation.nucleotide_taxonomy_status = ScreenStatus.SKIP
-        self.recommendation.benign_status = ScreenStatus.SKIP
+        self.status.screen_status = ScreenStatus.SKIP
+        self.status.biorisk = ScreenStatus.SKIP
+        self.status.protein_taxonomy = ScreenStatus.SKIP
+        self.status.nucleotide_taxonomy = ScreenStatus.SKIP
+        self.status.benign = ScreenStatus.SKIP
         logger.debug("Query %s has all statuses assigned to SKIP.", self.query)
 
 
@@ -769,11 +788,11 @@ class ScreenResult:
         for query in self.queries.values():
             data.append({
                 "query": query.query[:25],
-                "overall": query.recommendation.screen_status,
-                "biorisk": query.recommendation.biorisk_status,
-                "taxonomy_aa": query.recommendation.protein_taxonomy_status,
-                "taxonomy_nt": query.recommendation.nucleotide_taxonomy_status,
-                "benign": query.recommendation.benign_status
+                "overall": query.status.screen_status,
+                "biorisk": query.status.biorisk,
+                "taxonomy_aa": query.status.protein_taxonomy,
+                "taxonomy_nt": query.status.nucleotide_taxonomy,
+                "benign": query.status.benign
             })
 
         output_data : pd.DataFrame = pd.DataFrame(data)
@@ -789,8 +808,8 @@ class ScreenResult:
         for query in self.queries.values():
             data.append({
                 "query": query.query[:25],
-                "overall": query.recommendation.screen_status,
-                "rationale": query.recommendation.rationale,
+                "overall": query.status.screen_status,
+                "rationale": query.status.rationale,
             })
 
         output_data : pd.DataFrame = pd.DataFrame(data)

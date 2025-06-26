@@ -86,8 +86,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
     log_container = {key : [] for key in data.queries.keys()}
 
     for query in data.queries.values():
-        if not query.recommendation.biorisk_status == ScreenStatus.SKIP:
-            query.recommendation.biorisk_status = ScreenStatus.PASS
+        query.status.set_step_status(ScreenStep.BIORISK, ScreenStatus.PASS)
 
     if not search_handle.has_hits(search_handle.out_file):
         return 0
@@ -198,9 +197,8 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
             query_data.hits[affected_target] = new_hit
 
 
-
         # Update the recommendation for this query for biorisk.
-        query_data.recommendation.biorisk_status = biorisk_overall
+        query_data.status.set_step_status(ScreenStep.BIORISK, biorisk_overall)
 
     # Do all non-verbose logging in order of query:
     for query_name, log_list in log_container.items():
