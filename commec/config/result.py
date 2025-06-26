@@ -324,74 +324,30 @@ class QueryScreenStatus:
 
     def update(self, query_data):
         """
-        Parses the query status across all screening steps, 
-        then updates overall status flag.
+        Updates the overall status flag for this query, based on the status
+        from each step. Some special cases are also handled:
+        * Skipping this query entirely
+        * This query passed, but is suspiciously new.
+        ----
+        Inputs:
+        query_data : Query - The input Query as loaded by Screen, see Query.py
         """
-
-        if ScreenStatus.ERROR in {
+        self.screen_status = max(
             self.biorisk,
             self.protein_taxonomy,
             self.nucleotide_taxonomy,
             self.benign
-        }:
-            self.screen_status = ScreenStatus.ERROR
-            return
-                
-        if self.benign == ScreenStatus.CLEARED_FLAG:
-            self.screen_status = self.benign
-            return
+        )
 
-        if self.benign == ScreenStatus.CLEARED_WARN:
-            self.screen_status = self.benign
-            return
-
-        if self.biorisk == ScreenStatus.FLAG:
-            self.screen_status = ScreenStatus.FLAG
-            return
-
-        if self.protein_taxonomy == ScreenStatus.FLAG:
-            self.screen_status = ScreenStatus.FLAG
-            return
-
-        if self.nucleotide_taxonomy == ScreenStatus.FLAG:
-            self.screen_status = ScreenStatus.FLAG
-            return
-
-        if self.biorisk == ScreenStatus.WARN:
-            self.screen_status = ScreenStatus.WARN
-            return
-
-        if self.protein_taxonomy == ScreenStatus.WARN:
-            self.screen_status = ScreenStatus.WARN
-            return
-
-        if self.nucleotide_taxonomy == ScreenStatus.WARN:
-            self.screen_status = ScreenStatus.WARN
-            return
-
-        if (self.protein_taxonomy == ScreenStatus.WARN or
-            self.nucleotide_taxonomy == ScreenStatus.WARN):
-            self.screen_status = ScreenStatus.WARN
-            return
-        
         # If everything is happy, but we haven't hit anything, time to be suspicious...
-        if (self.biorisk == ScreenStatus.PASS and
-            self.protein_taxonomy == ScreenStatus.PASS and
-            self.nucleotide_taxonomy == ScreenStatus.PASS and
-            query_data.no_hits_warning):
+        if (self.screen_status == ScreenStatus.PASS and query_data.no_hits_warning):
             self.screen_status = ScreenStatus.WARN
             return
 
-        # If biorisk is skipped then it is skipped overall - likely query is too short...
+        # If biorisk was skipped then it is skipped overall - likely query is too short...
         if (self.biorisk == ScreenStatus.SKIP):
             self.screen_status = ScreenStatus.SKIP
             return
-
-        logger.debug("Update called, but no query status updates occurred."
-                     " Setting status to biorisk search output: [%s] (Should be PASS or NULL)",
-                     self.biorisk)
-        assert self.biorisk in [ScreenStatus.PASS, ScreenStatus.NULL]
-        self.screen_status = self.biorisk
 
 
     def __str__(self) -> str:
