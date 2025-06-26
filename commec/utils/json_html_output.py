@@ -150,7 +150,7 @@ def update_layout(fig, query_to_draw : QueryResult, stacks):
     figure_base_height = 180
     figure_stack_height = 30
 
-    r,g,b = color_from_status(query_to_draw.recommendation.screen_status)
+    r,g,b = color_from_status(query_to_draw.status.screen_status)
     css_color = f"rgb({r},{g},{b})"
 
     fig.update_layout(showlegend=False)
@@ -161,7 +161,7 @@ def update_layout(fig, query_to_draw : QueryResult, stacks):
         'title' : (
             f"<span style='background-color:{css_color};padding:6px 10px;"
             f"border-radius:6px;color:{css_color};font-weight:bold;'>"
-            f"{query_to_draw.recommendation.screen_status}</span> : {query_to_draw.query} ({query_to_draw.length} b.p.)"
+            f"{query_to_draw.status.screen_status}</span> : {query_to_draw.query} ({query_to_draw.length} b.p.) <br>{query_to_draw.status.rationale}"
         ),
         'barmode': 'overlay',
         'template': 'plotly_white',
@@ -263,9 +263,9 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
     graph_data = [
         {"label": query_to_draw.query, 
          "label_verbose": query_to_draw.query, 
-         "outcome" : f"Commec Recommendation for this query: {query_to_draw.recommendation.screen_status}",
-         "outcome_verbose":"",
-         "start": 1, "stop": query_to_draw.length, 
+         "outcome" : f"Commec Recommendation for this query: {query_to_draw.status.screen_status}",
+         "outcome_verbose":f"{query_to_draw.status.rationale}",
+         "start": 1, "stop": query_to_draw.length,
          "color" : CommecPalette.DK_BLUE, 
          "stack" : 0,
          "text" : query_to_draw.query[:25],
@@ -330,9 +330,9 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
 
         fig.add_trace(
             go.Bar(
-                x=[bar_data['stop'] - bar_data['start']],  # Width of bar as timedelta
+                x=[bar_data['stop'] - (bar_data['start'] - 1)],  # Width of bar as timedelta
                 y=[bar_data['stack']],  # Stack position
-                base=bar_data['start'],  # Starting point on x-axis
+                base=bar_data['start']-1,  # Starting point on x-axis
                 orientation='h',
                 marker=marker_dictionary,
                 hovertext=bar_data['hovertext'],
@@ -344,7 +344,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
         )
 
         # Compute x center for horizontal bar
-        bar_center_x = bar_data['start'] + (bar_data['stop'] - bar_data['start']) / 2
+        bar_center_x = (bar_data['start']-1) + (bar_data['stop'] - (bar_data['start']-1)) / 2
         bar_y = bar_data['stack']
 
         fig.add_annotation(

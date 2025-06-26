@@ -191,7 +191,7 @@ def calculate_noncoding_regions_per_query(
         # if the entire sequence, save regions <50 bases, is covered with protein, skip nt scan
         if not ranges_to_screen:
             logger.info("\t --> no noncoding regions >= 50 bases found for %s, skipping nt scan for query.", query.name)
-            query.result_handle.recommendation.nucleotide_taxonomy_status = ScreenStatus.SKIP
+            query.result_handle.status.nucleotide_taxonomy = ScreenStatus.SKIP
             continue
 
         # Update the list of start and end non-coding tuples for query.

@@ -86,7 +86,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
     log_container = {key : [] for key in data.queries.keys()}
 
     for query in data.queries.values():
-        query.recommendation.biorisk_status = ScreenStatus.PASS
+        query.status.set_step_status(ScreenStep.BIORISK, ScreenStatus.PASS)
 
     if not search_handle.has_hits(search_handle.out_file):
         return 0
@@ -131,6 +131,8 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
         if not query_data:
             logger.error("Query during hmmscan could not be found! [%s]", affected_query)
             continue
+
+        queries[affected_query[:-2]].confirm_has_hits()
 
         # Grab a list of unique queries, and targets for iteration.
         unique_query_data : pd.DataFrame = hmmer[hmmer['query name'] == affected_query]
@@ -195,9 +197,8 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
             query_data.hits[affected_target] = new_hit
 
 
-
         # Update the recommendation for this query for biorisk.
-        query_data.recommendation.biorisk_status = biorisk_overall
+        query_data.status.set_step_status(ScreenStep.BIORISK, biorisk_overall)
 
     # Do all non-verbose logging in order of query:
     for query_name, log_list in log_container.items():
