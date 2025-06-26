@@ -361,9 +361,9 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                 skip = False
 
         if skip:
-            query.result_handle.recommendation.benign_status = ScreenStatus.SKIP
+            query.result_handle.status.benign = ScreenStatus.SKIP
         
-        if query.result_handle.recommendation.benign_status == ScreenStatus.SKIP:
+        if query.result_handle.status.benign == ScreenStatus.SKIP:
             logger.debug("Skipping query %s, no regulated regions to clear.", query.name)
             continue
         
@@ -374,13 +374,12 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                       benign_desc)
 
         # Calculate the Benign Screen outcomes for each query.
-        query.result_handle.recommendation.benign_status = ScreenStatus.PASS
+        query.result_handle.status.benign = ScreenStatus.PASS
         # If any hits are still warnings, or flags, propagate that to the benign step.
         for flagged_hit in query.result_handle.get_flagged_hits():
-            query.result_handle.recommendation.benign_status = compare(
-                flagged_hit.recommendation.status,
-                query.result_handle.recommendation.benign_status
-                )
+            query.result_handle.status.update_step_status(
+               ScreenStep.BENIGN_DNA, flagged_hit.recommendation.status
+        )
 
 def _trim_to_region(data : pd.DataFrame, region : MatchRange):
     datatrim = data[
