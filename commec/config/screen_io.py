@@ -205,7 +205,11 @@ class ScreenIO:
         not in the default YAML, will be ignored.
         """
         config_from_yaml = self._load_config_from_yaml(config_filepath)
-        self.config = deep_update(self.config, config_from_yaml)
+        self.config, rejected = deep_update(self.config, config_from_yaml)
+        for rejects in rejected:
+            logger.warning("The follow input from the user provided"
+                " configuration was not recognised: %s : %s",
+                rejects[0], rejects[1])
 
     def _update_config_from_cli(self, args: argparse.Namespace):
         """ 
