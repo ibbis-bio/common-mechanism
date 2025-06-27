@@ -1,8 +1,8 @@
 {
     "commec_info": {
         "commec_version": "0.3.2",
-        "json_output_version": "0.2",
-        "time_taken": "00:00:01",
+        "json_output_version": "0.3",
+        "time_taken": "00:00:02",
         "date_run": "",
         "search_tool_info": {
             "biorisk_search_info": {
@@ -32,7 +32,7 @@
         }
     },
     "query_info": {
-        "file": "/tmp/pytest-of-root/pytest-7/test_functional_screen0/functional.fasta",
+        "file": "/tmp/pytest-of-root/pytest-22/test_functional_screen0/functional.fasta",
         "number_of_queries": 1,
         "total_query_length": 600
     },
