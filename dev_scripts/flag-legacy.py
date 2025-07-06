@@ -21,6 +21,7 @@ import glob
 import os
 import re
 from enum import StrEnum
+from json import JSONDecodeError
 import pandas as pd
 from commec.utils.file_utils import directory_arg
 from commec.config.result import ScreenStatus, ScreenResult, ScreenStep
@@ -89,7 +90,7 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
     results = []
     try:
         screen_data : ScreenResult = get_screen_data_from_json(file_path)
-    except (KeyError, AttributeError):
+    except (KeyError, AttributeError, JSONDecodeError):
         return []
     except IoVersionError as e:
         print(f"The following json was not a compatible version ({file_path}): {e}")
