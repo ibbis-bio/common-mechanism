@@ -169,6 +169,7 @@ def test_functional_screen(tmp_path, request):
     assert os.path.isfile(json_output_path)
 
     actual_screen_result : ScreenResult = get_screen_data_from_json(json_output_path)
+    sanitize_for_test(actual_screen_result)
     generate_html_from_screen_data(actual_screen_result, html_output_path)
 
     # If we are writing exemplare data, do it in raw, to test the json_io simultaneously.
@@ -177,7 +178,7 @@ def test_functional_screen(tmp_path, request):
         encode_screen_data_to_json(actual_screen_result, expected_json_output_path)
 
     expected_screen_result : ScreenResult = get_screen_data_from_json(expected_json_output_path)
-
+    sanitize_for_test(expected_screen_result)
     assert os.path.isfile(str(tmp_path / "functional.screen.log"))
 
     with open(str(tmp_path / "functional.screen.log"), "r", encoding = "utf-8") as file:
@@ -187,15 +188,6 @@ def test_functional_screen(tmp_path, request):
                 break
             print(line)
 
-    # This WILL be different, mainly the time,
-    # But also potentially blast versions etc.
-    actual_screen_result.commec_info = None
-    expected_screen_result.commec_info = None
-
-    # Pytest increments the filename version, so ignore the input file.
-    actual_screen_result.query_info.file = "REPLACED"
-    expected_screen_result.query_info.file = "REPLACED"
-
     # Convert both original and retrieved data to dictionaries and compare
     assert asdict(expected_screen_result) == asdict(actual_screen_result), (
         f"Functional test does not match predicted output, fix code,"
@@ -204,3 +196,13 @@ def test_functional_screen(tmp_path, request):
         f"Test JSON output data: \n{asdict(expected_screen_result)}"
     )
 
+def sanitize_for_test(screen_result: ScreenResult):
+    """
+    Remove arbitrary changes to the JSON that may arise during testing but are not
+    relevant and should not be compared or versioned. 
+    """
+    # Runtime for pytest may be different
+    screen_result.commec_info.time_taken = None
+
+    # Pytest increments the filename version, so ignore the input file.
+    screen_result.query_info.file = "/test_placeholder/"
