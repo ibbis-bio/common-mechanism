@@ -75,9 +75,9 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         benign_rna = False
         benign_synbio = False
 
-        qr = query.recommendation
+        qs = query.status
 
-        if (qr.protein_taxonomy_status
+        if (qs.protein_taxonomy
             not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
             for hit in query.hits.values():
                 if hit.recommendation.from_step in {ScreenStep.TAXONOMY_AA, ScreenStep.TAXONOMY_NT}:
@@ -87,7 +87,7 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
                         eukaryote_flag |= (int(info["regulated_eukaryotes"]) > 0)
 
         # Which forms of benign hits are present?
-        if (qr.benign_status
+        if (qs.benign
             not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
             for hit in query.hits.values():
                 match hit.recommendation.from_step:
@@ -124,21 +124,21 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
 
         # Update Protein and/or nucleotide statuses to Mixed, in the case where
         # they are otherwise a Pass, and there were mixed regulated and non-regulated.
-        protein_status = qr.protein_taxonomy_status
+        protein_status = qs.protein_taxonomy
         if mixed_aa_taxonomy and protein_status == ScreenStatus.PASS:
             protein_status = "Mixed"
-        nucleotide_status = qr.nucleotide_taxonomy_status
+        nucleotide_status = qs.nucleotide_taxonomy
         if mixed_nt_taxonomy and nucleotide_status == ScreenStatus.PASS:
             nucleotide_status = "Mixed"
 
         results.append({
         "name": name,
         "filepath": file_path,
-        "flag": query.recommendation.screen_status,
-        "biorisk": query.recommendation.biorisk_status,
+        "flag": query.status.screen_status,
+        "biorisk": query.status.biorisk,
         "protein": protein_status,
         "nucleotide": nucleotide_status,
-        "benign": query.recommendation.benign_status,
+        "benign": query.status.benign,
         "virus_flag": virus_flag,
         "bacteria_flag": bacteria_flag,
         "eukaryote_flag": eukaryote_flag,

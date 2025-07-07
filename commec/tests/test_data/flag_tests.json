@@ -40,12 +40,12 @@
         "FLAG_TEST_01": {
             "query": "FLAG_TEST_01",
             "length": 1,
-            "recommendation": {
+            "status": {
                 "screen_status": "Flag",
-                "biorisk_status": "Flag",
-                "protein_taxonomy_status": "Pass",
-                "nucleotide_taxonomy_status": "Pass",
-                "benign_status": "Flag"
+                "biorisk": "Flag",
+                "protein_taxonomy": "Pass",
+                "nucleotide_taxonomy": "Pass",
+                "benign": "Flag"
             },
             "hits": {
                 "BioriskHit": {
@@ -78,12 +78,12 @@
         "FLAG_TEST_02": {
             "query": "FLAG_TEST_02",
             "length": 1,
-            "recommendation": {
+            "status": {
                 "screen_status": "Flag",
-                "biorisk_status": "Pass",
-                "protein_taxonomy_status": "Flag",
-                "nucleotide_taxonomy_status": "Pass",
-                "benign_status": "Flag"
+                "biorisk": "Pass",
+                "protein_taxonomy": "Flag",
+                "nucleotide_taxonomy": "Pass",
+                "benign": "Flag"
             },
             "hits": {
                 "BioriskHit": {
@@ -129,12 +129,12 @@
         "FLAG_TEST_03": {
             "query": "FLAG_TEST_03",
             "length": 1,
-            "recommendation": {
+            "status": {
                 "screen_status": "Flag",
-                "biorisk_status": "Pass",
-                "protein_taxonomy_status": "Flag",
-                "nucleotide_taxonomy_status": "Pass",
-                "benign_status": "Flag"
+                "biorisk": "Pass",
+                "protein_taxonomy": "Flag",
+                "nucleotide_taxonomy": "Pass",
+                "benign": "Flag"
             },
             "hits": {
                 "BioriskHit": {
@@ -180,12 +180,12 @@
         "FLAG_TEST_04": {
             "query": "FLAG_TEST_02",
             "length": 1,
-            "recommendation": {
+            "status": {
                 "screen_status": "Flag",
-                "biorisk_status": "Pass",
-                "protein_taxonomy_status": "Flag",
-                "nucleotide_taxonomy_status": "Pass",
-                "benign_status": "Flag"
+                "biorisk": "Pass",
+                "protein_taxonomy": "Flag",
+                "nucleotide_taxonomy": "Pass",
+                "benign": "Flag"
             },
             "hits": {
                 "BioriskHit": {
@@ -231,12 +231,12 @@
         "FLAG_TEST_05": {
             "query": "FLAG_TEST_05",
             "length": 1,
-            "recommendation": {
+            "status": {
                 "screen_status": "Flag",
-                "biorisk_status": "Pass",
-                "protein_taxonomy_status": "Pass",
-                "nucleotide_taxonomy_status": "Flag",
-                "benign_status": "Flag"
+                "biorisk": "Pass",
+                "protein_taxonomy": "Pass",
+                "nucleotide_taxonomy": "Flag",
+                "benign": "Flag"
             },
             "hits": {
                 "BioriskHit": {
@@ -284,12 +284,12 @@
         "FLAG_TEST_06": {
             "query": "FLAG_TEST_06",
             "length": 1,
-            "recommendation": {
+            "status": {
                 "screen_status": "Pass",
-                "biorisk_status": "Pass",
-                "protein_taxonomy_status": "Pass",
-                "nucleotide_taxonomy_status": "Pass",
-                "benign_status": "Pass"
+                "biorisk": "Pass",
+                "protein_taxonomy": "Pass",
+                "nucleotide_taxonomy": "Pass",
+                "benign": "Pass"
             },
             "hits": {
                 "BioriskHit": {
