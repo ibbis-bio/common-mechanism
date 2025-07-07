@@ -1,0 +1,338 @@
+{
+    "commec_info": {
+        "commec_version": "",
+        "json_output_version": "0.2",
+        "time_taken": "00:00:01",
+        "date_run": "",
+        "search_tool_info": {
+            "biorisk_search_info": {
+                "tool_info": "",
+                "database_info": ""
+            },
+            "protein_search_info": {
+                "tool_info": "",
+                "database_info": ""
+            },
+            "nucleotide_search_info": {
+                "tool_info": "",
+                "database_info": ""
+            },
+            "benign_protein_search_info": {
+                "tool_info": "",
+                "database_info": ""
+            },
+            "benign_rna_search_info": {
+                "tool_info": "",
+                "database_info": ""
+            },
+            "benign_dna_search_info": {
+                "tool_info": "",
+                "database_info": ""
+            }
+        }
+    },
+    "query_info": {
+        "file": "n/a",
+        "number_of_queries": 1,
+        "total_query_length": 600
+    },
+    "queries": {
+        "FLAG_TEST_01": {
+            "query": "FLAG_TEST_01",
+            "length": 1,
+            "status": {
+                "screen_status": "Flag",
+                "biorisk": "Flag",
+                "protein_taxonomy": "Pass",
+                "nucleotide_taxonomy": "Pass",
+                "benign": "Flag"
+            },
+            "hits": {
+                "BioriskHit": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Biorisk Search"
+                    },
+                    "name": "Toxin1",
+                    "description": " TestBioriskToxinFlag",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 30,
+                            "query_start": 4,
+                            "query_end": 93
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "not assigned"
+                        ],
+                        "regulated": [
+                            "Regulated Gene"
+                        ]
+                    }
+                }
+            }
+        },
+        "FLAG_TEST_02": {
+            "query": "FLAG_TEST_02",
+            "length": 1,
+            "status": {
+                "screen_status": "Flag",
+                "biorisk": "Pass",
+                "protein_taxonomy": "Flag",
+                "nucleotide_taxonomy": "Pass",
+                "benign": "Flag"
+            },
+            "hits": {
+                "BioriskHit": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "RegulatedGeneExample",
+                    "description": " TestBioriskToxinFlag",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 30,
+                            "query_start": 4,
+                            "query_end": 93
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "12345"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "species"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "FLAG_TEST_03": {
+            "query": "FLAG_TEST_03",
+            "length": 1,
+            "status": {
+                "screen_status": "Flag",
+                "biorisk": "Pass",
+                "protein_taxonomy": "Flag",
+                "nucleotide_taxonomy": "Pass",
+                "benign": "Flag"
+            },
+            "hits": {
+                "BioriskHit": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "RegulatedGeneExample",
+                    "description": " TestBioriskToxinFlag",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 30,
+                            "query_start": 4,
+                            "query_end": 93
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Bacteria"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "1",
+                                "regulated_viruses": "0",
+                                "regulated_taxids": [
+                                    "12345"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "species"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "FLAG_TEST_04": {
+            "query": "FLAG_TEST_02",
+            "length": 1,
+            "status": {
+                "screen_status": "Flag",
+                "biorisk": "Pass",
+                "protein_taxonomy": "Flag",
+                "nucleotide_taxonomy": "Pass",
+                "benign": "Flag"
+            },
+            "hits": {
+                "BioriskHit": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "RegulatedGeneExample",
+                    "description": " TestBioriskToxinFlag",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 30,
+                            "query_start": 4,
+                            "query_end": 93
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Eukaryote"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "1",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "0",
+                                "regulated_taxids": [
+                                    "12345"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "species"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "FLAG_TEST_05": {
+            "query": "FLAG_TEST_05",
+            "length": 1,
+            "status": {
+                "screen_status": "Flag",
+                "biorisk": "Pass",
+                "protein_taxonomy": "Pass",
+                "nucleotide_taxonomy": "Flag",
+                "benign": "Flag"
+            },
+            "hits": {
+                "BioriskHit": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Nucleotide Taxonomy Search"
+                    },
+                    "name": "RegulatedGeneExample",
+                    "description": " TestRegulatedNT",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 30,
+                            "query_start": 4,
+                            "query_end": 93
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses",
+                            "Eukaryote",
+                            "Bacteria"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "3",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "1",
+                                "regulated_bacteria": "1",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "12345"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "species"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "FLAG_TEST_06": {
+            "query": "FLAG_TEST_06",
+            "length": 1,
+            "status": {
+                "screen_status": "Pass",
+                "biorisk": "Pass",
+                "protein_taxonomy": "Pass",
+                "nucleotide_taxonomy": "Pass",
+                "benign": "Pass"
+            },
+            "hits": {
+                "BioriskHit": {
+                    "recommendation": {
+                        "status": "Pass",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "MixedRegulatedAndNonExample",
+                    "description": " TestRegulatedNT",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 30,
+                            "query_start": 4,
+                            "query_end": 93
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "1",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "12345"
+                                ],
+                                "non_regulated_taxids": [
+                                    "11111"
+                                ],
+                                "regulated_species": [
+                                    "species"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
