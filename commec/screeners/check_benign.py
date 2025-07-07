@@ -271,7 +271,7 @@ def _update_benign_data_for_query(query : Query,
     new_benign_dna_hits = []
 
     # Check every region, of every hit that is a FLAG or WARN, against the Benign screen outcomes.
-    for hit in query.result_handle.hits.values():
+    for hit in query.result.hits.values():
         # Ignore regions that don't require clearing...
         if ((hit.recommendation.status not in {
             ScreenStatus.FLAG,
@@ -321,7 +321,7 @@ def _update_benign_data_for_query(query : Query,
 
     logger.debug("\tNew benign hits added: %i", len(new_benign_hits))
     for benign_addition in new_benign_hits:
-        query.result_handle.add_new_hit_information(benign_addition)
+        query.result.add_new_hit_information(benign_addition)
         logger.debug("\t\tAdding Benign Hit: %s", benign_addition)
 
 def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
@@ -353,7 +353,7 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
     for query in queries.values():
 
         skip = True
-        for hit in query.result_handle.hits.values():
+        for hit in query.result.hits.values():
             if hit.recommendation.status in {
                 ScreenStatus.FLAG,
                 ScreenStatus.WARN
@@ -361,9 +361,9 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                 skip = False
 
         if skip:
-            query.result_handle.status.benign = ScreenStatus.SKIP
+            query.result.status.benign = ScreenStatus.SKIP
         
-        if query.result_handle.status.benign == ScreenStatus.SKIP:
+        if query.result.status.benign == ScreenStatus.SKIP:
             logger.debug("Skipping query %s, no regulated regions to clear.", query.name)
             continue
         
@@ -374,10 +374,10 @@ def update_benign_data_from_database(benign_protein_handle : HmmerHandler,
                                       benign_desc)
 
         # Calculate the Benign Screen outcomes for each query.
-        query.result_handle.status.benign = ScreenStatus.PASS
+        query.result.status.benign = ScreenStatus.PASS
         # If any hits are still warnings, or flags, propagate that to the benign step.
-        for flagged_hit in query.result_handle.get_flagged_hits():
-            query.result_handle.status.update_step_status(
+        for flagged_hit in query.result.get_flagged_hits():
+            query.result.status.update_step_status(
                ScreenStep.BENIGN_DNA, flagged_hit.recommendation.status
         )
 

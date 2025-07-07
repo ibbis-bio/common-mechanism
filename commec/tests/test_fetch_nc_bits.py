@@ -112,7 +112,7 @@ def test_fetch_nocoding_regions(tmp_path):
 
     queries = screen_io.parse_input_fasta()
     for query in queries.values():
-        query.result_handle = QueryResult()
+        query.result = QueryResult()
 
     # Setup result handler for function input.
     db_file = os.path.join(DATABASE_DIRECTORY, "nr_blast/nr")
@@ -123,7 +123,7 @@ def test_fetch_nocoding_regions(tmp_path):
     # Generate the non-coding fasta text.
     actual_output = ""
     for query in queries.values():
-        if query.result_handle.status.nucleotide_taxonomy == ScreenStatus.SKIP:
+        if query.result.status.nucleotide_taxonomy == ScreenStatus.SKIP:
             continue
         actual_output += query.get_non_coding_regions_as_fasta()
 
