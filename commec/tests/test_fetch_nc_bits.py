@@ -8,7 +8,6 @@ from unittest.mock import patch
 
 from commec.tools.fetch_nc_bits import (
     _get_ranges_with_no_hits,
-    _write_nc_sequences,
     calculate_noncoding_regions_per_query,
 )
 
@@ -51,23 +50,6 @@ def test_get_ranges_with_no_hits(hits, nc_ranges):
 
     blast_df = _create_mock_blast_df_from(hits)
     assert _get_ranges_with_no_hits(blast_df) == nc_ranges
-
-
-def test_write_nc_sequences(tmp_path):
-    """
-    Test that sequences are successfully written to an output file based on noncoding regions.
-    """
-    desc = "TEST_FETCH_NC"
-    seq = "".join([str(i % 10) for i in range(300)])
-    record = list(SeqIO.parse(StringIO(f">{desc}\n{seq}\n"), "fasta"))[0]
-    nc_ranges = [[5, 59], [91, 170]]
-    outfile = tmp_path / "output.fasta"
-
-    _write_nc_sequences(nc_ranges, record, outfile)
-
-    content = outfile.read_text()
-    assert f">{desc} 5-59\n{seq[4:59]}\n" in content
-    assert f">{desc} 91-170\n{seq[90:170]}\n" in content
 
 
 def test_fetch_nocoding_regions(tmp_path):
