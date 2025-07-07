@@ -61,7 +61,6 @@ import pandas as pd
 
 from commec.config.screen_io import ScreenIO, IoValidationError
 from commec.config.query import Query
-from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.logger import (
     setup_console_logging,
     setup_file_logging,
@@ -509,7 +508,7 @@ class Screen:
 
         # Calculate non-coding information for each Query.
         calculate_noncoding_regions_per_query(
-            self.database_tools.regulated_protein.out_file,
+            self.database_tools.regulated_protein,
             self.queries)
 
         # Generate the non-coding fasta.

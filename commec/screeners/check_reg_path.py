@@ -56,15 +56,11 @@ def _check_inputs(
     if not os.path.exists(biorisk_taxid_path):
         logger.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
         return False
-    
+
     if not os.path.exists(taxonomy_directory):
         logger.error("\t...taxonomy directory %s does not exist\n", taxonomy_directory)
         return False
 
-    if search_handle.is_empty(search_handle.out_file):
-        logger.info("\tERROR: Homology search has failed\n")
-        return False
-    
     return True
 
 def update_taxonomic_data_from_database(
@@ -89,7 +85,7 @@ def update_taxonomic_data_from_database(
     """
     logger.debug("Acquiring Taxonomic Data for JSON output:")
 
-    if not _check_inputs(search_handle, benign_taxid_path, 
+    if not _check_inputs(search_handle, benign_taxid_path,
                          biorisk_taxid_path, taxonomy_directory):
         return 1
 
@@ -97,7 +93,7 @@ def update_taxonomic_data_from_database(
     for query in data.queries.values():
         query.status.set_step_status(step, ScreenStatus.PASS)
 
-    if not search_handle.has_hits(search_handle.out_file):
+    if not search_handle.has_hits():
         logger.info("\t...no hits\n")
         return 0
 
