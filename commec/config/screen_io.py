@@ -12,6 +12,7 @@ import argparse
 import logging
 import multiprocessing
 import importlib.resources
+from pprint import pformat
 
 import yaml
 from yaml.parser import ParserError
@@ -19,7 +20,7 @@ from yaml.parser import ParserError
 from Bio import SeqIO
 
 from commec.config.query import Query
-from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
+from commec.config.constants import DEFAULT_CONFIG_YAML_PATH, MINIMUM_QUERY_LENGTH
 from commec.utils.file_utils import expand_and_normalize
 from commec.utils.dict_utils import deep_update
 
@@ -122,6 +123,9 @@ class ScreenIO:
                 record.description = ""
             except Exception as e:
                 raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}") from e
+            
+        # Don't write a cleaned fasta for queries below a given length.
+        records = [record for record in records if len(record.seq) > MINIMUM_QUERY_LENGTH]
 
         with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
             SeqIO.write(records, fasta_file, "fasta")
@@ -169,6 +173,7 @@ class ScreenIO:
         # Override configuration with any in user-provided YAML file
         cli_config_yaml=args.config_yaml.strip()
         if os.path.exists(cli_config_yaml):
+            logger.debug(f"Overriding defaults in {default_yaml} with values from {cli_config_yaml}")
             self._update_config_from_yaml(cli_config_yaml)
 
         # Override configuration with any user-provided CLI arguments
@@ -176,6 +181,9 @@ class ScreenIO:
 
         # Update paths in configuration using appropriate string substitution
         self._format_config_paths(self.db_dir)
+
+        logger.debug("Running Screen with the following parameter set:")
+        logger.debug(pformat(self.config))
 
     def _load_config_from_yaml(self, config_filepath: str | os.PathLike) -> dict:
         """
@@ -197,7 +205,11 @@ class ScreenIO:
         not in the default YAML, will be ignored.
         """
         config_from_yaml = self._load_config_from_yaml(config_filepath)
-        self.config = deep_update(self.config, config_from_yaml)
+        self.config, rejected = deep_update(self.config, config_from_yaml)
+        for rejects in rejected:
+            logger.warning("The follow input from the user provided"
+                " configuration was not recognised: %s : %s",
+                rejects[0], rejects[1])
 
     def _update_config_from_cli(self, args: argparse.Namespace):
         """ 
@@ -210,8 +222,12 @@ class ScreenIO:
             )
 
         # Update the YAML default values in the configuration dictionary
+        logger.debug("Using the following CLI configuration arguments:")
+        logger.debug(pformat(args.user_specified_args))
+
         for arg in args.user_specified_args:
-             if arg in self.config and hasattr(args, arg):
+            if arg in self.config and hasattr(args, arg):
+                logger.debug(f"Command line arguments updated '{arg}' to: {getattr(args,arg)}")
                 self.config[arg] = getattr(args, arg)
 
     def _format_config_paths(self,
@@ -225,7 +241,7 @@ class ScreenIO:
                 default: path/to/databases/
             databases:
                 regulated_nt:
-                    path: '{default}nt_blast/nt'
+                    path: '{default}nt_blast/core_nt'
 
         This script will update the dictionary to propagate these substitutions.
         If a database directory is provided, it will override the base_path provided in the yaml.
@@ -234,6 +250,7 @@ class ScreenIO:
             try:
                 base_paths = self.config["base_paths"]
                 if db_dir_override is not None:
+                    logger.debug(f"Command line arguments updated base databases directory: {db_dir_override}")
                     base_paths["default"] = db_dir_override
                 else:
                     self.db_dir = base_paths["default"]
@@ -336,11 +353,11 @@ class ScreenIO:
 
     @property
     def should_do_protein_screening(self) -> bool:
-        return not self.config["in_fast_mode"]
+        return not self.config["skip_taxonomy_search"]
 
     @property
     def should_do_nucleotide_screening(self) -> bool:
-        return not (self.config["in_fast_mode"] or self.config["skip_nt_search"])
+        return not (self.config["skip_taxonomy_search"] or self.config["skip_nt_search"])
 
     @property
     def should_do_benign_screening(self) -> bool:

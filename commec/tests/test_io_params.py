@@ -28,7 +28,7 @@ def expected_defaults():
                 "annotations": 'commec-dbs/biorisk_db/biorisk_annotations.csv'
             },
             "regulated_nt": {
-                "path": "commec-dbs/nt_blast/nt"
+                "path": "commec-dbs/nt_blast/core_nt"
             },
             "regulated_protein": {
                 "blast": {"path": "commec-dbs/nr_blast/nr"},
@@ -42,7 +42,7 @@ def expected_defaults():
         },
         "threads": 1,
         "protein_search_tool": "blastx",
-        "in_fast_mode": False,
+        "skip_taxonomy_search": False,
         "skip_nt_search": False,
         "do_cleanup": False,
         "diamond_jobs": None,
@@ -59,7 +59,7 @@ def custom_yaml_config():
                 "regulated_taxids" : "custom_path.txt"
             }
         },
-        "in_fast_mode": True,
+        "skip_taxonomy_search": True,
         "force": True,
         "threads": 8,
     }
@@ -81,7 +81,7 @@ def expected_updated_from_custom_yaml():
                 "annotations": 'commec-dbs/biorisk_db/biorisk_annotations.csv'
             },
             "regulated_nt": {
-                "path": "commec-dbs/nt_blast/nt"
+                "path": "commec-dbs/nt_blast/core_nt"
             },
             "regulated_protein": {
                 "blast": {"path": "commec-dbs/nr_blast/nr"},
@@ -95,7 +95,7 @@ def expected_updated_from_custom_yaml():
         },
         "threads": 8,
         "protein_search_tool": "blastx",
-        "in_fast_mode": True,
+        "skip_taxonomy_search": True,
         "skip_nt_search": False,
         "do_cleanup": False,
         "diamond_jobs": None,
@@ -147,7 +147,7 @@ def test_cli_override(tmp_path, expected_updated_from_custom_yaml, custom_yaml_c
         INPUT_QUERY,
         "--config",
         str(user_config_path),
-        "-f", # fast mode
+        "--skip-tx", # skip taxonomy
         "--skip-nt", # skip nt search
         "-c", # do_cleanup
         "-d",

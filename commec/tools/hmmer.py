@@ -191,4 +191,4 @@ def append_nt_querylength_info(hmmer : pd.DataFrame, queries : dict[str, Query])
     Take the hmmer output, and add a series (nt_qlen) 
     of the true nt length based on query name.
     """
-    hmmer["nt_qlen"] = [len(queries[q[:-2]].seq_record.seq) for q in hmmer["query name"]]
+    hmmer["nt_qlen"] = [queries[q[:-2]].length for q in hmmer["query name"]]
