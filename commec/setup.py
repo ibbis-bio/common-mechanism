@@ -15,8 +15,8 @@ from urllib import request, error, parse
 import zipfile
 import tarfile
 import yaml
+import json
 from yaml.parser import ParserError
-import requests
 
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 
@@ -767,16 +767,23 @@ def get_latest_commec_database_release_tag(repo="ibbis-bio/commec-databases") ->
     ```
     """
     url = f"https://api.github.com/repos/{repo}/releases/latest"
+    req = request.Request(url, headers={"User-Agent": "commec-version-checker"})
     try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        return response.json()["tag_name"], "Success"
-    except (requests.HTTPError, requests.Timeout) as e:
-        return None, f"GitHub API error: {e}"
-    except requests.RequestException as e:
-        return None, f"Network error when contacting GitHub: {e}"
-    except KeyError:
-        return None, "Unexpected response structure: 'tag_name' not found."
+        with request.urlopen(req, timeout=10) as response:
+            if response.status != 200:
+                return None, f"GitHub API error: HTTP {response.status}"
+            data = json.loads(response.read().decode())
+        if "tag_name" in data:
+            return data.get("tag_name"), "Success" 
+        else:
+            return None, "Unexpected response structure: 'tag_name' not found."
+    except error.HTTPError as e:
+        return None, f"GitHub API error: HTTP {e.code} - {e.reason}"
+    except error.URLError as e:
+        return None, f"Network error when contacting GitHub: {e.reason}"
+    except json.JSONDecodeError:
+        return None, "Invalid JSON received from GitHub"
+
 
 def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
