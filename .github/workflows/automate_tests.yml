@@ -21,7 +21,7 @@ jobs:
           activate-environment: commec-env
           environment-file: environment.yaml
           auto-activate-base: false
-          python-version: 3.10  # Specify your project's Python version
+          clean-patched-environment-file: true
 
       - name: Run tests
         shell: bash -l {0}
