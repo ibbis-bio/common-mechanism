@@ -241,3 +241,12 @@ class DiamondHandler(BlastHandler):
             return SearchToolVersion(tool_info, database_info)
         except subprocess.CalledProcessError:
             return SearchToolVersion()
+
+    def check_output(self) -> bool:
+        """
+        Check if a file is non-existent. 
+        Diamond overrides the standard behaviour here,
+        as a non-hits output file can infact be empty, 
+        whereas the blast etc outputs have header information.
+        """
+        return self.output_exists()

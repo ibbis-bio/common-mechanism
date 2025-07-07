@@ -91,68 +91,11 @@ def _write_nc_sequences(nc_ranges, record, outfile):
     with open(outfile, "w", encoding="utf-8") as output_file:
         output_file.writelines(nc_sequences)
 
-
-def fetch_noncoding_regions(protein_results, query_fasta):
-    """Fetch noncoding regions > 50bp and write to a new file."""
-    outfile = re.sub(".nr.*", "", protein_results) + ".noncoding.fasta"
-
-    logger.info("Checking protein hits in: %s", protein_results)
-
-    if SearchHandler.is_empty(protein_results) or not SearchHandler.has_hits(
-        protein_results
-    ):
-        logger.info("\t...no protein hits found, screening entire sequence\n")
-        shutil.copyfile(query_fasta, outfile)
-        return
-
-    blast_df = get_high_identity_matches(protein_results)
-
-    if blast_df.empty:
-        logger.info(
-            "Protein hits all low percent identity (<90%%) - screening entire sequence"
-        )
-        shutil.copyfile(query_fasta, outfile)
-        return
-
-    query_col = "query acc."
-    if blast_df[query_col].nunique() > 1:
-        first_query = blast_df[query_col].iloc[0]
-        logger.warning(
-            "Only fetching nucleotides from first query [%s] in multi-query results: %s",
-            first_query,
-            protein_results,
-        )
-        blast_df = blast_df[blast_df[query_col] == first_query]
-
-    logger.info(
-        "Protein hits found, fetching nt regions not covered by a 90%% ID hit or better"
-    )
-    ranges_to_screen = _get_ranges_with_no_hits(blast_df)
-
-    # if the entire sequence, save regions <50 bases, is covered with protein, skip nt scan
-    if not ranges_to_screen:
-        logger.info(
-            "\t\t --> no noncoding regions >= 50 bases found, skipping nt scan\n"
-        )
-        return
-
-    records = _get_records(query_fasta)
-
-    if len(records) > 1:
-        logger.warning(
-            "Only fetching nucleotides from first record in multifasta: %s",
-            query_fasta,
-        )
-
-    ranges_str = ", ".join(f"{start}-{end}" for start, end in ranges_to_screen)
-    logger.info("Writing noncoding regions [%s] to: %s", ranges_str, outfile)
-    _write_nc_sequences(ranges_to_screen, records[0], outfile)
-
 def _set_no_coding_regions(query : Query):
     query.non_coding_regions.append((1, query.length))
 
 def calculate_noncoding_regions_per_query(
-        protein_results : str,
+        protein_results : SearchHandler,
         queries : dict[str, Query]
         ):
     """
@@ -162,15 +105,15 @@ def calculate_noncoding_regions_per_query(
     Does NOT write the non-coding dictionary.
     """
 
-    logger.debug("Checking protein hits in: %s", protein_results)
+    logger.debug("Checking protein hits in: %s", protein_results.out_file)
 
-    if not SearchHandler.has_hits(protein_results):
+    if not protein_results.has_hits():
         logger.info("No protein hits found, screening entire sequence.")
         for query in queries.values():
             _set_no_coding_regions(query)
         return
 
-    protein_matches = get_high_identity_matches(protein_results)
+    protein_matches = get_high_identity_matches(protein_results.out_file)
 
     query_col = "query acc."
 
@@ -199,20 +142,3 @@ def calculate_noncoding_regions_per_query(
 
         ranges_str = ", ".join(f"{start}-{end}" for start, end in ranges_to_screen)
         logger.info("\t --> Identified noncoding regions for query %s: [%s]", query.name, ranges_str)
-
-
-def main():
-    """
-    Wrapper for parsing arguments direction to fetch_nc_bits if called as main.
-    """
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(dest="protein_results", help="Results of a protein search")
-    parser.add_argument(
-        dest="fasta_file_path",
-        help="FASTA file from which to fetch regions with no protein hits",
-    )
-    args = parser.parse_args()
-    fetch_noncoding_regions(args.protein_results, args.fasta_file_path)
-
-if __name__ == "__main__":
-    main()
