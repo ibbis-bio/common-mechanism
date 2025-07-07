@@ -21,14 +21,12 @@ import glob
 import os
 import re
 from enum import StrEnum
-from json import JSONDecodeError
 import pandas as pd
 from commec.utils.file_utils import directory_arg
-from commec.config.result import ScreenStatus, ScreenResult, ScreenStep
-from commec.config.json_io import get_screen_data_from_json, IoVersionError
+from commec.config.result import ScreenStatus
+from commec.flag import read_flags_from_json
 
 DESCRIPTION = "Parse all .screen, or .json files in a directory and create CSVs of flags raised"
-
 
 class Outcome(StrEnum):
     """Possible outcomes for each step of the screening process."""
@@ -82,96 +80,6 @@ def add_args(parser: argparse.ArgumentParser):
     )
     return parser
 
-
-def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
-    """
-    Read JSON screen output and prepare screen_pipline_status CSV.
-    """
-    results = []
-    try:
-        screen_data : ScreenResult = get_screen_data_from_json(file_path)
-    except (KeyError, AttributeError, JSONDecodeError):
-        return []
-    except IoVersionError as e:
-        print(f"The following json was not a compatible version ({file_path}): {e}")
-        return []
-
-    for name, query in screen_data.queries.items():
-        # Defaults are false, and are overwritten if a single hit occurs.
-        virus_flag = False
-        bacteria_flag = False
-        eukaryote_flag = False
-        benign_protein = False
-        benign_rna = False
-        benign_synbio = False
-
-        QR = query.recommendation
-
-        if (QR.protein_taxonomy_status
-            not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
-            for hit in query.hits.values():
-                if hit.recommendation.from_step == ScreenStep.TAXONOMY_AA:
-                    for info in hit.annotations["regulated_taxonomy"]:
-                        bacteria_flag  |= (int(info["regulated_bacteria"]) > 0)
-                        virus_flag     |= (int(info["regulated_viruses"]) > 0)
-                        eukaryote_flag |= (int(info["regulated_eukaryotes"]) > 0)
-
-        # Which forms of benign hits are present?
-        if (QR.benign_status
-            not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
-            for hit in query.hits.values():
-                match hit.recommendation.from_step:
-                    case ScreenStep.BENIGN_PROTEIN:
-                        benign_protein = True
-                    case ScreenStep.BENIGN_RNA:
-                        benign_rna = True
-                    case ScreenStep.BENIGN_DNA:
-                        benign_synbio = True
-                    case _:
-                        continue
-
-        mixed_aa_taxonomy = False
-        mixed_nt_taxonomy = False
-        for hit in query.hits.values():
-            match hit.recommendation.from_step:
-                case ScreenStep.TAXONOMY_AA:
-                    if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN]:
-                        reg_dicts = hit.annotations["regulated_taxonomy"]
-                        for r in reg_dicts:
-                            if len(r["non_regulated_taxids"]) > 0:
-                                mixed_aa_taxonomy = True
-
-                case ScreenStep.TAXONOMY_NT:
-                    if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN]:
-                        reg_dicts = hit.annotations["regulated_taxonomy"]
-                        for r in reg_dicts:
-                            if len(r["non_regulated_taxids"]) > 0:
-                                mixed_nt_taxonomy = True
-                case _:
-                    continue
-
-        protein_status = Outcome.MIX if mixed_aa_taxonomy else status_to_outcome(QR.protein_taxonomy_status)
-        nucleotide_status = Outcome.MIX if mixed_nt_taxonomy else status_to_outcome(QR.nucleotide_taxonomy_status)
-
-        results.append({
-        "name": name,
-        "filepath": file_path,
-        "flag": status_to_outcome(query.recommendation.screen_status),
-        "biorisk": status_to_outcome(query.recommendation.biorisk_status),
-        "protein": protein_status,
-        "nucleotide": nucleotide_status,
-        "benign": status_to_outcome(query.recommendation.benign_status),
-        "virus_flag": virus_flag,
-        "bacteria_flag": bacteria_flag,
-        "eukaryote_flag": eukaryote_flag,
-        "benign_protein": benign_protein,
-        "benign_rna": benign_rna,
-        "benign_dna": benign_synbio
-        })
-
-    return results
-
-
 def read_flags_from_screen(file_path) -> dict[str, str | set[str] | bool]:
     """
     Read log .screen output and prepare screen_pipline_status CSV.
@@ -181,6 +89,8 @@ def read_flags_from_screen(file_path) -> dict[str, str | set[str] | bool]:
 
     filename_without_extension = os.path.splitext(os.path.basename(file_path))[0]
 
+    steps = []
+    
     # Don't capture any of the file before STEP 1
     first_step = re.search(r">> STEP 1:", content)
     # Split by STEP
