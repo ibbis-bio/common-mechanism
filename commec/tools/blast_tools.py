@@ -410,7 +410,7 @@ def get_top_hits(blast: pd.DataFrame):
     return top_hits
 
 
-def get_high_identity_matches(blast_output_file, threshold=90):
+def get_high_identity_hits(blast_output_file, threshold=90):
     """Read all hits with high sequence identity from a BLAST results file."""
     hits = read_blast(blast_output_file)
     hits = _trim_overlapping(hits)
