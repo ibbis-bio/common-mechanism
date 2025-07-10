@@ -18,8 +18,8 @@ databases_to_implement = [
     [DiamondHandler, "nr_dmnd", "nr"],
     [BlastNHandler, "nt_blast", "core_nt"],
     [BlastXHandler, "nr_blast", "nr"],
-    [HmmerHandler, "low_concern/protein", "low_concern.hmm"],
-    [CmscanHandler, "low_concern/rna", "low_concern.cm"],
+    [HmmerHandler, "low_concern/protein", "benign.hmm"],
+    [CmscanHandler, "low_concern/rna", "benign.cm"],
 ]
 
 def print_tmp_path_contents(tmp_path):
