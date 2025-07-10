@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 # Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
 """
-Script that checks the output from hmmscan and prints to screen the results
-
-Usage:
-    python check_low_concern.py -i INPUT -s SEQUENCE -d DATABASE FOLDER
-      -i, --input = input sample name (will check for sample.low_concern.hmmscan file)
-      -s, --sequence = input sequence file
-      -d, --database = database folder location/path (will check for low_concern_annotations.tsv)
+Script that checks the output from 3 databases of low concern, deriving protein, 
+dna, and rna sources. Protein (hmmscan), rna (cmscan), and dna (blastn) are 
+checked via the entry point `parse_low_concern_hits``.
+The input dictionary of Query objects is updated in place with the resulting 
+relevant low concern information.
 """
 import logging
 import pandas as pd
@@ -26,7 +24,6 @@ from commec.config.result import (
     ScreenStatus,
     HitScreenStatus,
     MatchRange,
-    compare
 )
 
 # Constants determining Commec's sensitivity for low_concern screen.
@@ -51,7 +48,7 @@ def _filter_low_concern_proteins(query : Query,
     Benign proteins should have a coverage of at least 80% of the region they are 
     aiming to cover, as well as be at least 50 nucleotide in length.
     """
-    logger.debug("\t\tChecking hit %s for proteins of low-concern: ", hit.name)
+    logger.debug("\t\t\tChecking query (%s) hit %s for proteins of low-concern",  query.name, hit.name)
 
     # Ignore this region, if there are no overlapping hits.
     low_concern_protein_for_query_trimmed = _trim_to_region(low_concern_protein_for_query, region).copy()
@@ -324,28 +321,40 @@ def _update_low_concern_data_for_query(query : Query,
         query.result_handle.add_new_hit_information(low_concern_addition)
         logger.debug("\t\tAdding low-concern Hit: %s", low_concern_addition)
 
-def parse_low_concern_hits(low_concern_protein_handler : HmmerHandler,
-                                     low_concern_rna_handler : CmscanHandler,
-                                     low_concern_dna_handler : BlastNHandler,
-                                     queries : dict[str,Query],
-                                     low_concern_desc : pd.DataFrame):
+def parse_low_concern_hits(protein_handler : HmmerHandler,
+                            rna_handler : CmscanHandler,
+                            dna_handler : BlastNHandler,
+                            queries : dict[str,Query],
+                            low_concern_desc : pd.DataFrame):
     """
-    Parse the outputs from the protein, rna, and synbio database searches, and populate
-    the low_concern hits into a Screen dataset. Marks those hits that are cleared for low_concern
-    as cleared if low_concern screen passes them.
+    Parses the outputs from protein (HMMER), RNA (CMSCAN), and DNA (BLASTN) low-concern screens.
+
+    This function processes hit data from the respective handlers, and updates each query's result handle with
+    low-concern status information based on these outcomes. 
+    Queries with no relevant flagged or warned hits are marked as SKIP. 
+    ----
+    ## Parameters:
+    * `protein_handler` (HmmerHandler): Handler for HMMER-based protein search results.
+    * `rna_handler` (CmscanHandler): Handler for CMSCAN-based RNA search results.
+    * `dna_handler` (BlastNHandler): Handler for BLASTN-based DNA search results.
+    * `queries` (dict[str, Query]): Dictionary of Query objects, i.e. screen fasta input.
+    * `low_concern_desc` (pd.DataFrame): DataFrame containing descriptions for low-concern hits.
+    -----
+    ## Returns:
+    * `None`: The function updates `queries` in place.
     """
     # Reading empty outcomes should result in empty DataFrames, not errors.
-    low_concern_protein_screen_data = low_concern_protein_handler.read_output()
+    low_concern_protein_screen_data = protein_handler.read_output()
     append_nt_querylength_info(low_concern_protein_screen_data, queries)
     recalculate_hmmer_query_coordinates(low_concern_protein_screen_data)
     logger.debug("\tLow-concern Protein Data: shape: %s preview:\n%s",
                  low_concern_protein_screen_data.shape, low_concern_protein_screen_data.head())
     
-    low_concern_rna_screen_data = low_concern_rna_handler.read_output()
+    low_concern_rna_screen_data = rna_handler.read_output()
     logger.debug("\tLow-concern RNA Data: shape: %s preview:\n%s",
                 low_concern_rna_screen_data.shape, low_concern_rna_screen_data.head())
     
-    low_concern_dna_screen_data = low_concern_dna_handler.read_output()
+    low_concern_dna_screen_data = dna_handler.read_output()
     low_concern_dna_screen_data = get_top_hits(low_concern_dna_screen_data)
     logger.debug("\tLow-concern Synbio Top Hits Data: shape: %s preview:\n%s",
                 low_concern_dna_screen_data.shape, low_concern_dna_screen_data.head())
