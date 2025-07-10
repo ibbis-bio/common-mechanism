@@ -249,4 +249,4 @@ class DiamondHandler(BlastHandler):
         as a non-hits output file can infact be empty, 
         whereas the blast etc outputs have header information.
         """
-        return self.output_exists()
+        return self.has_output()
