@@ -20,7 +20,7 @@ from yaml.parser import ParserError
 from Bio import SeqIO
 
 from commec.config.query import Query
-from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
+from commec.config.constants import DEFAULT_CONFIG_YAML_PATH, MINIMUM_QUERY_LENGTH
 from commec.utils.file_utils import expand_and_normalize
 from commec.utils.dict_utils import deep_update
 
@@ -123,6 +123,9 @@ class ScreenIO:
                 record.description = ""
             except Exception as e:
                 raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}") from e
+            
+        # Don't write a cleaned fasta for queries below a given length.
+        records = [record for record in records if len(record.seq) > MINIMUM_QUERY_LENGTH]
 
         with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
             SeqIO.write(records, fasta_file, "fasta")
@@ -202,7 +205,11 @@ class ScreenIO:
         not in the default YAML, will be ignored.
         """
         config_from_yaml = self._load_config_from_yaml(config_filepath)
-        self.config = deep_update(self.config, config_from_yaml)
+        self.config, rejected = deep_update(self.config, config_from_yaml)
+        for rejects in rejected:
+            logger.warning("The follow input from the user provided"
+                " configuration was not recognised: %s : %s",
+                rejects[0], rejects[1])
 
     def _update_config_from_cli(self, args: argparse.Namespace):
         """ 

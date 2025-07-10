@@ -125,7 +125,7 @@ def test_functional_screen(tmp_path, request):
     input_fasta_path = tmp_path / "functional.fasta"
     input_fasta_path.write_text(f">{desc_1}\n{seq_1}\n")
     json_output_path = tmp_path / "functional.output.json"
-    desired_json_output_path = os.path.join(os.path.dirname(__file__), "test_data/functional.json")
+    expected_json_output_path = os.path.join(os.path.dirname(__file__), "test_data/functional.json")
     html_output_path = os.path.join(os.path.dirname(__file__), "test_data/functional")
 
     os.mkdir(tmp_path / "output_functional")
@@ -160,27 +160,25 @@ def test_functional_screen(tmp_path, request):
         parser = ScreenArgumentParser()
         add_args(parser)
         args = parser.parse_args()
+        # Full run of commec scren!
         run(args)
 
     print_tmp_path_contents(tmp_path) # Debug print to ensure correct files are located where they should be.
     
-    # TESTING BEGINS:
+    # TESTING OUTPUT BEGINS:
     assert os.path.isfile(json_output_path)
 
-    output_result : ScreenResult = get_screen_data_from_json(json_output_path)
-    generate_html_from_screen_data(output_result, html_output_path)
+    actual_screen_result : ScreenResult = get_screen_data_from_json(json_output_path)
+    sanitize_for_test(actual_screen_result)
+    generate_html_from_screen_data(actual_screen_result, html_output_path)
 
     # If we are writing exemplare data, do it in raw, to test the json_io simultaneously.
     gen_examples = request.config.getoption("--gen-examples")
     if gen_examples:
-        encode_screen_data_to_json(output_result, desired_json_output_path)
-        #with open(desired_json_output_path, "w", encoding="utf-8") as json_file:
-        #    json.dump(tesT, json_file, indent=4)
+        encode_screen_data_to_json(actual_screen_result, expected_json_output_path)
 
-    test_result : ScreenResult = get_screen_data_from_json(desired_json_output_path)
-
-    print(test_result)
-
+    expected_screen_result : ScreenResult = get_screen_data_from_json(expected_json_output_path)
+    sanitize_for_test(expected_screen_result)
     assert os.path.isfile(str(tmp_path / "functional.screen.log"))
 
     with open(str(tmp_path / "functional.screen.log"), "r", encoding = "utf-8") as file:
@@ -190,23 +188,21 @@ def test_functional_screen(tmp_path, request):
                 break
             print(line)
 
-
-
-    # This WILL be different, mainly the time,
-    # But also potentially blast versions etc.
-    output_result.commec_info = None
-    test_result.commec_info = None
-
-    # Pytest increments the filename version, so ignore the input file.
-    output_result.query_info.file = "REPLACED"
-    test_result.query_info.file = "REPLACED"
-
-
     # Convert both original and retrieved data to dictionaries and compare
-    assert asdict(output_result) == asdict(test_result), (
+    assert asdict(expected_screen_result) == asdict(actual_screen_result), (
         f"Functional test does not match predicted output, fix code,"
         f" or if new output is expected, run with --gen-examples\n"
-        f"Test JSON Reference data: \n{asdict(output_result)}\n"
-        f"Test JSON output data: \n{asdict(test_result)}"
+        f"Test JSON Reference data: \n{asdict(actual_screen_result)}\n"
+        f"Test JSON output data: \n{asdict(expected_screen_result)}"
     )
 
+def sanitize_for_test(screen_result: ScreenResult):
+    """
+    Remove arbitrary changes to the JSON that may arise during testing but are not
+    relevant and should not be compared or versioned. 
+    """
+    # Runtime for pytest may be different
+    screen_result.commec_info.time_taken = None
+
+    # Pytest increments the filename version, so ignore the input file.
+    screen_result.query_info.file = "/test_placeholder/"

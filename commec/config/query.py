@@ -24,6 +24,7 @@ class Query:
         self.non_coding_regions : list[tuple[int, int]] = [] # 1 based coordinates for Non-Coding Regions.
         self.result_handle : QueryResult = None
         self.translations: list[QueryTranslation] = []
+        self.no_hits_warning : bool = True # Updated to False whenever any hit is found.
 
     @property
     def original_name(self) -> str:
@@ -181,6 +182,17 @@ class Query:
             f"Non-coding index provided  ({index}) for {self.name}"
             f"which is out-of-bounds for any known NC start-end tuple: {self.non_coding_regions}"
             )
+    
+    def confirm_has_hits(self):
+        """
+        Confirm that this query has had a valid hit, and therefore, has some
+        sort of homology to something. 
+        
+        TODO: In the future, this could also be passed
+        coordinate information to mark some areas of the query identified compared
+        to other areas.
+        """
+        self.no_hits_warning = False
 
 @dataclass
 class QueryTranslation:

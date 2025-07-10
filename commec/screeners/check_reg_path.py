@@ -94,15 +94,8 @@ def parse_taxonomy_hits(
         return 1
 
     # The default is to pass, its up to the data to over-write this.
-    # Some Queries may already be set to skip, which we ignore.
-    if step == ScreenStep.TAXONOMY_AA:
-        for query in data.queries.values():
-            if query.recommendation.protein_taxonomy_status != ScreenStatus.SKIP:
-                query.recommendation.protein_taxonomy_status = ScreenStatus.PASS
-    if step == ScreenStep.TAXONOMY_NT:
-        for query in data.queries.values():
-            if query.recommendation.nucleotide_taxonomy_status != ScreenStatus.SKIP:
-                query.recommendation.nucleotide_taxonomy_status = ScreenStatus.PASS
+    for query in data.queries.values():
+        query.status.set_step_status(step, ScreenStatus.PASS)
 
     if not search_handler.has_hits(search_handler.out_file):
         logger.info("\t...no hits\n")
@@ -146,6 +139,8 @@ def parse_taxonomy_hits(
             if not query_write:
                 logger.error("Query during %s could not be found! [%s]", str(step), query)
                 continue
+
+            queries[query].confirm_has_hits()
 
             unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
             unique_query_data.dropna(subset = ['species'])
@@ -237,7 +232,7 @@ def parse_taxonomy_hits(
                 logger.debug("\t\tNon Regulated Taxids: %s", non_reg_taxids)
                 logger.debug("\t\tRanges: %s", match_ranges)
 
-                recommendation : ScreenStatus = ScreenStatus.FLAG
+                screen_status : ScreenStatus = ScreenStatus.FLAG
 
                 # TODO: Currently, we recapitulate old behaviour,
                 # # " no top hit exclusive to a regulated pathogen: PASS"
@@ -248,17 +243,10 @@ def parse_taxonomy_hits(
                 logger.debug("Checking number of non regulated taxids: %i", len(non_reg_taxids))
                 if len(non_reg_taxids) > 0:
                     logger.debug("Non-regulated taxids present, treating as MIXED result.")
-                    recommendation = ScreenStatus.PASS
+                    screen_status = ScreenStatus.PASS
 
                 # Update the query level recommendation of this step.
-                if step == ScreenStep.TAXONOMY_AA:
-                    query_write.recommendation.protein_taxonomy_status = compare(
-                        query_write.recommendation.protein_taxonomy_status,
-                        recommendation)
-                if step == ScreenStep.TAXONOMY_NT:
-                    query_write.recommendation.nucleotide_taxonomy_status = compare(
-                        query_write.recommendation.nucleotide_taxonomy_status,
-                        recommendation)
+                query_write.status.update_step_status(step, screen_status)
 
                 regulation_dict = {"number_of_regulated_taxids" : str(len(reg_taxids)),
                                    "number_of_unregulated_taxids" : str(len(non_reg_taxids)),
@@ -270,10 +258,10 @@ def parse_taxonomy_hits(
                                    "regulated_species" : reg_species}
 
                 # Logging logic.
-                alt_text = "only " if recommendation == ScreenStatus.FLAG else "both regulated and non-"
+                alt_text = "only " if screen_status == ScreenStatus.FLAG else "both regulated and non-"
                 s = "" if len(reg_taxids) == 1 else "'s"
                 log_message = (
-                    f"\t --> {recommendation} at bases ({match_ranges_text}) found in {alt_text}regulated {domains_text}.\n"
+                    f"\t --> {screen_status} at bases ({match_ranges_text}) found in {alt_text}regulated {domains_text}.\n"
                     f"\t   (Regulated Species: {reg_species_text}. Regulated TaxID{s}: {reg_taxids_text})"
                 )
                 logger.debug(log_message)
@@ -282,7 +270,7 @@ def parse_taxonomy_hits(
                 # Append our hit information to Screen data.
                 new_hit = HitResult(
                     HitScreenStatus(
-                        recommendation,
+                        screen_status,
                         step
                     ),
                     hit,
@@ -298,7 +286,7 @@ def parse_taxonomy_hits(
                     if write_hit:
                         write_hit.annotations["domain"] = domains
                         write_hit.annotations["regulated_taxonomy"].append(regulation_dict)
-                        write_hit.recommendation.status = compare(write_hit.recommendation.status, recommendation)
+                        write_hit.recommendation.status = compare(write_hit.recommendation.status, screen_status)
                         write_hit.description += ","+hit_description
 
     # Do all non-verbose logging in order of query:

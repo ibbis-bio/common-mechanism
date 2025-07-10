@@ -15,6 +15,7 @@ from urllib import request, error, parse
 import zipfile
 import tarfile
 import yaml
+import json
 from yaml.parser import ParserError
 
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
@@ -56,12 +57,16 @@ class CliSetup:
     """
 
     def __init__(self, automate: bool = False):
+
+        self.latest_version = get_latest_commec_database_release_tag()[0]
+
         self.database_directory: str = "commec-dbs/"
 
         self.download_biorisk: bool = True
         self.default_biorisk_download_url: str = (
-            "https://f005.backblazeb2.com/file/common-mechanism-dbs/common-mechanism-dbs.zip"
-        )
+            "https://github.com/ibbis-bio/commec-databases/releases"
+            f"/download/{self.latest_version}/commec-dbs.zip"
+        ) if self.latest_version else ""
         self.biorisk_download_url: str = self.default_biorisk_download_url
 
         self.download_blastnr: bool = False
@@ -587,7 +592,7 @@ class CliSetup:
             )
             nt_directory = os.path.join(self.database_directory, "nt_blast")
             os.makedirs(nt_directory, exist_ok=True)
-            print(nr_directory)
+            print(nt_directory)
             command = ["update_blastdb.pl", "--decompress", self.blastnt_database]
             subprocess.run(command, cwd=nt_directory, check=True)
 
@@ -738,6 +743,46 @@ class CliSetup:
         """Gracefully exit with a message to the user."""
         print(f"{C_RESET}Exiting setup for The Common Mechanism.")
         sys.exit()
+
+def get_latest_commec_database_release_tag(repo="ibbis-bio/commec-databases") -> tuple[str | None, str]:
+    """
+    Contacts GitHub for the latest tagged release of the commec databases.
+    This can be used to compare to a local commec-db-version.txt file,
+    or to update the download URL to the latest version.
+    ----
+    ## inputs:
+    * `repo` : str (optional), Input repository where commec-databases are stored.
+    defaults to "ibbis-bio/commec-databases"
+    ----
+    ## outputs:
+    tuple:
+    *    0 : The version string e.g. "v1.0.0", or None.
+    *    1 : Reason for failure, or success.
+    ----
+    ## example use:
+    ```version, _ = get_latest_commec_database_release_tag()
+    if not version:
+        # Warn user there was a failure to get the version.
+        print("Database version retrieval failed: ",_)
+    ```
+    """
+    url = f"https://api.github.com/repos/{repo}/releases/latest"
+    req = request.Request(url, headers={"User-Agent": "commec-version-checker"})
+    try:
+        with request.urlopen(req, timeout=10) as response:
+            if response.status != 200:
+                return None, f"GitHub API error: HTTP {response.status}"
+            data = json.loads(response.read().decode())
+        if "tag_name" in data:
+            return data.get("tag_name"), "Success" 
+        else:
+            return None, "Unexpected response structure: 'tag_name' not found."
+    except error.HTTPError as e:
+        return None, f"GitHub API error: HTTP {e.code} - {e.reason}"
+    except error.URLError as e:
+        return None, f"Network error when contacting GitHub: {e.reason}"
+    except json.JSONDecodeError:
+        return None, "Invalid JSON received from GitHub"
 
 
 def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:

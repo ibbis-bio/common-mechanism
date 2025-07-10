@@ -33,8 +33,7 @@ def test_screendata():
             QueryResult(
                 query="Query1",
                 length=10,
-                #sequence="ABCDEFGHIJ",
-                recommendation = QueryScreenStatus(),
+                status = QueryScreenStatus(),
                 hits = {
                     "ImportantProtein1":
                     HitResult(
@@ -121,10 +120,10 @@ def test_adding_data_to_existing():
     Tests to ensure the mutability of writing to queries is working as expected.
     """
     def write_info(input_query : QueryResult):
-        input_query.recommendation.biorisk_status = ScreenStatus.PASS
+        input_query.status.biorisk = ScreenStatus.PASS
     
     new_screen_data = ScreenResult()
     new_screen_data.queries["test01"] = QueryResult("test01", 10, ScreenStatus.FLAG)
     write_query = new_screen_data.get_query("test01")
     write_info(write_query)
-    assert new_screen_data.queries["test01"].recommendation.biorisk_status == ScreenStatus.PASS
+    assert new_screen_data.queries["test01"].status.biorisk == ScreenStatus.PASS

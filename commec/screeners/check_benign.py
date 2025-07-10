@@ -109,6 +109,7 @@ def _filter_benign_proteins(query : Query,
         logger.info("\t --> Clearing %s (%s) with house-keeping protein, %s",
                         hit.name, hit.recommendation.status, benign_hit_outcome.name)
         hit.recommendation.status = hit.recommendation.status.clear()
+        benign_hit_outcome.recommendation.status = hit.recommendation.status
 
     return [benign_hit_outcome]
 
@@ -162,6 +163,8 @@ def _filter_benign_rna(query : Query,
             logger.info("\t --> Clearing %s %s (region %i-%i), with RNA of low-concern %s",
                         hit.recommendation.status, hit.name, region.query_start, region.query_end, benign_hit_outcome.name)
             hit.recommendation.status = hit.recommendation.status.clear()
+            benign_hit_outcome.recommendation.status = hit.recommendation.status
+
         return [benign_hit_outcome]
     
     logger.info("Clear failed for %s (%s) as RNA of low-concern has >%i bases unaccounted for.",
@@ -223,7 +226,7 @@ def _filter_benign_dna(query : Query,
         logger.info("\t --> Clearing %s %s region %i-%i as low-concern DNA, with synthetic biology part %s",
                         hit.recommendation.status, hit.name, region.query_start, region.query_end, benign_hit_outcome.name)
         hit.recommendation.status = hit.recommendation.status.clear()
-
+        benign_hit_outcome.recommendation.status = hit.recommendation.status
     return [benign_hit_outcome]
 
 def _update_benign_data_for_query(query : Query,
@@ -283,6 +286,7 @@ def _update_benign_data_for_query(query : Query,
         for region in hit.ranges:
 
             if not benign_protein_for_query.empty:
+                query.confirm_has_hits()
                 new_benign_protein_hits.extend(
                     _filter_benign_proteins(query, hit, region,
                                             benign_protein_for_query,
@@ -290,12 +294,14 @@ def _update_benign_data_for_query(query : Query,
                     )
             
             if not benign_rna_for_query.empty:
+                query.confirm_has_hits()
                 new_benign_rna_hits.extend(
                     _filter_benign_rna(query, hit, region,
                                        benign_rna_for_query)
                 )
                 
             if not benign_dna_for_query.empty:
+                query.confirm_has_hits()
                 new_benign_dna_hits.extend(
                     _filter_benign_dna(query, hit, region,
                                           benign_dna_for_query)
@@ -345,6 +351,22 @@ def parse_low_concern_hits(benign_protein_handler : HmmerHandler,
                 benign_dna_screen_data.shape, benign_dna_screen_data.head())
     
     for query in queries.values():
+
+        skip = True
+        for hit in query.result_handle.hits.values():
+            if hit.recommendation.status in {
+                ScreenStatus.FLAG,
+                ScreenStatus.WARN
+            }:
+                skip = False
+
+        if skip:
+            query.result_handle.status.benign = ScreenStatus.SKIP
+        
+        if query.result_handle.status.benign == ScreenStatus.SKIP:
+            logger.debug("Skipping query %s, no regulated regions to clear.", query.name)
+            continue
+        
         _update_benign_data_for_query(query,
                                       benign_protein_screen_data,
                                       benign_rna_screen_data,
@@ -352,13 +374,12 @@ def parse_low_concern_hits(benign_protein_handler : HmmerHandler,
                                       benign_desc)
 
         # Calculate the Benign Screen outcomes for each query.
-        query.result_handle.recommendation.low_concern_status = ScreenStatus.PASS
+        query.result_handle.status.low_concern = ScreenStatus.PASS
         # If any hits are still warnings, or flags, propagate that to the benign step.
         for flagged_hit in query.result_handle.get_flagged_hits():
-            query.result_handle.recommendation.low_concern_status = compare(
-                flagged_hit.recommendation.status,
-                query.result_handle.recommendation.low_concern_status
-                )
+            query.result_handle.status.update_step_status(
+               ScreenStep.BENIGN_DNA, flagged_hit.recommendation.status
+        )
 
 def _trim_to_region(data : pd.DataFrame, region : MatchRange):
     datatrim = data[

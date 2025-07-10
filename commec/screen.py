@@ -81,6 +81,7 @@ from commec.screeners.check_benign import parse_low_concern_hits
 from commec.screeners.check_reg_path import parse_taxonomy_hits
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.config.json_io import encode_screen_data_to_json
+from commec.config.constants import MINIMUM_QUERY_LENGTH
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -260,8 +261,13 @@ class Screen:
         hours, rem = divmod(time_taken, 3600)
         minutes, seconds = divmod(rem, 60)
         self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
-        self.screen_data.update()
+        self.screen_data.update(self.queries)
         encode_screen_data_to_json(self.screen_data, self.params.output_json)
+
+        logger.debug("\n >> EXPORT JSON SUMMARY : \n%s",
+                    self.screen_data.flag_text(), extra={"no_prefix" : True})
+        logger.debug("\n >> RATIONALE : \n%s",
+                    self.screen_data.rationale_text(), extra={"no_prefix" : True})
 
         # Only output the HTML, and cleanup if this was a successful run:
         if self.success:
@@ -309,11 +315,24 @@ class Screen:
         try:
             for query in self.queries.values():
                 logger.debug("Processing query: %s, (%s)", query.name, query.original_name)
-                query.translate(self.params.aa_path)
-                total_query_length += query.length
-                qr = QueryResult(query.original_name,query.length)
+
+                # Link query to the output data.
+                qr = QueryResult(query.original_name,
+                                 query.length)
                 self.screen_data.queries[query.name] = qr
                 query.result_handle = qr
+
+                # Determine short querys as skipped:
+                if query.length < MINIMUM_QUERY_LENGTH:
+                    logger.debug("%s length %i is less than %i",
+                                    query.name, query.length, MINIMUM_QUERY_LENGTH)
+                    qr.skip()
+                    continue
+
+                # Only translate if valid.
+                query.translate(self.params.aa_path)
+                total_query_length += query.length
+
         except RuntimeError as e:
             logger.error(e)
             sys.exit()
@@ -357,7 +376,7 @@ class Screen:
         except Exception as e:
             logger.error("STEP 1: Biorisk search failed due to an error:\n %s", str(e))
             logger.info(" Traceback:\n%s", traceback.format_exc())
-            self.reset_biorisk_recommendations(ScreenStatus.ERROR)
+            self.reset_query_statuses(ScreenStep.BIORISK, ScreenStatus.ERROR)
 
         # Taxonomy screen (Protein)
         if self.params.should_do_protein_screening:
@@ -371,10 +390,10 @@ class Screen:
             except Exception as e:
                 logger.error("STEP 2: Protein search failed due to an error:\n %s", str(e))
                 logger.info(" Traceback:\n%s", traceback.format_exc())
-                self.reset_protein_recommendations(ScreenStatus.ERROR)
+                self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.ERROR)
         else:
             logger.info("SKIPPING STEP 2: Protein search")
-            self.reset_protein_recommendations(ScreenStatus.SKIP)
+            self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.SKIP)
 
         # Taxonomy screen (Nucleotide)
         if self.params.should_do_nucleotide_screening:
@@ -388,10 +407,10 @@ class Screen:
             except Exception as e:
                 logger.error("ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
                 logger.info(" Traceback:\n%s", traceback.format_exc())
-                self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
+                self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.ERROR)
         else:
             logger.info("SKIPPING STEP 3: Nucleotide search")
-            self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
+            self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.SKIP)
 
         # Benign Screen
         if self.params.should_do_benign_screening:
@@ -407,17 +426,21 @@ class Screen:
             except Exception as e:
                 logger.error("STEP 4: Benign search failed due to an error:\n %s", str(e))
                 logger.info(" Traceback:\n%s", traceback.format_exc())
-                self.reset_benign_recommendations(ScreenStatus.ERROR)
+                self.reset_query_statuses(ScreenStep.BENIGN_DNA, ScreenStatus.ERROR)
         else:
             logger.info(" << SKIPPING STEP 4: Low-concern search")
-            self.reset_benign_recommendations(ScreenStatus.SKIP)
+            self.reset_query_statuses(ScreenStep.BENIGN_DNA, ScreenStatus.SKIP)
 
         logger.info(
             " >> Commec Screen completed at %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
 
-        self.screen_data.update()
-        logger.info("SUMMARY: \n%s", self.screen_data, extra={"no_prefix" : True, "box_up":True})
+        self.screen_data.update(self.queries)
+
+        logger.info("\n >> SUMMARY : \n%s",
+                    self.screen_data.flag_text(), extra={"no_prefix" : True, "box_up":True})
+        logger.info("\n >> RATIONALE : \n%s",
+                    self.screen_data.rationale_text(), extra={"no_prefix" : True})
         self.success = True
 
 
@@ -447,7 +470,7 @@ class Screen:
         logger.debug("\t...running %s", self.params.config["protein_search_tool"])
         self.database_tools.regulated_protein.search()
         if not self.database_tools.regulated_protein.check_output():
-            self.reset_protein_recommendations(ScreenStatus.ERROR)
+            self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.ERROR)
             raise RuntimeError(
                 "ERROR: Expected protein search output not created: "
                 + self.database_tools.regulated_protein.out_file
@@ -482,7 +505,7 @@ class Screen:
         noncoding regions (i.e. that would not be found with protein search).
         """
         # By Default, this should be overriden.
-        self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
+        self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.ERROR)
 
         # Calculate non-coding information for each Query.
         calculate_noncoding_regions_per_query(
@@ -492,6 +515,8 @@ class Screen:
         # Generate the non-coding fasta.
         nc_fasta_sequences = ""
         for query in self.queries.values():
+            if query.result_handle.status.nucleotide_taxonomy == ScreenStatus.SKIP:
+                continue
             nc_fasta_sequences += query.get_non_coding_regions_as_fasta()
 
         # Skip if there is no non-coding information.
@@ -499,7 +524,7 @@ class Screen:
             logger.info(
                 "\t...skipping nucleotide search since no noncoding regions fetched"
             )
-            self.reset_nucleotide_recommendations(ScreenStatus.SKIP)
+            self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.SKIP)
             return
 
         # Create a non-coding fasta file.
@@ -510,7 +535,7 @@ class Screen:
         self.database_tools.regulated_nt.search()
 
         if not self.database_tools.regulated_nt.check_output():
-            self.reset_nucleotide_recommendations(ScreenStatus.ERROR)
+            self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.ERROR)
             raise RuntimeError(
                 "ERROR: Expected nucleotide search output not created: "
                 + self.database_tools.regulated_nt.out_file
@@ -548,7 +573,7 @@ class Screen:
 
         if not hits_to_clear:
             logger.info("\t...no regulated regions to clear\n")
-            self.reset_benign_recommendations(ScreenStatus.SKIP)
+            self.reset_query_statuses(ScreenStep.BENIGN_DNA, ScreenStatus.SKIP)
             return
 
         # Run the benign tools:
@@ -574,33 +599,10 @@ class Screen:
             benign_desc
         )
 
-    def reset_biorisk_recommendations(self, new_recommendation : ScreenStatus):
-        """ Helper function 
-        apply a single recommendation to the whole Biorisk step 
-        for every query."""
+    def reset_query_statuses(self, step: ScreenStep, status : ScreenStatus):
+        """Helper function to apply a single status across a step for every query"""
         for query in self.screen_data.queries.values():
-            query.recommendation.biorisk_status = new_recommendation
-
-    def reset_benign_recommendations(self, new_recommendation : ScreenStatus):
-        """ Helper function 
-        apply a single recommendation to the whole low-concern step 
-        for every query."""
-        for query in self.screen_data.queries.values():
-            query.recommendation.low_concern_status = new_recommendation
-
-    def reset_protein_recommendations(self, new_recommendation : ScreenStatus):
-        """ Helper function
-        apply a single recommendation to the whole protein taxonomy step 
-        for every query."""
-        for query in self.screen_data.queries.values():
-            query.recommendation.protein_taxonomy_status = new_recommendation
-
-    def reset_nucleotide_recommendations(self, new_recommendation : ScreenStatus):
-        """ Helper function:
-        apply a single recommendation to the whole nucleotide taxonomy step 
-        for every query."""
-        for query in self.screen_data.queries.values():
-            query.recommendation.nucleotide_taxonomy_status = new_recommendation
+            query.status.set_step_status(step, status)
 
 def run(args: argparse.Namespace):
     """
