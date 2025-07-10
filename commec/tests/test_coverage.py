@@ -9,7 +9,7 @@ The following behaviour is expected:
 
 import pandas as pd
 import pytest
-from commec.screeners.check_benign import _calculate_coverage
+from commec.screeners.check_low_concern import _calculate_coverage
 from commec.config.result import MatchRange
 
 # Test the following hmmer configuration:

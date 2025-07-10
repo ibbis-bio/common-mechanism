@@ -97,7 +97,7 @@ def test_functional_screen(tmp_path, request):
     )
 
     #PROTEIN
-    benign_hmmscan_to_parse = textwrap.dedent(
+    low_concern_hmmscan_to_parse = textwrap.dedent(
         """\
         #                                                         --- full sequence --- -------------- this domain -------------           hmm coord   ali coord   env coord
         # tname    accession        tlen qname        accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias    from    to  from    to  from    to  acc description of target
@@ -106,7 +106,7 @@ def test_functional_screen(tmp_path, request):
     )
 
     #RNA, mdl = target, seq = query
-    benign_cmscan_to_parse = textwrap.dedent(
+    low_concern_cmscan_to_parse = textwrap.dedent(
         """\
         #target name         accession query name                accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value  inc description of target
         #------------------- --------- ------------------------- --------- --- -------- -------- -------- -------- ------ ----- ---- ---- ----- ------ ---------  --- ---------------------
@@ -115,7 +115,7 @@ def test_functional_screen(tmp_path, request):
     )
 
     #SYNBIO:
-    benign_blastnt_to_parse = textwrap.dedent(
+    low_concern_blastnt_to_parse = textwrap.dedent(
         """\
         #query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	    s.len	s. start	s. end
         FCTEST1	BENIGNSYNBIO	BENIGN_SB	210	        0.0	    BITSCORE	99.999	    600	    410	    480	    90	    10	    100
@@ -145,12 +145,12 @@ def test_functional_screen(tmp_path, request):
     nt_db_output_path.write_text(blastnt_to_parse)
 
     # BENIGN FILES:
-    benign_hmm_output_path = tmp_path / "output_functional/functional.low_concern.hmmscan"
-    benign_hmm_output_path.write_text(benign_hmmscan_to_parse)
-    benign_cmscan_output_path = tmp_path / "output_functional/functional.low_concern.cmscan"
-    benign_cmscan_output_path.write_text(benign_cmscan_to_parse)
-    benign_nt_output_path = tmp_path / "output_functional/functional.low_concern.blastn"
-    benign_nt_output_path.write_text(benign_blastnt_to_parse)
+    low_concern_hmm_output_path = tmp_path / "output_functional/functional.low_concern.hmmscan"
+    low_concern_hmm_output_path.write_text(low_concern_hmmscan_to_parse)
+    low_concern_cmscan_output_path = tmp_path / "output_functional/functional.low_concern.cmscan"
+    low_concern_cmscan_output_path.write_text(low_concern_cmscan_to_parse)
+    low_concern_nt_output_path = tmp_path / "output_functional/functional.low_concern.blastn"
+    low_concern_nt_output_path.write_text(low_concern_blastnt_to_parse)
 
     # We patch taxonomic labels to avoid making a mini-taxonomy database.
     with patch("commec.screeners.check_reg_path.get_taxonomic_labels", new=cheat_taxonomy_info), patch(

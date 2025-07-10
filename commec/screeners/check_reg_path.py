@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 def _check_inputs(
         search_handler : SearchHandler,
-        benign_taxid_path : str | os.PathLike,
+        low_concern_taxid_path : str | os.PathLike,
         biorisk_taxid_path : str | os.PathLike,
         taxonomy_directory : str | os.PathLike
         ):
@@ -49,8 +49,8 @@ def _check_inputs(
         logger.info("\t...ERROR: Taxonomic search results empty\n %s", search_handler.out_file)
         return False
 
-    if not os.path.exists(benign_taxid_path):
-        logger.error("\t...low-concern database file %s does not exist\n", benign_taxid_path)
+    if not os.path.exists(low_concern_taxid_path):
+        logger.error("\t...low-concern database file %s does not exist\n", low_concern_taxid_path)
         return False
 
     if not os.path.exists(biorisk_taxid_path):
@@ -69,7 +69,7 @@ def _check_inputs(
 
 def parse_taxonomy_hits(
         search_handler : SearchHandler,
-        benign_taxid_path : str | os.PathLike,
+        low_concern_taxid_path : str | os.PathLike,
         biorisk_taxid_path : str | os.PathLike,
         taxonomy_directory : str | os.PathLike,
         data : ScreenResult,
@@ -80,16 +80,16 @@ def parse_taxonomy_hits(
     """
     Given a Taxonomic database screen output, update the screen data appropriately.
         search_handler : The handle of the search tool used to screen taxonomic data.
-        benign_taxid_path : Path to low-concern taxid csv.
+        low_concern_taxid_path : Path to low-concern taxid csv.
         biorisk_taxid_path : Path to regulated taxid csv.
-        taxonomy_directory : The location of taxonom directory.
+        taxonomy_directory : The location of taxonomy directory.
         data : the Screen data object, to be updated.
         step : Which taxonomic step this is (Nucleotide, Protein, etc)
         n_threads : maximum number of available threads for allocation.
     """
     logger.debug("Acquiring Taxonomic Data for JSON output:")
 
-    if not _check_inputs(search_handler, benign_taxid_path, 
+    if not _check_inputs(search_handler, low_concern_taxid_path,
                          biorisk_taxid_path, taxonomy_directory):
         return 1
 
@@ -104,8 +104,8 @@ def parse_taxonomy_hits(
     # We delay non-debug logging to sort messages via query.
     log_container = {key : [] for key in data.queries.keys()}
 
-    # Read in lists of regulated and benign tax ids
-    vax_taxids = pd.read_csv(benign_taxid_path, header=None).squeeze().astype(str).tolist()
+    # Read in lists of regulated and low_concern tax ids
+    vax_taxids = pd.read_csv(low_concern_taxid_path, header=None).squeeze().astype(str).tolist()
     reg_taxids = pd.read_csv(biorisk_taxid_path, header=None).squeeze().astype(str).tolist()
 
     blast = read_blast(search_handler.out_file)
@@ -315,7 +315,7 @@ def main():
         "--database",
         dest="db",
         required=True,
-        help="top-level database folder (assumes /taxonomy, /benign_db, /biorisk_db dirs",
+        help="top-level database folder (assumes /taxonomy, /low_concern_db, /biorisk_db dirs",
     )
     parser.add_argument("-t", "--threads", dest="threads", required=True, help="number of threads")
     args = parser.parse_args()
@@ -323,11 +323,11 @@ def main():
     # Legacy - assume hardcoded database locations; to adjust, call via screen.py
     input_database_dir = args.db
     taxonomy_db_path = f"{input_database_dir}/taxonomy/"
-    benign_taxid_path = f"{input_database_dir}/benign_db/vax_taxids.txt"
+    low_concern_taxid_path = f"{input_database_dir}/low_concern_db/vax_taxids.txt"
     biorisk_taxid_path = f"{input_database_dir}/biorisk_db/reg_taxids.txt"
 
     exit_code = check_for_regulated_pathogens(
-        args.in_file, taxonomy_db_path, benign_taxid_path, biorisk_taxid_path, args.threads
+        args.in_file, taxonomy_db_path, low_concern_taxid_path, biorisk_taxid_path, args.threads
     )
     sys.exit(exit_code)
 
@@ -335,7 +335,7 @@ def main():
 def check_for_regulated_pathogens(
         input_file: str | os.PathLike,
         taxonomy_path: str | os.PathLike,
-        benign_taxid_path: str | os.PathLike,
+        low_concern_taxid_path: str | os.PathLike,
         regulated_taxid_path: str | os.PathLike,
         threads: int
     ):
@@ -351,11 +351,11 @@ def check_for_regulated_pathogens(
         return 1
     sample_name = re.sub(r"\.nr.*|\.nt\.blastn", "", input_file)
 
-    # Read in lists of regulated and benign tax ids
-    if not os.path.exists(benign_taxid_path):
-        logger.error("\t...List of low-concern taxids %s does not exist\n", benign_taxid_path)
+    # Read in lists of regulated and low_concern tax ids
+    if not os.path.exists(low_concern_taxid_path):
+        logger.error("\t...List of low-concern taxids %s does not exist\n", low_concern_taxid_path)
         return 1
-    vax_taxids = pd.read_csv(benign_taxid_path, header=None).squeeze().astype(str).tolist()
+    vax_taxids = pd.read_csv(low_concern_taxid_path, header=None).squeeze().astype(str).tolist()
 
     if not os.path.exists(regulated_taxid_path):
         logger.error("\t...List of regulated taxids %s does not exist\n", regulated_taxid_path)

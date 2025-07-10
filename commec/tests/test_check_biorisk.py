@@ -51,11 +51,11 @@ def test_check_biorisk_return_codes(annotations_exists, is_empty, has_hits, expe
         patch("commec.screeners.check_biorisk.HmmerHandler.is_empty", return_value=is_empty),
         patch("commec.screeners.check_biorisk.HmmerHandler.has_hits", return_value=has_hits),
     ):
-        handler = HmmerHandler(DATABASE_DIRECTORY + "biorisk_db/biorisk.hmm", INPUT_QUERY, "/mock/path/test.hmmscan")
+        handler = HmmerHandler(DATABASE_DIRECTORY + "biorisk/biorisk.hmm", INPUT_QUERY, "/mock/path/test.hmmscan")
         results = ScreenResult()
         queries : dict[str,Query] = {"testname" : Query(SeqRecord(Seq("atgatgatgatgatgatgatg"),"testname","testname"))}
         # Run the function - input paths are unused given all the mocking above
-        result = parse_biorisk_hits(handler, "/mock/path/biorisk_db/biorisk_annotations.csv", results, queries)
+        result = parse_biorisk_hits(handler, "/mock/path/biorisk/biorisk_annotations.csv", results, queries)
 
         # Check the result
         assert result == expected_return

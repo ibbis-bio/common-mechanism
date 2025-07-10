@@ -19,9 +19,9 @@ def expected_defaults():
         },
         "databases": {
             "low_concern": {
-                "cm": {"path": "commec-dbs/benign_db/benign.cm"},
-                "fasta": {"path": "commec-dbs/benign_db/benign.fasta"},
-                "hmm": {"path": "commec-dbs/benign_db/benign.hmm"}
+                "cm": {"path": "commec-dbs/low_concern_db/low_concern.cm"},
+                "fasta": {"path": "commec-dbs/low_concern_db/low_concern.fasta"},
+                "hmm": {"path": "commec-dbs/low_concern_db/low_concern.hmm"}
             },
             "biorisk_hmm": {
                 "path": "commec-dbs/biorisk_db/biorisk.hmm",
@@ -37,7 +37,7 @@ def expected_defaults():
             "taxonomy": {
                 "path": "commec-dbs/taxonomy/",
                 "regulated_taxids": "commec-dbs/biorisk_db/reg_taxids.txt",
-                "low_concern_taxids": "commec-dbs/benign_db/vax_taxids.txt"
+                "low_concern_taxids": "commec-dbs/low_concern_db/vax_taxids.txt"
             }
         },
         "threads": 1,
@@ -72,9 +72,9 @@ def expected_updated_from_custom_yaml():
         },
         "databases": {
             "low_concern": {
-                "cm": {"path": "commec-dbs/benign_db/benign.cm"},
-                "fasta": {"path": "commec-dbs/benign_db/benign.fasta"},
-                "hmm": {"path": "commec-dbs/benign_db/benign.hmm"}
+                "cm": {"path": "commec-dbs/low_concern_db/low_concern.cm"},
+                "fasta": {"path": "commec-dbs/low_concern_db/low_concern.fasta"},
+                "hmm": {"path": "commec-dbs/low_concern_db/low_concern.hmm"}
             },
             "biorisk_hmm": {
                 "path": "commec-dbs/biorisk_db/biorisk.hmm",
@@ -90,7 +90,7 @@ def expected_updated_from_custom_yaml():
             "taxonomy": {
                 "path": "commec-dbs/taxonomy/",
                 "regulated_taxids" : "custom_path.txt",
-                "low_concern_taxids": "commec-dbs/benign_db/vax_taxids.txt"
+                "low_concern_taxids": "commec-dbs/low_concern_db/vax_taxids.txt"
             }
         },
         "threads": 8,
@@ -195,19 +195,19 @@ def test_missing_default_config():
 
 
 @pytest.mark.parametrize(
-    "base_path, benign_path, expected_path",
+    "base_path, low_concern_path, expected_path",
     [
         # Expected (basepath has terminal separator)
-        ("commec-test/", "{default}benign_db/test.cm", "commec-test/benign_db/test.cm"),
+        ("commec-test/", "{default}low_concern_db/test.cm", "commec-test/low_concern_db/test.cm"),
         # No separators
-        ("commec-test", "{default}benign_db/test.cm", "commec-test/benign_db/test.cm"),
+        ("commec-test", "{default}low_concern_db/test.cm", "commec-test/low_concern_db/test.cm"),
         # Subpath has separator
-        ("commec-test", "{default}/benign_db/test.cm", "commec-test//benign_db/test.cm"),
+        ("commec-test", "{default}/low_concern_db/test.cm", "commec-test//low_concern_db/test.cm"),
         # Double separators
-        ("commec-test/", "{default}/benign_db/test.cm", "commec-test//benign_db/test.cm"),
+        ("commec-test/", "{default}/low_concern_db/test.cm", "commec-test//low_concern_db/test.cm"),
     ],
 )
-def test_format_config_paths(tmp_path, base_path, benign_path, expected_path):
+def test_format_config_paths(tmp_path, base_path, low_concern_path, expected_path):
     config_yaml = {
         "base_paths": {
             "default": base_path
@@ -215,7 +215,7 @@ def test_format_config_paths(tmp_path, base_path, benign_path, expected_path):
         "databases": {
             "low_concern" : {
                 "cm" : {
-                    "path": benign_path
+                    "path": low_concern_path
                 }
             }
         }

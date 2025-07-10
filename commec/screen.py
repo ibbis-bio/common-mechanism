@@ -77,7 +77,7 @@ from commec.config.result import (
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
 from commec.screeners.check_biorisk import parse_biorisk_hits
-from commec.screeners.check_benign import parse_low_concern_hits
+from commec.screeners.check_low_concern import parse_low_concern_hits
 from commec.screeners.check_reg_path import parse_taxonomy_hits
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.config.json_io import encode_screen_data_to_json
@@ -344,15 +344,15 @@ class Screen:
         # Initialize the version info for all the databases
         _tools = self.database_tools
         _info = self.screen_data.commec_info.search_tool_info
-        _info.biorisk_search_info = _tools.biorisk_hmm.get_version_information()
+        _info.biorisk_search_info = _tools.biorisk.get_version_information()
         if self.params.should_do_protein_screening:
             _info.protein_search_info = _tools.regulated_protein.get_version_information()
         if self.params.should_do_nucleotide_screening:
             _info.nucleotide_search_info = _tools.regulated_nt.get_version_information()
-        if self.params.should_do_benign_screening:
-            _info.low_concern_protein_search_info = _tools.benign_hmm.get_version_information()
-            _info.low_concern_rna_search_info = _tools.benign_cmscan.get_version_information()
-            _info.low_concern_dna_search_info = _tools.benign_blastn.get_version_information()
+        if self.params.should_do_low_concern_screening:
+            _info.low_concern_protein_search_info = _tools.low_concern_hmm.get_version_information()
+            _info.low_concern_rna_search_info = _tools.low_concern_cmscan.get_version_information()
+            _info.low_concern_dna_search_info = _tools.low_concern_blastn.get_version_information()
 
         # Store start time.
         _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -413,12 +413,12 @@ class Screen:
             self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.SKIP)
 
         # Benign Screen
-        if self.params.should_do_benign_screening:
+        if self.params.should_do_low_concern_screening:
             try:
                 logger.info(
                     " >> STEP 4: Checking any pathogen regions for low-concern components..."
                 )
-                self.screen_benign()
+                self.screen_low_concern()
                 logger.info(
                     "STEP 4 completed at %s",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -449,17 +449,17 @@ class Screen:
         Call hmmscan` and `check_biorisk.py` to add biorisk results to `screen_file`.
         """
         logger.debug("\t...running hmmscan")
-        self.database_tools.biorisk_hmm.search()
+        self.database_tools.biorisk.search()
         logger.debug("\t...checking hmmscan results")
         exit_status = parse_biorisk_hits(
-            self.database_tools.biorisk_hmm,
-            self.database_tools.biorisk_annotations_csv,
+            self.database_tools.biorisk,
+            self.database_tools.biorisk_annotations,
             self.screen_data,
             self.queries)
         
         if exit_status != 0:
             raise RuntimeError(
-                f"Output of biorisk search could not be processed: {self.database_tools.biorisk_hmm.out_file}"
+                f"Output of biorisk search could not be processed: {self.database_tools.biorisk.out_file}"
             )
 
     def screen_proteins(self):
@@ -482,7 +482,7 @@ class Screen:
 
         exit_status = parse_taxonomy_hits(
             self.database_tools.regulated_protein,
-            self.database_tools.benign_taxid_path,
+            self.database_tools.low_concern_taxid_path,
             self.database_tools.biorisk_taxid_path,
             self.database_tools.taxonomy_path,
             self.screen_data,
@@ -545,7 +545,7 @@ class Screen:
         # Note: Currently noncoding coordinates are converted within parse_taxonomy_hits,
         exit_status = parse_taxonomy_hits(
             self.database_tools.regulated_nt,
-            self.database_tools.benign_taxid_path,
+            self.database_tools.low_concern_taxid_path,
             self.database_tools.biorisk_taxid_path,
             self.database_tools.taxonomy_path,
             self.screen_data,
@@ -559,10 +559,10 @@ class Screen:
                 f"Output of nucleotide taxonomy search could not be processed: {self.database_tools.regulated_nt.out_file}"
             )
 
-    def screen_benign(self):
+    def screen_low_concern(self):
         """
         Call `hmmscan`, `blastn`, and `cmscan` and then pass results
-        to `check_benign.py` to identify regions that can be cleared.
+        to `check_low_concern.py` to identify regions that can be cleared.
         """
         # Start by checking if there are any hits that require clearing...
         hits_to_clear : bool = False
@@ -576,27 +576,27 @@ class Screen:
             self.reset_query_statuses(ScreenStep.BENIGN_DNA, ScreenStatus.SKIP)
             return
 
-        # Run the benign tools:
+        # Run the low_concern tools:
         logger.debug("\t...running low-concern hmmer.")
-        self.database_tools.benign_hmm.search()
+        self.database_tools.low_concern_hmm.search()
         logger.debug("\t...running low-concern blastn")
-        self.database_tools.benign_blastn.search()
+        self.database_tools.low_concern_blastn.search()
         logger.debug("\t...running low-concern cmscan")
-        self.database_tools.benign_cmscan.search()
+        self.database_tools.low_concern_cmscan.search()
 
 
-        # Update Screen Data with benign outputs.
-        benign_desc = pd.read_csv(
-            self.database_tools.benign_hmm.db_directory + "/benign_annotations.tsv",
+        # Update Screen Data with low_concern outputs.
+        low_concern_desc = pd.read_csv(
+            self.params.config["databases"]["low_concern"]["annotations"],
             sep="\t",
         )
 
         parse_low_concern_hits(
-            self.database_tools.benign_hmm,
-            self.database_tools.benign_cmscan,
-            self.database_tools.benign_blastn,
+            self.database_tools.low_concern_hmm,
+            self.database_tools.low_concern_cmscan,
+            self.database_tools.low_concern_blastn,
             self.queries,
-            benign_desc
+            low_concern_desc
         )
 
     def reset_query_statuses(self, step: ScreenStep, status : ScreenStatus):

@@ -71,9 +71,9 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         virus_flag = False
         bacteria_flag = False
         eukaryote_flag = False
-        benign_protein = False
-        benign_rna = False
-        benign_synbio = False
+        low_concern_protein = False
+        low_concern_rna = False
+        low_concern_synbio = False
 
         qs = query.status
 
@@ -86,17 +86,17 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
                         virus_flag     |= (int(info["regulated_viruses"]) > 0)
                         eukaryote_flag |= (int(info["regulated_eukaryotes"]) > 0)
 
-        # Which forms of benign hits are present?
+        # Which forms of low_concern hits are present?
         if (qs.low_concern
             not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
             for hit in query.hits.values():
                 match hit.recommendation.from_step:
                     case ScreenStep.BENIGN_PROTEIN:
-                        benign_protein = True
+                        low_concern_protein = True
                     case ScreenStep.BENIGN_RNA:
-                        benign_rna = True
+                        low_concern_rna = True
                     case ScreenStep.BENIGN_DNA:
-                        benign_synbio = True
+                        low_concern_synbio = True
                     case _:
                         continue
 
@@ -142,9 +142,9 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         "virus_flag": virus_flag,
         "bacteria_flag": bacteria_flag,
         "eukaryote_flag": eukaryote_flag,
-        "low_concern_protein": benign_protein,
-        "low_concern_rna": benign_rna,
-        "low_concern_dna": benign_synbio
+        "low_concern_protein": low_concern_protein,
+        "low_concern_rna": low_concern_rna,
+        "low_concern_dna": low_concern_synbio
         })
 
     return results
