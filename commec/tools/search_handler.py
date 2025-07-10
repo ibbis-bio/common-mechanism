@@ -59,9 +59,9 @@ class SearchHandler(ABC):
         - `database_file`, `input_file`, and `out_file` are validated on instantiation.
         """
 
-        self.db_file = os.path.abspath(database_file)
-        self.input_file = os.path.abspath(input_file)
-        self.out_file = os.path.abspath(out_file)
+        self.db_file = os.path.abspath(os.path.expanduser(database_file))
+        self.input_file = os.path.abspath(os.path.expanduser(input_file))
+        self.out_file = os.path.abspath(os.path.expanduser(out_file))
         self.threads = kwargs.get('threads', 1)
         self.force = kwargs.get('force', False)
         self.arguments_dictionary = {}
@@ -128,7 +128,7 @@ class SearchHandler(ABC):
         Is overridden for Diamond outputs, which have no header information, and simply only
         checks for file-existance, rather than lack of content, for example.
         """
-        return not self.is_empty()
+        return not self.has_empty_or_no_output()
 
     def _validate_db(self):
         """
@@ -146,17 +146,17 @@ class SearchHandler(ABC):
                 " File location can be set via --databases option or --config yaml."
             )
 
-    def is_empty(self) -> bool:
+    def has_empty_or_no_output(self) -> bool:
         """Check if the output file is empty or non-existent."""
         try:
-            return os.path.getsize(os.path.abspath(os.path.expanduser(self.out_file))) == 0
+            return os.path.getsize(self.out_file) == 0
         except OSError:
             # Errors such as FileNotFoundError considered empty
             return True
 
-    def output_exists(self) -> bool:
+    def has_output(self) -> bool:
         """Check if the output file exists."""
-        return os.path.isfile(os.path.abspath(os.path.expanduser(self.out_file)))
+        return os.path.isfile(self.out_file)
 
     def has_hits(self) -> bool:
         """Check if the output file has any hits (lines that do not start with '#')."""
