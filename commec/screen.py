@@ -61,7 +61,6 @@ import pandas as pd
 
 from commec.config.screen_io import ScreenIO, IoValidationError
 from commec.config.query import Query
-from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.logger import (
     setup_console_logging,
     setup_file_logging,
@@ -320,7 +319,7 @@ class Screen:
                 qr = QueryResult(query.original_name,
                                  query.length)
                 self.screen_data.queries[query.name] = qr
-                query.result_handle = qr
+                query.result = qr
 
                 # Determine short querys as skipped:
                 if query.length < MINIMUM_QUERY_LENGTH:
@@ -509,13 +508,13 @@ class Screen:
 
         # Calculate non-coding information for each Query.
         calculate_noncoding_regions_per_query(
-            self.database_tools.regulated_protein.out_file,
+            self.database_tools.regulated_protein,
             self.queries)
 
         # Generate the non-coding fasta.
         nc_fasta_sequences = ""
         for query in self.queries.values():
-            if query.result_handle.status.nucleotide_taxonomy == ScreenStatus.SKIP:
+            if query.result.status.nucleotide_taxonomy == ScreenStatus.SKIP:
                 continue
             nc_fasta_sequences += query.get_non_coding_regions_as_fasta()
 
