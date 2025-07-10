@@ -14,6 +14,7 @@ from commec.tools.blastx import BlastXHandler
 from commec.tools.diamond import DiamondHandler
 from commec.tools.cmscan import CmscanHandler
 from commec.tools.hmmer import HmmerHandler
+from commec.setup import get_latest_commec_database_release_tag
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,10 @@ class ScreenTools:
         self.biorisk_taxid_path: str | os.PathLike = None
 
         self.biorisk_annotations_csv: str | os.PathLike = None
+
+        # Check the existance of a version.txt file. ... 
+        validate_commec_database_versions(
+            params.config["base_paths"]["default"] + "commec-db-version.txt")
 
         # Paths for vaxid, taxids, and taxonomy directory, used for check_regulated_pathogens
         # (Declared this way for backwards compatibility to old database structure at this stage)
@@ -117,3 +122,50 @@ class ScreenTools:
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
+
+def validate_commec_database_versions(version_filepath: str | os.PathLike):
+    """
+    Validate whether the local COMMEC database version is up-to-date.
+
+    This function reads the local version of the COMMEC database from a `version.txt`
+    file located at `version_filepath`. It also retrieves the most recent available
+    version from GitHub via `get_latest_commec_database_release_tag()`.
+
+    If either the local or remote version cannot be determined, or if the local version
+    is out of date, a warning will be logged.
+
+    Parameters
+    ----------
+    version_filepath : str or os.PathLike
+        Path to the local `commec-db-version.txt` file containing the COMMEC database version.
+
+    Logs
+    ----
+    - A warning if the local version file does not exist or cannot be read.
+    - A warning if the latest version cannot be fetched (e.g., due to lack of internet).
+    - A warning if the local version is not the most recent.
+    """
+    local_version: str | None = None
+    if os.path.exists(version_filepath):
+        try:
+            with open(version_filepath, "r", encoding="utf-8") as f:
+                local_version = f.readline().strip()
+        except (FileNotFoundError, PermissionError, OSError, UnicodeDecodeError) as e:
+            logger.warning("Failed to read local version file '%s': %s",
+                           version_filepath, e)
+
+    most_recent_version, _reason = get_latest_commec_database_release_tag()
+
+    if not local_version:
+        logger.warning("Local COMMEC database version not found or unreadable at '%s'.", version_filepath)
+    if not most_recent_version:
+        logger.warning("Unable to determine the latest COMMEC database version, %s ", _reason)
+
+    if most_recent_version != local_version:
+        logger.warning(
+            "COMMEC database outdated. Local version: '%s', Latest version: '%s'. "
+            "\nIt is strongly recommend to download the latest version by running commec setup, "
+            "or directly downloading the latest from the commec-databases repository: "
+            "[https://github.com/ibbis-bio/commec-databases/releases].",
+            local_version, most_recent_version
+        )
