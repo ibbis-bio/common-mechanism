@@ -87,7 +87,7 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
                         eukaryote_flag |= (int(info["regulated_eukaryotes"]) > 0)
 
         # Which forms of benign hits are present?
-        if (qs.benign
+        if (qs.low_concern
             not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
             for hit in query.hits.values():
                 match hit.recommendation.from_step:
@@ -138,13 +138,13 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         "biorisk": query.status.biorisk,
         "protein": protein_status,
         "nucleotide": nucleotide_status,
-        "benign": query.status.benign,
+        "low_concern": query.status.low_concern,
         "virus_flag": virus_flag,
         "bacteria_flag": bacteria_flag,
         "eukaryote_flag": eukaryote_flag,
-        "benign_protein": benign_protein,
-        "benign_rna": benign_rna,
-        "benign_dna": benign_synbio
+        "low_concern_protein": benign_protein,
+        "low_concern_rna": benign_rna,
+        "low_concern_dna": benign_synbio
         })
 
     return results

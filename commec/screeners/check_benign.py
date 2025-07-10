@@ -361,9 +361,9 @@ def parse_low_concern_hits(benign_protein_handler : HmmerHandler,
                 skip = False
 
         if skip:
-            query.result_handle.status.benign = ScreenStatus.SKIP
+            query.result_handle.status.low_concern = ScreenStatus.SKIP
         
-        if query.result_handle.status.benign == ScreenStatus.SKIP:
+        if query.result_handle.status.low_concern == ScreenStatus.SKIP:
             logger.debug("Skipping query %s, no regulated regions to clear.", query.name)
             continue
         

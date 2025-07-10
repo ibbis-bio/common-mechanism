@@ -335,7 +335,7 @@ class QueryScreenStatus:
             self.biorisk,
             self.protein_taxonomy,
             self.nucleotide_taxonomy,
-            self.benign
+            self.low_concern
         )
 
         # If everything is happy, but we haven't hit anything, time to be suspicious...
@@ -351,11 +351,11 @@ class QueryScreenStatus:
 
     def __str__(self) -> str:
         output = f"""
-                Overall    : {self.screen_status}\n
-                Biorisk    : {self.biorisk}\n
-                Protein    : {self.protein_taxonomy}\n
-                Nucleotide : {self.nucleotide_taxonomy}\n
-                Benign     : {self.benign}\n
+                Overall     : {self.screen_status}\n
+                Biorisk     : {self.biorisk}\n
+                Protein     : {self.protein_taxonomy}\n
+                Nucleotide  : {self.nucleotide_taxonomy}\n
+                Low Concern : {self.low_concern}\n
                 {self.rationale}
                 """
         return output
@@ -370,8 +370,8 @@ class QueryScreenStatus:
             return "Protein Taxonomy Screening"
         if self.nucleotide_taxonomy == ScreenStatus.ERROR:
             return "Nucleotide Taxonomy Screening"
-        if self.benign == ScreenStatus.ERROR:
-            return "Benign Screening"
+        if self.low_concern == ScreenStatus.ERROR:
+            return "Low concern Screening"
 
         return "Screening" # General Error at some stage.
 
@@ -469,8 +469,8 @@ class QueryResult:
             self.status.protein_taxonomy = ScreenStatus.NULL
         if self.status.nucleotide_taxonomy not in ignored_status:
             self.status.nucleotide_taxonomy = ScreenStatus.NULL
-        if self.status.benign not in ignored_status:
-            self.status.benign = ScreenStatus.NULL
+        if self.status.low_concern not in ignored_status:
+            self.status.low_concern = ScreenStatus.NULL
 
         # Track status sets for rationale (only for specific steps that need it)
         status_sets = {
@@ -490,9 +490,9 @@ class QueryResult:
                 status_sets[step].add(hit_status)
 
         # Update Benign outcome based on the worst step.
-        self.status.benign = max(
-            self.status.benign,
-            self.status.biorisk, 
+        self.status.low_concern = max(
+            self.status.low_concern,
+            self.status.biorisk,
             self.status.protein_taxonomy,
             self.status.nucleotide_taxonomy
         )
@@ -543,7 +543,7 @@ class QueryResult:
             state.biorisk == ScreenStatus.PASS and
             state.protein_taxonomy == ScreenStatus.PASS and
             state.nucleotide_taxonomy == ScreenStatus.PASS and
-            state.benign == ScreenStatus.PASS):
+            state.low_concern == ScreenStatus.PASS):
             state.rationale = Rationale.NOTHING
             return
 
@@ -657,7 +657,7 @@ class QueryResult:
         self.status.biorisk = ScreenStatus.SKIP
         self.status.protein_taxonomy = ScreenStatus.SKIP
         self.status.nucleotide_taxonomy = ScreenStatus.SKIP
-        self.status.benign = ScreenStatus.SKIP
+        self.status.low_concern = ScreenStatus.SKIP
         logger.debug("Query %s has all statuses assigned to SKIP.", self.query)
 
 
