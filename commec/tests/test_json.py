@@ -18,9 +18,9 @@ def test_screendata():
                 biorisk_search_info=SearchToolVersion("HMM 0.0.0","DB 0.0.0"),
                 protein_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
                 nucleotide_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-                benign_protein_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-                benign_rna_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-                benign_dna_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                low_concern_protein_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                low_concern_rna_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                low_concern_dna_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
             )
         ),
         query_info = ScreenQueryInfo(

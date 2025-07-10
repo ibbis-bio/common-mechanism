@@ -17,15 +17,15 @@
                 "tool_info": "",
                 "database_info": ""
             },
-            "benign_protein_search_info": {
+            "low_concern_protein_search_info": {
                 "tool_info": "",
                 "database_info": ""
             },
-            "benign_rna_search_info": {
+            "low_concern_rna_search_info": {
                 "tool_info": "",
                 "database_info": ""
             },
-            "benign_dna_search_info": {
+            "low_concern_dna_search_info": {
                 "tool_info": "",
                 "database_info": ""
             }
@@ -45,7 +45,7 @@
                 "biorisk": "Flag",
                 "protein_taxonomy": "Pass",
                 "nucleotide_taxonomy": "Pass",
-                "benign": "Flag"
+                "low_concern": "Flag"
             },
             "hits": {
                 "BioriskHit": {
@@ -83,7 +83,7 @@
                 "biorisk": "Pass",
                 "protein_taxonomy": "Flag",
                 "nucleotide_taxonomy": "Pass",
-                "benign": "Flag"
+                "low_concern": "Flag"
             },
             "hits": {
                 "BioriskHit": {
@@ -134,7 +134,7 @@
                 "biorisk": "Pass",
                 "protein_taxonomy": "Flag",
                 "nucleotide_taxonomy": "Pass",
-                "benign": "Flag"
+                "low_concern": "Flag"
             },
             "hits": {
                 "BioriskHit": {
@@ -185,7 +185,7 @@
                 "biorisk": "Pass",
                 "protein_taxonomy": "Flag",
                 "nucleotide_taxonomy": "Pass",
-                "benign": "Flag"
+                "low_concern": "Flag"
             },
             "hits": {
                 "BioriskHit": {
@@ -236,7 +236,7 @@
                 "biorisk": "Pass",
                 "protein_taxonomy": "Pass",
                 "nucleotide_taxonomy": "Flag",
-                "benign": "Flag"
+                "low_concern": "Flag"
             },
             "hits": {
                 "BioriskHit": {
@@ -289,7 +289,7 @@
                 "biorisk": "Pass",
                 "protein_taxonomy": "Pass",
                 "nucleotide_taxonomy": "Pass",
-                "benign": "Pass"
+                "low_concern": "Pass"
             },
             "hits": {
                 "BioriskHit": {

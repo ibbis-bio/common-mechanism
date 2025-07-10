@@ -1,27 +1,28 @@
 base_paths:
   default: commec-dbs/
 databases:
-  benign:
-    cm:
-      path: '{default}benign_db/benign.cm'
-    fasta:
-      path: '{default}benign_db/benign.fasta'
-    hmm:
-      path: '{default}benign_db/benign.hmm'
-  biorisk_hmm:
-    path: '{default}biorisk_db/biorisk.hmm'
-    annotations: '{default}biorisk_db/biorisk_annotations.csv'
-  regulated_nt:
-    path: '{default}nt_blast/core_nt'
+  biorisk:
+    path: '{default}biorisk/biorisk.hmm'
+    taxids: "{default}biorisk/reg_taxids.txt"
+    annotations: '{default}biorisk/biorisk_annotations.csv'
   regulated_protein:
     blast:
       path: '{default}nr_blast/nr'
     diamond:
       path: '{default}nr_dmnd/nr.dmnd'
+  regulated_nt:
+    path: '{default}nt_blast/core_nt'
+  low_concern:
+    rna:
+      path: '{default}low_concern/rna/benign.cm'
+    dna:
+      path: '{default}low_concern/dna/benign.fasta'
+    protein:
+      path: '{default}low_concern/protein/benign.hmm'
+    taxids: "{default}low_concern/vax_taxids.txt"
+    annotations: '{default}low_concern/low_concern_annotations.tsv'
   taxonomy:
       path: "{default}taxonomy/"
-      regulated_taxids: "{default}biorisk_db/reg_taxids.txt"
-      benign_taxids: "{default}benign_db/vax_taxids.txt"
 threads: 1
 diamond_jobs: null
 do_cleanup: False

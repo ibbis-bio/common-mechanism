@@ -19,7 +19,7 @@ def test_flag(tmp_path):
 
     expected_status = textwrap.dedent(
         f"""\
-        name,filepath,flag,biorisk,protein,nucleotide,benign,virus_flag,bacteria_flag,eukaryote_flag,benign_protein,benign_rna,benign_dna
+        name,filepath,flag,biorisk,protein,nucleotide,low_concern,virus_flag,bacteria_flag,eukaryote_flag,low_concern_protein,low_concern_rna,low_concern_dna
         FLAG_TEST_01,{SCREEN_DIR}/flag_tests.json,Flag,Flag,Pass,Pass,Flag,False,False,False,False,False,False
         FLAG_TEST_02,{SCREEN_DIR}/flag_tests.json,Flag,Pass,Flag,Pass,Flag,True,False,False,False,False,False
         FLAG_TEST_03,{SCREEN_DIR}/flag_tests.json,Flag,Pass,Flag,Pass,Flag,False,True,False,False,False,False
