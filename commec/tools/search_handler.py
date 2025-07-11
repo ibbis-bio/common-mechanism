@@ -66,7 +66,10 @@ class SearchHandler(ABC):
         self.force = kwargs.get('force', False)
         self.arguments_dictionary = {}
 
-        self._validate_db()
+        # Only check database files validating if we actually intend on using them.
+        if self.force or not self.check_output():
+            self._validate_db()
+
         self.version_info = self.get_version_information()
 
     @property
