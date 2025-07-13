@@ -45,7 +45,7 @@ def _check_inputs(
     returns True if it is safe to continue. 
     """
     # check input files
-    if not search_handle.check_output():
+    if not search_handle.validate_output():
         logger.info("\t...ERROR: Taxonomic search results empty\n %s", search_handle.out_file)
         return False
 

@@ -66,8 +66,8 @@ class SearchHandler(ABC):
         self.force = kwargs.get('force', False)
         self.arguments_dictionary = {}
 
-        # Only check database files validating if we actually intend on using them.
-        if self.force or not self.check_output():
+        # Only validate database files if we actually intend on using them
+        if not self.should_use_existing_output:
             self._validate_db()
 
         self.version_info = self.get_version_information()
@@ -82,19 +82,24 @@ class SearchHandler(ABC):
         """Temporary log file used for this search. Based on outfile name."""
         return f"{self.out_file}.log.tmp"
 
+    @property
+    def should_use_existing_output(self) -> bool:
+        """
+        True if (1) search is not forced and (2) output exists and is valid.
+        """
+        return not self.force and self.validate_output()
+
     def search(self):
         """
-        Wrapper for _search, to ensure that it is only called if 
-         - The output doesn't already exist,
-         - If force is enabled.
+        Wrapper for _search, skipping if existing output should not be overwritten.
         """
-        if not self.force and self.check_output():
+        if self.should_use_existing_output:
             logger.warning("%s expected output data already exists, "
                          "will use existing data found in:",
                          self.__class__.__name__)
             logger.warning(self.out_file, extra = {"no_prefix" : True, "cap":True})
-            return
-        self._search()
+        else:
+            self._search()
 
     @abstractmethod
     def _search(self):
@@ -116,7 +121,7 @@ class SearchHandler(ABC):
         This method should be implemented by all subclasses to return tool-specific version info.
         """
 
-    def check_output(self):
+    def validate_output(self):
         """
         Check the output file exists, indicating that the search ran.
         Can be overridden if more complex checks for a particular tool are desired.
