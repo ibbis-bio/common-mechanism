@@ -75,8 +75,8 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
     if not os.path.exists(hmm_folder_csv):
         logger.error("\t...biorisk_annotations.csv does not exist\n %s", hmm_folder_csv)
         return 1
-    if not search_handler.check_output():
-        logger.error("\t...database output file does not exist\n %s", search_handler.out_file)
+    if not search_handle.validate_output():
+        logger.error("\t...database output file does not exist\n %s", search_handle.out_file)
         return 1
     if search_handler.is_empty(search_handler.out_file):
         logger.error("\t...ERROR: biorisk search results empty\n")

@@ -469,7 +469,7 @@ class Screen:
         """
         logger.debug("\t...running %s", self.params.config["protein_search_tool"])
         self.database_tools.regulated_protein.search()
-        if not self.database_tools.regulated_protein.check_output():
+        if not self.database_tools.regulated_protein.validate_output():
             self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.ERROR)
             raise RuntimeError(
                 "ERROR: Expected protein search output not created: "
@@ -534,7 +534,7 @@ class Screen:
         # Only run new blastn search if there are no previous results
         self.database_tools.regulated_nt.search()
 
-        if not self.database_tools.regulated_nt.check_output():
+        if not self.database_tools.regulated_nt.validate_output():
             self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.ERROR)
             raise RuntimeError(
                 "ERROR: Expected nucleotide search output not created: "
