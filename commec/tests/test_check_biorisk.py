@@ -47,7 +47,6 @@ def test_check_biorisk_return_codes(annotations_exists, has_empty_output, has_hi
         patch("pandas.read_csv", return_value=mock_annot_df),
         patch("commec.screeners.check_biorisk.readhmmer", return_value=mock_hit_df),
         patch("commec.screeners.check_biorisk.remove_overlaps", return_value=mock_hit_df),
-        patch("commec.screeners.check_biorisk.HmmerHandler.validate_output", return_value=True),
         patch("commec.screeners.check_biorisk.HmmerHandler.has_empty_output", return_value=has_empty_output),
         patch("commec.screeners.check_biorisk.HmmerHandler.has_hits", return_value=has_hits),
     ):
