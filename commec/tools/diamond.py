@@ -242,7 +242,7 @@ class DiamondHandler(BlastHandler):
         except subprocess.CalledProcessError:
             return SearchToolVersion()
 
-    def check_output(self) -> bool:
+    def validate_output(self) -> bool:
         """
         Diamond overrides the standard behaviour here, as a valid output file can be empty if
         it has no hits, whereas other search outputs (e.g. BLAST) have header information.
