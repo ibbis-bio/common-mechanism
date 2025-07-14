@@ -128,7 +128,7 @@ class SearchHandler(ABC):
         Is overridden for Diamond outputs, which have no header information, and simply only
         checks for file-existance, rather than lack of content, for example.
         """
-        return not self.has_empty_or_no_output()
+        return not self.has_empty_output()
 
     def _validate_db(self):
         """
@@ -146,17 +146,13 @@ class SearchHandler(ABC):
                 " File location can be set via --databases option or --config yaml."
             )
 
-    def has_empty_or_no_output(self) -> bool:
+    def has_empty_output(self) -> bool:
         """Check if the output file is empty or non-existent."""
         try:
             return os.path.getsize(self.out_file) == 0
         except OSError:
             # Errors such as FileNotFoundError considered empty
             return True
-
-    def has_output(self) -> bool:
-        """Check if the output file exists."""
-        return os.path.isfile(self.out_file)
 
     def has_hits(self) -> bool:
         """Check if the output file has any hits (lines that do not start with '#')."""

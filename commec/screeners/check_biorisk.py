@@ -78,7 +78,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
     if not search_handle.validate_output():
         logger.error("\t...database output file does not exist\n %s", search_handle.out_file)
         return 1
-    if search_handle.has_empty_or_no_output():
+    if search_handle.has_empty_output():
         logger.error("\t...ERROR: biorisk search results empty\n")
         return 1
 

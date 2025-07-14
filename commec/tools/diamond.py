@@ -244,9 +244,7 @@ class DiamondHandler(BlastHandler):
 
     def check_output(self) -> bool:
         """
-        Check if a file is non-existent. 
-        Diamond overrides the standard behaviour here,
-        as a non-hits output file can infact be empty, 
-        whereas the blast etc outputs have header information.
+        Diamond overrides the standard behaviour here, as a valid output file can be empty if
+        it has no hits, whereas other search outputs (e.g. BLAST) have header information.
         """
-        return self.has_output()
+        return os.path.isfile(self.out_file)
