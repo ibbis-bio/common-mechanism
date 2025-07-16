@@ -76,10 +76,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
         logger.error("\t...biorisk_annotations.csv does not exist\n %s", hmm_folder_csv)
         return 1
     if not search_handle.validate_output():
-        logger.error("\t...database output file does not exist\n %s", search_handle.out_file)
-        return 1
-    if search_handle.is_empty(search_handle.out_file):
-        logger.error("\t...ERROR: biorisk search results empty\n")
+        logger.error("\t...database output file does not exist, or is empty\n %s", search_handle.out_file)
         return 1
 
     # We delay non-debug logging to sort messages via query.
@@ -88,7 +85,7 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
     for query in data.queries.values():
         query.status.set_step_status(ScreenStep.BIORISK, ScreenStatus.PASS)
 
-    if not search_handle.has_hits(search_handle.out_file):
+    if not search_handle.has_hits():
         return 0
 
     # Read in Output, and parse.

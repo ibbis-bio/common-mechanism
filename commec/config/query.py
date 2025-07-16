@@ -22,7 +22,7 @@ class Query:
         self._seq_record = seq_record
         self.name = self.create_id(seq_record.id)
         self.non_coding_regions : list[tuple[int, int]] = [] # 1 based coordinates for Non-Coding Regions.
-        self.result_handle : QueryResult = None
+        self.result : QueryResult = None
         self.translations: list[QueryTranslation] = []
         self.no_hits_warning : bool = True # Updated to False whenever any hit is found.
 
