@@ -4,12 +4,19 @@ import pandas as pd
 import pytest
 import textwrap
 from Bio import SeqIO
+from unittest.mock import patch
+
 from commec.tools.fetch_nc_bits import (
     _get_ranges_with_no_hits,
-    _write_nc_sequences,
-    fetch_noncoding_regions,
+    calculate_noncoding_regions_per_query,
 )
 
+from commec.config.screen_io import ScreenIO
+from commec.config.result import QueryResult, ScreenStatus
+from commec.screen import add_args, ScreenArgumentParser
+from commec.tools.blastx import BlastXHandler
+
+DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs")
 
 @pytest.mark.parametrize(
     "hits, nc_ranges",
@@ -45,23 +52,6 @@ def test_get_ranges_with_no_hits(hits, nc_ranges):
     assert _get_ranges_with_no_hits(blast_df) == nc_ranges
 
 
-def test_write_nc_sequences(tmp_path):
-    """
-    Test that sequences are successfully written to an output file based on noncoding regions.
-    """
-    desc = "TEST_FETCH_NC"
-    seq = "".join([str(i % 10) for i in range(300)])
-    record = list(SeqIO.parse(StringIO(f">{desc}\n{seq}\n"), "fasta"))[0]
-    nc_ranges = [[5, 59], [91, 170]]
-    outfile = tmp_path / "output.fasta"
-
-    _write_nc_sequences(nc_ranges, record, outfile)
-
-    content = outfile.read_text()
-    assert f">{desc} 5-59\n{seq[4:59]}\n" in content
-    assert f">{desc} 91-170\n{seq[90:170]}\n" in content
-
-
 def test_fetch_nocoding_regions(tmp_path):
     """Full test, including file parsing."""
 
@@ -93,30 +83,48 @@ def test_fetch_nocoding_regions(tmp_path):
         # 3 hits found
         NC_TEST01	SUBJECT	SUBJECT_ACC	TAXID	0.0	BITSCORE	99.999	300	101	200	500	1	100
         NC_TEST02	SUBJECT	SUBJECT_ACC	TAXID	0.0	BITSCORE	99.999	300	25	80	500	1	100
-        NC_TEST02	SUBJECT	SUBJECT_ACC	TAXID	0.0	BITSCORE	99.999	300	275	300	500	1	100
+        NC_TEST02	SUBJECT	SUBJECT_ACC	TAXID	0.0	BITSCORE	99.999	300	100	300	500	1	100
         """
     )
 
     expected_output = textwrap.dedent(
         """\
-        >NC_TEST01 1-100
-        ggtagttccctaaacttatcattaagcgatcttcatcgtcaggtatctcgattggtgcagcaagagagcggtgattgtaccgggaaattaagaggtaacg
-        >NC_TEST01 201-300
-        aaatgttgttctaactcaagaagataccgctaagctattgcaaagtacggtaaagcataatttgaataattatgacttaagaagtgtcggcaatggtaat
+        >NC_TEST01 (1-100) (201-300)
+        ggtagttccctaaacttatcattaagcgatcttcatcgtcaggtatctcgattggtgcagcaagagagcggtgattgtaccgggaaattaagaggtaacgaaatgttgttctaactcaagaagataccgctaagctattgcaaagtacggtaaagcataatttgaataattatgacttaagaagtgtcggcaatggtaat
         """
     )
 
+    # Setup Expected files
     input_fasta = tmp_path / "fetch_nc_input.fasta"
     input_fasta.write_text(f">{desc_1}\n{seq_1}\n>{desc_2}\n{seq_2}\n")
     input_blast = tmp_path / "fetch_nc_input.blastx"
     input_blast.write_text(blast_to_parse)
 
-    nc_output = tmp_path / "fetch_nc_input.blastx.noncoding.fasta"
+    # Create Dictionary of queries for funciton input.
+    with patch(
+        "sys.argv",
+        ["test.py", "--skip-tx", str(input_fasta), "-d", str(DATABASE_DIRECTORY), "-o", str(tmp_path)],
+    ):
+        parser = ScreenArgumentParser()
+        add_args(parser)
+        screen_io = ScreenIO(parser.parse_args())
+        screen_io.setup()
 
-    fetch_noncoding_regions(str(input_blast), str(input_fasta))
+    queries = screen_io.parse_input_fasta()
+    for query in queries.values():
+        query.result = QueryResult()
 
-    # Check if the output file exists
-    assert nc_output.exists()
+    # Setup result handler for function input.
+    db_file = os.path.join(DATABASE_DIRECTORY, "nr_blast/nr")
+    handler = BlastXHandler(db_file, input_fasta, input_blast, force=True)
 
-    actual_output = nc_output.read_text()
+    calculate_noncoding_regions_per_query(handler, queries)
+
+    # Generate the non-coding fasta text.
+    actual_output = ""
+    for query in queries.values():
+        if query.result.status.nucleotide_taxonomy == ScreenStatus.SKIP:
+            continue
+        actual_output += query.get_non_coding_regions_as_fasta()
+
     assert actual_output.strip() == expected_output.strip()
