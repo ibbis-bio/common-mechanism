@@ -8,18 +8,16 @@ Usage:
   python check_reg_path.py -i INPUT -d database_folder -t threads
 
 """
-import argparse
 import logging
 import os
-import re
-import sys
-import textwrap
 import pandas as pd
-#from commec.config.screen_tools import ScreenIO
-from commec.tools.blast_tools import read_blast, get_taxonomic_labels, get_top_hits
-from commec.tools.blastn import BlastNHandler
 from commec.tools.search_handler import SearchHandler
 from commec.config.query import Query
+from commec.tools.blast_tools import (
+    read_blast,
+    get_taxonomic_labels,
+    get_top_hits
+)
 from commec.config.result import (
     ScreenResult,
     HitResult,
@@ -56,15 +54,11 @@ def _check_inputs(
     if not os.path.exists(biorisk_taxid_path):
         logger.error("\t...biorisk database file %s does not exist\n", biorisk_taxid_path)
         return False
-    
+
     if not os.path.exists(taxonomy_directory):
         logger.error("\t...taxonomy directory %s does not exist\n", taxonomy_directory)
         return False
 
-    if search_handler.is_empty(search_handler.out_file):
-        logger.info("\tERROR: Homology search has failed\n")
-        return False
-    
     return True
 
 def parse_taxonomy_hits(
@@ -97,7 +91,7 @@ def parse_taxonomy_hits(
     for query in data.queries.values():
         query.status.set_step_status(step, ScreenStatus.PASS)
 
-    if not search_handler.has_hits(search_handler.out_file):
+    if not search_handler.has_hits():
         logger.info("\t...no hits\n")
         return 0
 
@@ -111,6 +105,18 @@ def parse_taxonomy_hits(
     blast = read_blast(search_handler.out_file)
     logger.debug("%s Blast Import: shape: %s preview:\n%s", step, blast.shape, blast.head())
 
+    # Initial check for query to be identified as anything known.
+    unique_queries = blast['query acc.'].unique()
+    for query_acc in unique_queries:
+        query_obj = queries.get(query_acc)
+        if query_obj:
+            logger.debug("Confirming hits for query %s.", query_acc)
+            query_obj.confirm_has_hits()
+        else:
+            logger.error("Could not mark query %s for confirmation of hit, "
+                            "query not found in input queries.", query_acc)
+
+    # Add taxonomic labels, and filter synthetic constructs
     blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)
     logger.debug("%s TaxLabels: shape: %s preview:\n%s", step, blast.shape, blast.head())
 
@@ -139,8 +145,6 @@ def parse_taxonomy_hits(
             if not query_write:
                 logger.error("Query during %s could not be found! [%s]", str(step), query)
                 continue
-
-            queries[query].confirm_has_hits()
 
             unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
             unique_query_data.dropna(subset = ['species'])
@@ -298,5 +302,5 @@ def parse_taxonomy_hits(
         logger.info(f" Regulated {taxtype}{s} in {query_name}:")
         for log_text in log_list:
             logger.info(log_text)
-    
+
     return 0

@@ -59,9 +59,9 @@ class SearchHandler(ABC):
         - `database_file`, `input_file`, and `out_file` are validated on instantiation.
         """
 
-        self.db_file = os.path.abspath(database_file)
-        self.input_file = os.path.abspath(input_file)
-        self.out_file = os.path.abspath(out_file)
+        self.db_file = os.path.abspath(os.path.expanduser(database_file))
+        self.input_file = os.path.abspath(os.path.expanduser(input_file))
+        self.out_file = os.path.abspath(os.path.expanduser(out_file))
         self.threads = kwargs.get('threads', 1)
         self.force = kwargs.get('force', False)
         self.arguments_dictionary = {}
@@ -123,10 +123,12 @@ class SearchHandler(ABC):
 
     def validate_output(self):
         """
-        Check the output file exists, indicating that the search ran.
+        Check the output file contains something, indicating that the search ran.
         Can be overridden if more complex checks for a particular tool are desired.
+        Is overridden for Diamond outputs, which have no header information, and simply only
+        checks for file-existance, rather than lack of content, for example.
         """
-        return os.path.isfile(self.out_file)
+        return not self.has_empty_output()
 
     def _validate_db(self):
         """
@@ -144,20 +146,18 @@ class SearchHandler(ABC):
                 " File location can be set via --databases option or --config yaml."
             )
 
-    @staticmethod
-    def is_empty(filepath: str) -> bool:
-        """Check if a file is empty or non-existent."""
+    def has_empty_output(self) -> bool:
+        """Check if the output file is empty or non-existent."""
         try:
-            return os.path.getsize(os.path.abspath(os.path.expanduser(filepath))) == 0
+            return os.path.getsize(self.out_file) == 0
         except OSError:
             # Errors such as FileNotFoundError considered empty
             return True
 
-    @staticmethod
-    def has_hits(filepath: str) -> bool:
-        """Check if a file has any hits (lines that do not start with '#')."""
+    def has_hits(self) -> bool:
+        """Check if the output file has any hits (lines that do not start with '#')."""
         try:
-            with open(filepath, "r", encoding="utf-8") as file:
+            with open(self.out_file, "r", encoding="utf-8") as file:
                 return any(not line.strip().startswith("#") for line in file)
         except FileNotFoundError:
             return False
