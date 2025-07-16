@@ -11,7 +11,6 @@ Usage:
 import logging
 import os
 import pandas as pd
-
 from commec.tools.search_handler import SearchHandler
 from commec.config.query import Query
 from commec.tools.blast_tools import (
@@ -106,6 +105,18 @@ def update_taxonomic_data_from_database(
     blast = read_blast(search_handle.out_file)
     logger.debug("%s Blast Import: shape: %s preview:\n%s", step, blast.shape, blast.head())
 
+    # Initial check for query to be identified as anything known.
+    unique_queries = blast['query acc.'].unique()
+    for query_acc in unique_queries:
+        query_obj = queries.get(query_acc)
+        if query_obj:
+            logger.debug("Confirming hits for query %s.", query_acc)
+            query_obj.confirm_has_hits()
+        else:
+            logger.error("Could not mark query %s for confirmation of hit, "
+                            "query not found in input queries.", query_acc)
+
+    # Add taxonomic labels, and filter synthetic constructs
     blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)
     logger.debug("%s TaxLabels: shape: %s preview:\n%s", step, blast.shape, blast.head())
 
@@ -134,8 +145,6 @@ def update_taxonomic_data_from_database(
             if not query_write:
                 logger.error("Query during %s could not be found! [%s]", str(step), query)
                 continue
-
-            queries[query].confirm_has_hits()
 
             unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
             unique_query_data.dropna(subset = ['species'])
