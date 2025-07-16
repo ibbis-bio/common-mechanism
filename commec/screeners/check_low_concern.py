@@ -268,7 +268,7 @@ def _update_low_concern_data_for_query(query : Query,
     new_low_concern_dna_hits = []
 
     # Check every region, of every hit that is a FLAG or WARN, against the Benign screen outcomes.
-    for hit in query.result_handle.hits.values():
+    for hit in query.result.hits.values():
         # Ignore regions that don't require clearing...
         if ((hit.recommendation.status not in {
             ScreenStatus.FLAG,
@@ -318,7 +318,7 @@ def _update_low_concern_data_for_query(query : Query,
 
     logger.debug("\tNew low-concern hits added: %i", len(new_low_concern_hits))
     for low_concern_addition in new_low_concern_hits:
-        query.result_handle.add_new_hit_information(low_concern_addition)
+        query.result.add_new_hit_information(low_concern_addition)
         logger.debug("\t\tAdding low-concern Hit: %s", low_concern_addition)
 
 def parse_low_concern_hits(protein_handler : HmmerHandler,
@@ -362,7 +362,7 @@ def parse_low_concern_hits(protein_handler : HmmerHandler,
     for query in queries.values():
 
         skip = True
-        for hit in query.result_handle.hits.values():
+        for hit in query.result.hits.values():
             if hit.recommendation.status in {
                 ScreenStatus.FLAG,
                 ScreenStatus.WARN
@@ -370,9 +370,9 @@ def parse_low_concern_hits(protein_handler : HmmerHandler,
                 skip = False
 
         if skip:
-            query.result_handle.status.low_concern = ScreenStatus.SKIP
+            query.result.status.low_concern = ScreenStatus.SKIP
         
-        if query.result_handle.status.low_concern == ScreenStatus.SKIP:
+        if query.result.status.low_concern == ScreenStatus.SKIP:
             logger.debug("Skipping query %s, no regulated regions to clear.", query.name)
             continue
         
@@ -383,10 +383,10 @@ def parse_low_concern_hits(protein_handler : HmmerHandler,
                                       low_concern_desc)
 
         # Calculate the Benign Screen outcomes for each query.
-        query.result_handle.status.low_concern = ScreenStatus.PASS
+        query.result.status.low_concern = ScreenStatus.PASS
         # If any hits are still warnings, or flags, propagate that to the low_concern step.
-        for flagged_hit in query.result_handle.get_flagged_hits():
-            query.result_handle.status.update_step_status(
+        for flagged_hit in query.result.get_flagged_hits():
+            query.result.status.update_step_status(
                ScreenStep.BENIGN_DNA, flagged_hit.recommendation.status
         )
 
