@@ -15,8 +15,6 @@ import re
 import sys
 import textwrap
 import pandas as pd
-#from commec.config.screen_tools import ScreenIO
-from commec.config.constants import MINIMUM_PERCENT_IDENTITY
 from commec.tools.blast_tools import read_blast, get_taxonomic_labels, get_top_hits
 from commec.tools.blastn import BlastNHandler
 from commec.tools.search_handler import SearchHandler
@@ -113,16 +111,15 @@ def update_taxonomic_data_from_database(
     logger.debug("%s Blast Import: shape: %s preview:\n%s", step, blast.shape, blast.head())
 
     # Initial check for query to be identified as anything known.
-    grouped = blast.groupby("query acc.")["% identity"]
-    for query_acc, pc_identity in grouped:
-        if (pc_identity > MINIMUM_PERCENT_IDENTITY).any():
-            query_obj = queries.get(query_acc)
-            if query_obj:
-                logger.debug("Confirming hits for query %s.", query_acc)
-                query_obj.confirm_has_hits()
-            else:
-                logger.error("Could not mark query %s for confirmation of hit, "
-                             "query not found in input queries.", query_acc)
+    unique_queries = blast['query acc.'].unique()
+    for query_acc in unique_queries:
+        query_obj = queries.get(query_acc)
+        if query_obj:
+            logger.debug("Confirming hits for query %s.", query_acc)
+            query_obj.confirm_has_hits()
+        else:
+            logger.error("Could not mark query %s for confirmation of hit, "
+                            "query not found in input queries.", query_acc)
 
     # Add taxonomic labels, and filter synthetic constructs
     blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)
