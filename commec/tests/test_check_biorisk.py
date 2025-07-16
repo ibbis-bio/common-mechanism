@@ -12,7 +12,7 @@ INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.f
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
 
 @pytest.mark.parametrize(
-    "annotations_exists, is_empty, has_hits, expected_return",
+    "annotations_exists, has_empty_output, has_hits, expected_return",
     [
         # Case 1: annotations file doesn't exist
         (False, False, False, 1),
@@ -24,7 +24,7 @@ DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
         (True, False, True, 0),
     ],
 )
-def test_check_biorisk_return_codes(annotations_exists, is_empty, has_hits, expected_return):
+def test_check_biorisk_return_codes(annotations_exists, has_empty_output, has_hits, expected_return):
     mock_hit_df = pd.DataFrame(
         {
             "target name": ["test_id"],
@@ -47,8 +47,7 @@ def test_check_biorisk_return_codes(annotations_exists, is_empty, has_hits, expe
         patch("pandas.read_csv", return_value=mock_annot_df),
         patch("commec.screeners.check_biorisk.readhmmer", return_value=mock_hit_df),
         patch("commec.screeners.check_biorisk.remove_overlaps", return_value=mock_hit_df),
-        patch("commec.screeners.check_biorisk.HmmerHandler.validate_output", return_value=True),
-        patch("commec.screeners.check_biorisk.HmmerHandler.is_empty", return_value=is_empty),
+        patch("commec.screeners.check_biorisk.HmmerHandler.has_empty_output", return_value=has_empty_output),
         patch("commec.screeners.check_biorisk.HmmerHandler.has_hits", return_value=has_hits),
     ):
         handler = HmmerHandler(DATABASE_DIRECTORY + "biorisk_db/biorisk.hmm", INPUT_QUERY, "/mock/path/test.hmmscan")
