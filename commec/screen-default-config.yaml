@@ -28,7 +28,7 @@ diamond_jobs: null
 do_cleanup: False
 force: False
 skip_taxonomy_search: False
-protein_search_tool: 'diamond'
+protein_search_tool: 'blastx'
 resume: False
 skip_nt_search: False
 verbose: False
