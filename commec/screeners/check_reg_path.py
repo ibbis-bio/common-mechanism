@@ -33,8 +33,8 @@ pd.set_option("display.max_colwidth", 10000)
 logger = logging.getLogger(__name__)
 
 def _check_inputs(
-        search_handle : SearchHandler,
-        benign_taxid_path : str | os.PathLike,
+        search_handler : SearchHandler,
+        low_concern_taxid_path : str | os.PathLike,
         biorisk_taxid_path : str | os.PathLike,
         taxonomy_directory : str | os.PathLike
         ):
@@ -43,16 +43,16 @@ def _check_inputs(
     returns True if it is safe to continue. 
     """
     # check input files
-    if not search_handle.validate_output():
-        logger.info("\t...ERROR: Taxonomic search results empty\n %s", search_handle.out_file)
+    if not search_handler.validate_output():
+        logger.info("\t...ERROR: Taxonomic search results empty\n %s", search_handler.out_file)
         return False
 
-    if not os.path.exists(benign_taxid_path):
-        logger.error("\t...benign db file %s does not exist\n", benign_taxid_path)
+    if not os.path.exists(low_concern_taxid_path):
+        logger.error("\t...low-concern database file %s does not exist\n", low_concern_taxid_path)
         return False
 
     if not os.path.exists(biorisk_taxid_path):
-        logger.error("\t...biorisk db file %s does not exist\n", biorisk_taxid_path)
+        logger.error("\t...biorisk database file %s does not exist\n", biorisk_taxid_path)
         return False
 
     if not os.path.exists(taxonomy_directory):
@@ -61,9 +61,9 @@ def _check_inputs(
 
     return True
 
-def update_taxonomic_data_from_database(
-        search_handle : SearchHandler,
-        benign_taxid_path : str | os.PathLike,
+def parse_taxonomy_hits(
+        search_handler : SearchHandler,
+        low_concern_taxid_path : str | os.PathLike,
         biorisk_taxid_path : str | os.PathLike,
         taxonomy_directory : str | os.PathLike,
         data : ScreenResult,
@@ -73,17 +73,17 @@ def update_taxonomic_data_from_database(
         ):
     """
     Given a Taxonomic database screen output, update the screen data appropriately.
-        search_handle : The handle of the search tool used to screen taxonomic data.
-        benign_taxid_path : Path to benign taxid csv.
+        search_handler : The handle of the search tool used to screen taxonomic data.
+        low_concern_taxid_path : Path to low-concern taxid csv.
         biorisk_taxid_path : Path to regulated taxid csv.
-        taxonomy_directory : The location of taxonom directory.
+        taxonomy_directory : The location of taxonomy directory.
         data : the Screen data object, to be updated.
         step : Which taxonomic step this is (Nucleotide, Protein, etc)
         n_threads : maximum number of available threads for allocation.
     """
     logger.debug("Acquiring Taxonomic Data for JSON output:")
 
-    if not _check_inputs(search_handle, benign_taxid_path,
+    if not _check_inputs(search_handler, low_concern_taxid_path,
                          biorisk_taxid_path, taxonomy_directory):
         return 1
 
@@ -91,18 +91,18 @@ def update_taxonomic_data_from_database(
     for query in data.queries.values():
         query.status.set_step_status(step, ScreenStatus.PASS)
 
-    if not search_handle.has_hits():
+    if not search_handler.has_hits():
         logger.info("\t...no hits\n")
         return 0
 
     # We delay non-debug logging to sort messages via query.
     log_container = {key : [] for key in data.queries.keys()}
 
-    # Read in lists of regulated and benign tax ids
-    vax_taxids = pd.read_csv(benign_taxid_path, header=None).squeeze().astype(str).tolist()
+    # Read in lists of regulated and low_concern tax ids
+    vax_taxids = pd.read_csv(low_concern_taxid_path, header=None).squeeze().astype(str).tolist()
     reg_taxids = pd.read_csv(biorisk_taxid_path, header=None).squeeze().astype(str).tolist()
 
-    blast = read_blast(search_handle.out_file)
+    blast = read_blast(search_handler.out_file)
     logger.debug("%s Blast Import: shape: %s preview:\n%s", step, blast.shape, blast.head())
 
     # Initial check for query to be identified as anything known.

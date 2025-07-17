@@ -239,7 +239,7 @@ class DiamondHandler(BlastHandler):
 
             tool_info: str = result.stdout.strip()
             return SearchToolVersion(tool_info, database_info)
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, FileNotFoundError):
             return SearchToolVersion()
 
     def validate_output(self) -> bool:
