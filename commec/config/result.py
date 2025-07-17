@@ -139,9 +139,9 @@ class ScreenStep(StrEnum):
     BIORISK = "Biorisk Search"
     TAXONOMY_NT = "Nucleotide Taxonomy Search"
     TAXONOMY_AA = "Protein Taxonomy Search"
-    BENIGN_PROTEIN = "Benign Protein Search"
-    BENIGN_RNA = "Benign RNA Search"
-    BENIGN_DNA = "Benign DNA Search"
+    LOW_CONCERN_PROTEIN = "Benign Protein Search"
+    LOW_CONCERN_RNA = "Benign RNA Search"
+    LOW_CONCERN_DNA = "Benign DNA Search"
 
 
 @dataclass
@@ -294,9 +294,9 @@ class QueryScreenStatus:
         ScreenStep.BIORISK: 'biorisk',
         ScreenStep.TAXONOMY_NT: 'nucleotide_taxonomy', 
         ScreenStep.TAXONOMY_AA: 'protein_taxonomy',
-        ScreenStep.BENIGN_PROTEIN: 'low_concern',
-        ScreenStep.BENIGN_RNA: 'low_concern',
-        ScreenStep.BENIGN_DNA: 'low_concern',
+        ScreenStep.LOW_CONCERN_PROTEIN: 'low_concern',
+        ScreenStep.LOW_CONCERN_RNA: 'low_concern',
+        ScreenStep.LOW_CONCERN_DNA: 'low_concern',
     }
 
     def update_step_status(self, step: ScreenStep, status: ScreenStatus, override_skip: bool = False) -> None:

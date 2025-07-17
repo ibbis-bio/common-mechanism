@@ -425,10 +425,10 @@ class Screen:
             except Exception as e:
                 logger.error("STEP 4: Benign search failed due to an error:\n %s", str(e))
                 logger.info(" Traceback:\n%s", traceback.format_exc())
-                self.reset_query_statuses(ScreenStep.BENIGN_DNA, ScreenStatus.ERROR)
+                self.reset_query_statuses(ScreenStep.LOW_CONCERN_DNA, ScreenStatus.ERROR)
         else:
             logger.info(" << SKIPPING STEP 4: Low-concern search")
-            self.reset_query_statuses(ScreenStep.BENIGN_DNA, ScreenStatus.SKIP)
+            self.reset_query_statuses(ScreenStep.LOW_CONCERN_DNA, ScreenStatus.SKIP)
 
         logger.info(
             " >> Commec Screen completed at %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -572,7 +572,7 @@ class Screen:
 
         if not hits_to_clear:
             logger.info("\t...no regulated regions to clear\n")
-            self.reset_query_statuses(ScreenStep.BENIGN_DNA, ScreenStatus.SKIP)
+            self.reset_query_statuses(ScreenStep.LOW_CONCERN_DNA, ScreenStatus.SKIP)
             return
 
         # Run the low_concern tools:

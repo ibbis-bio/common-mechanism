@@ -27,7 +27,7 @@ from commec.config.result import (
 )
 
 # Constants determining Commec's sensitivity for low_concern screen.
-BENIGN_PROTEIN_EVALUE_CUTOFF : float = 1e-20
+LOW_CONCERN_PROTEIN_EVALUE_CUTOFF : float = 1e-20
 MINIMUM_PEPTIDE_COVERAGE : int = 50 # Number is counted in NTs, not AA's.
 MINIMUM_QUERY_COVERAGE_FRACTION : float = 0.80
 MINIMUM_RNA_BASEPAIR_COVERAGE : int = 50
@@ -93,7 +93,7 @@ def _filter_low_concern_proteins(query : Query,
     low_concern_hit_outcome = HitResult(
             HitScreenStatus(
                 ScreenStatus.PASS,
-                ScreenStep.BENIGN_PROTEIN
+                ScreenStep.LOW_CONCERN_PROTEIN
             ),
             low_concern_hit,
             low_concern_hit_description,
@@ -149,7 +149,7 @@ def _filter_low_concern_rna(query : Query,
         low_concern_hit_outcome = HitResult(
                 HitScreenStatus(
                     ScreenStatus.PASS,
-                    ScreenStep.BENIGN_RNA
+                    ScreenStep.LOW_CONCERN_RNA
                 ),
                 low_concern_hit,
                 low_concern_hit_description,
@@ -210,7 +210,7 @@ def _filter_low_concern_dna(query : Query,
     low_concern_hit_outcome = HitResult(
             HitScreenStatus(
                 ScreenStatus.PASS,
-                ScreenStep.BENIGN_DNA
+                ScreenStep.LOW_CONCERN_DNA
             ),
             low_concern_hit,
             low_concern_hit_description,
@@ -387,7 +387,7 @@ def parse_low_concern_hits(protein_handler : HmmerHandler,
         # If any hits are still warnings, or flags, propagate that to the low_concern step.
         for flagged_hit in query.result.get_flagged_hits():
             query.result.status.update_step_status(
-               ScreenStep.BENIGN_DNA, flagged_hit.recommendation.status
+               ScreenStep.LOW_CONCERN_DNA, flagged_hit.recommendation.status
         )
 
 def _trim_to_region(data : pd.DataFrame, region : MatchRange):
