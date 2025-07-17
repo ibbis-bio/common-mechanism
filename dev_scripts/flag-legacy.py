@@ -41,8 +41,8 @@ class Outcome(StrEnum):
     # (biorisk only) significant hit to a virulence factor, but these are often shared between
     # regulated and non-regulated organisms
     WARN = "warn"
-    CLEARED = "cleared"  # (benign only) all earlier flags were cleared
-    NOT_CLEARED = "not-cleared"  # (benign only) not all earlier flags were cleared
+    CLEARED = "cleared"  # (low_concern only) all earlier flags were cleared
+    NOT_CLEARED = "not-cleared"  # (low_concern only) not all earlier flags were cleared
 
 
 class Flag(StrEnum):
@@ -108,7 +108,7 @@ def read_flags_from_screen(file_path) -> dict[str, str | set[str] | bool]:
         "biorisk": get_biorisk_outcome(steps[0]),
         "protein": get_protein_outcome(steps[1]),
         "nucleotide": get_nucleotide_outcome(steps[2]),
-        "benign": get_benign_outcome(steps[3]),
+        "low_concern": get_low_concern_outcome(steps[3]),
     }
 
     # Add regulated flags - only check protein, since nucleotide may 
@@ -116,9 +116,9 @@ def read_flags_from_screen(file_path) -> dict[str, str | set[str] | bool]:
     if step_ran_successfully(results["protein"]):
         results.update(get_regulated_taxa(content))
 
-    # Add info about benign sub-steps
-    if step_ran_successfully(results["benign"]):
-        results.update(get_benign_substeps(steps[3]))
+    # Add info about low_concern sub-steps
+    if step_ran_successfully(results["low_concern"]):
+        results.update(get_low_concern_substeps(steps[3]))
 
     results["flag"] = get_overall_flag(results)
 
@@ -197,8 +197,8 @@ def get_nucleotide_outcome(step_content: str) -> set[str]:
     return outcomes if outcomes else {Outcome.NOT_RUN}
 
 
-def get_benign_outcome(step_content) -> set[str]:
-    """Process benign scan step from .screen file."""
+def get_low_concern_outcome(step_content) -> set[str]:
+    """Process low_concern scan step from .screen file."""
     outcomes = set()
     if "no regulated regions to clear" in step_content:
         outcomes.add(Outcome.SKIP)
@@ -224,14 +224,14 @@ def get_regulated_taxa(content) -> dict[str, bool]:
     }
 
 
-def get_benign_substeps(step_content) -> dict[str, bool]:
+def get_low_concern_substeps(step_content) -> dict[str, bool]:
     """
-    Check for whether benign protiein, RNA or DNA (synbio sequences) is in the content.
+    Check for whether low_concern protiein, RNA or DNA (synbio sequences) is in the content.
     """
     return {
-        "benign_protein": True if re.search(r"-->.*?protein.*?PASS", step_content) else False,
-        "benign_rna": True if re.search(r"-->.*?RNA.*?PASS", step_content) else False,
-        "benign_dna": True if re.search(r"-->.*?Synbio sequence.*?PASS", step_content) else False,
+        "low_concern_protein": True if re.search(r"-->.*?protein.*?PASS", step_content) else False,
+        "low_concern_rna": True if re.search(r"-->.*?RNA.*?PASS", step_content) else False,
+        "low_concern_dna": True if re.search(r"-->.*?Synbio sequence.*?PASS", step_content) else False,
     }
 
 
@@ -256,7 +256,7 @@ def get_overall_flag(results: dict[str]) -> str:
     if any(
         [
             Outcome.ERROR in results.get(key)
-            for key in ["biorisk", "protein", "nucleotide", "benign"]
+            for key in ["biorisk", "protein", "nucleotide", "low_concern"]
         ]
     ):
         return Outcome.ERROR
@@ -265,9 +265,9 @@ def get_overall_flag(results: dict[str]) -> str:
     if Outcome.FLAG in results["biorisk"]:
         return Outcome.FLAG
     # If flags were cleared, that's a pass
-    if Outcome.CLEARED in results["benign"]:
+    if Outcome.CLEARED in results["low_concern"]:
         return Outcome.PASS
-    # Flag regulated pathogens unless already cleared in the benign screen
+    # Flag regulated pathogens unless already cleared in the low_concern screen
     if Outcome.FLAG in results["protein"] or Outcome.FLAG in results["nucleotide"]:
         return Outcome.FLAG
     # Other outcomes pass
@@ -286,8 +286,8 @@ def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> dict[str
     regulated_bacteria = Flag.NOT_RUN
     regulated_eukaryote = Flag.NOT_RUN
     mixed_regulated_non_reg = Flag.NOT_RUN
-    # Column determined by benign step
-    benign = Outcome.NOT_RUN
+    # Column determined by low_concern step
+    low_concern = Outcome.NOT_RUN
 
     # Set biorisk and virtulence factor flags based on biorisk search
     if step_ran_successfully(results["biorisk"]):
@@ -315,21 +315,21 @@ def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> dict[str
             Flag.ERROR
         )
 
-    # Set benign flag based on benign search
-    if Outcome.CLEARED in results["benign"]:
-        benign = Flag.PASS
-    if Outcome.NOT_CLEARED in results["benign"]:
-        benign = Flag.FLAG
-    if Outcome.ERROR in results["benign"]:
-        benign = Flag.ERROR
+    # Set low_concern flag based on low_concern search
+    if Outcome.CLEARED in results["low_concern"]:
+        low_concern = Flag.PASS
+    if Outcome.NOT_CLEARED in results["low_concern"]:
+        low_concern = Flag.FLAG
+    if Outcome.ERROR in results["low_concern"]:
+        low_concern = Flag.ERROR
 
     # JSON converts into outcomes, which are parsed here.
-    if Outcome.PASS in results["benign"]:
-        benign = Flag.PASS
-    if Outcome.WARN in results["benign"]:
-        benign = Flag.FLAG
-    if Outcome.FLAG in results["benign"]:
-        benign = Flag.FLAG
+    if Outcome.PASS in results["low_concern"]:
+        low_concern = Flag.PASS
+    if Outcome.WARN in results["low_concern"]:
+        low_concern = Flag.FLAG
+    if Outcome.FLAG in results["low_concern"]:
+        low_concern = Flag.FLAG
 
     return {
         "filename": results["filepath"],
@@ -339,7 +339,7 @@ def get_flags_from_status(results: dict[str, str | set[str] | bool]) -> dict[str
         "regulated_bacteria": regulated_bacteria,
         "regulated_eukaryote": regulated_eukaryote,
         "mixed_regulated_and_non_reg": mixed_regulated_non_reg,
-        "benign": benign,
+        "low_concern": low_concern,
     }
 
 def status_to_outcome(result: ScreenStatus) -> Outcome:

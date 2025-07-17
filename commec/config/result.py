@@ -69,14 +69,14 @@ class ScreenStatus(StrEnum):
             ),
             ScreenStatus.SKIP: (
                 "Screening step intentionally skipped (e.g. skipping taxonomy screen in FAST mode,"
-                " skipping benign screen when there are no flags to clear)"
+                " skipping low-concern screen when there are no flags to clear)"
             ),
             ScreenStatus.PASS: "Query was not flagged in this screening step; biosecurity review may not be needed",
             ScreenStatus.CLEARED_WARN: (
-                "Warning was cleared, since query region was identified as benign"
+                "Warning was cleared, since query region was identified as low-concern"
                 " (e.g. housekeeping gene, common synbio part)"),
             ScreenStatus.CLEARED_FLAG: (
-                "Flag was cleared, since query region was identified as benign"
+                "Flag was cleared, since query region was identified as low-concern"
                 " (e.g. housekeeping gene, common synbio part)"),
             ScreenStatus.WARN: (
                 "Possible sequence of concern identified, but with low confidence"
@@ -139,9 +139,9 @@ class ScreenStep(StrEnum):
     BIORISK = "Biorisk Search"
     TAXONOMY_NT = "Nucleotide Taxonomy Search"
     TAXONOMY_AA = "Protein Taxonomy Search"
-    BENIGN_PROTEIN = "Benign Protein Search"
-    BENIGN_RNA = "Benign RNA Search"
-    BENIGN_DNA = "Benign DNA Search"
+    LOW_CONCERN_PROTEIN = "Benign Protein Search"
+    LOW_CONCERN_RNA = "Benign RNA Search"
+    LOW_CONCERN_DNA = "Benign DNA Search"
 
 
 @dataclass
@@ -286,7 +286,7 @@ class QueryScreenStatus:
     biorisk: ScreenStatus = ScreenStatus.NULL
     protein_taxonomy: ScreenStatus = ScreenStatus.NULL
     nucleotide_taxonomy: ScreenStatus = ScreenStatus.NULL
-    benign: ScreenStatus = ScreenStatus.NULL
+    low_concern: ScreenStatus = ScreenStatus.NULL
     rationale : str = "-"
 
     # Mapping between screen steps and the fields above
@@ -294,9 +294,9 @@ class QueryScreenStatus:
         ScreenStep.BIORISK: 'biorisk',
         ScreenStep.TAXONOMY_NT: 'nucleotide_taxonomy', 
         ScreenStep.TAXONOMY_AA: 'protein_taxonomy',
-        ScreenStep.BENIGN_PROTEIN: 'benign',
-        ScreenStep.BENIGN_RNA: 'benign',
-        ScreenStep.BENIGN_DNA: 'benign',
+        ScreenStep.LOW_CONCERN_PROTEIN: 'low_concern',
+        ScreenStep.LOW_CONCERN_RNA: 'low_concern',
+        ScreenStep.LOW_CONCERN_DNA: 'low_concern',
     }
 
     def update_step_status(self, step: ScreenStep, status: ScreenStatus, override_skip: bool = False) -> None:
@@ -311,7 +311,6 @@ class QueryScreenStatus:
     def set_step_status(self, step: ScreenStep, status: ScreenStatus, override_skip: bool = False) -> None:
         """
         Set the query screen status for a particular step.
-
         In most cases, query steps that have already been skipped should not be updated.
         """
         field_name, current_status = self._get_step_field_and_status(step)
@@ -336,7 +335,7 @@ class QueryScreenStatus:
             self.biorisk,
             self.protein_taxonomy,
             self.nucleotide_taxonomy,
-            self.benign
+            self.low_concern
         )
 
         # If everything is happy, but we haven't hit anything, time to be suspicious...
@@ -352,11 +351,11 @@ class QueryScreenStatus:
 
     def __str__(self) -> str:
         output = f"""
-                Overall    : {self.screen_status}\n
-                Biorisk    : {self.biorisk}\n
-                Protein    : {self.protein_taxonomy}\n
-                Nucleotide : {self.nucleotide_taxonomy}\n
-                Benign     : {self.benign}\n
+                Overall     : {self.screen_status}\n
+                Biorisk     : {self.biorisk}\n
+                Protein     : {self.protein_taxonomy}\n
+                Nucleotide  : {self.nucleotide_taxonomy}\n
+                Low Concern : {self.low_concern}\n
                 {self.rationale}
                 """
         return output
@@ -371,8 +370,8 @@ class QueryScreenStatus:
             return "Protein Taxonomy Screening"
         if self.nucleotide_taxonomy == ScreenStatus.ERROR:
             return "Nucleotide Taxonomy Screening"
-        if self.benign == ScreenStatus.ERROR:
-            return "Benign Screening"
+        if self.low_concern == ScreenStatus.ERROR:
+            return "Low concern Screening"
 
         return "Screening" # General Error at some stage.
 
@@ -444,7 +443,7 @@ class QueryResult:
     def get_flagged_hits(self) -> List[HitResult]:
         """
         Calculates and returns the list of hits, for all Warnings or Flags.
-        Typically used as the regions to check against for benign screens.
+        Typically used as the regions to check against for low-concern screens.
         """
         flagged_and_warnings_data = [
             flagged_hit
@@ -470,8 +469,8 @@ class QueryResult:
             self.status.protein_taxonomy = ScreenStatus.NULL
         if self.status.nucleotide_taxonomy not in ignored_status:
             self.status.nucleotide_taxonomy = ScreenStatus.NULL
-        if self.status.benign not in ignored_status:
-            self.status.benign = ScreenStatus.NULL
+        if self.status.low_concern not in ignored_status:
+            self.status.low_concern = ScreenStatus.NULL
 
         # Track status sets for rationale (only for specific steps that need it)
         status_sets = {
@@ -491,9 +490,9 @@ class QueryResult:
                 status_sets[step].add(hit_status)
 
         # Update Benign outcome based on the worst step.
-        self.status.benign = max(
-            self.status.benign,
-            self.status.biorisk, 
+        self.status.low_concern = max(
+            self.status.low_concern,
+            self.status.biorisk,
             self.status.protein_taxonomy,
             self.status.nucleotide_taxonomy
         )
@@ -544,7 +543,7 @@ class QueryResult:
             state.biorisk == ScreenStatus.PASS and
             state.protein_taxonomy == ScreenStatus.PASS and
             state.nucleotide_taxonomy == ScreenStatus.PASS and
-            state.benign == ScreenStatus.PASS):
+            state.low_concern == ScreenStatus.PASS):
             state.rationale = Rationale.NOTHING
             return
 
@@ -658,7 +657,7 @@ class QueryResult:
         self.status.biorisk = ScreenStatus.SKIP
         self.status.protein_taxonomy = ScreenStatus.SKIP
         self.status.nucleotide_taxonomy = ScreenStatus.SKIP
-        self.status.benign = ScreenStatus.SKIP
+        self.status.low_concern = ScreenStatus.SKIP
         logger.debug("Query %s has all statuses assigned to SKIP.", self.query)
 
 
@@ -668,9 +667,9 @@ class SearchToolInfo:
     biorisk_search_info:        SearchToolVersion = field(default_factory=SearchToolVersion)
     protein_search_info:        SearchToolVersion = field(default_factory=SearchToolVersion)
     nucleotide_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
-    benign_protein_search_info: SearchToolVersion = field(default_factory=SearchToolVersion)
-    benign_rna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
-    benign_dna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
+    low_concern_protein_search_info: SearchToolVersion = field(default_factory=SearchToolVersion)
+    low_concern_rna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
+    low_concern_dna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
 
 
 @dataclass
@@ -747,7 +746,7 @@ class ScreenResult:
                 "biorisk": query.status.biorisk,
                 "taxonomy_aa": query.status.protein_taxonomy,
                 "taxonomy_nt": query.status.nucleotide_taxonomy,
-                "benign": query.status.benign
+                "cleared": query.status.low_concern
             })
 
         output_data : pd.DataFrame = pd.DataFrame(data)

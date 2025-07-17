@@ -55,7 +55,7 @@ def _guess_domain(search_string : str) -> str:
     logger.debug("Could not guess domain from \"%s\"", search_string)
     return "not assigned"
 
-def update_biorisk_data_from_database(search_handle : HmmerHandler,
+def parse_biorisk_hits(search_handler : HmmerHandler,
                                       biorisk_annotations_file : str | os.PathLike,
                                       data : ScreenResult,
                                       queries : dict[str, Query]):
@@ -63,20 +63,20 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
     Takes an input database, reads its outputs, and updates the input data to contain
     biorisk hits from the database. Also requires passing of the biorisk annotations CSV file.
     Inputs:
-        search : search_handle - The handler which has performed a search on a database.
+        search : search_handler - The handler which has performed a search on a database.
         biorisk_annotations_csv_file : str - directory/filename of the biorisk annotations provided by Commec.
         data : ScreenResult - The ScreenResult to be updated with information from database, interpeted as Biorisks.
     """
     logger.debug("Starting Update Biorisk data from database...")
-    logger.debug("Directory: %s", search_handle.db_directory)
-    logger.debug("Directory/file: %s", search_handle.db_file)
+    logger.debug("Directory: %s", search_handler.db_directory)
+    logger.debug("Directory/file: %s", search_handler.db_file)
 
-    hmm_folder_csv = biorisk_annotations_file #os.path.join(search_handle.db_directory,"biorisk_annotations.csv")
+    hmm_folder_csv = biorisk_annotations_file
     if not os.path.exists(hmm_folder_csv):
         logger.error("\t...biorisk_annotations.csv does not exist\n %s", hmm_folder_csv)
         return 1
-    if not search_handle.validate_output():
-        logger.error("\t...database output file does not exist, or is empty\n %s", search_handle.out_file)
+    if not search_handler.validate_output():
+        logger.error("\t...database output file does not exist, or is empty\n %s", search_handler.out_file)
         return 1
 
     # We delay non-debug logging to sort messages via query.
@@ -85,11 +85,11 @@ def update_biorisk_data_from_database(search_handle : HmmerHandler,
     for query in data.queries.values():
         query.status.set_step_status(ScreenStep.BIORISK, ScreenStatus.PASS)
 
-    if not search_handle.has_hits():
+    if not search_handler.has_hits():
         return 0
 
     # Read in Output, and parse.
-    hmmer : pd.DataFrame = readhmmer(search_handle.out_file)
+    hmmer : pd.DataFrame = readhmmer(search_handler.out_file)
     logger.debug("Biorisk Import: shape: %s preview:\n%s", hmmer.shape, hmmer.head())
     keep1 = [i for i, x in enumerate(hmmer['E-value']) if x < 1e-20]
     hmmer = hmmer.iloc[keep1,:]

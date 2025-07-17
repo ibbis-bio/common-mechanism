@@ -360,7 +360,7 @@ class ScreenIO:
         return not (self.config["skip_taxonomy_search"] or self.config["skip_nt_search"])
 
     @property
-    def should_do_benign_screening(self) -> bool:
+    def should_do_low_concern_screening(self) -> bool:
         return True
 
 
