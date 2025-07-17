@@ -66,9 +66,9 @@ def color_from_hit(hit : HitResult) -> CommecPalette:
 
     if hit.recommendation.from_step == ScreenStep.BIORISK:
         return CommecPalette.RED
-    if (hit.recommendation.from_step == ScreenStep.BENIGN_PROTEIN or
-        hit.recommendation.from_step == ScreenStep.BENIGN_RNA or
-        hit.recommendation.from_step == ScreenStep.BENIGN_DNA):
+    if (hit.recommendation.from_step == ScreenStep.LOW_CONCERN_PROTEIN or
+        hit.recommendation.from_step == ScreenStep.LOW_CONCERN_RNA or
+        hit.recommendation.from_step == ScreenStep.LOW_CONCERN_DNA):
         return CommecPalette.LT_BLUE
     if hit.recommendation.from_step == ScreenStep.TAXONOMY_AA:
         return CommecPalette.ORANGE
@@ -100,11 +100,11 @@ def overlay_text_from_hit(hit : HitResult):
             return "Protein "+outcome
         case ScreenStep.TAXONOMY_NT:
             return "Nucl. "+outcome
-        case ScreenStep.BENIGN_PROTEIN:
+        case ScreenStep.LOW_CONCERN_PROTEIN:
             return "Benign Protein"
-        case ScreenStep.BENIGN_RNA:
+        case ScreenStep.LOW_CONCERN_RNA:
             return "Benign RNA"
-        case ScreenStep.BENIGN_DNA:
+        case ScreenStep.LOW_CONCERN_DNA:
             return "Benign DNA"
 
 def generate_html_from_screen_data(input_data : ScreenResult, output_file : str):

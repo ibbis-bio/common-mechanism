@@ -8,7 +8,7 @@
  STEP 1 completed at 2025-02-18 02:05:16
  SKIPPING STEP 2: Protein search
  SKIPPING STEP 3: Nucleotide search
->> STEP 4: Checking any pathogen regions for benign components...
+>> STEP 4: Checking any pathogen regions for low_concern components...
 	...no regulated regions to clear
 
 >> STEP 4 completed at 2025-02-18 02:05:16

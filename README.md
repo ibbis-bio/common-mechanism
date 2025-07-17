@@ -1,16 +1,20 @@
 # commec: a free, open-source, globally available tool for DNA sequence screening
 
+<picture style="max-width: 512; display: inline-block;">
+	<source media="(prefers-color-scheme: dark)" srcset="https://ibbis.bio/wp-content/uploads/2025/06/COMMEC_Logo_Horiz_Color_IBBIS_onDark.png">
+	<img align="left" alt="commec logo" style="max-width: 512;" src="https://ibbis.bio/wp-content/uploads/2025/06/COMMEC_Logo_Horiz_Color_IBBIS_onWhite.png">
+</picture>
+
 The `commec` package is a tool for DNA sequence screening that is part of the
 [Common Mechanism for DNA Synthesis screening](https://ibbis.bio/common-mechanism/).
 
-![Common Mechanism banner](https://ibbis.bio/wp-content/uploads/2024/05/commec-v0.1.0-banner.png)
-
 Introduction
 ============
-The Common Mechanism offers three sub-commands through the `commec` entrypoint:
+The Common Mechanism offers several sub-commands through the `commec` entrypoint:
 
     screen  Run Common Mechanism screening on an input FASTA.
-    flag    Parse all .screen files in a directory and create two CSVs file of flags raised
+    flag    Parse .screen.json files in a directory and create a CSV file of outcomes
+    setup   A command-line helper tool to download the required databases
     split   Split a multi-record FASTA file into individual files, one for each record
 
 The `screen` command runs an input FASTA through four steps:
@@ -18,22 +22,28 @@ The `screen` command runs an input FASTA through four steps:
   1. Biorisk scan (uses a hmmer search against custom databases)
   2. Regulated protein scan (uses a BLASTX or DIAMOND search against NCBI nr)
   3. Regulated nucleotide scan (uses BLASTN against NCBI nt)
-  4. Benign scan (users hmmer, cmscan and BLASTN against custom databases)
+  4. Low-concern scan (uses hmmer, cmscan and BLASTN against custom databases)
 
-The `.screen` file produced by that pipeline can be passed to `flag` to produce two output CSVs.
-`flags.csv` will have the following columns:
+The `.screen.json` file produced by that pipeline can be passed to `flag` to produce a convenient output CSV.
+The **screen_pipeline_status.csv** file has the following values:
 
-    filename:                 .screen file basename
-    biorisk:                  "F" if flagged, "P" if no flags
-    virulence_factor:         "F" if flagged, "P" if no flags
-    regulated_virus:          "F" if flagged, "P" if no flags, "Err" if error logged
-    regulated_bacteria:       "F" if flagged, "P" if no flags, "Err" if error logged
-    regulated_eukaryote:      "F" if flagged, "P" if no flags, "Err" if error logged
-    mixed_regulated_non_reg:  "F" if flagged, "P" if no flags, "Err" if error logged
-    benign:                   "F" if not cleared, "P" if all cleared, "-" if not run
+| Column Name     | Type   | Description  |
+| --------------- | ------ | ------------- |
+| name            | str    | Name of screen file |
+| filepath        | path   | Path to screen file |
+| flag            | status | Outcome of the overall screen |
+| biorisk         | status | Outcome of the biorisk search |
+| protein         | status | Outcome of the protein taxonomy search |
+| nucleotide      | status | Outcome of the nucleotide taxonomy search |
+| cleared         | status | Outcome of the low-concern search |
+| virus_flag      | bool   | Did the taxonomy search flag sequences from a regulated virus? |
+| bacteria_flag   | bool   | ... or a regulated bacterial species? |
+| eukaryote_flag  | bool   | ... or a regulated eukaryotic (e.g. fungal) species? |
+| cleared_protein  | bool   | Were any flags cleared by the low_concern protein search? |
+| cleared_rna      | bool   | ... or the low_concern RNA search? |
+| cleared_dna      | bool   | ... or the low_concern DNA search? |
 
-The flags_recommended CSV just has two columns, "filename" and "recommend_flag_or_pass". The
-recommendation is based on the following decision flow:
+The flag column contains the overall recommendation is based on the following decision flow:
 
 ![Flowchart showing decision-making by the common mechanism flag module.](https://ibbis.bio/wp-content/uploads/2024/05/common-mechanism-screening-flowcharts-decision-support.jpg "Decision Flow")
 
@@ -43,9 +53,10 @@ The online documentation is located at the
 [GitHub Wiki](https://github.com/ibbis-screening/common-mechanism/wiki).
 
 Development
-=======
-Development dependencies are managed through a conda environment. Install conda, then make sure
+===========
+Development dependencies are managed through a conda environment. Install conda, and make sure
 that [your channels are configured correctly](http://bioconda.github.io/).
+Then create the environment with:
 
 ```
 conda env create -f environment.yml
