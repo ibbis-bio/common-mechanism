@@ -61,7 +61,7 @@ class CmscanHandler(SearchHandler):
 
             return SearchToolVersion(tool_info, database_info or "error")
 
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, FileNotFoundError):
             return None
 
 

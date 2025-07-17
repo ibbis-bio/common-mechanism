@@ -76,5 +76,5 @@ class BlastNHandler(BlastHandler):
             database_info: str = lines[5] + lines[3]
 
             return SearchToolVersion(tool_info, database_info)
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, FileNotFoundError):
             return SearchToolVersion()
