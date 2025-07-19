@@ -26,6 +26,12 @@ class BlastHandler(SearchHandler):
     Inherit from this, and implement screen()
     """
 
+    def read_output(self):
+        output_dataframe = pd.DataFrame()
+        if self.has_hits():
+            output_dataframe = read_blast(self.out_file)
+        return output_dataframe
+
     def _validate_db(self):
         """
         Blast expects a set of files with shared prefix, rather than a single file.
@@ -49,6 +55,12 @@ class BlastHandler(SearchHandler):
                 " File location can be set via --databases option or --config yaml."
             )
 
+        # Search for files of provided prefix.
+        filename, extension = os.path.splitext(self.db_file)
+        search_file = os.path.join(self.db_directory, "*" + os.path.basename(filename) + "*" + extension)
+        files = glob.glob(search_file)
+        if len(files) == 0:
+            raise DatabaseValidationError(f"Mandatory screening files with {filename}* not found.")
 
 def _split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
     """
@@ -129,11 +141,11 @@ def get_taxonomic_labels(
     blast["genus"] = ""
     blast["species"] = ""
 
+    lin = _get_lineages(blast[TAXIDS_COL], db_path, threads)
+
     blast = blast[blast[TAXIDS_COL] != TAXID_SYNTHETIC_CONSTRUCTS]
     blast = blast[blast[TAXIDS_COL] != TAXID_VECTORS]
     blast = blast.reset_index(drop=True)
-
-    lin = _get_lineages(blast[TAXIDS_COL], db_path, threads)
 
     # Check if any rows will be removed due to not finding a valid lineage for them
     rows_to_remove = blast[~blast[TAXIDS_COL].isin(lin["TaxID"])]
@@ -272,12 +284,37 @@ def shift_hits_pos_strand(blast):
             blast.loc[j, "q. end"] = end
     return blast
 
+def _trim_edges(df : pd.DataFrame) -> tuple[pd.DataFrame, int]:
+    """
+    Function for filtering a Blast derived dataframe, removes weaker hits
+    (based on % identity) that have extents within that of stronger hits.
+    Also trims weaker hits to not overlap with stronger hits.
 
-def trim_edges(df):
-    for top in range(len(df.index)):  # run through each hit from the top
-        i = df.index[top]
-        for next in range(top + 1, len(df.index)):  # compare to each below
-            j = df.index[next]
+    input:
+        - df :: pd.Dataframe, containing 'q. start', 'q. end', and '% identity' information.
+
+    output:
+        - The altered dataframe.s
+        - Integer flag, 0 or 1, where 1 indicates a need to rerun _trim_edges()
+    """
+
+    assert "q. start" in df.columns, (
+        "Expected column \"q. start\" does not exist for _trim_edges().\n"
+        f"Existing columns: {', '.join(df.columns)}"
+    )
+
+    assert "q. end" in df.columns, (
+        "Expected column \"q. end\" does not exist for _trim_edges().\n"
+        f"Existing columns: {', '.join(df.columns)}"
+    )
+
+    assert "% identity" in df.columns, (
+        "Expected column \"query length\" does not exist for _trim_edges().\n"
+        f"Existing columns: {', '.join(df.columns)}"
+    )
+
+    for top, i in enumerate(df.index):  # run through each hit from the top
+        for _, j in enumerate(df.index[top + 1:], start=top + 1):  # compare to each below
             i_start = df.loc[i, "q. start"]
             i_end = df.loc[i, "q. end"]
             j_start = df.loc[j, "q. start"]
@@ -337,6 +374,13 @@ def get_top_hits(blast: pd.DataFrame):
     """
     Trim BLAST results down to the top hit for each base.
     """
+
+    assert isinstance(blast, pd.DataFrame), "get_top_hits expects a pandas dataframe object."
+
+    if blast.empty:
+        logger.debug("Empty dataframe passed to Get Top Hits.")
+        return blast
+
     top_hits = _trim_overlapping(blast)
     top_hits = top_hits.sort_values("% identity", ascending=False)
 
@@ -348,7 +392,7 @@ def get_top_hits(blast: pd.DataFrame):
         while (
             rerun == 1
         ):  # edges of hits can be moved within a higher scoring hit in the first pass
-            df, rerun = trim_edges(df)
+            df, rerun = _trim_edges(df)
 
         for j in df.index:
             top_hits.loc[j, "subject length"] = max(
@@ -366,7 +410,7 @@ def get_top_hits(blast: pd.DataFrame):
     return top_hits
 
 
-def get_high_identity_matches(blast_output_file, threshold=90):
+def get_high_identity_hits(blast_output_file, threshold=90):
     """Read all hits with high sequence identity from a BLAST results file."""
     hits = read_blast(blast_output_file)
     hits = _trim_overlapping(hits)

@@ -22,7 +22,6 @@ class SearchToolVersion:
 class DatabaseValidationError(Exception):
     """Custom exception for database validation errors."""
 
-
 class SearchHandler(ABC):
     """
     Abstract class defining tool interface including a database directory / file to search, an input
@@ -60,14 +59,17 @@ class SearchHandler(ABC):
         - `database_file`, `input_file`, and `out_file` are validated on instantiation.
         """
 
-        self.db_file = os.path.abspath(database_file)
-        self.input_file = os.path.abspath(input_file)
-        self.out_file = os.path.abspath(out_file)
+        self.db_file = os.path.abspath(os.path.expanduser(database_file))
+        self.input_file = os.path.abspath(os.path.expanduser(input_file))
+        self.out_file = os.path.abspath(os.path.expanduser(out_file))
         self.threads = kwargs.get('threads', 1)
         self.force = kwargs.get('force', False)
         self.arguments_dictionary = {}
 
-        self._validate_db()
+        # Only validate database files if we actually intend on using them
+        if not self.should_use_existing_output:
+            self._validate_db()
+
         self.version_info = self.get_version_information()
 
     @property
@@ -80,18 +82,24 @@ class SearchHandler(ABC):
         """Temporary log file used for this search. Based on outfile name."""
         return f"{self.out_file}.log.tmp"
 
+    @property
+    def should_use_existing_output(self) -> bool:
+        """
+        True if (1) search is not forced and (2) output exists and is valid.
+        """
+        return not self.force and self.validate_output()
+
     def search(self):
         """
-        Wrapper for _search, to ensure that it is only called if 
-         - The output doesn't already exist,
-         - If force is enabled.
+        Wrapper for _search, skipping if existing output should not be overwritten.
         """
-        if not self.force and self.check_output():
-            logger.info("%s expected output data already exists, "
-                         "will use existing data found in:\n%s",
-                         self.__class__.__name__, self.out_file)
-            return
-        self._search()
+        if self.should_use_existing_output:
+            logger.warning("%s expected output data already exists, "
+                         "will use existing data found in:",
+                         self.__class__.__name__)
+            logger.warning(self.out_file, extra = {"no_prefix" : True, "cap":True})
+        else:
+            self._search()
 
     @abstractmethod
     def _search(self):
@@ -101,18 +109,26 @@ class SearchHandler(ABC):
         """
 
     @abstractmethod
+    def read_output(self):
+        """
+        Returns the output of the handler in the form of a pandas dataframe.
+        """
+
+    @abstractmethod
     def get_version_information(self) -> SearchToolVersion:
         """
         Provide version for the search tool used, to allow reproducibility.
         This method should be implemented by all subclasses to return tool-specific version info.
         """
 
-    def check_output(self):
+    def validate_output(self):
         """
-        Check the output file exists, indicating that the search ran.
+        Check the output file contains something, indicating that the search ran.
         Can be overridden if more complex checks for a particular tool are desired.
+        Is overridden for Diamond outputs, which have no header information, and simply only
+        checks for file-existance, rather than lack of content, for example.
         """
-        return os.path.isfile(self.out_file)
+        return not self.has_empty_output()
 
     def _validate_db(self):
         """
@@ -130,20 +146,18 @@ class SearchHandler(ABC):
                 " File location can be set via --databases option or --config yaml."
             )
 
-    @staticmethod
-    def is_empty(filepath: str) -> bool:
-        """Check if a file is empty or non-existent."""
+    def has_empty_output(self) -> bool:
+        """Check if the output file is empty or non-existent."""
         try:
-            return os.path.getsize(os.path.abspath(os.path.expanduser(filepath))) == 0
+            return os.path.getsize(self.out_file) == 0
         except OSError:
             # Errors such as FileNotFoundError considered empty
             return True
 
-    @staticmethod
-    def has_hits(filepath: str) -> bool:
-        """Check if a file has any hits (lines that do not start with '#')."""
+    def has_hits(self) -> bool:
+        """Check if the output file has any hits (lines that do not start with '#')."""
         try:
-            with open(filepath, "r", encoding="utf-8") as file:
+            with open(self.out_file, "r", encoding="utf-8") as file:
                 return any(not line.strip().startswith("#") for line in file)
         except FileNotFoundError:
             return False
@@ -166,6 +180,7 @@ class SearchHandler(ABC):
         Run a command using subprocess.run, piping stdout and stderr to `out_file`.
         """
         logger.debug("SUBPROCESS: %s", " ".join(command))
+        logger.debug(" ".join(command), extra = {"no_prefix":True,"cap":True})
 
         with open(out_file, "a", encoding="utf-8") as f:
             result = subprocess.run(

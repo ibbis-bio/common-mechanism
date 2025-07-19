@@ -11,9 +11,9 @@ Screening involves (up to) four steps:
   4. Benign scan:       three different scans (against conserved proteins, housekeeping RNAs, and
                         synbio parts) to see if hits identified in homology search can be cleared.
 
-In "fast" mode, only the biorisk scan is run. By default, all four steps are run, but the nucleotide
+In "skip-taxonomy" mode, only the biorisk scan is run. By default, all four steps are run, but the nucleotide
 search is only run for regions that do not have any protein hits with a high sequence identity. The
-benign search is not permitted to clear biorisk scan hits, only protein or nucleotide hits. Whether
+low-concern search is not permitted to clear biorisk scan hits, only protein or nucleotide hits. Whether
 or not a homology scan hit is from a regulated pathogen is determined by referencing the taxonomy
 ids assoicated with each accession that returns a hit, then looking at their lineages.
 
@@ -29,10 +29,10 @@ options:
   -v, --verbose         Output verbose (i.e. DEBUG-level) logs
 
 Screen run logic:
-  -f, --fast            Run in fast mode and skip protein and nucleotide homology search
   -p {blastx,diamond}, --protein-search-tool {blastx,diamond}
                         Tool for protein homology search to identify regulated pathogens
-  -n, --skip-nt         Skip nucleotide search (regulated pathogens will only be identified based on
+  --skip-tx             Skip taxonomy homology search (only toxins and other proteins included in the biorisk database will be flagged)
+  --skip-nt             Skip nucleotide search (regulated pathogens will only be identified based on
                         protein hits)
 
 Parallelisation:
@@ -51,20 +51,36 @@ Output file handling:
 """
 import argparse
 import datetime
+import time
 import logging
+import shutil
 import os
 import sys
+import traceback
 import pandas as pd
 
-from commec.utils.file_utils import file_arg, directory_arg
-from commec.utils.logging import setup_console_logging, setup_file_logging, set_log_level
-from commec.config.io_parameters import ScreenIOParameters
+from commec.config.screen_io import ScreenIO, IoValidationError
+from commec.config.query import Query
+from commec.utils.logger import (
+    setup_console_logging,
+    setup_file_logging,
+    set_log_level,
+)
 from commec.config.screen_tools import ScreenTools
-
-from commec.screeners.check_biorisk import check_biorisk
-from commec.screeners.check_benign import check_for_benign
-from commec.screeners.check_reg_path import check_for_regulated_pathogens
-from commec.screeners.fetch_nc_bits import fetch_noncoding_regions
+from commec.config.result import (
+    ScreenResult,
+    ScreenStep,
+    QueryResult,
+    ScreenStatus,
+)
+from commec.utils.file_utils import file_arg, directory_arg
+from commec.utils.json_html_output import generate_html_from_screen_data
+from commec.screeners.check_biorisk import parse_biorisk_hits
+from commec.screeners.check_low_concern import parse_low_concern_hits
+from commec.screeners.check_reg_path import parse_taxonomy_hits
+from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
+from commec.config.json_io import encode_screen_data_to_json
+from commec.config.constants import MINIMUM_QUERY_LENGTH
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -140,12 +156,20 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
     screen_logic_group = parser.add_argument_group("Screen run logic")
     screen_logic_group.add_argument(
-        "-f",
-        "--fast",
-        dest="in_fast_mode",
+        "--skip-tx",
+        dest="skip_taxonomy_search",
         action="store_true",
-        help="Run in fast mode and skip protein and nucleotide homology search",
+        help=("Skip taxonomy homology search (only toxins and other proteins"
+              " included in the biorisk database will be flagged)"),
     )
+    screen_logic_group.add_argument(
+        "--skip-nt",
+        dest="skip_nt_search",
+        action="store_true",
+        help=("Skip nucleotide search (regulated pathogens will only be"
+              " identified based on biorisk database and protein hits)"),
+    )
+
     screen_logic_group.add_argument(
         "-p",
         "--protein-search-tool",
@@ -153,13 +177,13 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         choices=["blastx", "diamond"],
         help="Tool for protein homology search to identify regulated pathogens",
     )
-    screen_logic_group.add_argument(
-        "-n",
-        "--skip-nt",
-        dest="skip_nt_search",
-        action="store_true",
-        help="Skip nucleotide search (regulated pathogens will only be identified based on protein hits)",
-    )
+
+    screen_logic_group.add_argument('-f', '--fast-mode', action="store_true", deprecated=True,
+                                    help=("(DEPRECATED: legacy commands for --fast-mode, please use"
+                                          " --skip-tx to skip the taxonomy step instead.)"))
+    screen_logic_group.add_argument('-n', action = "store_true", deprecated=True,
+                                    help="(DEPRECATED: shorthand for --skip-nt, use --skip-nt instead.)")
+
     parallel_group = parser.add_argument_group("Parallelisation")
     parallel_group.add_argument(
         "-t",
@@ -208,7 +232,6 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
     return parser
 
-
 class Screen:
     """
     Handles the parsing of input arguments, the control of databases, and
@@ -216,108 +239,226 @@ class Screen:
     """
 
     def __init__(self):
-        self.params: ScreenIOParameters = None
-        self.database_tools: ScreenTools = None
-        self.scripts_dir: str = os.path.dirname(__file__)  # Legacy.
+        self.params : ScreenIO = None
+        self.queries : dict[str, Query] = None
+        self.database_tools : ScreenTools = None
+        self.screen_data : ScreenResult = ScreenResult()
+        self.start_time = time.time()
+        self.success = False
+
+    def __del__(self):
+        """ 
+        Before we are finished, we attempt to write a JSON and HTML output.
+        Doing this in the destructor means that sometimes this will complete
+        successfully, despite exceptions, and premature exits.
+        """
+        if not self.params:
+            #Setup failed, so no need to output anything
+            return
+
+        time_taken = (time.time() - self.start_time)
+        hours, rem = divmod(time_taken, 3600)
+        minutes, seconds = divmod(rem, 60)
+        self.screen_data.commec_info.time_taken = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+        self.screen_data.update(self.queries)
+        encode_screen_data_to_json(self.screen_data, self.params.output_json)
+
+        logger.debug("\n >> EXPORT JSON SUMMARY : \n%s",
+                    self.screen_data.flag_text(), extra={"no_prefix" : True})
+        logger.debug("\n >> RATIONALE : \n%s",
+                    self.screen_data.rationale_text(), extra={"no_prefix" : True})
+
+        # Only output the HTML, and cleanup if this was a successful run:
+        if self.success:
+            generate_html_from_screen_data(self.screen_data, self.params.directory_prefix+"_summary")
+            if self.params.config["do_cleanup"]:
+                self.params.clean()
 
     def setup(self, args: argparse.Namespace):
         """Instantiates and validates parameters, and databases, ready for a run."""
+
         # Start logging to console
         log_level = logging.INFO if not args.verbose else logging.DEBUG
         setup_console_logging(log_level)
-        logger.debug("Parsing input parameters...")
+        logger.info(" The Common Mechanism : Screen", extra={"no_prefix": True, "box_down" : True})
 
-        self.params: ScreenIOParameters = ScreenIOParameters(args)
+        logger.debug("Parsing input parameters...")
+        self.params: ScreenIO = ScreenIO(args)
+        self.params.setup()
 
         # Logging level may be overridden
         if self.params.config["verbose"]:
             log_level = logging.DEBUG
-        
+
         # Update console log-level
         set_log_level(log_level, update_only_handler_type=logging.StreamHandler)
 
         # Needed to initialize parameters before logging to files
         setup_file_logging(self.params.output_screen_file, log_level)
-        setup_file_logging(self.params.tmp_log, log_level=logging.DEBUG)
-        
+
         logger.info("Validating input query and databases...")
-        self.params.query.setup(self.params.output_prefix)
         self.database_tools: ScreenTools = ScreenTools(self.params)
 
-        logger.info(f"Input query file: {self.params.query.input_fasta_path}")
+        logger.info("Input query file: ")
+        logger.info(self.params.input_fasta_path, extra={"no_prefix":True,"cap":True})
 
+        # Initialize the queries
+        try:
+            self.queries = self.params.parse_input_fasta()
+        except IoValidationError as e:
+            logger.error(e)
+            sys.exit()
 
-    def run(self, args: argparse.Namespace):
+        total_query_length = 0
+
+        try:
+            for query in self.queries.values():
+                logger.debug("Processing query: %s, (%s)", query.name, query.original_name)
+
+                # Link query to the output data.
+                qr = QueryResult(query.original_name,
+                                 query.length)
+                self.screen_data.queries[query.name] = qr
+                query.result = qr
+
+                # Determine short querys as skipped:
+                if query.length < MINIMUM_QUERY_LENGTH:
+                    logger.debug("%s length %i is less than %i",
+                                    query.name, query.length, MINIMUM_QUERY_LENGTH)
+                    qr.skip()
+                    continue
+
+                # Only translate if valid.
+                query.translate(self.params.aa_path)
+                total_query_length += query.length
+
+        except RuntimeError as e:
+            logger.error(e)
+            sys.exit()
+
+        self.screen_data.query_info.file = self.params.input_fasta_path
+        self.screen_data.query_info.number_of_queries = len(self.queries.values())
+        self.screen_data.query_info.total_query_length = total_query_length
+
+        # Initialize the version info for all the databases
+        _tools = self.database_tools
+        _info = self.screen_data.commec_info.search_tool_info
+        _info.biorisk_search_info = _tools.biorisk.get_version_information()
+        if self.params.should_do_protein_screening:
+            _info.protein_search_info = _tools.regulated_protein.get_version_information()
+        if self.params.should_do_nucleotide_screening:
+            _info.nucleotide_search_info = _tools.regulated_nt.get_version_information()
+        if self.params.should_do_low_concern_screening:
+            _info.low_concern_protein_search_info = _tools.low_concern_hmm.get_version_information()
+            _info.low_concern_rna_search_info = _tools.low_concern_cmscan.get_version_information()
+            _info.low_concern_dna_search_info = _tools.low_concern_blastn.get_version_information()
+
+        # Store start time.
+        _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    def run(self, args : argparse.Namespace):
         """
         Wrapper so that args be parsed in main() or commec.py interface.
         """
         # Perform setup steps.
         self.setup(args)
-
-        self.params.output_yaml(self.params.output_prefix + "_config.yaml")
-
+        self.params.output_yaml(self.params.input_prefix + "_config.yaml")
+        
         # Biorisk screen
-        logger.info(">> STEP 1: Checking for biorisk genes...")
-        self.screen_biorisks()
-        logger.info(
-            " STEP 1 completed at %s",
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        )
+        try:
+            logger.info(" >> STEP 1: Checking for biorisk genes...")
+            self.screen_biorisks()
+            logger.info(
+                "STEP 1 completed at %s",
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            )
+        except Exception as e:
+            logger.error("STEP 1: Biorisk search failed due to an error:\n %s", str(e))
+            logger.info(" Traceback:\n%s", traceback.format_exc())
+            self.reset_query_statuses(ScreenStep.BIORISK, ScreenStatus.ERROR)
 
         # Taxonomy screen (Protein)
         if self.params.should_do_protein_screening:
-            logger.info(" >> STEP 2: Checking regulated pathogen proteins...")
-            self.screen_proteins()
-            logger.info(
-                " STEP 2 completed at %s",
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            )
+            try:
+                logger.info(" >> STEP 2: Checking regulated pathogen proteins...")
+                self.screen_proteins()
+                logger.info(
+                    "STEP 2 completed at %s",
+                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                )
+            except Exception as e:
+                logger.error("STEP 2: Protein search failed due to an error:\n %s", str(e))
+                logger.info(" Traceback:\n%s", traceback.format_exc())
+                self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.ERROR)
         else:
-            logger.info(" SKIPPING STEP 2: Protein search")
+            logger.info("SKIPPING STEP 2: Protein search")
+            self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.SKIP)
 
         # Taxonomy screen (Nucleotide)
         if self.params.should_do_nucleotide_screening:
-            logger.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
-            self.screen_nucleotides()
-            logger.info(
-                " STEP 3 completed at %s",
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            )
+            try:
+                logger.info(" >> STEP 3: Checking regulated pathogen nucleotides...")
+                self.screen_nucleotides()
+                logger.info(
+                    "STEP 3 completed at %s",
+                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                )
+            except Exception as e:
+                logger.error("ERROR STEP 3: Nucleotide search failed due to an error:\n %s", str(e))
+                logger.info(" Traceback:\n%s", traceback.format_exc())
+                self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.ERROR)
         else:
-            logger.info(" SKIPPING STEP 3: Nucleotide search")
+            logger.info("SKIPPING STEP 3: Nucleotide search")
+            self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.SKIP)
 
         # Benign Screen
-        if self.params.should_do_benign_screening:
-            logger.info(
-                ">> STEP 4: Checking any pathogen regions for benign components..."
-            )
-            self.screen_benign()
-            logger.info(
-                ">> STEP 4 completed at %s",
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            )
+        if self.params.should_do_low_concern_screening:
+            try:
+                logger.info(
+                    " >> STEP 4: Checking any pathogen regions for low-concern components..."
+                )
+                self.screen_low_concern()
+                logger.info(
+                    "STEP 4 completed at %s",
+                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                )
+            except Exception as e:
+                logger.error("STEP 4: Benign search failed due to an error:\n %s", str(e))
+                logger.info(" Traceback:\n%s", traceback.format_exc())
+                self.reset_query_statuses(ScreenStep.LOW_CONCERN_DNA, ScreenStatus.ERROR)
         else:
-            logger.info(" SKIPPING STEP 4: Benign search")
+            logger.info(" << SKIPPING STEP 4: Low-concern search")
+            self.reset_query_statuses(ScreenStep.LOW_CONCERN_DNA, ScreenStatus.SKIP)
 
         logger.info(
-            ">> COMPLETED AT %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            " >> Commec Screen completed at %s", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
-        self.params.clean()
+
+        self.screen_data.update(self.queries)
+
+        logger.info("\n >> SUMMARY : \n%s",
+                    self.screen_data.flag_text(), extra={"no_prefix" : True, "box_up":True})
+        logger.info("\n >> RATIONALE : \n%s",
+                    self.screen_data.rationale_text(), extra={"no_prefix" : True})
+        self.success = True
+
 
     def screen_biorisks(self):
         """
         Call hmmscan` and `check_biorisk.py` to add biorisk results to `screen_file`.
         """
         logger.debug("\t...running hmmscan")
-        self.database_tools.biorisk_hmm.search()
+        self.database_tools.biorisk.search()
         logger.debug("\t...checking hmmscan results")
-        exit_status = check_biorisk(
-            self.database_tools.biorisk_hmm.out_file,
-            self.database_tools.biorisk_hmm.db_directory,
-        )
+        exit_status = parse_biorisk_hits(
+            self.database_tools.biorisk,
+            self.database_tools.biorisk_annotations,
+            self.screen_data,
+            self.queries)
+        
         if exit_status != 0:
             raise RuntimeError(
-                f"Output of biorisk search could not be processed: {self.database_tools.biorisk_hmm.out_file}"
+                f"Output of biorisk search could not be processed: {self.database_tools.biorisk.out_file}"
             )
 
     def screen_proteins(self):
@@ -327,7 +468,8 @@ class Screen:
         """
         logger.debug("\t...running %s", self.params.config["protein_search_tool"])
         self.database_tools.regulated_protein.search()
-        if not self.database_tools.regulated_protein.check_output():
+        if not self.database_tools.regulated_protein.validate_output():
+            self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.ERROR)
             raise RuntimeError(
                 "ERROR: Expected protein search output not created: "
                 + self.database_tools.regulated_protein.out_file
@@ -336,96 +478,140 @@ class Screen:
         logger.debug(
             "\t...checking %s results", self.params.config["protein_search_tool"]
         )
-        reg_path_coords = f"{self.params.output_prefix}.reg_path_coords.csv"
 
-        # Delete any previous check_reg_path results for this search
-        if os.path.isfile(reg_path_coords):
-            os.remove(reg_path_coords)
-
-        check_for_regulated_pathogens(
-            self.database_tools.regulated_protein.out_file,
-            self.params.config["databases"]["taxonomy"]["path"],
-            self.params.config["databases"]["taxonomy"]["benign_taxids"],
-            self.params.config["databases"]["taxonomy"]["regulated_taxids"],
+        exit_status = parse_taxonomy_hits(
+            self.database_tools.regulated_protein,
+            self.database_tools.low_concern_taxid_path,
+            self.database_tools.biorisk_taxid_path,
+            self.database_tools.taxonomy_path,
+            self.screen_data,
+            self.queries,
+            ScreenStep.TAXONOMY_AA,
             self.params.config["threads"]
         )
 
+        if exit_status != 0:
+            raise RuntimeError(
+                f"Output of protein taxonomy search could not be processed: {self.database_tools.regulated_protein.out_file}"
+            )
+
     def screen_nucleotides(self):
         """
+        Screen Nucleotides only in regions determined to be non-coding.
+
         Call `fetch_nc_bits.py`, search noncoding regions with `blastn` and
         then `check_reg_path.py` to screen regulated pathogen nucleotides in
         noncoding regions (i.e. that would not be found with protein search).
         """
-        # Only screen nucleotides in noncoding regions
-        fetch_noncoding_regions(
-            self.database_tools.regulated_protein.out_file, self.params.query.nt_path
-        )
-        noncoding_fasta = f"{self.params.output_prefix}.noncoding.fasta"
+        # By Default, this should be overriden.
+        self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.ERROR)
 
-        if not os.path.isfile(noncoding_fasta):
-            logger.debug(
+        # Calculate non-coding information for each Query.
+        calculate_noncoding_regions_per_query(
+            self.database_tools.regulated_protein,
+            self.queries)
+
+        # Generate the non-coding fasta.
+        nc_fasta_sequences = ""
+        for query in self.queries.values():
+            if query.result.status.nucleotide_taxonomy == ScreenStatus.SKIP:
+                continue
+            nc_fasta_sequences += query.get_non_coding_regions_as_fasta()
+
+        # Skip if there is no non-coding information.
+        if nc_fasta_sequences == "":
+            logger.info(
                 "\t...skipping nucleotide search since no noncoding regions fetched"
             )
+            self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.SKIP)
             return
 
-        # Only run new blastn search if there are no previous results
-        if not self.database_tools.regulated_nt.check_output():
-            self.database_tools.regulated_nt.search()
+        # Create a non-coding fasta file.
+        with open(self.params.nc_path, "w", encoding="utf-8") as output_file:
+            output_file.writelines(nc_fasta_sequences)
 
-        if not self.database_tools.regulated_nt.check_output():
+        # Only run new blastn search if there are no previous results
+        self.database_tools.regulated_nt.search()
+
+        if not self.database_tools.regulated_nt.validate_output():
+            self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.ERROR)
             raise RuntimeError(
                 "ERROR: Expected nucleotide search output not created: "
                 + self.database_tools.regulated_nt.out_file
             )
 
         logger.debug("\t...checking blastn results")
-        check_for_regulated_pathogens(
-            self.database_tools.regulated_nt.out_file,
-            self.params.config["databases"]["taxonomy"]["path"],
-            self.params.config["databases"]["taxonomy"]["benign_taxids"],
-            self.params.config["databases"]["taxonomy"]["regulated_taxids"],
+        # Note: Currently noncoding coordinates are converted within parse_taxonomy_hits,
+        exit_status = parse_taxonomy_hits(
+            self.database_tools.regulated_nt,
+            self.database_tools.low_concern_taxid_path,
+            self.database_tools.biorisk_taxid_path,
+            self.database_tools.taxonomy_path,
+            self.screen_data,
+            self.queries,
+            ScreenStep.TAXONOMY_NT,
             self.params.config["threads"]
         )
 
-    def screen_benign(self):
+        if exit_status != 0:
+            raise RuntimeError(
+                f"Output of nucleotide taxonomy search could not be processed: {self.database_tools.regulated_nt.out_file}"
+            )
+
+    def screen_low_concern(self):
         """
         Call `hmmscan`, `blastn`, and `cmscan` and then pass results
-        to `check_benign.py` to identify regions that can be cleared.
+        to `check_low_concern.py` to identify regions that can be cleared.
         """
-        sample_name = self.params.output_prefix
-        if not os.path.exists(sample_name + ".reg_path_coords.csv"):
+        # Start by checking if there are any hits that require clearing...
+        hits_to_clear : bool = False
+        for _query, hit in self.screen_data.hits():
+            if hit.recommendation.status in {ScreenStatus.WARN, ScreenStatus.FLAG}:
+                hits_to_clear = True
+                break
+
+        if not hits_to_clear:
             logger.info("\t...no regulated regions to clear\n")
+            self.reset_query_statuses(ScreenStep.LOW_CONCERN_DNA, ScreenStatus.SKIP)
             return
 
-        logger.debug("\t...running benign hmmscan")
-        self.database_tools.benign_hmm.search()
-        logger.debug("\t...running benign blastn")
-        self.database_tools.benign_blastn.search()
-        logger.debug("\t...running benign cmscan")
-        self.database_tools.benign_cmscan.search()
+        # Run the low_concern tools:
+        logger.debug("\t...running low-concern hmmer.")
+        self.database_tools.low_concern_hmm.search()
+        logger.debug("\t...running low-concern blastn")
+        self.database_tools.low_concern_blastn.search()
+        logger.debug("\t...running low-concern cmscan")
+        self.database_tools.low_concern_cmscan.search()
 
-        coords = pd.read_csv(sample_name + ".reg_path_coords.csv")
-        benign_desc = pd.read_csv(
-            self.database_tools.benign_hmm.db_directory + "/benign_annotations.tsv",
+
+        # Update Screen Data with low_concern outputs.
+        low_concern_desc = pd.read_csv(
+            self.params.config["databases"]["low_concern"]["annotations"],
             sep="\t",
         )
 
-        if coords.shape[0] == 0:
-            logger.info("\t...no regulated regions to clear\n")
-            return
+        parse_low_concern_hits(
+            self.database_tools.low_concern_hmm,
+            self.database_tools.low_concern_cmscan,
+            self.database_tools.low_concern_blastn,
+            self.queries,
+            low_concern_desc
+        )
 
-        logger.debug("\t...checking benign scan results")
-
-        # Note currently check_for_benign hard codes .benign.hmmscan,
-        # in future parse, and grab from search handler instead.
-        check_for_benign(sample_name, coords, benign_desc)
+    def reset_query_statuses(self, step: ScreenStep, status : ScreenStatus):
+        """Helper function to apply a single status across a step for every query"""
+        for query in self.screen_data.queries.values():
+            query.status.set_step_status(step, status)
 
 def run(args: argparse.Namespace):
     """
     Entry point from commec main. Passes args to Screen object, and runs.
     """
     my_screen: Screen = Screen()
-    my_screen.run(args)
+    try:
+        my_screen.run(args)
+    except KeyboardInterrupt:
+        print(" >>> Commec Screen Terminated.")
 
 
 def main():
@@ -436,7 +622,6 @@ def main():
     add_args(parser)
     args = parser.parse_args()
     run(args)
-
 
 if __name__ == "__main__":
     try:

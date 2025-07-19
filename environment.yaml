@@ -14,9 +14,11 @@ dependencies:
   # Runtime non-Python dependencies
   - blast
   - diamond>=2.1
-  - emboss
   - hmmer
   - infernal
+  - plotly
+  - yaml
+  - mako
   # Development dependencies
   - pip
   - pytest

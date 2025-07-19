@@ -49,10 +49,10 @@ class BlastNHandler(BlastHandler):
     def _search(self):
         command = [
             self.blastcall,
-            "-query",
-            self.input_file,
             "-db",
             self.db_file,
+            "-query",
+            self.input_file,
             "-out",
             self.out_file,
         ]
@@ -76,5 +76,5 @@ class BlastNHandler(BlastHandler):
             database_info: str = lines[5] + lines[3]
 
             return SearchToolVersion(tool_info, database_info)
-        except subprocess.CalledProcessError:
-            return None
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return SearchToolVersion()

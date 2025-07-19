@@ -9,7 +9,10 @@ Throws if inputs are invalid. Creates a temporary log file, which is deleted on 
 import re
 import subprocess
 import pandas as pd
+import itertools
+from commec.config.query import Query
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
+from commec.utils.coordinates import convert_protein_to_nucleotide_coords
 
 
 class HmmerHandler(SearchHandler):
@@ -27,19 +30,32 @@ class HmmerHandler(SearchHandler):
         ]
         self.run_as_subprocess(command, self.temp_log_file)
 
+    def read_output(self):
+        output_dataframe = readhmmer(self.out_file)
+        # Standardize the output column names to be like blast:
+        output_dataframe = output_dataframe.rename(columns={
+            #"ali from": "q. start", # These are no re-calculated to Query NT coordinates.
+            #"ali to": "q. end",
+            "coverage": "q. coverage",
+            "target name": "subject title",
+            "qlen":"query length",
+            "hmm from":"s. start",
+            "hmm to":"s. end",
+            'E-value': "evalue",
+        })
+        return output_dataframe
+
     def get_version_information(self) -> SearchToolVersion:
         """
-        At the moment this is just grabbing some basic header info of the
-        first entrant of the hmm database. Not really a true version control.
-        But better than nothing at the moment. There may be some way to return
-        some version information from hmmcan itself, look into that.
+        The first line of the HMM database typically contains creation date
+        information, and some version information.
         """
         database_info: str = None
         try:
             with open(self.db_file, "r", encoding="utf-8") as file:
                 for line in file:
                     if line.startswith("HMMER3/f"):
-                        database_info = line.split("[", maxsplit=1)
+                        database_info = line.split(";", maxsplit=1)[0].strip()
                         continue
                     # Early exit if data has been found
                     if database_info:
@@ -48,10 +64,10 @@ class HmmerHandler(SearchHandler):
             tool_version_result = subprocess.run(
                 ["hmmscan", "-h"], capture_output=True, text=True, check=True
             )
-            tool_info: str = tool_version_result.stdout.splitlines()[1]
+            tool_info: str = tool_version_result.stdout.splitlines()[1].strip()
             return SearchToolVersion(tool_info, database_info)
 
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, FileNotFoundError):
             return None
 
 
@@ -104,33 +120,75 @@ def readhmmer(fileh):
     hmmer["ali from"] = pd.to_numeric(hmmer["ali from"])
     hmmer["ali to"] = pd.to_numeric(hmmer["ali to"])
     hmmer["qlen"] = pd.to_numeric(hmmer["qlen"])
+    # Extract the frame information.
+    hmmer["frame"] = hmmer["query name"].str.split('_').str[-1].astype(int)
     return hmmer
 
-
-def trimhmmer(hmmer):
+def remove_overlaps(hmmer : pd.DataFrame) -> pd.DataFrame:
     """
-    Trim hmmer files.
+    Trims verbosity of a HMMER output, 
+    by removing weaker hits which are 
+    encompassed in their extent by higher scoring hits.
 
-    Don't forget this is a report on 6-frame translations so coordinates will be complicated.
+    Note, works to trim nucleotide coordinates relative to the query, 
+    not ali from and ali to from the HMMER itself.
+
+    This means it can be used on any DataFrame with the q. start and q. end NT headings.
+    (Consider moving to a general coordinates tool function?)
     """
-    # rank hits by bitscore
-    hmmer = hmmer.sort_values(by=["score"], ascending=False)
-    #     hmmer = hmmer.drop_duplicates(subset=['query acc.', 'q. start', 'q. end'], keep='first', ignore_index=True)
+    assert "q. start" in hmmer.columns, ("No \"q. start\" heading in HMMER output dataframe being "
+                                         "passed to remove overlaps, ensure that the dataframe has "
+                                         "been processed for converstion to nucleotide coordinates.")
 
-    hmmer2 = hmmer
-    # only keep  top ranked hits that don't overlap
+    assert "q. end" in hmmer.columns, ("No \"q. end\" heading in HMMER output dataframe being "
+                                         "passed to remove overlaps, ensure that the dataframe has "
+                                         "been processed for converstion to nucleotide coordinates.")
+
+    trimmed_hmmer = hmmer # Direct Assignment, reassigned later with .drop() for deep-copy.
+
+    # Ensure all logic is performed per unique Query name.
     for query in hmmer["query name"].unique():
-        df = hmmer[hmmer["query name"] == query]
-        for i in df.index:
-            for j in df.index[(i + 1) :]:
-                if (
-                    df.loc[i, "ali from"] <= df.loc[j, "ali from"]
-                    and df.loc[i, "ali to"] >= df.loc[j, "ali to"]
-                ) | (
-                    df.loc[i, "ali from"] >= df.loc[j, "ali from"]
-                    and df.loc[i, "ali to"] <= df.loc[j, "ali to"]
-                ):
-                    if j in hmmer2.index:
-                        hmmer2 = hmmer2.drop([j])
-        hmmer2 = hmmer2.reset_index(drop=True)
-    return hmmer2
+
+        hmmer_for_query = hmmer[hmmer["query name"] == query]
+        sorted_values = hmmer_for_query.sort_values(by=["score"], ascending = False)
+
+        for i, j in itertools.combinations(sorted_values.index, 2):
+            # If J is encapsulated:
+            if (sorted_values.loc[i, "q. start"] <= sorted_values.loc[j, "q. start"]
+                and sorted_values.loc[i, "q. end"] >= sorted_values.loc[j, "q. end"]
+                and sorted_values.loc[i, "score"] >= sorted_values.loc[j, "score"]):
+                if j in trimmed_hmmer.index:
+                    trimmed_hmmer = trimmed_hmmer.drop([j])
+                    continue
+            # If I is encapsulated:
+            if (sorted_values.loc[i, "q. start"] >= sorted_values.loc[j, "q. start"]
+                and sorted_values.loc[i, "q. end"] <= sorted_values.loc[j, "q. end"]
+                and sorted_values.loc[i, "score"] <= sorted_values.loc[j, "score"]):
+                if i in trimmed_hmmer.index:
+                    trimmed_hmmer = trimmed_hmmer.drop([i])
+
+    # Tidy the output indices.
+    trimmed_hmmer = trimmed_hmmer.reset_index(drop=True)
+
+    return trimmed_hmmer
+
+def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame):
+    """
+    Recalculate the coordinates of the hmmer database , such that each translated frame
+    reverts to original nucleotide coordinates.
+    """
+    assert "nt_qlen" in hmmer.columns, ("No \"nt_qlen\" heading in HMMER output dataframe being "
+                                         "passed to calculate nt coordinates, ensure that the dataframe has "
+                                         "been processed to include nucleotide query length data.")
+    hmmer["q. start"], hmmer["q. end"] = convert_protein_to_nucleotide_coords(
+        hmmer["frame"].to_numpy(),
+        hmmer["ali from"].to_numpy(),
+        hmmer["ali to"].to_numpy(),
+        hmmer["nt_qlen"].to_numpy())
+
+def append_nt_querylength_info(hmmer : pd.DataFrame, queries : dict[str, Query]):
+    """ 
+    Take the hmmer output, and add a series (nt_qlen) 
+    of the true nt length based on query name.
+    """
+    hmmer["nt_qlen"] = [queries[q[:-2]].length for q in hmmer["query name"]]

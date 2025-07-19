@@ -1,0 +1,13 @@
+#                                                                                                       --- full sequence --- -------------- this domain -------------   hmm coord   ali coord   env coord
+# target name        accession   tlen query name                                      accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias  from    to  from    to  from    to  acc description of target
+#------------------- ---------- -----                            -------------------- ---------- ----- --------- ------ ----- --- --- --------- --------- ------ ----- ----- ----- ----- ----- ----- ----- ---- ---------------------
+#
+# Program:         hmmscan
+# Version:         3.4 (Aug 2023)
+# Pipeline mode:   SCAN
+# Query file:      /root/repo/json/common-mechanism/commec/tests/test_data/single_record.fasta
+# Target file:     /root/repo/json/common-mechanism/commec/tests/test_dbs/benign_db/benign.hmm
+# Option settings: hmmscan --domtblout /root/repo/json/common-mechanism/commec/tests/test_dbs/benign_db/benign.hmm.exemplar.out /root/repo/json/common-mechanism/commec/tests/test_dbs/benign_db/benign.hmm /root/repo/json/common-mechanism/commec/tests/test_data/single_record.fasta 
+# Current dir:     /root/repo/json/common-mechanism
+# Date:            Thu Sep 19 12:15:55 2024
+# [ok]

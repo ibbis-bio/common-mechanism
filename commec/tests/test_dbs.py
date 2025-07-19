@@ -2,7 +2,6 @@
 Unit test for ensuring that the databases are being called without errors.
 Will fail if databases have not been installed as expected, with correct versions.
 """
-
 import os
 import pytest
 from commec.tools.diamond import DiamondHandler
@@ -17,12 +16,16 @@ DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs")
 
 databases_to_implement = [
     [DiamondHandler, "nr_dmnd", "nr"],
-    [BlastNHandler, "nt_blast", "nt"],
+    [BlastNHandler, "nt_blast", "core_nt"],
     [BlastXHandler, "nr_blast", "nr"],
-    [HmmerHandler, "benign_db", "benign.hmm"],
-    [CmscanHandler, "benign_db", "benign.cmscan"],
+    [HmmerHandler, "low_concern/protein", "benign.hmm"],
+    [CmscanHandler, "low_concern/rna", "benign.cm"],
 ]
 
+def print_tmp_path_contents(tmp_path):
+    print(f"Contents of {tmp_path}:")
+    for path in tmp_path.rglob("*"):  # Recursively list all files and directories
+        print(path.relative_to(tmp_path), "->", "DIR" if path.is_dir() else "FILE")
 
 @pytest.mark.parametrize("input_db", databases_to_implement)
 def test_database_can_run(input_db):
@@ -42,7 +45,7 @@ def test_database_can_run(input_db):
 
     new_db = input_db[0](db_file, INPUT_QUERY, output_file, force=True)
     new_db.search()
-    assert new_db.check_output()
+    assert new_db.validate_output()
 
     version: str = new_db.get_version_information()
     assert version
@@ -55,8 +58,8 @@ bad_databases = [
     [DiamondHandler, "nr_dmnd", "bad"],
     [BlastNHandler, "nt_blast", "bad"],
     [BlastXHandler, "nr_blast", "bad"],
-    [HmmerHandler, "benign_db", "bad.hmm"],
-    [CmscanHandler, "benign_db", "bad.cmscan"],
+    [HmmerHandler, "low_concern_db", "bad.hmm"],
+    [CmscanHandler, "low_concern_db", "bad.cmscan"],
     [DiamondHandler, "bad", "bad"],
     [BlastNHandler, "bad", "bad"],
     [BlastXHandler, "bad", "bad"],
