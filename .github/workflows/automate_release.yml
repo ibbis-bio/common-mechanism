@@ -1,0 +1,129 @@
+name: Automate Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: 'Branch to release (e.g. release_v1.2.3)'
+        required: true
+        type: string
+      version_string:
+        description: 'Version string (e.g. 1.2.3)'
+        required: true
+        type: string
+        
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check token permissions
+        run: gh auth status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Checkout release branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.release_branch }}
+
+      #- name: Set up Python
+      #  uses: actions/setup-python@v5
+      #  with:
+      #    python-version: '3.11'
+
+      - name: Check and update pyproject.toml version
+        run: |
+          ver="${{ github.event.inputs.version_string }}"
+          current=$(grep "^version = '" pyproject.toml | head -n1 | cut -d"'" -f2)
+          if [ "$current" != "$ver" ]; then
+            sed -i "s/^version = '.*'/version = '$ver'/" pyproject.toml
+            echo "updated_pyproject=true" >> $GITHUB_ENV
+          fi
+
+      - name: Check and update conda meta.yaml version
+        run: |
+          ver="${{ github.event.inputs.version_string }}"
+          current=$(grep '{% set version = "' conda-recipe/meta.yaml | head -n1 | cut -d'"' -f2)
+          if [ "$current" != "$ver" ]; then
+            sed -i "s/{% set version = \".*\" %}/{% set version = \"$ver\" %}/" conda-recipe/meta.yaml
+            echo "updated_meta=true" >> $GITHUB_ENV
+          fi
+
+      - name: Update functional test JSON with new version
+        if: env.updated_pyproject == 'true'
+        run: |
+          ver="${{ github.event.inputs.version_string }}"
+          json_file="commec/tests/test_data/functional.json"
+          
+          if [ -f "$json_file" ]; then
+            # Use jq to replace the version field safely
+            tmpfile=$(mktemp)
+            jq --arg ver "$ver" '.commec_info.commec_version = $ver' "$json_file" > "$tmpfile" && mv "$tmpfile" "$json_file"
+            echo "Updated commec_version in $json_file to $ver"
+          else
+            echo "File $json_file not found!"
+            exit 1
+          fi
+
+      - name: Commit version changes (if needed)
+        if: env.updated_pyproject == 'true' || env.updated_meta == 'true'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add pyproject.toml conda-recipe/meta.yaml commec/tests/test_data/functional.json
+          if git commit -m "Update version texts to ${{ github.event.inputs.version_string }}"; then
+            git push origin HEAD:${{ github.event.inputs.release_branch }}
+          else
+            echo "No changes to commit, skipping push."
+          fi
+
+      - name: Tag release
+        run: |
+          git tag -a "v${{ github.event.inputs.version_string }}" -m "Release ${{ github.event.inputs.version_string }}"
+          git push origin "v${{ github.event.inputs.version_string }}"
+
+      - name: Download tar.gz from GitHub release
+        run: |
+          curl -L -o source.tar.gz https://github.com/${{ github.repository }}/archive/refs/tags/v${{ github.event.inputs.version_string }}.tar.gz
+
+      - name: Calculate SHA256
+        id: hash
+        run: |
+          sha256=$(sha256sum source.tar.gz | cut -d ' ' -f1)
+          echo "sha256=$sha256" >> $GITHUB_OUTPUT
+
+      - name: Clone bioconda fork
+        run: |
+          git clone https://github.com/ibbis-bio/bioconda-recipes.git
+          cd bioconda-recipes
+          git remote add upstream https://github.com/bioconda/bioconda-recipes.git
+          git fetch upstream
+          git reset --hard upstream/master
+          git push origin master --force
+
+      - name: Update recipe with new meta.yaml
+        run: |
+          cp conda-recipe/meta.yaml bioconda-recipes/recipes/commec/meta.yaml
+          cd bioconda-recipes
+          sed -i '3s/.*/{% set sha256 = "'"${{ steps.hash.outputs.sha256 }}"'" %}/' recipes/commec/meta.yaml
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add recipes/commec/meta.yaml
+          git commit -m "Update commec recipe to v${{ github.event.inputs.version_string }}"
+          git push origin master
+
+      - name: Create PR to bioconda upstream
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --repo bioconda/bioconda-recipes \
+            --head ibbis-bio:master \
+            --base master \
+            --title "Update commec to v${{ github.event.inputs.version_string }}" \
+            --body "This PR updates the commec recipe to version ${{ github.event.inputs.version_string }}."
