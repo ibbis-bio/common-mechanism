@@ -1,0 +1,72 @@
+name: Assign Version Text
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_string:
+        description: 'Safely Updates the Version string (e.g. 1.2.3)'
+        required: true
+        type: string
+jobs:
+  assign_version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Conda environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: commec-env
+          environment-file: environment.yaml
+          auto-activate-base: false
+          clean-patched-environment-file: true
+
+      # The tests have passed, we can update the strings.
+      - name: Check and update pyproject.toml version
+        run: |
+          ver="${{ github.event.inputs.version_string }}"
+          current=$(grep "^version" pyproject.toml | head -n1 | cut -d '"' -f2)
+          if [ "$current" != "$ver" ]; then
+            sed -i "s/^version = \".*\"/version = \"$ver\"/" pyproject.toml
+            echo "updated_pyproject=true" >> $GITHUB_ENV
+          fi
+
+      - name: Check and update conda meta.yaml version
+        run: |
+          ver="${{ github.event.inputs.version_string }}"
+          current=$(grep "^version:" conda-recipe/meta.yaml | head -n1 | awk '{print $2}')
+          if [ "$current" != "$ver" ]; then
+            sed -i "s/^version: .*/version: $ver/" conda-recipe/meta.yaml
+            echo "updated_meta=true" >> $GITHUB_ENV
+          fi
+
+      - name: Update functional test JSON with new version
+        if: env.updated_pyproject == 'true' || env.updated_meta == 'true'
+        run: |
+          ver="${{ github.event.inputs.version_string }}"
+          json_file="commec/tests/test_data/functional.json"
+          
+          if [ -f "$json_file" ]; then
+            # Use jq to replace the version field safely
+            tmpfile=$(mktemp)
+            jq --arg ver "$ver" '.commec_info.commec_version = $ver' "$json_file" > "$tmpfile" && mv "$tmpfile" "$json_file"
+            echo "Updated commec_version in $json_file to $ver"
+          else
+            echo "File $json_file not found!"
+            exit 1
+          fi
+
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          conda activate commec-env
+          pytest -vv || { echo "Initial tests failed"; exit 1; }
+
+      - name: Commit changes
+        if: env.updated_pyproject == 'true' || env.updated_meta == 'true'
+        run: |
+          git add pyproject.toml conda-recipe/meta.yaml commec/tests/test_data/functional.json
+          git commit -m "Update to version strings to ${{ github.event.inputs.version_string }}"
+          git push
