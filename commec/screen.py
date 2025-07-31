@@ -79,6 +79,7 @@ from commec.screeners.check_biorisk import parse_biorisk_hits
 from commec.screeners.check_low_concern import parse_low_concern_hits
 from commec.screeners.check_reg_path import parse_taxonomy_hits
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
+from commec.tools.search_handler import DatabaseValidationError
 from commec.config.json_io import encode_screen_data_to_json
 from commec.config.constants import MINIMUM_QUERY_LENGTH
 
@@ -237,6 +238,13 @@ class Screen:
     Handles the parsing of input arguments, the control of databases, and
     the logical flow of the screening process for commec.
     """
+    def early_exit(self):
+        """
+        Exit commec screen early, wrapper for sys.ext() for tidy logging.
+        """
+        logger.info("Commec screen will now exit ... ")
+        logger.info("", extra={"no_prefix" : True, "box_up" : True})
+        sys.exit(1)
 
     def __init__(self):
         self.params : ScreenIO = None
@@ -297,7 +305,11 @@ class Screen:
         setup_file_logging(self.params.output_screen_file, log_level)
 
         logger.info("Validating input query and databases...")
-        self.database_tools: ScreenTools = ScreenTools(self.params)
+        try:
+            self.database_tools: ScreenTools = ScreenTools(self.params)
+        except(DatabaseValidationError) as e:
+            logger.error(e)
+            self.early_exit()
 
         logger.info("Input query file: ")
         logger.info(self.params.input_fasta_path, extra={"no_prefix":True,"cap":True})
@@ -307,7 +319,7 @@ class Screen:
             self.queries = self.params.parse_input_fasta()
         except IoValidationError as e:
             logger.error(e)
-            sys.exit()
+            self.early_exit()
 
         total_query_length = 0
 
@@ -334,7 +346,7 @@ class Screen:
 
         except RuntimeError as e:
             logger.error(e)
-            sys.exit()
+            self.early_exit()
 
         self.screen_data.query_info.file = self.params.input_fasta_path
         self.screen_data.query_info.number_of_queries = len(self.queries.values())
