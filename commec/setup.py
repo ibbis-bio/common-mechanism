@@ -19,7 +19,6 @@ import json
 from yaml.parser import ParserError
 
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
-from commec.utils.file_utils import expand_and_normalize
 
 DESCRIPTION = """Helper script for downloading the databases
  required for running the Common Mechanism Screen"""
