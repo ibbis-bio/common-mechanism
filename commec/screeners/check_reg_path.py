@@ -168,6 +168,9 @@ def parse_taxonomy_hits(
                 domains = [] # List of domains.
                 match_ranges = [] # Ranges where hit matches query.
 
+                regulated_taxa = []
+                non_regulated_taxa = []
+
                 for _, region in regulated_hit_data.iterrows():
                     match_range = MatchRange(
                         float(region['evalue']),
@@ -183,9 +186,9 @@ def parse_taxonomy_hits(
                     match_ranges.append(match_range)
 
                     # Filter shared_site based on 'q. start' or 'q. end' (Previously only shared starts were used)
-                    shared_site = top_hits[
-                        (top_hits['q. start'] == region['q. start']) |
-                        (top_hits['q. end'] == region['q. end'])
+                    shared_site = unique_query_data[
+                        (unique_query_data['q. start'] == region['q. start']) |
+                        (unique_query_data['q. end'] == region['q. end'])
                         ]
 
                     # Filter for regulated and non-regulated entries
@@ -207,13 +210,49 @@ def parse_taxonomy_hits(
 
                     # Collect unique species from both regulated and non-regulated
                     reg_species.extend(regulated["species"])
+
                     # JSON serialization requires int, not np.int64, hence the map()
                     reg_taxids.extend(map(str, regulated["subject tax ids"]))
                     non_reg_taxids.extend(map(str, non_regulated["subject tax ids"]))
 
+                    regulated_taxa.append(regulated)
+                    non_regulated_taxa.append(non_regulated)
+
                     # These are the old values, now we simply count the size of the regulated, and non_regulated taxid arrays.
                     #n_reg += (top_hits["regulated"][top_hits['q. start'] == region['q. start']] != False).sum()
                     #n_total += len(top_hits["regulated"][top_hits['q. start'] == region['q. start']])
+
+                logger.debug(regulated_taxa)
+                logger.debug(non_regulated_taxa)
+
+                regulated_taxa = pd.concat(regulated_taxa, ignore_index=True)
+                non_regulated_taxa = pd.concat(non_regulated_taxa, ignore_index=True)
+
+                regulated_taxa_list = []
+                non_regulated_taxa_list = []
+
+                # Construct some dictionaries for storing the specific
+                # regulated and non-regulated hit information.
+                for _, taxa in regulated_taxa.iterrows():
+                    regulated_taxa_list.append(
+                        {
+                            "taxid" : taxa["subject tax ids"],
+                            "name" : taxa["species"],
+                            "kingdom" : taxa["superkingdom"],
+                            "target_hit" : taxa["subject acc."],
+                            "target_description" : taxa['subject title']
+                        }
+                    )
+                for _, taxa in non_regulated_taxa.iterrows():
+                    non_regulated_taxa_list.append(
+                        {
+                            "taxid" : taxa["subject tax ids"],
+                            "name" : taxa["species"],
+                            "kingdom" : taxa["superkingdom"],
+                            "target_hit" : taxa["subject acc."],
+                            "target_description" : taxa['subject title']
+                        }
+                    )
 
                 # Uniquefy.
                 reg_species = list(set(reg_species))
@@ -232,8 +271,8 @@ def parse_taxonomy_hits(
                 non_reg_taxids.sort()
 
                 logger.debug("\t\tRegulated Species: %s", reg_species)
-                logger.debug("\t\tRegulated Taxids: %s", reg_taxids)
-                logger.debug("\t\tNon Regulated Taxids: %s", non_reg_taxids)
+                logger.debug("\t\tRegulated Taxids: %s", regulated_taxa_list)
+                logger.debug("\t\tNon Regulated Taxids: %s", non_regulated_taxa_list)
                 logger.debug("\t\tRanges: %s", match_ranges)
 
                 screen_status : ScreenStatus = ScreenStatus.FLAG
@@ -257,9 +296,8 @@ def parse_taxonomy_hits(
                                    "regulated_eukaryotes": str(n_regulated_eukaryote),
                                    "regulated_bacteria": str(n_regulated_bacteria),
                                    "regulated_viruses": str(n_regulated_virus),
-                                   "regulated_taxids": reg_taxids,
-                                   "non_regulated_taxids" : non_reg_taxids,
-                                   "regulated_species" : reg_species}
+                                   "regulated_taxa": regulated_taxa_list,
+                                   "non_regulated_taxa" : non_regulated_taxa_list}
 
                 # Logging logic.
                 alt_text = "only " if screen_status == ScreenStatus.FLAG else "both regulated and non-"
