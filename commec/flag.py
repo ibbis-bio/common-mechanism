@@ -110,14 +110,14 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
                     if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN, ScreenStatus.PASS]:
                         reg_dicts = hit.annotations["regulated_taxonomy"]
                         for r in reg_dicts:
-                            if len(r["non_regulated_taxids"]) > 0:
+                            if len(r["non_regulated_taxa"]) > 0:
                                 mixed_aa_taxonomy = True
 
                 case ScreenStep.TAXONOMY_NT:
                     if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN]:
                         reg_dicts = hit.annotations["regulated_taxonomy"]
                         for r in reg_dicts:
-                            if len(r["non_regulated_taxids"]) > 0:
+                            if len(r["non_regulated_taxa"]) > 0:
                                 mixed_nt_taxonomy = True
                 case _:
                     continue
