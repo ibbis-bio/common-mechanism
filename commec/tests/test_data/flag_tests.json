@@ -113,10 +113,10 @@
                                 "regulated_eukaryotes": "0",
                                 "regulated_bacteria": "0",
                                 "regulated_viruses": "1",
-                                "regulated_taxids": [
+                                "regulated_taxa": [
                                     "12345"
                                 ],
-                                "non_regulated_taxids": [],
+                                "non_regulated_taxa": [],
                                 "regulated_species": [
                                     "species"
                                 ]
@@ -164,10 +164,10 @@
                                 "regulated_eukaryotes": "0",
                                 "regulated_bacteria": "1",
                                 "regulated_viruses": "0",
-                                "regulated_taxids": [
+                                "regulated_taxa": [
                                     "12345"
                                 ],
-                                "non_regulated_taxids": [],
+                                "non_regulated_taxa": [],
                                 "regulated_species": [
                                     "species"
                                 ]
@@ -215,10 +215,10 @@
                                 "regulated_eukaryotes": "1",
                                 "regulated_bacteria": "0",
                                 "regulated_viruses": "0",
-                                "regulated_taxids": [
+                                "regulated_taxa": [
                                     "12345"
                                 ],
-                                "non_regulated_taxids": [],
+                                "non_regulated_taxa": [],
                                 "regulated_species": [
                                     "species"
                                 ]
@@ -268,10 +268,10 @@
                                 "regulated_eukaryotes": "1",
                                 "regulated_bacteria": "1",
                                 "regulated_viruses": "1",
-                                "regulated_taxids": [
+                                "regulated_taxa": [
                                     "12345"
                                 ],
-                                "non_regulated_taxids": [],
+                                "non_regulated_taxa": [],
                                 "regulated_species": [
                                     "species"
                                 ]
@@ -319,10 +319,10 @@
                                 "regulated_eukaryotes": "0",
                                 "regulated_bacteria": "0",
                                 "regulated_viruses": "1",
-                                "regulated_taxids": [
+                                "regulated_taxa": [
                                     "12345"
                                 ],
-                                "non_regulated_taxids": [
+                                "non_regulated_taxa": [
                                     "11111"
                                 ],
                                 "regulated_species": [
