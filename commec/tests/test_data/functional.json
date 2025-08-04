@@ -158,13 +158,16 @@
                                 "regulated_eukaryotes": "0",
                                 "regulated_bacteria": "0",
                                 "regulated_viruses": "1",
-                                "regulated_taxids": [
-                                    "12345"
+                                "regulated_taxa": [
+                                    {
+                                        "taxid": 12345,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "        NR_HIT_FLAG4",
+                                        "target_description": "ShouldClear"
+                                    }
                                 ],
-                                "non_regulated_taxids": [],
-                                "regulated_species": [
-                                    "species"
-                                ]
+                                "non_regulated_taxa": []
                             }
                         ]
                     }
@@ -196,13 +199,16 @@
                                 "regulated_eukaryotes": "0",
                                 "regulated_bacteria": "0",
                                 "regulated_viruses": "1",
-                                "regulated_taxids": [
-                                    "12345"
+                                "regulated_taxa": [
+                                    {
+                                        "taxid": 12345,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "    NR_HIT_FLAG1",
+                                        "target_description": "ShouldntClear"
+                                    }
                                 ],
-                                "non_regulated_taxids": [],
-                                "regulated_species": [
-                                    "species"
-                                ]
+                                "non_regulated_taxa": []
                             }
                         ]
                     }
@@ -234,15 +240,30 @@
                                 "regulated_eukaryotes": "0",
                                 "regulated_bacteria": "0",
                                 "regulated_viruses": "1",
-                                "regulated_taxids": [
-                                    "12345"
+                                "regulated_taxa": [
+                                    {
+                                        "taxid": 12345,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "    NR_HIT_MIXED",
+                                        "target_description": "ShouldMixedReg"
+                                    }
                                 ],
-                                "non_regulated_taxids": [
-                                    "12346",
-                                    "12347"
-                                ],
-                                "regulated_species": [
-                                    "species"
+                                "non_regulated_taxa": [
+                                    {
+                                        "taxid": 12346,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "NR_HIT_MIXED",
+                                        "target_description": "ShouldMixednonReg"
+                                    },
+                                    {
+                                        "taxid": 12347,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "NR_HIT_MIXED",
+                                        "target_description": "ShouldMixedNonReg"
+                                    }
                                 ]
                             }
                         ]
@@ -275,13 +296,23 @@
                                 "regulated_eukaryotes": "0",
                                 "regulated_bacteria": "0",
                                 "regulated_viruses": "1",
-                                "regulated_taxids": [
-                                    "12345"
+                                "regulated_taxa": [
+                                    {
+                                        "taxid": 12345,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "NR_HIT_FLAG2",
+                                        "target_description": "ShouldClearBySynbio"
+                                    },
+                                    {
+                                        "taxid": 12345,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "    NR_HIT_FLAG3",
+                                        "target_description": "ShouldntClear"
+                                    }
                                 ],
-                                "non_regulated_taxids": [],
-                                "regulated_species": [
-                                    "species"
-                                ]
+                                "non_regulated_taxa": []
                             }
                         ]
                     }
@@ -313,13 +344,23 @@
                                 "regulated_eukaryotes": "0",
                                 "regulated_bacteria": "0",
                                 "regulated_viruses": "1",
-                                "regulated_taxids": [
-                                    "12345"
+                                "regulated_taxa": [
+                                    {
+                                        "taxid": 12345,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "NR_HIT_FLAG2",
+                                        "target_description": "ShouldClearBySynbio"
+                                    },
+                                    {
+                                        "taxid": 12345,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "    NR_HIT_FLAG3",
+                                        "target_description": "ShouldntClear"
+                                    }
                                 ],
-                                "non_regulated_taxids": [],
-                                "regulated_species": [
-                                    "species"
-                                ]
+                                "non_regulated_taxa": []
                             }
                         ]
                     }
@@ -351,13 +392,23 @@
                                 "regulated_eukaryotes": "0",
                                 "regulated_bacteria": "0",
                                 "regulated_viruses": "1",
-                                "regulated_taxids": [
-                                    "12345"
+                                "regulated_taxa": [
+                                    {
+                                        "taxid": 12345,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "NT_HIT_FLAG2",
+                                        "target_description": "SUBJECT"
+                                    },
+                                    {
+                                        "taxid": 12345,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "NT_HIT_FLAG3",
+                                        "target_description": "SUBJECT"
+                                    }
                                 ],
-                                "non_regulated_taxids": [],
-                                "regulated_species": [
-                                    "species"
-                                ]
+                                "non_regulated_taxa": []
                             }
                         ]
                     }
@@ -389,13 +440,23 @@
                                 "regulated_eukaryotes": "0",
                                 "regulated_bacteria": "0",
                                 "regulated_viruses": "1",
-                                "regulated_taxids": [
-                                    "12345"
+                                "regulated_taxa": [
+                                    {
+                                        "taxid": 12345,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "NT_HIT_FLAG2",
+                                        "target_description": "SUBJECT"
+                                    },
+                                    {
+                                        "taxid": 12345,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "NT_HIT_FLAG3",
+                                        "target_description": "SUBJECT"
+                                    }
                                 ],
-                                "non_regulated_taxids": [],
-                                "regulated_species": [
-                                    "species"
-                                ]
+                                "non_regulated_taxa": []
                             }
                         ]
                     }
@@ -427,13 +488,16 @@
                                 "regulated_eukaryotes": "0",
                                 "regulated_bacteria": "0",
                                 "regulated_viruses": "1",
-                                "regulated_taxids": [
-                                    "12345"
+                                "regulated_taxa": [
+                                    {
+                                        "taxid": 12345,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "NT_HIT_FLAG1",
+                                        "target_description": "SUBJECT"
+                                    }
                                 ],
-                                "non_regulated_taxids": [],
-                                "regulated_species": [
-                                    "species"
-                                ]
+                                "non_regulated_taxa": []
                             }
                         ]
                     }
@@ -465,14 +529,23 @@
                                 "regulated_eukaryotes": "0",
                                 "regulated_bacteria": "0",
                                 "regulated_viruses": "1",
-                                "regulated_taxids": [
-                                    "12345"
+                                "regulated_taxa": [
+                                    {
+                                        "taxid": 12345,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "NT_HIT_MIXED",
+                                        "target_description": "Main"
+                                    }
                                 ],
-                                "non_regulated_taxids": [
-                                    "12346"
-                                ],
-                                "regulated_species": [
-                                    "species"
+                                "non_regulated_taxa": [
+                                    {
+                                        "taxid": 12346,
+                                        "name": "species",
+                                        "kingdom": "Viruses",
+                                        "target_hit": "NT_HIT_MIXED2",
+                                        "target_description": "NonRegMixedWithMain"
+                                    }
                                 ]
                             }
                         ]
