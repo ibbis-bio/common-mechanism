@@ -57,24 +57,29 @@ class RegulationList:
 @dataclass
 class TaxidRegulation:
     """
-    Container for information of a given taxid.
+    Container for regulatory information of a given taxid from
+    a specific list.
     """
+    # full_list_name : str = ""
+    # list_url : str = ""
+    # region : str = ""
+
     taxonomy_category : str = ""
     taxonomy_name : str = ""
     notes : str = ""
     preferred_taxonomy_name : str = ""
-    # full_list_name : str = ""
     list_acronym : str = ""
-    # list_url : str = ""
     target : str = ""
     hazard_group : str = ""
-    # region : str = ""
     in_reg_taxids : str = ""
+    parent_taxid : int = 0
 
 @dataclass
 class RegulationLevel(StrEnum):
     """
     At what level a regulation is for i.e. "regulated at the species level."
+    ??? These delineations require further thought before being practical.
+    Specifically, protein may only apply to biorisk hits, not taxonomy screening.
     """
     ORGANISM = "organism" # All species of this organism are regulated.
     SPECIES = "species" # This specific species is regulated.
@@ -98,6 +103,28 @@ class RegulationOutput:
 
 
 # Module Storage globals:
+# The information of a single list, key on the list acronym.
 REG_LISTS : dict[str, RegulationList] = {}
+# Information for every taxid within a list, keyed on list acronym, and taxid.
 REG_TAXID_LISTS : dict[str, dict[int, TaxidRegulation]] = {}
+# To be decided - if each TaxidRegulation simply contains a parent taxid,
+# and bridging entries are used for each intermediary, then we might
+# not require a global taxid map LUT...
 TAXID_MAP : dict[int, tuple[int, list[int]]] = {}
+
+def clear(target : str | None = None) -> bool:
+    """
+    Removes the targeted list from the module state, or
+    if no target is provided, clears the entired module state.
+    returns whether operation was successful.
+    """
+    if target and target in REG_LISTS:
+        # implement targetted rmeoval logic.
+        del REG_LISTS[target]
+        return True
+
+    if not target:
+        REG_LISTS = None
+        return True
+
+    return False
