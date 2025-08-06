@@ -47,4 +47,5 @@ def _import_regulation_list(input_path : str | os.PathLike) -> bool:
     """
     ...
 
-def import_regulations(input_path : str | os.PathLike)
+def import_regulations(input_path : str | os.PathLike):
+    ...
