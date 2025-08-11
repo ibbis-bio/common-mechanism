@@ -163,6 +163,7 @@
                                         "taxid": 12345,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "        NR_HIT_FLAG4",
                                         "target_description": "ShouldClear"
                                     }
@@ -204,6 +205,7 @@
                                         "taxid": 12345,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "    NR_HIT_FLAG1",
                                         "target_description": "ShouldntClear"
                                     }
@@ -245,6 +247,7 @@
                                         "taxid": 12345,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "    NR_HIT_MIXED",
                                         "target_description": "ShouldMixedReg"
                                     }
@@ -254,6 +257,7 @@
                                         "taxid": 12346,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "NR_HIT_MIXED",
                                         "target_description": "ShouldMixednonReg"
                                     },
@@ -261,6 +265,7 @@
                                         "taxid": 12347,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "NR_HIT_MIXED",
                                         "target_description": "ShouldMixedNonReg"
                                     }
@@ -301,6 +306,7 @@
                                         "taxid": 12345,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "NR_HIT_FLAG2",
                                         "target_description": "ShouldClearBySynbio"
                                     },
@@ -308,6 +314,7 @@
                                         "taxid": 12345,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "    NR_HIT_FLAG3",
                                         "target_description": "ShouldntClear"
                                     }
@@ -349,6 +356,7 @@
                                         "taxid": 12345,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "NR_HIT_FLAG2",
                                         "target_description": "ShouldClearBySynbio"
                                     },
@@ -356,6 +364,7 @@
                                         "taxid": 12345,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "    NR_HIT_FLAG3",
                                         "target_description": "ShouldntClear"
                                     }
@@ -397,6 +406,7 @@
                                         "taxid": 12345,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "NT_HIT_FLAG2",
                                         "target_description": "SUBJECT"
                                     },
@@ -404,6 +414,7 @@
                                         "taxid": 12345,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "NT_HIT_FLAG3",
                                         "target_description": "SUBJECT"
                                     }
@@ -445,6 +456,7 @@
                                         "taxid": 12345,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "NT_HIT_FLAG2",
                                         "target_description": "SUBJECT"
                                     },
@@ -452,6 +464,7 @@
                                         "taxid": 12345,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "NT_HIT_FLAG3",
                                         "target_description": "SUBJECT"
                                     }
@@ -493,6 +506,7 @@
                                         "taxid": 12345,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "NT_HIT_FLAG1",
                                         "target_description": "SUBJECT"
                                     }
@@ -534,6 +548,7 @@
                                         "taxid": 12345,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "NT_HIT_MIXED",
                                         "target_description": "Main"
                                     }
@@ -543,6 +558,7 @@
                                         "taxid": 12346,
                                         "name": "species",
                                         "kingdom": "Viruses",
+                                        "genus": "genus",
                                         "target_hit": "NT_HIT_MIXED2",
                                         "target_description": "NonRegMixedWithMain"
                                     }

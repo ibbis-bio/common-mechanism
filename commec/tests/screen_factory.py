@@ -15,16 +15,12 @@ def skip_taxonomy_info(
 ):
     """
     Override the taxonomy database retrieval with our own information at a 
-    per hit basis.
+    per-hit basis.
     """
-    blast["regulated"] = TAXONOMY[blast["subject acc."]]["regulated"]
-    blast["superkingdom"] = TAXONOMY[blast["subject acc."]]["superkingdom"]
-    blast["phylum"] = TAXONOMY[blast["subject acc."]]["phylum"]
-    blast["genus"] = TAXONOMY[blast["subject acc."]]["genus"]
-    blast["species"] = TAXONOMY[blast["subject acc."]]["species"]
+    blast = blast.merge(TAXONOMY, on = "subject acc.", how = "left")
     return blast
 
-def skip_biorisk_annotations(input_file):
+def skip_biorisk_annotations(_input_file):
     """
     Overrides the biorisk annotations retrieval to be
     replaced with our own generated annotation data.
@@ -32,7 +28,7 @@ def skip_biorisk_annotations(input_file):
     return BIORISK_ANNOTATIONS_DATA
 
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
-TAXONOMY = {}
+TAXONOMY = pd.DataFrame(columns=["subject acc.","regulated", "superkingdom", "phylum", "genus", "species"])
 BIORISK_ANNOTATIONS_DATA = pd.DataFrame(columns=["ID", "Description", "Must flag"])
 
 class ScreenTesterFactory:
@@ -68,6 +64,8 @@ class ScreenTesterFactory:
         """
 
         self._create_temporary_files()
+
+        print("Using the following Taxonomy Information:\n", TAXONOMY.to_string())
         # We patch taxonomic labels to avoid having to make a mini-taxonomy database.
         # We also patch in the desired CLI arguments to avoid an input yaml, and control output.
         with (patch("commec.screeners.check_reg_path.get_taxonomic_labels", new=skip_taxonomy_info), patch(
@@ -77,7 +75,8 @@ class ScreenTesterFactory:
                 "test.py", str(self.input_fasta_path), 
                 "-d", str(DATABASE_DIRECTORY), 
                 "-o", str(self.tmp_path), 
-                "--resume"
+                "--resume",
+                "--verbose"
             ],
         )):
             parser = ScreenArgumentParser()
@@ -100,7 +99,7 @@ class ScreenTesterFactory:
         start,                      # Start Nucleotide in Query coords.
         stop,                       # End Nucleotide in Query Coords...
         title = "untitled",
-        accession = 0,
+        accession = "",
         taxid = 0,
         species = "unclassified",
         genus = "unclassified",
@@ -112,13 +111,15 @@ class ScreenTesterFactory:
         ):
 
         # Ensure that the taxonomy LUT entry for this hit exists.
-        TAXONOMY[accession] = {
-            "regulated" : regulated,
-            "superkingdom" : superkingdom,
-            "phylum" : phylum,
-            "genus" : genus,
-            "species" : species
-        }
+        if to_step in [ScreenStep.TAXONOMY_AA, ScreenStep.TAXONOMY_NT]:
+            TAXONOMY.loc[len(TAXONOMY)] = [
+                accession,
+                regulated,
+                superkingdom,
+                phylum,
+                genus,
+                species
+            ]
 
         query_length = len(self.queries[to_query])
         query_length_aa = math.floor(query_length/3)
@@ -136,8 +137,8 @@ class ScreenTesterFactory:
         # Used if HMMSCAN i.e. protein based.
         query_name = f"{to_query}_{str(frame)}"
 
-        length = start - stop
-        length_aa = start_aa - end_aa
+        length = abs(stop - start)
+        length_aa = abs(end_aa - start_aa)
         
         if to_step == ScreenStep.BIORISK:
             BIORISK_ANNOTATIONS_DATA.loc[len(BIORISK_ANNOTATIONS_DATA)] = [
@@ -150,13 +151,13 @@ class ScreenTesterFactory:
 
         if to_step == ScreenStep.TAXONOMY_AA:
             self.protein_tx.append(
-                f"{to_query}  {title}  {accession}  {taxid}  0.0   BITSCORE  99.999   {query_length}  {start}  {stop}  {length}   1  {length}"
+                f"{to_query}\t{title}\t{accession}\t{taxid}\t0.0\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
             )
             return
         
         if to_step == ScreenStep.TAXONOMY_NT:
             self.nucl_tx.append(
-                f"{to_query}  {title}  {accession}  {taxid}  0.0   BITSCORE  99.999   {query_length}  {start}  {stop}  {length}   1  {length}"
+                f"{to_query}\t{title}\t{accession}\t{taxid}\t0.0\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
             )
             return
 
@@ -174,9 +175,9 @@ class ScreenTesterFactory:
 
         if to_step == ScreenStep.LOW_CONCERN_DNA:
             self.lowconcern_dna.append(
-                f"{to_query}  {title}  {accession}  {taxid}  0.0   BITSCORE  99.999   {query_length}  {start}  {stop}  {length}   1  {length}"
+                f"{to_query}\t{title}\t{accession}\t{taxid}\t0.0\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
             )
-            return  
+            return
 
 
     def _create_temporary_files(self):
@@ -198,30 +199,37 @@ class ScreenTesterFactory:
         biorisk_db_output_path = self.tmp_path / f"output_{self.name}/{self.name}.biorisk.hmmscan"
         hmmer_biorisk_to_parse = header + "\n".join(self.biorisks)
         biorisk_db_output_path.write_text(hmmer_biorisk_to_parse)
+        print("writing biorisk hmm: \n", hmmer_biorisk_to_parse)
 
         # TAXONOMY NR FILES
-        header = "#query acc.	title	        subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	s.len	s. start	s. end\n"
+        header = "#query acc.	    title   subject acc.    taxid	evalue	bit score	% identity	    q.len	q.start	q.end	s.len	s. start	s. end\n"
         nr_db_output_path = self.tmp_path / f"output_{self.name}/{self.name}.nr.blastx"
         blastnr_to_parse = header + "\n".join(self.protein_tx)
         nr_db_output_path.write_text(blastnr_to_parse)
+        print("writing blast nr: \n", blastnr_to_parse)
 
         # TAXONOMY NT FILES:
         nt_db_output_path = self.tmp_path / f"output_{self.name}/{self.name}.nt.blastn"
         blastnt_to_parse = header + "\n".join(self.nucl_tx)
         nt_db_output_path.write_text(blastnt_to_parse)
+        print("writing blast nt: \n", blastnt_to_parse)
 
         # LOW CONCERN FILES:
         header = " # tname    accession        tlen qname        accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias    from    to  from    to  from    to  acc description of target\n"
         low_concern_hmm_output_path = self.tmp_path / f"output_{self.name}/{self.name}.low_concern.hmmscan"
         low_concern_hmmscan_to_parse = header + "\n".join(self.lowconcern_protein)
         low_concern_hmm_output_path.write_text(low_concern_hmmscan_to_parse)
-        
+        print("writing lowconcern hmm: \n", low_concern_hmmscan_to_parse)
+
         header = "        #target name         accession query name                accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value  inc description of target\n"
         low_concern_cmscan_output_path = self.tmp_path / f"output_{self.name}/{self.name}.low_concern.cmscan"
         low_concern_cmscan_to_parse = header + "\n".join(self.lowconcern_rna)
         low_concern_cmscan_output_path.write_text(low_concern_cmscan_to_parse)
-        
+        print("writing lowconcern rna: \n", low_concern_cmscan_to_parse)
+
         header = "        #query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	    s.len	s. start	s. end\n"
         low_concern_nt_output_path = self.tmp_path / f"output_{self.name}/{self.name}.low_concern.blastn"
         low_concern_blastnt_to_parse = header + "\n".join(self.lowconcern_dna)
         low_concern_nt_output_path.write_text(low_concern_blastnt_to_parse)
+        print("writing lowconcern dna: \n", low_concern_blastnt_to_parse)
+
