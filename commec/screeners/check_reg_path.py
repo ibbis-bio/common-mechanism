@@ -239,6 +239,7 @@ def parse_taxonomy_hits(
                             "taxid" : taxa["subject tax ids"],
                             "name" : taxa["species"],
                             "kingdom" : taxa["superkingdom"],
+                            "genus" : taxa["genus"],
                             "target_hit" : taxa["subject acc."],
                             "target_description" : taxa['subject title']
                         }
@@ -249,6 +250,7 @@ def parse_taxonomy_hits(
                             "taxid" : taxa["subject tax ids"],
                             "name" : taxa["species"],
                             "kingdom" : taxa["superkingdom"],
+                            "genus" : taxa["genus"],
                             "target_hit" : taxa["subject acc."],
                             "target_description" : taxa['subject title']
                         }
