@@ -216,8 +216,15 @@ def sanitize_for_test(screen_result: ScreenResult):
 def test_screen_factory(tmp_path):
     my_factory = ScreenTesterFactory("test_01", tmp_path)
     my_factory.add_query("query_01", 500)
-    my_factory.add_hit(ScreenStep.BIORISK, "query_01", 100, 400, "bad_risk", 500, 200, regulated = True)
+    my_factory.add_hit(ScreenStep.BIORISK, "query_01", 100, 400, "bad_risk", "BR500", 200, regulated = True)
+    my_factory.add_hit(ScreenStep.TAXONOMY_AA, "query_01", 100, 300, "reg_gene", "ACC500", 500, "imaginary_species", regulated = True)
+    my_factory.add_hit(ScreenStep.TAXONOMY_NT, "query_01", 0, 70, "reg_gene2", "ACC501", 501, "imaginary_species", regulated = True)
+    #my_factory.add_hit(ScreenStep.TAXONOMY_NT, "query_01", 400, 500, "reg_dna", 500, 501, "imaginary", regulated = True)
     result = my_factory.run()
 
     generate_html_from_screen_data(result, "testing_html.html")
+    encode_screen_data_to_json(result, "testing_json.json")
     assert result.queries["query_01"].status.screen_status == ScreenStatus.FLAG
+    assert result.queries["query_01"].status.biorisk == ScreenStatus.FLAG
+    assert result.queries["query_01"].status.protein_taxonomy == ScreenStatus.FLAG
+    
