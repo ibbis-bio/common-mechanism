@@ -9,7 +9,9 @@ import pandas as pd
 from commec.screen import run, ScreenArgumentParser, add_args
 from commec.config.json_io import get_screen_data_from_json, encode_screen_data_to_json
 from commec.utils.json_html_output import generate_html_from_screen_data
-from commec.config.result import ScreenResult
+from commec.config.result import ScreenResult, ScreenStep, ScreenStatus
+
+from commec.tests.screen_factory import ScreenTesterFactory
 
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
 
@@ -206,3 +208,12 @@ def sanitize_for_test(screen_result: ScreenResult):
 
     # Pytest increments the filename version, so ignore the input file.
     screen_result.query_info.file = "/test_placeholder/"
+
+def test_screen_factory(tmp_path):
+    my_factory = ScreenTesterFactory("test_01", tmp_path)
+    my_factory.add_query("query_01", 500)
+    my_factory.add_hit(ScreenStep.BIORISK, "query_01", 100, 400, "bad_risk", 500, 200, regulated = True)
+    result = my_factory.run()
+
+    generate_html_from_screen_data(result, "testing_html.html")
+    assert result.queries["query_01"].status.screen_status == ScreenStatus.FLAG
