@@ -55,6 +55,12 @@ def _guess_domain(search_string : str) -> str:
     logger.debug("Could not guess domain from \"%s\"", search_string)
     return "not assigned"
 
+def read_biorisk_annotations(hmm_folder_csv):
+    # Read in annotations.
+    lookup : pd.DataFrame = pd.read_csv(hmm_folder_csv)
+    lookup.fillna(False, inplace=True)
+    return lookup
+
 def parse_biorisk_hits(search_handler : HmmerHandler,
                                       biorisk_annotations_file : str | os.PathLike,
                                       data : ScreenResult,
@@ -104,9 +110,7 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
     hmmer = remove_overlaps(hmmer)
     logger.debug("Removed overlaps: shape: %s preview:\n%s", hmmer.shape, hmmer.head())
 
-    # Read in annotations.
-    lookup : pd.DataFrame = pd.read_csv(hmm_folder_csv)
-    lookup.fillna(False, inplace=True)
+    lookup = read_biorisk_annotations(hmm_folder_csv)
 
     # Append description, and must_flag columns from annotations:
     hmmer['description'] = ''
