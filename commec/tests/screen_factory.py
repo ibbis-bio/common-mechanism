@@ -58,6 +58,10 @@ class ScreenTesterFactory:
         self.lowconcern_rna = []
         self.input_fasta_path = ""
 
+        # We reset the globals when a new test is made - its just safer.
+        TAXONOMY = pd.DataFrame(columns=["subject acc.","regulated", "superkingdom", "phylum", "genus", "species"])
+        BIORISK_ANNOTATIONS_DATA = pd.DataFrame(columns=["ID", "Description", "Must flag"])
+
     def run(self):
         """
         Run the Factory commec screen. Return the ScreenResult Object.
@@ -109,6 +113,9 @@ class ScreenTesterFactory:
         score = 1000,               # Used for HMMSCAN
         description = "no description",
         ):
+
+        assert start > 0
+        assert stop > 0
 
         # Ensure that the taxonomy LUT entry for this hit exists.
         if to_step in [ScreenStep.TAXONOMY_AA, ScreenStep.TAXONOMY_NT]:
@@ -163,7 +170,7 @@ class ScreenTesterFactory:
 
         if to_step == ScreenStep.LOW_CONCERN_PROTEIN:
             self.lowconcern_protein.append(
-                f"{title}    {accession}    {length}    {query_name}    999    {query_length}  0.0   {score}    10.0    1   1   0    0    {score}  10.0  "
+                f"{title}    {accession}    {length_aa}    {query_name}    999    {query_length_aa}  0.0   {score}    10.0    1   1   0    0    {score}  10.0  1   {length_aa}  {start_aa}  {end_aa}  1  {length_aa}  1.00  {description}"
             )
             return
 

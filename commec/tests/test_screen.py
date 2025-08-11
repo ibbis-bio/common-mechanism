@@ -212,15 +212,31 @@ def sanitize_for_test(screen_result: ScreenResult):
 def test_screen_factory(tmp_path):
     my_factory = ScreenTesterFactory("test_01", tmp_path)
     my_factory.add_query("query_01", 500)
-    my_factory.add_hit(ScreenStep.BIORISK, "query_01", 100, 400, "bad_risk", "BR500", 200, regulated = True)
+    my_factory.add_hit(ScreenStep.BIORISK, "query_01", 99, 399, "bad_risk", "BR500", 200, regulated = True)
     my_factory.add_hit(ScreenStep.TAXONOMY_AA, "query_01", 100, 300, "reg_gene", "ACC500", 500, "imaginary_species", regulated = True)
-    my_factory.add_hit(ScreenStep.TAXONOMY_NT, "query_01", 0, 70, "reg_gene2", "ACC501", 501, "imaginary_species", regulated = True)
-    #my_factory.add_hit(ScreenStep.TAXONOMY_NT, "query_01", 400, 500, "reg_dna", 500, 501, "imaginary", regulated = True)
+    my_factory.add_hit(ScreenStep.TAXONOMY_NT, "query_01", 1, 90, "reg_gene2", "ACC501", 501, "imaginary_species", regulated = True)
+    my_factory.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "query_01", 97, 402, "safe_protein", "SF21YKN", 256, "saficius")
     result = my_factory.run()
 
-    generate_html_from_screen_data(result, "testing_html.html")
-    encode_screen_data_to_json(result, "testing_json.json")
+    # Generating these outputs is useful for checking visually, however not needed in the repo.
+    # generate_html_from_screen_data(result, "testing_html.html")
+    # encode_screen_data_to_json(result, "testing_json.json")
     assert result.queries["query_01"].status.screen_status == ScreenStatus.FLAG
     assert result.queries["query_01"].status.biorisk == ScreenStatus.FLAG
-    assert result.queries["query_01"].status.protein_taxonomy == ScreenStatus.FLAG
-    
+    assert result.queries["query_01"].status.protein_taxonomy == ScreenStatus.CLEARED_FLAG
+    assert result.queries["query_01"].status.nucleotide_taxonomy == ScreenStatus.FLAG
+
+def test_different_regions(tmp_path):
+    screen_test = ScreenTesterFactory("repeating_taxonomy", tmp_path)
+    screen_test.add_query("repeats",1000)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 30, 60, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 60, 90, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 120, 150, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 170, 190, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 200, 260, "RegRepeat", "RR55", 500, regulated=True)
+    result = screen_test.run()
+    encode_screen_data_to_json(result, "testing_json.json")
+
+    assert len(result.queries["repeats"].hits) == 1
+    print(result.queries["repeats"].hits["RR55"])
+    assert len(result.queries["repeats"].hits["RR55"].ranges) == 5
