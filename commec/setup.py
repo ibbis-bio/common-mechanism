@@ -169,26 +169,46 @@ class CliSetup:
             print(f"{C_F_ORANGE}Check these are installed in your environment.{C_RESET}")
             self.stop()
 
-    def check_directory_is_writable(self, input_directory: str) -> bool:
-        """Checks a directory is viable by creating it and destroying it."""
-        path = Path(input_directory).absolute().resolve()
+    def check_directory_is_writable(self, input_directory: str) -> str:
+        """
+        Checks a directory is viable by 
+        * Expanding terminal variables, user, and resolving the full path and
+        * Checking if it exists or
+        * Creating it and destroying it.
+
+        It returns a str representing the both the truthiness of the outcome,
+        as well as the valid path.
+        """
+        path = Path(os.path.expandvars(input_directory))
+
+        # Catches accidental ~/commec-dbs/ vs ~commec-dbs/ when theres no commec-dbs username.
+        try:
+            path = path.expanduser()
+        except(RuntimeError):
+            print("User expansion for path failed, ensure you are using"
+                  " \"~/\" for self, or a valid user with \"~username/\".")
+            return ""
+
+        try:
+            path = path.resolve()
+        except(RuntimeError):
+            return ""
 
         print(path)
         if path.exists():
-            return True
+            return path
         
         if path.is_reserved():
             print("This path contains reserved characters for this Operating System.")
-            return False
+            return ""
         
         # Handily, all sorts of special characters are identified with a %XX, within posix, and are replaced
         # by similar characters during mkdir, whilst technically legal, lets recommend against cursed dir names.
         if '%' in path.as_posix():
             print("Please avoid using special characters (\"|}{\":?><*&\" etc) in filepath names.")
-            return False
+            return ""
     
         # If the path doesn't exist, the best way to know if user input is valid, is to try make it.
-
         # Find the part of the directory which is new, so we can delete only it after.
         path_to_remove_dirs = Path(path.parts[0])
         for part in path.parts:
@@ -204,8 +224,8 @@ class CliSetup:
                 shutil.rmtree(path_to_remove_dirs)
             except OSError:
                 pass
-            return True
-        return False
+            return path
+        return ""
 
     def setup_overall_directory(self):
         """
@@ -233,11 +253,11 @@ class CliSetup:
                 continue
 
             if len(user_input) > 0:
-                directory_is_valid = self.check_directory_is_writable(user_input)
-                if not directory_is_valid:
+                user_input_validated = self.check_directory_is_writable(user_input)
+                if not user_input_validated:
                     print(user_input, " is not a valid directory structure!")
                     continue
-                self.database_directory = user_input
+                self.database_directory = user_input_validated
 
             print("Using database directory: ", self.database_directory)
             self.decide_commec_dbs()
@@ -734,14 +754,19 @@ class CliSetup:
 
     def user_input(self, prompt: str = ">>> "):
         """Get input from the user, and do some basic string sanitation."""
-        user_input: str = input(prompt).strip().lower()
+        try:
+            user_input: str = input(prompt).strip().lower()
+        except KeyboardInterrupt:
+            self.stop()
+            return None
+
         if user_input == "exit":
             self.stop()
         return user_input
 
     def stop(self):
         """Gracefully exit with a message to the user."""
-        print(f"{C_RESET}Exiting setup for The Common Mechanism.")
+        print(f"{C_RESET}\nExiting setup for The Common Mechanism.")
         sys.exit()
 
 def get_latest_commec_database_release_tag(repo="ibbis-bio/commec-databases") -> tuple[str | None, str]:
