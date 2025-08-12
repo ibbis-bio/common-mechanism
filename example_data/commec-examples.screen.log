@@ -1,0 +1,1569 @@
+2025-08-06 21:23:47│ INFO    │ Validating input query and databases...
+2025-08-06 21:23:48│ INFO    │ Input query file:
+─────────────────────────────┘
+/mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/commec-examples.fasta
+─────────────────────────────┐
+2025-08-06 21:23:48│ DEBUG   │ Processing query: Part:BBa_K5108009_creA_-, (Part:BBa_K5108009_creA_-)
+2025-08-06 21:23:48│ DEBUG   │ Processing query: encrypted, (encrypted)
+2025-08-06 21:23:48│ DEBUG   │ Processing query: xylanase_zero_shot_des31, (xylanase_zero_shot_des31)
+2025-08-06 21:23:48│ DEBUG   │ Processing query: RVFV_Rift_valley_fever, (RVFV_Rift_valley_fever)
+2025-08-06 21:23:48│ DEBUG   │ Processing query: BBa_K209429_A_15261, (BBa_K209429_A_15261)
+2025-08-06 21:23:49│ INFO    │  >> STEP 1: Checking for biorisk genes...
+2025-08-06 21:23:49│ DEBUG   │  ...running hmmscan
+2025-08-06 21:23:49│ DEBUG   │ SUBPROCESS: hmmscan --cpu 12 --domtblout /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.biorisk.hmmscan /mnt/data/home/ec2-user/cm-dbs/biorisk/biorisk.hmm
+                             │ /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.faa
+─────────────────────────────┘
+hmmscan --cpu 12 --domtblout /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.biorisk.hmmscan /mnt/data/home/ec2-user/cm-dbs/biorisk/biorisk.hmm /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.faa
+─────────────────────────────┐
+2025-08-06 21:23:52│ DEBUG   │  ...checking hmmscan results
+2025-08-06 21:23:52│ DEBUG   │ Starting Update Biorisk data from database...
+2025-08-06 21:23:52│ DEBUG   │ Directory: /mnt/data/home/ec2-user/cm-dbs/biorisk
+2025-08-06 21:23:52│ DEBUG   │ Directory/file: /mnt/data/home/ec2-user/cm-dbs/biorisk/biorisk.hmm
+2025-08-06 21:23:52│ DEBUG   │ Biorisk Import: shape: (3, 24) preview:
+                             │               target name   accession tlen  ...   acc         description of target  frame
+                             │ 0            PeptidaseM24  PF00557.27  209  ...  0.64  Metallopeptidase family M24       1
+                             │ 1            PeptidaseM24  PF00557.27  209  ...  0.84  Metallopeptidase family M24       1
+                             │ 2  gi3006115embCAA73290.1           -  200  ...  1.00                            -       2
+                             │ [3 rows x 24 columns]
+2025-08-06 21:23:52│ DEBUG   │ Biorisk Filterd by E-Value: shape: (3, 24) preview:
+                             │               target name   accession tlen  ...   acc         description of target  frame
+                             │ 0            PeptidaseM24  PF00557.27  209  ...  0.64  Metallopeptidase family M24       1
+                             │ 1            PeptidaseM24  PF00557.27  209  ...  0.84  Metallopeptidase family M24       1
+                             │ 2  gi3006115embCAA73290.1           -  200  ...  1.00                            -       2
+                             │ [3 rows x 24 columns]
+2025-08-06 21:23:52│ DEBUG   │ Appended Query NT length: shape: (3, 25) preview:
+                             │                    query name  nt_qlen
+                             │ 0  Part:BBa_K5108009_creA_-_1     2058
+                             │ 1  Part:BBa_K5108009_creA_-_1     2058
+                             │ 2    RVFV_Rift_valley_fever_2     1691
+2025-08-06 21:23:52│ DEBUG   │ Recalculated AA to NT coords: shape: (3, 27) preview:
+                             │    ali from  ali to  q. start  q. end
+                             │ 0        38      58       112     174
+                             │ 1       174     389       520    1167
+                             │ 2        33     232        98     697
+2025-08-06 21:23:52│ DEBUG   │ Removed overlaps: shape: (3, 27) preview:
+                             │               target name   accession tlen  ... nt_qlen q. start  q. end
+                             │ 0            PeptidaseM24  PF00557.27  209  ...    2058      112     174
+                             │ 1            PeptidaseM24  PF00557.27  209  ...    2058      520    1167
+                             │ 2  gi3006115embCAA73290.1           -  200  ...    1691       98     697
+                             │ [3 rows x 27 columns]
+2025-08-06 21:23:52│ DEBUG   │ Unique Queries: shape: (2,) preview:
+                             │ ['Part:BBa_K5108009_creA_-_1' 'RVFV_Rift_valley_fever_2']
+2025-08-06 21:23:52│ DEBUG   │  Processing query: Part:BBa_K5108009_creA_-_1
+2025-08-06 21:23:52│ DEBUG   │  Data for Part:BBa_K5108009_creA_-_1: shape: (2, 29) preview:
+                             │     target name   accession tlen  ... q. end                   description  Must flag
+                             │ 0  PeptidaseM24  PF00557.27  209  ...    174   Metallopeptidase family M24      False
+                             │ 1  PeptidaseM24  PF00557.27  209  ...   1167   Metallopeptidase family M24      False
+                             │ [2 rows x 29 columns]
+2025-08-06 21:23:52│ DEBUG   │  Targets (1) hit by Part:BBa_K5108009_creA_-_1: ['PeptidaseM24']
+2025-08-06 21:23:52│ DEBUG   │          Processing target PeptidaseM24
+2025-08-06 21:23:52│ DEBUG   │          Target recommendation from this hit: Warning
+2025-08-06 21:23:52│ DEBUG   │ Part:BBa_K5108009_creA_-          --> Virulence Factor found at coordinates: 112-174, 520-1167.
+2025-08-06 21:23:52│ DEBUG   │ Could not guess domain from "PeptidaseM24 Metallopeptidase family M24"
+2025-08-06 21:23:52│ DEBUG   │          Hit was unique, creating new hit result information...
+                             │ PeptidaseM24:  Metallopeptidase family M24.
+                             │ Biorisk Search, Warning. Ranges (#2)
+                             │ [112-174, 520-1167]
+2025-08-06 21:23:52│ DEBUG   │  Processing query: RVFV_Rift_valley_fever_2
+2025-08-06 21:23:52│ DEBUG   │  Data for RVFV_Rift_valley_fever_2: shape: (1, 29) preview:
+                             │               target name accession  ...                             description Must flag
+                             │ 2  gi3006115embCAA73290.1         -  ...  NSs, partial [Rift Valley fever virus]     False
+                             │ [1 rows x 29 columns]
+2025-08-06 21:23:52│ DEBUG   │  Targets (1) hit by RVFV_Rift_valley_fever_2: ['gi3006115embCAA73290.1']
+2025-08-06 21:23:52│ DEBUG   │          Processing target gi3006115embCAA73290.1
+2025-08-06 21:23:52│ DEBUG   │          Target recommendation from this hit: Warning
+2025-08-06 21:23:52│ DEBUG   │ RVFV_Rift_valley_fever            --> Virulence Factor found at coordinates: 98-697.
+2025-08-06 21:23:52│ DEBUG   │ Determined virus from "gi3006115embCAA73290.1NSs, partial [Rift Valley fever virus]"
+2025-08-06 21:23:52│ DEBUG   │          Hit was unique, creating new hit result information...
+                             │ gi3006115embCAA73290.1: NSs, partial [Rift Valley fever virus].
+                             │ Biorisk Search, Warning. Ranges (#1)
+                             │ [98-697]
+2025-08-06 21:23:52│ INFO    │  Biorisk in Part:BBa_K5108009_creA_-:
+2025-08-06 21:23:52│ INFO    │   --> Virulence Factor found at coordinates: 112-174, 520-1167.
+2025-08-06 21:23:52│ INFO    │  Biorisk in RVFV_Rift_valley_fever:
+2025-08-06 21:23:52│ INFO    │   --> Virulence Factor found at coordinates: 98-697.
+2025-08-06 21:23:52│ INFO    │ STEP 1 completed at 2025-08-06 21:23:52
+2025-08-06 21:23:52│ INFO    │  >> STEP 2: Checking regulated pathogen proteins...
+2025-08-06 21:23:52│ DEBUG   │  ...running blastx
+2025-08-06 21:23:52│ DEBUG   │ SUBPROCESS: blastx -db /mnt/data/home/ec2-user/cm-dbs/nr_blast/nr -query /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.cleaned.fasta -out
+                             │ /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.nr.blastx -num_threads 12 -evalue 1e-10 -word_size 6 -threshold 21 -max_target_seqs 5000 -culling_limit 50 -window_size 40 -matrix BLOSUM62 -gapopen 11 -gapextend 1 -seg
+                             │ yes -outfmt 7 qacc stitle sacc staxids evalue bitscore pident qlen qstart qend slen sstart send
+─────────────────────────────┘
+blastx -db /mnt/data/home/ec2-user/cm-dbs/nr_blast/nr -query /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.cleaned.fasta -out /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.nr.blastx -num_threads 12 -evalue 1e-10 -word_size 6 -threshold 21 -max_target_seqs 5000 -culling_limit 50 -window_size 40 -matrix BLOSUM62 -gapopen 11 -gapextend 1 -seg yes -outfmt 7 qacc stitle sacc staxids evalue bitscore pident qlen qstart qend slen sstart send
+─────────────────────────────┐
+2025-08-06 22:00:36│ DEBUG   │  ...checking blastx results
+2025-08-06 22:00:36│ DEBUG   │ Acquiring Taxonomic Data for JSON output:
+2025-08-06 22:00:36│ DEBUG   │ Protein Taxonomy Search Blast Import: shape: (1003, 16) preview:
+                             │             query acc.  ... s. coverage
+                             │ 0  BBa_K209429_A_15261  ...    0.563291
+                             │ 1  BBa_K209429_A_15261  ...    0.988889
+                             │ 2  BBa_K209429_A_15261  ...    0.898990
+                             │ 3  BBa_K209429_A_15261  ...    0.978022
+                             │ 4  BBa_K209429_A_15261  ...    0.983740
+                             │ [5 rows x 16 columns]
+2025-08-06 22:00:36│ DEBUG   │ Confirming hits for query BBa_K209429_A_15261.
+2025-08-06 22:00:36│ DEBUG   │ Confirming hits for query Part:BBa_K5108009_creA_-.
+2025-08-06 22:00:36│ DEBUG   │ Confirming hits for query RVFV_Rift_valley_fever.
+2025-08-06 22:00:36│ DEBUG   │ Confirming hits for query xylanase_zero_shot_des31.
+2025-08-06 22:00:51│ DEBUG   │ Protein Taxonomy Search TaxLabels: shape: (2323, 21) preview:
+                             │             query acc.  ...                    species
+                             │ 0  BBa_K209429_A_15261  ...      Mycoplasmopsis anatis
+                             │ 1  BBa_K209429_A_15261  ...
+                             │ 2  BBa_K209429_A_15261  ...    Acinetobacter baumannii
+                             │ 3  BBa_K209429_A_15261  ...           Escherichia coli
+                             │ 4  BBa_K209429_A_15261  ...  Bifidobacterium sp. M0353
+                             │ [5 rows x 21 columns]
+2025-08-06 22:00:51│ DEBUG   │ Protein Taxonomy Search RemoveSpecies: shape: (2275, 21) preview:
+                             │             query acc.  ...                    species
+                             │ 0  BBa_K209429_A_15261  ...      Mycoplasmopsis anatis
+                             │ 2  BBa_K209429_A_15261  ...    Acinetobacter baumannii
+                             │ 3  BBa_K209429_A_15261  ...           Escherichia coli
+                             │ 4  BBa_K209429_A_15261  ...  Bifidobacterium sp. M0353
+                             │ 5  BBa_K209429_A_15261  ...            Bacillus cereus
+                             │ [5 rows x 21 columns]
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Top Hits: shape: (135, 21) preview:
+                             │                  query acc.  ...               species
+                             │ 0  xylanase_zero_shot_des31  ...      Escherichia coli
+                             │ 1  xylanase_zero_shot_des31  ...      Escherichia coli
+                             │ 2  xylanase_zero_shot_des31  ...      Escherichia coli
+                             │ 3  xylanase_zero_shot_des31  ...      Escherichia coli
+                             │ 4       BBa_K209429_A_15261  ...  uncultured bacterium
+                             │ [5 rows x 21 columns]
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Unique Queries: shape: (4,) preview:
+                             │ ['xylanase_zero_shot_des31' 'BBa_K209429_A_15261'
+                             │  'Part:BBa_K5108009_creA_-' 'RVFV_Rift_valley_fever']
+2025-08-06 22:02:03│ DEBUG   │  Processing query: xylanase_zero_shot_des31
+2025-08-06 22:02:03│ DEBUG   │  Protein Taxonomy Search Regulated hits: shape: (0,) preview:
+                             │ []
+2025-08-06 22:02:03│ DEBUG   │  Processing query: BBa_K209429_A_15261
+2025-08-06 22:02:03│ DEBUG   │  Protein Taxonomy Search Regulated hits: shape: (2,) preview:
+                             │ ['WP_099588326' 'ECC4931537']
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: WP_099588326
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │              query acc.  \
+                             │ 57  BBa_K209429_A_15261
+                             │                                                                     subject title  \
+                             │ 57  MULTISPECIES: APH(3')-I family aminoglycoside O-phosphotransferase [Bacteria]
+                             │     subject acc.  subject tax ids      evalue  bit score  % identity  \
+                             │ 57  WP_099588326           119857  8.720e-179      561.0       100.0
+                             │     query length  q. start  q. end  subject length  s. start  s. end  \
+                             │ 57        9646.0    1026.0  1832.0           806.0       1.0   269.0
+                             │     log evalue  q. coverage  s. coverage  regulated superkingdom  \
+                             │ 57     178.059        0.084        0.996       True     Bacteria
+                             │             phylum        genus                 species
+                             │ 57  Pseudomonadota  Francisella  Francisella tularensis
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                                                   BBa_K209429_A_15261
+                             │ subject title      MULTISPECIES: APH(3')-I family aminoglycoside O-phosphotransferase [Bacteria]
+                             │ subject acc.                                                                        WP_099588326
+                             │ subject tax ids                                                                           119857
+                             │ evalue                                                                                       0.0
+                             │ bit score                                                                                  561.0
+                             │ % identity                                                                                 100.0
+                             │ query length                                                                              9646.0
+                             │ q. start                                                                                  1026.0
+                             │ q. end                                                                                    1832.0
+                             │ subject length                                                                             806.0
+                             │ s. start                                                                                     1.0
+                             │ s. end                                                                                     269.0
+                             │ log evalue                                                                               178.059
+                             │ q. coverage                                                                                0.084
+                             │ s. coverage                                                                                0.996
+                             │ regulated                                                                                   True
+                             │ superkingdom                                                                            Bacteria
+                             │ phylum                                                                            Pseudomonadota
+                             │ genus                                                                                Francisella
+                             │ species                                                                   Francisella tularensis
+                             │ Name: 57, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Bacteria.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Francisella tularensis']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['119857']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: ['139', '1396', '1496', '1590', '1718', '2071714', '2801916', '3018075', '47715', '562', '66855', '99822']
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=8.72e-179, match_start=1, match_end=269, query_start=1026, query_end=1832)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 12
+2025-08-06 22:02:03│ DEBUG   │ Non-regulated taxids present, treating as MIXED result.
+2025-08-06 22:02:03│ DEBUG   │   --> Pass at bases (1026-1832) found in both regulated and non-regulated Bacteria.
+                             │            (Regulated Species: Francisella tularensis. Regulated TaxID: 119857)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: WP_099588326: MULTISPECIES: APH(3')-I family aminoglycoside O-phosphotransferase [Bacteria].
+                             │ Protein Taxonomy Search, Pass. Ranges (#1)
+                             │ [1026-1832]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: ECC4931537
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │               query acc.                               subject title  \
+                             │ 102  BBa_K209429_A_15261  hypothetical protein [Salmonella enterica]
+                             │     subject acc.  subject tax ids     evalue  bit score  % identity  \
+                             │ 102   ECC4931537            90370  1.350e-33      137.0       100.0
+                             │      query length  q. start  q. end  subject length  s. start  s. end  \
+                             │ 102        9646.0    2066.0  2263.0           197.0       1.0    66.0
+                             │      log evalue  q. coverage  s. coverage  regulated superkingdom  \
+                             │ 102       32.87         0.02        0.985       True     Bacteria
+                             │              phylum       genus              species
+                             │ 102  Pseudomonadota  Salmonella  Salmonella enterica
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                BBa_K209429_A_15261
+                             │ subject title      hypothetical protein [Salmonella enterica]
+                             │ subject acc.                                       ECC4931537
+                             │ subject tax ids                                         90370
+                             │ evalue                                                    0.0
+                             │ bit score                                               137.0
+                             │ % identity                                              100.0
+                             │ query length                                           9646.0
+                             │ q. start                                               2066.0
+                             │ q. end                                                 2263.0
+                             │ subject length                                          197.0
+                             │ s. start                                                  1.0
+                             │ s. end                                                   66.0
+                             │ log evalue                                              32.87
+                             │ q. coverage                                              0.02
+                             │ s. coverage                                             0.985
+                             │ regulated                                                True
+                             │ superkingdom                                         Bacteria
+                             │ phylum                                         Pseudomonadota
+                             │ genus                                              Salmonella
+                             │ species                                   Salmonella enterica
+                             │ Name: 102, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Bacteria.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Salmonella enterica']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['90370']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: ['28901', '321846', '573', '670', '77133', '85831', '913074']
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=1.35e-33, match_start=1, match_end=66, query_start=2066, query_end=2263)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 7
+2025-08-06 22:02:03│ DEBUG   │ Non-regulated taxids present, treating as MIXED result.
+2025-08-06 22:02:03│ DEBUG   │   --> Pass at bases (2066-2263) found in both regulated and non-regulated Bacteria.
+                             │            (Regulated Species: Salmonella enterica. Regulated TaxID: 90370)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: ECC4931537: hypothetical protein [Salmonella enterica].
+                             │ Protein Taxonomy Search, Pass. Ranges (#1)
+                             │ [2066-2263]
+2025-08-06 22:02:03│ DEBUG   │  Processing query: Part:BBa_K5108009_creA_-
+2025-08-06 22:02:03│ DEBUG   │  Protein Taxonomy Search Regulated hits: shape: (0,) preview:
+                             │ []
+2025-08-06 22:02:03│ DEBUG   │  Processing query: RVFV_Rift_valley_fever
+2025-08-06 22:02:03│ DEBUG   │  Protein Taxonomy Search Regulated hits: shape: (14,) preview:
+                             │ ['ABD38780' 'ATP66916' 'QAX24673' 'QBH70242' 'UPK83343' 'XAJ11185'
+                             │  'WES12370' 'AAF00695' 'ACA14363' 'AEB20445' 'ABD38761' 'ATP66914'
+                             │  'WES12327' 'WBR34649']
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: ABD38780
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                 query acc.                                     subject title  \
+                             │ 17  RVFV_Rift_valley_fever  non-structural protein [Rift Valley fever virus]
+                             │    subject acc.  subject tax ids      evalue  bit score  % identity  \
+                             │ 17     ABD38780            11588  1.910e-155      456.0       100.0
+                             │     query length  q. start  q. end  subject length  s. start  s. end  \
+                             │ 17        1691.0      35.0   829.0           794.0       1.0   265.0
+                             │     log evalue  q. coverage  s. coverage  regulated superkingdom  \
+                             │ 17     154.719        0.082        0.996       True      Viruses
+                             │              phylum        genus               species
+                             │ 17  Negarnaviricota  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                   RVFV_Rift_valley_fever
+                             │ subject title      non-structural protein [Rift Valley fever virus]
+                             │ subject acc.                                               ABD38780
+                             │ subject tax ids                                               11588
+                             │ evalue                                                          0.0
+                             │ bit score                                                     456.0
+                             │ % identity                                                    100.0
+                             │ query length                                                 1691.0
+                             │ q. start                                                       35.0
+                             │ q. end                                                        829.0
+                             │ subject length                                                794.0
+                             │ s. start                                                        1.0
+                             │ s. end                                                        265.0
+                             │ log evalue                                                  154.719
+                             │ q. coverage                                                   0.082
+                             │ s. coverage                                                   0.996
+                             │ regulated                                                      True
+                             │ superkingdom                                                Viruses
+                             │ phylum                                              Negarnaviricota
+                             │ genus                                                   Phlebovirus
+                             │ species                                        Phlebovirus riftense
+                             │ Name: 17, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=1.91e-155, match_start=1, match_end=265, query_start=35, query_end=829)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (35-829) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID: 11588)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: ABD38780: non-structural protein [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [35-829]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: ATP66916
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                 query acc.  \
+                             │ 31  RVFV_Rift_valley_fever
+                             │                                               subject title subject acc.  \
+                             │ 31  nucleocapsid protein, partial [Rift Valley fever virus]     ATP66916
+                             │     subject tax ids      evalue  bit score  % identity  query length  \
+                             │ 31            11588  1.370e-161      471.0       100.0        1691.0
+                             │     q. start  q. end  subject length  s. start  s. end  log evalue  \
+                             │ 31     961.0  1632.0           671.0       1.0   224.0     160.863
+                             │     q. coverage  s. coverage  regulated superkingdom           phylum  \
+                             │ 31         0.07        0.937       True      Viruses  Negarnaviricota
+                             │           genus               species
+                             │ 31  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                          RVFV_Rift_valley_fever
+                             │ subject title      nucleocapsid protein, partial [Rift Valley fever virus]
+                             │ subject acc.                                                      ATP66916
+                             │ subject tax ids                                                      11588
+                             │ evalue                                                                 0.0
+                             │ bit score                                                            471.0
+                             │ % identity                                                           100.0
+                             │ query length                                                        1691.0
+                             │ q. start                                                             961.0
+                             │ q. end                                                              1632.0
+                             │ subject length                                                       671.0
+                             │ s. start                                                               1.0
+                             │ s. end                                                               224.0
+                             │ log evalue                                                         160.863
+                             │ q. coverage                                                           0.07
+                             │ s. coverage                                                          0.937
+                             │ regulated                                                             True
+                             │ superkingdom                                                       Viruses
+                             │ phylum                                                     Negarnaviricota
+                             │ genus                                                          Phlebovirus
+                             │ species                                               Phlebovirus riftense
+                             │ Name: 31, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588', '3052676']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=1.37e-161, match_start=1, match_end=224, query_start=961, query_end=1632)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (961-1632) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: ATP66916: nucleocapsid protein, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1632]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: QAX24673
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                 query acc.  \
+                             │ 32  RVFV_Rift_valley_fever
+                             │                                               subject title subject acc.  \
+                             │ 32  nucleocapsid protein, partial [Rift Valley fever virus]     QAX24673
+                             │     subject tax ids      evalue  bit score  % identity  query length  \
+                             │ 32            11588  6.220e-165      479.0       100.0        1691.0
+                             │     q. start  q. end  subject length  s. start  s. end  log evalue  \
+                             │ 32     961.0  1644.0           683.0       1.0   228.0     164.206
+                             │     q. coverage  s. coverage  regulated superkingdom           phylum  \
+                             │ 32        0.071        0.938       True      Viruses  Negarnaviricota
+                             │           genus               species
+                             │ 32  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                          RVFV_Rift_valley_fever
+                             │ subject title      nucleocapsid protein, partial [Rift Valley fever virus]
+                             │ subject acc.                                                      QAX24673
+                             │ subject tax ids                                                      11588
+                             │ evalue                                                                 0.0
+                             │ bit score                                                            479.0
+                             │ % identity                                                           100.0
+                             │ query length                                                        1691.0
+                             │ q. start                                                             961.0
+                             │ q. end                                                              1644.0
+                             │ subject length                                                       683.0
+                             │ s. start                                                               1.0
+                             │ s. end                                                               228.0
+                             │ log evalue                                                         164.206
+                             │ q. coverage                                                          0.071
+                             │ s. coverage                                                          0.938
+                             │ regulated                                                             True
+                             │ superkingdom                                                       Viruses
+                             │ phylum                                                     Negarnaviricota
+                             │ genus                                                          Phlebovirus
+                             │ species                                               Phlebovirus riftense
+                             │ Name: 32, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588', '3052676']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=6.22e-165, match_start=1, match_end=228, query_start=961, query_end=1644)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (961-1644) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: QAX24673: nucleocapsid protein, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1644]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: QBH70242
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                 query acc.  \
+                             │ 33  RVFV_Rift_valley_fever
+                             │                                               subject title subject acc.  \
+                             │ 33  nucleocapsid protein, partial [Rift Valley fever virus]     QBH70242
+                             │     subject tax ids      evalue  bit score  % identity  query length  \
+                             │ 33            11588  8.950e-166      481.0       100.0        1691.0
+                             │     q. start  q. end  subject length  s. start  s. end  log evalue  \
+                             │ 33     961.0  1647.0           686.0       1.0   229.0     165.048
+                             │     q. coverage  s. coverage  regulated superkingdom           phylum  \
+                             │ 33        0.071        0.938       True      Viruses  Negarnaviricota
+                             │           genus               species
+                             │ 33  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                          RVFV_Rift_valley_fever
+                             │ subject title      nucleocapsid protein, partial [Rift Valley fever virus]
+                             │ subject acc.                                                      QBH70242
+                             │ subject tax ids                                                      11588
+                             │ evalue                                                                 0.0
+                             │ bit score                                                            481.0
+                             │ % identity                                                           100.0
+                             │ query length                                                        1691.0
+                             │ q. start                                                             961.0
+                             │ q. end                                                              1647.0
+                             │ subject length                                                       686.0
+                             │ s. start                                                               1.0
+                             │ s. end                                                               229.0
+                             │ log evalue                                                         165.048
+                             │ q. coverage                                                          0.071
+                             │ s. coverage                                                          0.938
+                             │ regulated                                                             True
+                             │ superkingdom                                                       Viruses
+                             │ phylum                                                     Negarnaviricota
+                             │ genus                                                          Phlebovirus
+                             │ species                                               Phlebovirus riftense
+                             │ Name: 33, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588', '3052676']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=8.950000000000001e-166, match_start=1, match_end=229, query_start=961, query_end=1647)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (961-1647) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: QBH70242: nucleocapsid protein, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1647]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: UPK83343
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                 query acc.  \
+                             │ 34  RVFV_Rift_valley_fever
+                             │                                               subject title subject acc.  \
+                             │ 34  nucleocapsid protein, partial [Rift Valley fever virus]     UPK83343
+                             │     subject tax ids      evalue  bit score  % identity  query length  \
+                             │ 34            11588  8.320e-167      484.0       100.0        1691.0
+                             │     q. start  q. end  subject length  s. start  s. end  log evalue  \
+                             │ 34     961.0  1650.0           689.0       1.0   230.0      166.08
+                             │     q. coverage  s. coverage  regulated superkingdom           phylum  \
+                             │ 34        0.071        0.939       True      Viruses  Negarnaviricota
+                             │           genus               species
+                             │ 34  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                          RVFV_Rift_valley_fever
+                             │ subject title      nucleocapsid protein, partial [Rift Valley fever virus]
+                             │ subject acc.                                                      UPK83343
+                             │ subject tax ids                                                      11588
+                             │ evalue                                                                 0.0
+                             │ bit score                                                            484.0
+                             │ % identity                                                           100.0
+                             │ query length                                                        1691.0
+                             │ q. start                                                             961.0
+                             │ q. end                                                              1650.0
+                             │ subject length                                                       689.0
+                             │ s. start                                                               1.0
+                             │ s. end                                                               230.0
+                             │ log evalue                                                          166.08
+                             │ q. coverage                                                          0.071
+                             │ s. coverage                                                          0.939
+                             │ regulated                                                             True
+                             │ superkingdom                                                       Viruses
+                             │ phylum                                                     Negarnaviricota
+                             │ genus                                                          Phlebovirus
+                             │ species                                               Phlebovirus riftense
+                             │ Name: 34, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588', '3052676']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=8.32e-167, match_start=1, match_end=230, query_start=961, query_end=1650)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (961-1650) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: UPK83343: nucleocapsid protein, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1650]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: XAJ11185
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                 query acc.                                    subject title  \
+                             │ 35  RVFV_Rift_valley_fever  nucleocapsid, partial [Rift Valley fever virus]
+                             │    subject acc.  subject tax ids      evalue  bit score  % identity  \
+                             │ 35     XAJ11185            11588  2.450e-167      485.0       100.0
+                             │     query length  q. start  q. end  subject length  s. start  s. end  \
+                             │ 35        1691.0     961.0  1653.0           692.0       1.0   231.0
+                             │     log evalue  q. coverage  s. coverage  regulated superkingdom  \
+                             │ 35     166.611        0.072        0.954       True      Viruses
+                             │              phylum        genus               species
+                             │ 35  Negarnaviricota  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                  RVFV_Rift_valley_fever
+                             │ subject title      nucleocapsid, partial [Rift Valley fever virus]
+                             │ subject acc.                                              XAJ11185
+                             │ subject tax ids                                              11588
+                             │ evalue                                                         0.0
+                             │ bit score                                                    485.0
+                             │ % identity                                                   100.0
+                             │ query length                                                1691.0
+                             │ q. start                                                     961.0
+                             │ q. end                                                      1653.0
+                             │ subject length                                               692.0
+                             │ s. start                                                       1.0
+                             │ s. end                                                       231.0
+                             │ log evalue                                                 166.611
+                             │ q. coverage                                                  0.072
+                             │ s. coverage                                                  0.954
+                             │ regulated                                                     True
+                             │ superkingdom                                               Viruses
+                             │ phylum                                             Negarnaviricota
+                             │ genus                                                  Phlebovirus
+                             │ species                                       Phlebovirus riftense
+                             │ Name: 35, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588', '3052676']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=2.45e-167, match_start=1, match_end=231, query_start=961, query_end=1653)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (961-1653) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: XAJ11185: nucleocapsid, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1653]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: WES12370
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                 query acc.  \
+                             │ 36  RVFV_Rift_valley_fever
+                             │                                               subject title subject acc.  \
+                             │ 36  nucleocapsid protein, partial [Rift Valley fever virus]     WES12370
+                             │     subject tax ids      evalue  bit score  % identity  query length  \
+                             │ 36            11588  2.300e-167      485.0       100.0        1691.0
+                             │     q. start  q. end  subject length  s. start  s. end  log evalue  \
+                             │ 36     961.0  1653.0           692.0       1.0   231.0     166.638
+                             │     q. coverage  s. coverage  regulated superkingdom           phylum  \
+                             │ 36        0.072         0.95       True      Viruses  Negarnaviricota
+                             │           genus               species
+                             │ 36  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                          RVFV_Rift_valley_fever
+                             │ subject title      nucleocapsid protein, partial [Rift Valley fever virus]
+                             │ subject acc.                                                      WES12370
+                             │ subject tax ids                                                      11588
+                             │ evalue                                                                 0.0
+                             │ bit score                                                            485.0
+                             │ % identity                                                           100.0
+                             │ query length                                                        1691.0
+                             │ q. start                                                             961.0
+                             │ q. end                                                              1653.0
+                             │ subject length                                                       692.0
+                             │ s. start                                                               1.0
+                             │ s. end                                                               231.0
+                             │ log evalue                                                         166.638
+                             │ q. coverage                                                          0.072
+                             │ s. coverage                                                           0.95
+                             │ regulated                                                             True
+                             │ superkingdom                                                       Viruses
+                             │ phylum                                                     Negarnaviricota
+                             │ genus                                                          Phlebovirus
+                             │ species                                               Phlebovirus riftense
+                             │ Name: 36, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588', '3052676']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=2.3e-167, match_start=1, match_end=231, query_start=961, query_end=1653)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (961-1653) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: WES12370: nucleocapsid protein, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1653]
+2025-08-06 22:02:03│ DEBUG   │ Using existing hit from shared region: XAJ11185: nucleocapsid, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1653]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: AAF00695
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (2, 21) preview:
+                             │                 query acc.  \
+                             │ 37  RVFV_Rift_valley_fever
+                             │ 39  RVFV_Rift_valley_fever
+                             │                                               subject title subject acc.  \
+                             │ 37  nucleocapsid protein, partial [Rift Valley fever virus]     AAF00695
+                             │ 39  nucleocapsid protein, partial [Rift Valley fever virus]     AAF00695
+                             │     subject tax ids      evalue  bit score  % identity  query length  \
+                             │ 37          3052676  1.130e-167      486.0       100.0        1691.0
+                             │ 39            11588  1.130e-167      486.0       100.0        1691.0
+                             │     q. start  q. end  subject length  s. start  s. end  log evalue  \
+                             │ 37     961.0  1653.0           692.0       1.0   231.0     166.947
+                             │ 39     961.0  1653.0           692.0       1.0   231.0     166.947
+                             │     q. coverage  s. coverage  regulated superkingdom           phylum  \
+                             │ 37        0.072        0.939       True      Viruses  Negarnaviricota
+                             │ 39        0.072        0.939       True      Viruses  Negarnaviricota
+                             │           genus               species
+                             │ 37  Phlebovirus  Phlebovirus riftense
+                             │ 39  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                          RVFV_Rift_valley_fever
+                             │ subject title      nucleocapsid protein, partial [Rift Valley fever virus]
+                             │ subject acc.                                                      AAF00695
+                             │ subject tax ids                                                    3052676
+                             │ evalue                                                                 0.0
+                             │ bit score                                                            486.0
+                             │ % identity                                                           100.0
+                             │ query length                                                        1691.0
+                             │ q. start                                                             961.0
+                             │ q. end                                                              1653.0
+                             │ subject length                                                       692.0
+                             │ s. start                                                               1.0
+                             │ s. end                                                               231.0
+                             │ log evalue                                                         166.947
+                             │ q. coverage                                                          0.072
+                             │ s. coverage                                                          0.939
+                             │ regulated                                                             True
+                             │ superkingdom                                                       Viruses
+                             │ phylum                                                     Negarnaviricota
+                             │ genus                                                          Phlebovirus
+                             │ species                                               Phlebovirus riftense
+                             │ Name: 37, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                          RVFV_Rift_valley_fever
+                             │ subject title      nucleocapsid protein, partial [Rift Valley fever virus]
+                             │ subject acc.                                                      AAF00695
+                             │ subject tax ids                                                      11588
+                             │ evalue                                                                 0.0
+                             │ bit score                                                            486.0
+                             │ % identity                                                           100.0
+                             │ query length                                                        1691.0
+                             │ q. start                                                             961.0
+                             │ q. end                                                              1653.0
+                             │ subject length                                                       692.0
+                             │ s. start                                                               1.0
+                             │ s. end                                                               231.0
+                             │ log evalue                                                         166.947
+                             │ q. coverage                                                          0.072
+                             │ s. coverage                                                          0.939
+                             │ regulated                                                             True
+                             │ superkingdom                                                       Viruses
+                             │ phylum                                                     Negarnaviricota
+                             │ genus                                                          Phlebovirus
+                             │ species                                               Phlebovirus riftense
+                             │ Name: 39, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588', '3052676']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=1.1300000000000001e-167, match_start=1, match_end=231, query_start=961, query_end=1653)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (961-1653) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: AAF00695: nucleocapsid protein, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1653]
+2025-08-06 22:02:03│ DEBUG   │ Using existing hit from shared region: XAJ11185: nucleocapsid, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1653]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: ACA14363
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                 query acc.                 subject title subject acc.  \
+                             │ 38  RVFV_Rift_valley_fever  NP [Rift Valley fever virus]     ACA14363
+                             │     subject tax ids      evalue  bit score  % identity  query length  \
+                             │ 38            11588  1.360e-167      486.0       100.0        1691.0
+                             │     q. start  q. end  subject length  s. start  s. end  log evalue  \
+                             │ 38     961.0  1653.0           692.0       1.0   231.0     166.866
+                             │     q. coverage  s. coverage  regulated superkingdom           phylum  \
+                             │ 38        0.072        0.939       True      Viruses  Negarnaviricota
+                             │           genus               species
+                             │ 38  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.               RVFV_Rift_valley_fever
+                             │ subject title      NP [Rift Valley fever virus]
+                             │ subject acc.                           ACA14363
+                             │ subject tax ids                           11588
+                             │ evalue                                      0.0
+                             │ bit score                                 486.0
+                             │ % identity                                100.0
+                             │ query length                             1691.0
+                             │ q. start                                  961.0
+                             │ q. end                                   1653.0
+                             │ subject length                            692.0
+                             │ s. start                                    1.0
+                             │ s. end                                    231.0
+                             │ log evalue                              166.866
+                             │ q. coverage                               0.072
+                             │ s. coverage                               0.939
+                             │ regulated                                  True
+                             │ superkingdom                            Viruses
+                             │ phylum                          Negarnaviricota
+                             │ genus                               Phlebovirus
+                             │ species                    Phlebovirus riftense
+                             │ Name: 38, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588', '3052676']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=1.36e-167, match_start=1, match_end=231, query_start=961, query_end=1653)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (961-1653) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: ACA14363: NP [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1653]
+2025-08-06 22:02:03│ DEBUG   │ Using existing hit from shared region: XAJ11185: nucleocapsid, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1653]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: AEB20445
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                 query acc.                                   subject title  \
+                             │ 40  RVFV_Rift_valley_fever  nucleocapsid protein [Rift Valley fever virus]
+                             │    subject acc.  subject tax ids      evalue  bit score  % identity  \
+                             │ 40     AEB20445            11588  1.110e-167      486.0       100.0
+                             │     query length  q. start  q. end  subject length  s. start  s. end  \
+                             │ 40        1691.0     961.0  1653.0           692.0       1.0   231.0
+                             │     log evalue  q. coverage  s. coverage  regulated superkingdom  \
+                             │ 40     166.955        0.072        0.939       True      Viruses
+                             │              phylum        genus               species
+                             │ 40  Negarnaviricota  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                 RVFV_Rift_valley_fever
+                             │ subject title      nucleocapsid protein [Rift Valley fever virus]
+                             │ subject acc.                                             AEB20445
+                             │ subject tax ids                                             11588
+                             │ evalue                                                        0.0
+                             │ bit score                                                   486.0
+                             │ % identity                                                  100.0
+                             │ query length                                               1691.0
+                             │ q. start                                                    961.0
+                             │ q. end                                                     1653.0
+                             │ subject length                                              692.0
+                             │ s. start                                                      1.0
+                             │ s. end                                                      231.0
+                             │ log evalue                                                166.955
+                             │ q. coverage                                                 0.072
+                             │ s. coverage                                                 0.939
+                             │ regulated                                                    True
+                             │ superkingdom                                              Viruses
+                             │ phylum                                            Negarnaviricota
+                             │ genus                                                 Phlebovirus
+                             │ species                                      Phlebovirus riftense
+                             │ Name: 40, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588', '3052676']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=1.11e-167, match_start=1, match_end=231, query_start=961, query_end=1653)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (961-1653) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: AEB20445: nucleocapsid protein [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1653]
+2025-08-06 22:02:03│ DEBUG   │ Using existing hit from shared region: XAJ11185: nucleocapsid, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1653]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: ABD38761
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                 query acc.                           subject title  \
+                             │ 41  RVFV_Rift_valley_fever  nucleocapsid [Rift Valley fever virus]
+                             │    subject acc.  subject tax ids      evalue  bit score  % identity  \
+                             │ 41     ABD38761            11588  1.410e-167      486.0       100.0
+                             │     query length  q. start  q. end  subject length  s. start  s. end  \
+                             │ 41        1691.0     961.0  1653.0           692.0       1.0   231.0
+                             │     log evalue  q. coverage  s. coverage  regulated superkingdom  \
+                             │ 41     166.851        0.072        0.939       True      Viruses
+                             │              phylum        genus               species
+                             │ 41  Negarnaviricota  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                         RVFV_Rift_valley_fever
+                             │ subject title      nucleocapsid [Rift Valley fever virus]
+                             │ subject acc.                                     ABD38761
+                             │ subject tax ids                                     11588
+                             │ evalue                                                0.0
+                             │ bit score                                           486.0
+                             │ % identity                                          100.0
+                             │ query length                                       1691.0
+                             │ q. start                                            961.0
+                             │ q. end                                             1653.0
+                             │ subject length                                      692.0
+                             │ s. start                                              1.0
+                             │ s. end                                              231.0
+                             │ log evalue                                        166.851
+                             │ q. coverage                                         0.072
+                             │ s. coverage                                         0.939
+                             │ regulated                                            True
+                             │ superkingdom                                      Viruses
+                             │ phylum                                    Negarnaviricota
+                             │ genus                                         Phlebovirus
+                             │ species                              Phlebovirus riftense
+                             │ Name: 41, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588', '3052676']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=1.4100000000000002e-167, match_start=1, match_end=231, query_start=961, query_end=1653)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (961-1653) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: ABD38761: nucleocapsid [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1653]
+2025-08-06 22:02:03│ DEBUG   │ Using existing hit from shared region: XAJ11185: nucleocapsid, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1653]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: ATP66914
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                 query acc.  \
+                             │ 42  RVFV_Rift_valley_fever
+                             │                                               subject title subject acc.  \
+                             │ 42  nucleocapsid protein, partial [Rift Valley fever virus]     ATP66914
+                             │     subject tax ids      evalue  bit score  % identity  query length  \
+                             │ 42            11588  5.410e-161      469.0       100.0        1691.0
+                             │     q. start  q. end  subject length  s. start  s. end  log evalue  \
+                             │ 42     961.0  1629.0           668.0       1.0   223.0     160.267
+                             │     q. coverage  s. coverage  regulated superkingdom           phylum  \
+                             │ 42        0.069        0.937       True      Viruses  Negarnaviricota
+                             │           genus               species
+                             │ 42  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                          RVFV_Rift_valley_fever
+                             │ subject title      nucleocapsid protein, partial [Rift Valley fever virus]
+                             │ subject acc.                                                      ATP66914
+                             │ subject tax ids                                                      11588
+                             │ evalue                                                                 0.0
+                             │ bit score                                                            469.0
+                             │ % identity                                                           100.0
+                             │ query length                                                        1691.0
+                             │ q. start                                                             961.0
+                             │ q. end                                                              1629.0
+                             │ subject length                                                       668.0
+                             │ s. start                                                               1.0
+                             │ s. end                                                               223.0
+                             │ log evalue                                                         160.267
+                             │ q. coverage                                                          0.069
+                             │ s. coverage                                                          0.937
+                             │ regulated                                                             True
+                             │ superkingdom                                                       Viruses
+                             │ phylum                                                     Negarnaviricota
+                             │ genus                                                          Phlebovirus
+                             │ species                                               Phlebovirus riftense
+                             │ Name: 42, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588', '3052676']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=5.410000000000001e-161, match_start=1, match_end=223, query_start=961, query_end=1629)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (961-1629) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: ATP66914: nucleocapsid protein, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1629]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: WES12327
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                 query acc.  \
+                             │ 43  RVFV_Rift_valley_fever
+                             │                                               subject title subject acc.  \
+                             │ 43  nucleocapsid protein, partial [Rift Valley fever virus]     WES12327
+                             │     subject tax ids      evalue  bit score  % identity  query length  \
+                             │ 43            11588  2.190e-159      465.0       100.0        1691.0
+                             │     q. start  q. end  subject length  s. start  s. end  log evalue  \
+                             │ 43     961.0  1623.0           662.0       1.0   221.0      158.66
+                             │     q. coverage  s. coverage  regulated superkingdom           phylum  \
+                             │ 43        0.069        0.936       True      Viruses  Negarnaviricota
+                             │           genus               species
+                             │ 43  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                                          RVFV_Rift_valley_fever
+                             │ subject title      nucleocapsid protein, partial [Rift Valley fever virus]
+                             │ subject acc.                                                      WES12327
+                             │ subject tax ids                                                      11588
+                             │ evalue                                                                 0.0
+                             │ bit score                                                            465.0
+                             │ % identity                                                           100.0
+                             │ query length                                                        1691.0
+                             │ q. start                                                             961.0
+                             │ q. end                                                              1623.0
+                             │ subject length                                                       662.0
+                             │ s. start                                                               1.0
+                             │ s. end                                                               221.0
+                             │ log evalue                                                          158.66
+                             │ q. coverage                                                          0.069
+                             │ s. coverage                                                          0.936
+                             │ regulated                                                             True
+                             │ superkingdom                                                       Viruses
+                             │ phylum                                                     Negarnaviricota
+                             │ genus                                                          Phlebovirus
+                             │ species                                               Phlebovirus riftense
+                             │ Name: 43, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588', '3052676']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=2.19e-159, match_start=1, match_end=221, query_start=961, query_end=1623)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (961-1623) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: WES12327: nucleocapsid protein, partial [Rift Valley fever virus].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1623]
+2025-08-06 22:02:03│ DEBUG   │          Processing Hit: WBR34649
+2025-08-06 22:02:03│ DEBUG   │ Protein Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                 query acc.                       subject title subject acc.  \
+                             │ 44  RVFV_Rift_valley_fever  NP, partial [Phlebovirus riftense]     WBR34649
+                             │     subject tax ids      evalue  bit score  % identity  query length  \
+                             │ 44          3052676  5.950e-138      409.0       100.0        1691.0
+                             │     q. start  q. end  subject length  s. start  s. end  log evalue  \
+                             │ 44     961.0  1545.0           584.0       1.0   195.0     137.225
+                             │     q. coverage  s. coverage  regulated superkingdom           phylum  \
+                             │ 44        0.061        0.928       True      Viruses  Negarnaviricota
+                             │           genus               species
+                             │ 44  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:02:03│ DEBUG   │ Processing region from hit: query acc.                     RVFV_Rift_valley_fever
+                             │ subject title      NP, partial [Phlebovirus riftense]
+                             │ subject acc.                                 WBR34649
+                             │ subject tax ids                               3052676
+                             │ evalue                                            0.0
+                             │ bit score                                       409.0
+                             │ % identity                                      100.0
+                             │ query length                                   1691.0
+                             │ q. start                                        961.0
+                             │ q. end                                         1545.0
+                             │ subject length                                  584.0
+                             │ s. start                                          1.0
+                             │ s. end                                          195.0
+                             │ log evalue                                    137.225
+                             │ q. coverage                                     0.061
+                             │ s. coverage                                     0.928
+                             │ regulated                                        True
+                             │ superkingdom                                  Viruses
+                             │ phylum                                Negarnaviricota
+                             │ genus                                     Phlebovirus
+                             │ species                          Phlebovirus riftense
+                             │ Name: 44, dtype: object
+2025-08-06 22:02:03│ DEBUG   │                  Added Virus.
+2025-08-06 22:02:03│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:02:03│ DEBUG   │          Regulated Taxids: ['11588', '3052676']
+2025-08-06 22:02:03│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:02:03│ DEBUG   │          Ranges: [MatchRange(e_value=5.95e-138, match_start=1, match_end=195, query_start=961, query_end=1545)]
+2025-08-06 22:02:03│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:02:03│ DEBUG   │   --> Flag at bases (961-1545) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ DEBUG   │ Hit information summary: WBR34649: NP, partial [Phlebovirus riftense].
+                             │ Protein Taxonomy Search, Flag. Ranges (#1)
+                             │ [961-1545]
+2025-08-06 22:02:03│ INFO    │  Regulated proteins in RVFV_Rift_valley_fever:
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (35-829) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID: 11588)
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (961-1632) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (961-1644) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (961-1647) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (961-1650) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (961-1653) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (961-1653) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (961-1653) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (961-1653) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (961-1653) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (961-1653) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (961-1629) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (961-1623) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ INFO    │   --> Flag at bases (961-1545) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID's: 11588, 3052676)
+2025-08-06 22:02:03│ INFO    │  Regulated proteins in BBa_K209429_A_15261:
+2025-08-06 22:02:03│ INFO    │   --> Pass at bases (1026-1832) found in both regulated and non-regulated Bacteria.
+                             │            (Regulated Species: Francisella tularensis. Regulated TaxID: 119857)
+2025-08-06 22:02:03│ INFO    │   --> Pass at bases (2066-2263) found in both regulated and non-regulated Bacteria.
+                             │            (Regulated Species: Salmonella enterica. Regulated TaxID: 90370)
+2025-08-06 22:02:03│ INFO    │ STEP 2 completed at 2025-08-06 22:02:03
+2025-08-06 22:02:03│ INFO    │  >> STEP 3: Checking regulated pathogen nucleotides...
+2025-08-06 22:02:03│ DEBUG   │ Checking protein hits in: /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.nr.blastx
+2025-08-06 22:02:06│ DEBUG   │   --> Protein hits found for Part:BBa_K5108009_creA_-, fetching nt regions not covered by a 90% ID hit or better
+2025-08-06 22:02:06│ INFO    │   --> no noncoding regions >= 50 bases found for Part:BBa_K5108009_creA_-, skipping nt scan for query.
+2025-08-06 22:02:06│ INFO    │ No protein hits found for encrypted, screening entire sequence.
+2025-08-06 22:02:06│ INFO    │ No protein hits found for xylanase_zero_shot_des31, screening entire sequence.
+2025-08-06 22:02:06│ DEBUG   │   --> Protein hits found for RVFV_Rift_valley_fever, fetching nt regions not covered by a 90% ID hit or better
+2025-08-06 22:02:06│ INFO    │   --> Identified noncoding regions for query RVFV_Rift_valley_fever: [830.0-960.0]
+2025-08-06 22:02:06│ DEBUG   │   --> Protein hits found for BBa_K209429_A_15261, fetching nt regions not covered by a 90% ID hit or better
+2025-08-06 22:02:06│ INFO    │   --> Identified noncoding regions for query BBa_K209429_A_15261: [643.0-758.0, 1833.0-1933.0, 2633.0-2764.0, 3497.0-3550.0]
+2025-08-06 22:02:06│ DEBUG   │ SUBPROCESS: blastn -db /mnt/data/home/ec2-user/cm-dbs/nt_blast/core_nt -query /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.noncoding.fasta -out
+                             │ /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.nt.blastn -outfmt 7 qacc stitle sacc staxids evalue bitscore pident qlen qstart qend slen sstart send -num_threads 12 -evalue 10 -max_target_seqs 50 -culling_limit 5
+─────────────────────────────┘
+blastn -db /mnt/data/home/ec2-user/cm-dbs/nt_blast/core_nt -query /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.noncoding.fasta -out /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.nt.blastn -outfmt 7 qacc stitle sacc staxids evalue bitscore pident qlen qstart qend slen sstart send -num_threads 12 -evalue 10 -max_target_seqs 50 -culling_limit 5
+─────────────────────────────┐
+2025-08-06 22:30:44│ DEBUG   │  ...checking blastn results
+2025-08-06 22:30:44│ DEBUG   │ Acquiring Taxonomic Data for JSON output:
+2025-08-06 22:30:44│ DEBUG   │ Nucleotide Taxonomy Search Blast Import: shape: (30, 16) preview:
+                             │                query acc.  ... s. coverage
+                             │ 0  RVFV_Rift_valley_fever  ...    0.076878
+                             │ 1     BBa_K209429_A_15261  ...    0.016487
+                             │ 2  RVFV_Rift_valley_fever  ...    0.078597
+                             │ 3  RVFV_Rift_valley_fever  ...    0.076878
+                             │ 4  RVFV_Rift_valley_fever  ...    0.076878
+                             │ [5 rows x 16 columns]
+2025-08-06 22:30:44│ DEBUG   │ Confirming hits for query RVFV_Rift_valley_fever.
+2025-08-06 22:30:44│ DEBUG   │ Confirming hits for query BBa_K209429_A_15261.
+2025-08-06 22:30:44│ DEBUG   │ Confirming hits for query xylanase_zero_shot_des31.
+2025-08-06 22:30:53│ WARNING │ No information about the following taxID(s) was found in the taxonomy database: 3231919
+2025-08-06 22:30:53│ WARNING │ Removing 1 rows from BLAST results due to invalid taxID(s): 3231919 - check that taxonomy and protein databases are up to date!
+2025-08-06 22:30:54│ DEBUG   │ Nucleotide Taxonomy Search TaxLabels: shape: (19, 21) preview:
+                             │                query acc.  ...               species
+                             │ 0  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ 1  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ 2  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ 3  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ 4  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ [5 rows x 21 columns]
+2025-08-06 22:30:54│ DEBUG   │ Nucleotide Taxonomy Search RemoveSpecies: shape: (19, 21) preview:
+                             │                query acc.  ...               species
+                             │ 0  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ 1  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ 2  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ 3  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ 4  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ [5 rows x 21 columns]
+2025-08-06 22:30:54│ DEBUG   │ Nucleotide Taxonomy Search Top Hits: shape: (10, 21) preview:
+                             │                query acc.  ...               species
+                             │ 0  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ 1  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ 2  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ 3  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ 4  RVFV_Rift_valley_fever  ...  Phlebovirus riftense
+                             │ [5 rows x 21 columns]
+2025-08-06 22:30:54│ DEBUG   │ Nucleotide Taxonomy Search Unique Queries: shape: (3,) preview:
+                             │ ['RVFV_Rift_valley_fever' 'xylanase_zero_shot_des31' 'BBa_K209429_A_15261']
+2025-08-06 22:30:54│ DEBUG   │  Processing query: RVFV_Rift_valley_fever
+2025-08-06 22:30:54│ DEBUG   │  Nucleotide Taxonomy Search Regulated hits: shape: (5,) preview:
+                             │ ['DQ380175' 'JF784388' 'EU312120' 'OM744402' 'KX944821']
+2025-08-06 22:30:54│ DEBUG   │          Processing Hit: DQ380175
+2025-08-06 22:30:54│ DEBUG   │ Nucleotide Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                query acc.  \
+                             │ 0  RVFV_Rift_valley_fever
+                             │                                                        subject title  \
+                             │ 0  Rift Valley fever virus strain SA-75 segment S, complete sequence
+                             │   subject acc.  subject tax ids     evalue  bit score  % identity  \
+                             │ 0     DQ380175            11588  5.950e-60      243.0       100.0
+                             │    query length  q. start  q. end  subject length  s. start  s. end  \
+                             │ 0           131         1     131             130       830     960
+                             │    log evalue  q. coverage  s. coverage  regulated superkingdom  \
+                             │ 0      59.225        0.172        0.077       True      Viruses
+                             │             phylum        genus               species
+                             │ 0  Negarnaviricota  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:30:54│ DEBUG   │ Processing region from hit: query acc.                                                    RVFV_Rift_valley_fever
+                             │ subject title      Rift Valley fever virus strain SA-75 segment S, complete sequence
+                             │ subject acc.                                                                DQ380175
+                             │ subject tax ids                                                                11588
+                             │ evalue                                                                           0.0
+                             │ bit score                                                                      243.0
+                             │ % identity                                                                     100.0
+                             │ query length                                                                     131
+                             │ q. start                                                                           1
+                             │ q. end                                                                           131
+                             │ subject length                                                                   130
+                             │ s. start                                                                         830
+                             │ s. end                                                                           960
+                             │ log evalue                                                                    59.225
+                             │ q. coverage                                                                    0.172
+                             │ s. coverage                                                                    0.077
+                             │ regulated                                                                       True
+                             │ superkingdom                                                                 Viruses
+                             │ phylum                                                               Negarnaviricota
+                             │ genus                                                                    Phlebovirus
+                             │ species                                                         Phlebovirus riftense
+                             │ Name: 0, dtype: object
+2025-08-06 22:30:54│ DEBUG   │                  Added Virus.
+2025-08-06 22:30:54│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:30:54│ DEBUG   │          Regulated Taxids: ['11588']
+2025-08-06 22:30:54│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:30:54│ DEBUG   │          Ranges: [MatchRange(e_value=5.95e-60, match_start=830, match_end=960, query_start=830.0, query_end=960.0)]
+2025-08-06 22:30:54│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:30:54│ DEBUG   │   --> Flag at bases (830.0-960.0) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID: 11588)
+2025-08-06 22:30:54│ DEBUG   │ Hit information summary: DQ380175: Rift Valley fever virus strain SA-75 segment S, complete sequence.
+                             │ Nucleotide Taxonomy Search, Flag. Ranges (#1)
+                             │ [830.0-960.0]
+2025-08-06 22:30:54│ DEBUG   │          Processing Hit: JF784388
+2025-08-06 22:30:54│ DEBUG   │ Nucleotide Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                query acc.  \
+                             │ 1  RVFV_Rift_valley_fever
+                             │                                                        subject title  \
+                             │ 1  Rift Valley fever virus strain 35/74 segment S, complete sequence
+                             │   subject acc.  subject tax ids     evalue  bit score  % identity  \
+                             │ 1     JF784388            11588  5.950e-60      243.0       100.0
+                             │    query length  q. start  q. end  subject length  s. start  s. end  \
+                             │ 1           131         1     131             130       830     960
+                             │    log evalue  q. coverage  s. coverage  regulated superkingdom  \
+                             │ 1      59.225        0.172        0.077       True      Viruses
+                             │             phylum        genus               species
+                             │ 1  Negarnaviricota  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:30:54│ DEBUG   │ Processing region from hit: query acc.                                                    RVFV_Rift_valley_fever
+                             │ subject title      Rift Valley fever virus strain 35/74 segment S, complete sequence
+                             │ subject acc.                                                                JF784388
+                             │ subject tax ids                                                                11588
+                             │ evalue                                                                           0.0
+                             │ bit score                                                                      243.0
+                             │ % identity                                                                     100.0
+                             │ query length                                                                     131
+                             │ q. start                                                                           1
+                             │ q. end                                                                           131
+                             │ subject length                                                                   130
+                             │ s. start                                                                         830
+                             │ s. end                                                                           960
+                             │ log evalue                                                                    59.225
+                             │ q. coverage                                                                    0.172
+                             │ s. coverage                                                                    0.077
+                             │ regulated                                                                       True
+                             │ superkingdom                                                                 Viruses
+                             │ phylum                                                               Negarnaviricota
+                             │ genus                                                                    Phlebovirus
+                             │ species                                                         Phlebovirus riftense
+                             │ Name: 1, dtype: object
+2025-08-06 22:30:54│ DEBUG   │                  Added Virus.
+2025-08-06 22:30:54│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:30:54│ DEBUG   │          Regulated Taxids: ['11588']
+2025-08-06 22:30:54│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:30:54│ DEBUG   │          Ranges: [MatchRange(e_value=5.95e-60, match_start=830, match_end=960, query_start=830.0, query_end=960.0)]
+2025-08-06 22:30:54│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:30:54│ DEBUG   │   --> Flag at bases (830.0-960.0) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID: 11588)
+2025-08-06 22:30:54│ DEBUG   │ Hit information summary: JF784388: Rift Valley fever virus strain 35/74 segment S, complete sequence.
+                             │ Nucleotide Taxonomy Search, Flag. Ranges (#1)
+                             │ [830.0-960.0]
+2025-08-06 22:30:54│ DEBUG   │ Using existing hit from shared region: DQ380175: Rift Valley fever virus strain SA-75 segment S, complete sequence.
+                             │ Nucleotide Taxonomy Search, Flag. Ranges (#1)
+                             │ [830.0-960.0]
+2025-08-06 22:30:54│ DEBUG   │          Processing Hit: EU312120
+2025-08-06 22:30:54│ DEBUG   │ Nucleotide Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                query acc.  \
+                             │ 2  RVFV_Rift_valley_fever
+                             │                                                             subject title  \
+                             │ 2  Rift Valley fever virus strain H1825RSA75 segment S, complete sequence
+                             │   subject acc.  subject tax ids     evalue  bit score  % identity  \
+                             │ 2     EU312120            11588  5.950e-60      243.0       100.0
+                             │    query length  q. start  q. end  subject length  s. start  s. end  \
+                             │ 2           131         1     131             130       830     960
+                             │    log evalue  q. coverage  s. coverage  regulated superkingdom  \
+                             │ 2      59.225        0.172        0.077       True      Viruses
+                             │             phylum        genus               species
+                             │ 2  Negarnaviricota  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:30:54│ DEBUG   │ Processing region from hit: query acc.                                                         RVFV_Rift_valley_fever
+                             │ subject title      Rift Valley fever virus strain H1825RSA75 segment S, complete sequence
+                             │ subject acc.                                                                     EU312120
+                             │ subject tax ids                                                                     11588
+                             │ evalue                                                                                0.0
+                             │ bit score                                                                           243.0
+                             │ % identity                                                                          100.0
+                             │ query length                                                                          131
+                             │ q. start                                                                                1
+                             │ q. end                                                                                131
+                             │ subject length                                                                        130
+                             │ s. start                                                                              830
+                             │ s. end                                                                                960
+                             │ log evalue                                                                         59.225
+                             │ q. coverage                                                                         0.172
+                             │ s. coverage                                                                         0.077
+                             │ regulated                                                                            True
+                             │ superkingdom                                                                      Viruses
+                             │ phylum                                                                    Negarnaviricota
+                             │ genus                                                                         Phlebovirus
+                             │ species                                                              Phlebovirus riftense
+                             │ Name: 2, dtype: object
+2025-08-06 22:30:54│ DEBUG   │                  Added Virus.
+2025-08-06 22:30:54│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:30:54│ DEBUG   │          Regulated Taxids: ['11588']
+2025-08-06 22:30:54│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:30:54│ DEBUG   │          Ranges: [MatchRange(e_value=5.95e-60, match_start=830, match_end=960, query_start=830.0, query_end=960.0)]
+2025-08-06 22:30:54│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:30:54│ DEBUG   │   --> Flag at bases (830.0-960.0) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID: 11588)
+2025-08-06 22:30:54│ DEBUG   │ Hit information summary: EU312120: Rift Valley fever virus strain H1825RSA75 segment S, complete sequence.
+                             │ Nucleotide Taxonomy Search, Flag. Ranges (#1)
+                             │ [830.0-960.0]
+2025-08-06 22:30:54│ DEBUG   │ Using existing hit from shared region: DQ380175: Rift Valley fever virus strain SA-75 segment S, complete sequence.
+                             │ Nucleotide Taxonomy Search, Flag. Ranges (#1)
+                             │ [830.0-960.0]
+2025-08-06 22:30:54│ DEBUG   │          Processing Hit: OM744402
+2025-08-06 22:30:54│ DEBUG   │ Nucleotide Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                query acc.  \
+                             │ 3  RVFV_Rift_valley_fever
+                             │                                                                                   subject title  \
+                             │ 3  Rift Valley fever virus segment S nonstructural protein and nucleocapsid genes, complete cds
+                             │   subject acc.  subject tax ids     evalue  bit score  % identity  \
+                             │ 3     OM744402            11588  5.950e-60      243.0       100.0
+                             │    query length  q. start  q. end  subject length  s. start  s. end  \
+                             │ 3           131         1     131             130       830     960
+                             │    log evalue  q. coverage  s. coverage  regulated superkingdom  \
+                             │ 3      59.225        0.172        0.077       True      Viruses
+                             │             phylum        genus               species
+                             │ 3  Negarnaviricota  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:30:54│ DEBUG   │ Processing region from hit: query acc.                                                                               RVFV_Rift_valley_fever
+                             │ subject title      Rift Valley fever virus segment S nonstructural protein and nucleocapsid genes, complete cds
+                             │ subject acc.                                                                                           OM744402
+                             │ subject tax ids                                                                                           11588
+                             │ evalue                                                                                                      0.0
+                             │ bit score                                                                                                 243.0
+                             │ % identity                                                                                                100.0
+                             │ query length                                                                                                131
+                             │ q. start                                                                                                      1
+                             │ q. end                                                                                                      131
+                             │ subject length                                                                                              130
+                             │ s. start                                                                                                    830
+                             │ s. end                                                                                                      960
+                             │ log evalue                                                                                               59.225
+                             │ q. coverage                                                                                               0.172
+                             │ s. coverage                                                                                               0.077
+                             │ regulated                                                                                                  True
+                             │ superkingdom                                                                                            Viruses
+                             │ phylum                                                                                          Negarnaviricota
+                             │ genus                                                                                               Phlebovirus
+                             │ species                                                                                    Phlebovirus riftense
+                             │ Name: 3, dtype: object
+2025-08-06 22:30:54│ DEBUG   │                  Added Virus.
+2025-08-06 22:30:54│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:30:54│ DEBUG   │          Regulated Taxids: ['11588']
+2025-08-06 22:30:54│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:30:54│ DEBUG   │          Ranges: [MatchRange(e_value=5.95e-60, match_start=830, match_end=960, query_start=830.0, query_end=960.0)]
+2025-08-06 22:30:54│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:30:54│ DEBUG   │   --> Flag at bases (830.0-960.0) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID: 11588)
+2025-08-06 22:30:54│ DEBUG   │ Hit information summary: OM744402: Rift Valley fever virus segment S nonstructural protein and nucleocapsid genes, complete cds.
+                             │ Nucleotide Taxonomy Search, Flag. Ranges (#1)
+                             │ [830.0-960.0]
+2025-08-06 22:30:54│ DEBUG   │ Using existing hit from shared region: DQ380175: Rift Valley fever virus strain SA-75 segment S, complete sequence.
+                             │ Nucleotide Taxonomy Search, Flag. Ranges (#1)
+                             │ [830.0-960.0]
+2025-08-06 22:30:54│ DEBUG   │          Processing Hit: KX944821
+2025-08-06 22:30:54│ DEBUG   │ Nucleotide Taxonomy Search Regulated Hit Data: shape: (1, 21) preview:
+                             │                query acc.  \
+                             │ 4  RVFV_Rift_valley_fever
+                             │                                                                                                subject title  \
+                             │ 4  Rift Valley fever virus isolate M57/74 nonstructural protein and nucleocapsid protein genes, complete cds
+                             │   subject acc.  subject tax ids     evalue  bit score  % identity  \
+                             │ 4     KX944821            11588  5.950e-60      243.0       100.0
+                             │    query length  q. start  q. end  subject length  s. start  s. end  \
+                             │ 4           131         1     131             130       801     931
+                             │    log evalue  q. coverage  s. coverage  regulated superkingdom  \
+                             │ 4      59.225        0.172        0.079       True      Viruses
+                             │             phylum        genus               species
+                             │ 4  Negarnaviricota  Phlebovirus  Phlebovirus riftense
+2025-08-06 22:30:54│ DEBUG   │ Processing region from hit: query acc.                                                                                            RVFV_Rift_valley_fever
+                             │ subject title      Rift Valley fever virus isolate M57/74 nonstructural protein and nucleocapsid protein genes, complete cds
+                             │ subject acc.                                                                                                        KX944821
+                             │ subject tax ids                                                                                                        11588
+                             │ evalue                                                                                                                   0.0
+                             │ bit score                                                                                                              243.0
+                             │ % identity                                                                                                             100.0
+                             │ query length                                                                                                             131
+                             │ q. start                                                                                                                   1
+                             │ q. end                                                                                                                   131
+                             │ subject length                                                                                                           130
+                             │ s. start                                                                                                                 801
+                             │ s. end                                                                                                                   931
+                             │ log evalue                                                                                                            59.225
+                             │ q. coverage                                                                                                            0.172
+                             │ s. coverage                                                                                                            0.079
+                             │ regulated                                                                                                               True
+                             │ superkingdom                                                                                                         Viruses
+                             │ phylum                                                                                                       Negarnaviricota
+                             │ genus                                                                                                            Phlebovirus
+                             │ species                                                                                                 Phlebovirus riftense
+                             │ Name: 4, dtype: object
+2025-08-06 22:30:54│ DEBUG   │                  Added Virus.
+2025-08-06 22:30:54│ DEBUG   │          Regulated Species: ['Phlebovirus riftense']
+2025-08-06 22:30:54│ DEBUG   │          Regulated Taxids: ['11588']
+2025-08-06 22:30:54│ DEBUG   │          Non Regulated Taxids: []
+2025-08-06 22:30:54│ DEBUG   │          Ranges: [MatchRange(e_value=5.95e-60, match_start=801, match_end=931, query_start=830.0, query_end=960.0)]
+2025-08-06 22:30:54│ DEBUG   │ Checking number of non regulated taxids: 0
+2025-08-06 22:30:54│ DEBUG   │   --> Flag at bases (830.0-960.0) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID: 11588)
+2025-08-06 22:30:54│ DEBUG   │ Hit information summary: KX944821: Rift Valley fever virus isolate M57/74 nonstructural protein and nucleocapsid protein genes, complete cds.
+                             │ Nucleotide Taxonomy Search, Flag. Ranges (#1)
+                             │ [830.0-960.0]
+2025-08-06 22:30:54│ DEBUG   │ Using existing hit from shared region: DQ380175: Rift Valley fever virus strain SA-75 segment S, complete sequence.
+                             │ Nucleotide Taxonomy Search, Flag. Ranges (#1)
+                             │ [830.0-960.0]
+2025-08-06 22:30:54│ DEBUG   │  Processing query: xylanase_zero_shot_des31
+2025-08-06 22:30:54│ DEBUG   │  Nucleotide Taxonomy Search Regulated hits: shape: (0,) preview:
+                             │ []
+2025-08-06 22:30:54│ DEBUG   │  Processing query: BBa_K209429_A_15261
+2025-08-06 22:30:54│ DEBUG   │  Nucleotide Taxonomy Search Regulated hits: shape: (0,) preview:
+                             │ []
+2025-08-06 22:30:54│ INFO    │  Regulated nucleotides in RVFV_Rift_valley_fever:
+2025-08-06 22:30:54│ INFO    │   --> Flag at bases (830.0-960.0) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID: 11588)
+2025-08-06 22:30:54│ INFO    │   --> Flag at bases (830.0-960.0) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID: 11588)
+2025-08-06 22:30:54│ INFO    │   --> Flag at bases (830.0-960.0) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID: 11588)
+2025-08-06 22:30:54│ INFO    │   --> Flag at bases (830.0-960.0) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID: 11588)
+2025-08-06 22:30:54│ INFO    │   --> Flag at bases (830.0-960.0) found in only regulated Viruses.
+                             │            (Regulated Species: Phlebovirus riftense. Regulated TaxID: 11588)
+2025-08-06 22:30:54│ INFO    │ STEP 3 completed at 2025-08-06 22:30:54
+2025-08-06 22:30:54│ INFO    │  >> STEP 4: Checking any pathogen regions for low-concern components...
+2025-08-06 22:30:54│ DEBUG   │  ...running low-concern hmmer.
+2025-08-06 22:30:54│ DEBUG   │ SUBPROCESS: hmmscan --cpu 12 --domtblout /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.low_concern.hmmscan /mnt/data/home/ec2-user/cm-dbs/low_concern/protein/benign.hmm
+                             │ /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.faa
+─────────────────────────────┘
+hmmscan --cpu 12 --domtblout /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.low_concern.hmmscan /mnt/data/home/ec2-user/cm-dbs/low_concern/protein/benign.hmm /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.faa
+─────────────────────────────┐
+2025-08-06 22:30:55│ DEBUG   │  ...running low-concern blastn
+2025-08-06 22:30:55│ DEBUG   │ SUBPROCESS: blastn -db /mnt/data/home/ec2-user/cm-dbs/low_concern/dna/benign.fasta -query /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.cleaned.fasta -out
+                             │ /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.low_concern.blastn -outfmt 7 qacc stitle sacc staxids evalue bitscore pident qlen qstart qend slen sstart send -num_threads 12 -evalue 10 -max_target_seqs 50
+                             │ -culling_limit 5
+─────────────────────────────┘
+blastn -db /mnt/data/home/ec2-user/cm-dbs/low_concern/dna/benign.fasta -query /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.cleaned.fasta -out /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.low_concern.blastn -outfmt 7 qacc stitle sacc staxids evalue bitscore pident qlen qstart qend slen sstart send -num_threads 12 -evalue 10 -max_target_seqs 50 -culling_limit 5
+─────────────────────────────┐
+2025-08-06 22:30:56│ DEBUG   │  ...running low-concern cmscan
+2025-08-06 22:30:56│ DEBUG   │ SUBPROCESS: cmscan --cpu 12 --tblout /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.low_concern.cmscan /mnt/data/home/ec2-user/cm-dbs/low_concern/rna/benign.cm
+                             │ /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.cleaned.fasta
+─────────────────────────────┘
+cmscan --cpu 12 --tblout /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.low_concern.cmscan /mnt/data/home/ec2-user/cm-dbs/low_concern/rna/benign.cm /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.cleaned.fasta
+─────────────────────────────┐
+2025-08-06 22:30:56│ DEBUG   │  Low-concern Protein Data: shape: (5, 27) preview:
+                             │   subject title accession tlen                  query name  ... frame  nt_qlen  q. start  q. end
+                             │ 0       COG0006         -  321  Part:BBa_K5108009_creA_-_1  ...     1     2058        85    1206
+                             │ 1       COG0024         -  475  Part:BBa_K5108009_creA_-_1  ...     1     2058       475    1119
+                             │ 2       COG0042         -  326  xylanase_zero_shot_des31_1  ...     1      756       406     465
+                             │ 3       COG0042         -  326  xylanase_zero_shot_des31_1  ...     1      756       577     750
+                             │ 4       COG0516         -  472  xylanase_zero_shot_des31_1  ...     1      756       466     711
+                             │ [5 rows x 27 columns]
+2025-08-06 22:30:56│ DEBUG   │  Low-concern RNA Data: shape: (0, 18) preview:
+                             │ Empty DataFrame
+                             │ Columns: [subject title, accession, query name, accession, mdl, s. start, s. end, q. start, q. end, strand, trunc, pass, gc, bias, score, evalue, inc, description of target]
+                             │ Index: []
+2025-08-06 22:30:56│ DEBUG   │  Low-concern Synbio Top Hits Data: shape: (1, 16) preview:
+                             │             query acc.  ... s. coverage
+                             │ 0  BBa_K209429_A_15261  ...    0.999896
+                             │ [1 rows x 16 columns]
+2025-08-06 22:30:56│ DEBUG   │          Processing low-concern data for query: Part:BBa_K5108009_creA_-
+2025-08-06 22:30:56│ INFO    │  Low-concern checks for Part:BBa_K5108009_creA_-
+2025-08-06 22:30:56│ DEBUG   │                  Ignoring PeptidaseM24 [Warning], cannot clear step 1.
+2025-08-06 22:30:56│ INFO    │   ... no housekeeping protein hits.
+2025-08-06 22:30:56│ INFO    │   ... no low-concern RNA hits.
+2025-08-06 22:30:56│ INFO    │   ... no low-concern DNA hits.
+2025-08-06 22:30:56│ DEBUG   │  New low-concern hits added: 0
+2025-08-06 22:30:56│ DEBUG   │ Skipping query encrypted, no regulated regions to clear.
+2025-08-06 22:30:56│ DEBUG   │ Skipping query xylanase_zero_shot_des31, no regulated regions to clear.
+2025-08-06 22:30:56│ DEBUG   │          Processing low-concern data for query: RVFV_Rift_valley_fever
+2025-08-06 22:30:56│ INFO    │  Low-concern checks for RVFV_Rift_valley_fever
+2025-08-06 22:30:56│ DEBUG   │                  Ignoring gi3006115embCAA73290.1 [Warning], cannot clear step 1.
+2025-08-06 22:30:56│ INFO    │   ... no housekeeping protein hits.
+2025-08-06 22:30:56│ INFO    │   ... no low-concern RNA hits.
+2025-08-06 22:30:56│ INFO    │   ... no low-concern DNA hits.
+2025-08-06 22:30:56│ DEBUG   │  New low-concern hits added: 0
+2025-08-06 22:30:56│ DEBUG   │ Skipping query BBa_K209429_A_15261, no regulated regions to clear.
+2025-08-06 22:30:56│ INFO    │ STEP 4 completed at 2025-08-06 22:30:56
+2025-08-06 22:30:56│ INFO    │  >> Commec Screen completed at 2025-08-06 22:30:56
+2025-08-06 22:30:56│ DEBUG   │ Updating step status flags for query Part:BBa_K5108009_creA_-
+2025-08-06 22:30:56│ DEBUG   │ Current status
+                             │                 Overall     : -
+                             │                 Biorisk     : Warning
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Skip
+                             │                 Low Concern : Warning
+                             │                 -
+2025-08-06 22:30:56│ DEBUG   │ Biorisk set: {<ScreenStatus.WARN: 'Warning'>}
+2025-08-06 22:30:56│ DEBUG   │ TAX AA set: set()
+2025-08-06 22:30:56│ DEBUG   │ TAX NT set: set()
+2025-08-06 22:30:56│ DEBUG   │ Part:BBa_K5108009_creA_- has flags [False], and has warnings [True], and has clears [False]
+2025-08-06 22:30:56│ DEBUG   │ Updated status
+                             │                 Overall     : Warning
+                             │                 Biorisk     : Warning
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Skip
+                             │                 Low Concern : Warning
+                             │                 Matches sequence with virulence factor.
+2025-08-06 22:30:56│ DEBUG   │ Updating step status flags for query encrypted
+2025-08-06 22:30:56│ DEBUG   │ Current status
+                             │                 Overall     : -
+                             │                 Biorisk     : Pass
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Pass
+                             │                 Low Concern : Skip
+                             │                 -
+2025-08-06 22:30:56│ DEBUG   │ Biorisk set: set()
+2025-08-06 22:30:56│ DEBUG   │ TAX AA set: set()
+2025-08-06 22:30:56│ DEBUG   │ TAX NT set: set()
+2025-08-06 22:30:56│ DEBUG   │ encrypted has flags [False], and has warnings [False], and has clears [False]
+2025-08-06 22:30:56│ DEBUG   │ Updated status
+                             │                 Overall     : Warning
+                             │                 Biorisk     : Pass
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Pass
+                             │                 Low Concern : Pass
+                             │                 No matches found during any stage of analysis. Sequence risk is unknown, possibly generated in silico.
+2025-08-06 22:30:56│ DEBUG   │ Updating step status flags for query xylanase_zero_shot_des31
+2025-08-06 22:30:56│ DEBUG   │ Current status
+                             │                 Overall     : -
+                             │                 Biorisk     : Pass
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Pass
+                             │                 Low Concern : Skip
+                             │                 -
+2025-08-06 22:30:56│ DEBUG   │ Biorisk set: set()
+2025-08-06 22:30:56│ DEBUG   │ TAX AA set: set()
+2025-08-06 22:30:56│ DEBUG   │ TAX NT set: set()
+2025-08-06 22:30:56│ DEBUG   │ xylanase_zero_shot_des31 has flags [False], and has warnings [False], and has clears [False]
+2025-08-06 22:30:56│ DEBUG   │ Updated status
+                             │                 Overall     : Pass
+                             │                 Biorisk     : Pass
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Pass
+                             │                 Low Concern : Pass
+                             │                 No regions of concern.
+2025-08-06 22:30:56│ DEBUG   │ Updating step status flags for query RVFV_Rift_valley_fever
+2025-08-06 22:30:56│ DEBUG   │ Current status
+                             │                 Overall     : -
+                             │                 Biorisk     : Warning
+                             │                 Protein     : Flag
+                             │                 Nucleotide  : Flag
+                             │                 Low Concern : Flag
+                             │                 -
+2025-08-06 22:30:56│ DEBUG   │ Biorisk set: {<ScreenStatus.WARN: 'Warning'>}
+2025-08-06 22:30:56│ DEBUG   │ TAX AA set: {<ScreenStatus.FLAG: 'Flag'>}
+2025-08-06 22:30:56│ DEBUG   │ TAX NT set: {<ScreenStatus.FLAG: 'Flag'>}
+2025-08-06 22:30:56│ DEBUG   │ RVFV_Rift_valley_fever has flags [True], and has warnings [True], and has clears [False]
+2025-08-06 22:30:56│ DEBUG   │ Updated status
+                             │                 Overall     : Flag
+                             │                 Biorisk     : Warning
+                             │                 Protein     : Flag
+                             │                 Nucleotide  : Flag
+                             │                 Low Concern : Flag
+                             │                 Matches protein and nucleotide sequence with regulated organisms; as well as virulence factor.
+2025-08-06 22:30:56│ DEBUG   │ Updating step status flags for query BBa_K209429_A_15261
+2025-08-06 22:30:56│ DEBUG   │ Current status
+                             │                 Overall     : -
+                             │                 Biorisk     : Pass
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Pass
+                             │                 Low Concern : Skip
+                             │                 -
+2025-08-06 22:30:56│ DEBUG   │ Biorisk set: set()
+2025-08-06 22:30:56│ DEBUG   │ TAX AA set: {<ScreenStatus.PASS: 'Pass'>}
+2025-08-06 22:30:56│ DEBUG   │ TAX NT set: set()
+2025-08-06 22:30:56│ DEBUG   │ BBa_K209429_A_15261 has flags [False], and has warnings [False], and has clears [False]
+2025-08-06 22:30:56│ DEBUG   │ Updated status
+                             │                 Overall     : Pass
+                             │                 Biorisk     : Pass
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Pass
+                             │                 Low Concern : Pass
+                             │                 No regions of concern.
+─────────────────────────────┘
+
+ >> SUMMARY : 
+                   query      overall      biorisk  taxonomy_aa  taxonomy_nt      cleared
+Part:BBa_K5108009_creA_-      Warning      Warning         Pass         Skip      Warning
+               encrypted      Warning         Pass         Pass         Pass         Pass
+xylanase_zero_shot_des31         Pass         Pass         Pass         Pass         Pass
+  RVFV_Rift_valley_fever         Flag      Warning         Flag         Flag         Flag
+     BBa_K209429_A_15261         Pass         Pass         Pass         Pass         Pass
+
+ >> RATIONALE : 
+Part:BBa_K5108009_creA_-  : Warning      --> Matches sequence with virulence factor.
+encrypted                 : Warning      --> No matches found during any stage of analysis. Sequence risk is unknown, possibly generated in silico. 
+xylanase_zero_shot_des31  : Pass         --> No regions of concern.
+RVFV_Rift_valley_fever    : Flag         --> Matches protein and nucleotide sequence with regulated organisms; as well as virulence factor.
+BBa_K209429_A_15261       : Pass         --> No regions of concern.
+
+2025-08-06 22:30:56│ DEBUG   │ Updating step status flags for query Part:BBa_K5108009_creA_-
+2025-08-06 22:30:56│ DEBUG   │ Current status
+                             │                 Overall     : Warning
+                             │                 Biorisk     : Warning
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Skip
+                             │                 Low Concern : Warning
+                             │                 Matches sequence with virulence factor.
+2025-08-06 22:30:56│ DEBUG   │ Biorisk set: {<ScreenStatus.WARN: 'Warning'>}
+2025-08-06 22:30:56│ DEBUG   │ TAX AA set: set()
+2025-08-06 22:30:56│ DEBUG   │ TAX NT set: set()
+2025-08-06 22:30:56│ DEBUG   │ Part:BBa_K5108009_creA_- has flags [False], and has warnings [True], and has clears [False]
+2025-08-06 22:30:56│ DEBUG   │ Updated status
+                             │                 Overall     : Warning
+                             │                 Biorisk     : Warning
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Skip
+                             │                 Low Concern : Warning
+                             │                 Matches sequence with virulence factor.
+2025-08-06 22:30:56│ DEBUG   │ Updating step status flags for query encrypted
+2025-08-06 22:30:56│ DEBUG   │ Current status
+                             │                 Overall     : Warning
+                             │                 Biorisk     : Pass
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Pass
+                             │                 Low Concern : Pass
+                             │                 No matches found during any stage of analysis. Sequence risk is unknown, possibly generated in silico.
+2025-08-06 22:30:56│ DEBUG   │ Biorisk set: set()
+2025-08-06 22:30:56│ DEBUG   │ TAX AA set: set()
+2025-08-06 22:30:56│ DEBUG   │ TAX NT set: set()
+2025-08-06 22:30:56│ DEBUG   │ encrypted has flags [False], and has warnings [False], and has clears [False]
+2025-08-06 22:30:56│ DEBUG   │ Updated status
+                             │                 Overall     : Warning
+                             │                 Biorisk     : Pass
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Pass
+                             │                 Low Concern : Pass
+                             │                 No matches found during any stage of analysis. Sequence risk is unknown, possibly generated in silico.
+2025-08-06 22:30:56│ DEBUG   │ Updating step status flags for query xylanase_zero_shot_des31
+2025-08-06 22:30:56│ DEBUG   │ Current status
+                             │                 Overall     : Pass
+                             │                 Biorisk     : Pass
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Pass
+                             │                 Low Concern : Pass
+                             │                 No regions of concern.
+2025-08-06 22:30:56│ DEBUG   │ Biorisk set: set()
+2025-08-06 22:30:56│ DEBUG   │ TAX AA set: set()
+2025-08-06 22:30:56│ DEBUG   │ TAX NT set: set()
+2025-08-06 22:30:56│ DEBUG   │ xylanase_zero_shot_des31 has flags [False], and has warnings [False], and has clears [False]
+2025-08-06 22:30:56│ DEBUG   │ Updated status
+                             │                 Overall     : Pass
+                             │                 Biorisk     : Pass
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Pass
+                             │                 Low Concern : Pass
+                             │                 No regions of concern.
+2025-08-06 22:30:56│ DEBUG   │ Updating step status flags for query RVFV_Rift_valley_fever
+2025-08-06 22:30:56│ DEBUG   │ Current status
+                             │                 Overall     : Flag
+                             │                 Biorisk     : Warning
+                             │                 Protein     : Flag
+                             │                 Nucleotide  : Flag
+                             │                 Low Concern : Flag
+                             │                 Matches protein and nucleotide sequence with regulated organisms; as well as virulence factor.
+2025-08-06 22:30:56│ DEBUG   │ Biorisk set: {<ScreenStatus.WARN: 'Warning'>}
+2025-08-06 22:30:56│ DEBUG   │ TAX AA set: {<ScreenStatus.FLAG: 'Flag'>}
+2025-08-06 22:30:56│ DEBUG   │ TAX NT set: {<ScreenStatus.FLAG: 'Flag'>}
+2025-08-06 22:30:56│ DEBUG   │ RVFV_Rift_valley_fever has flags [True], and has warnings [True], and has clears [False]
+2025-08-06 22:30:56│ DEBUG   │ Updated status
+                             │                 Overall     : Flag
+                             │                 Biorisk     : Warning
+                             │                 Protein     : Flag
+                             │                 Nucleotide  : Flag
+                             │                 Low Concern : Flag
+                             │                 Matches protein and nucleotide sequence with regulated organisms; as well as virulence factor.
+2025-08-06 22:30:56│ DEBUG   │ Updating step status flags for query BBa_K209429_A_15261
+2025-08-06 22:30:56│ DEBUG   │ Current status
+                             │                 Overall     : Pass
+                             │                 Biorisk     : Pass
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Pass
+                             │                 Low Concern : Pass
+                             │                 No regions of concern.
+2025-08-06 22:30:56│ DEBUG   │ Biorisk set: set()
+2025-08-06 22:30:56│ DEBUG   │ TAX AA set: {<ScreenStatus.PASS: 'Pass'>}
+2025-08-06 22:30:56│ DEBUG   │ TAX NT set: set()
+2025-08-06 22:30:56│ DEBUG   │ BBa_K209429_A_15261 has flags [False], and has warnings [False], and has clears [False]
+2025-08-06 22:30:56│ DEBUG   │ Updated status
+                             │                 Overall     : Pass
+                             │                 Biorisk     : Pass
+                             │                 Protein     : Pass
+                             │                 Nucleotide  : Pass
+                             │                 Low Concern : Pass
+                             │                 No regions of concern.
+
+ >> EXPORT JSON SUMMARY : 
+                   query      overall      biorisk  taxonomy_aa  taxonomy_nt      cleared
+Part:BBa_K5108009_creA_-      Warning      Warning         Pass         Skip      Warning
+               encrypted      Warning         Pass         Pass         Pass         Pass
+xylanase_zero_shot_des31         Pass         Pass         Pass         Pass         Pass
+  RVFV_Rift_valley_fever         Flag      Warning         Flag         Flag         Flag
+     BBa_K209429_A_15261         Pass         Pass         Pass         Pass         Pass
+
+ >> RATIONALE : 
+Part:BBa_K5108009_creA_-  : Warning      --> Matches sequence with virulence factor.
+encrypted                 : Warning      --> No matches found during any stage of analysis. Sequence risk is unknown, possibly generated in silico. 
+xylanase_zero_shot_des31  : Pass         --> No regions of concern.
+RVFV_Rift_valley_fever    : Flag         --> Matches protein and nucleotide sequence with regulated organisms; as well as virulence factor.
+BBa_K209429_A_15261       : Pass         --> No regions of concern.
+

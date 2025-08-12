@@ -1,0 +1,16 @@
+#                                                                                  --- full sequence --- -------------- this domain -------------   hmm coord   ali coord   env coord
+# target name        accession   tlen query name                 accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias  from    to  from    to  from    to  acc description of target
+#------------------- ---------- -----       -------------------- ---------- ----- --------- ------ ----- --- --- --------- --------- ------ ----- ----- ----- ----- ----- ----- ----- ---- ---------------------
+PeptidaseM24         PF00557.27   209 Part:BBa_K5108009_creA_-_1 -            686   1.3e-25   87.5   0.0   1   2       0.6   1.4e+03   -4.1   0.0    20    43    38    58    31    76 0.64 Metallopeptidase family M24
+PeptidaseM24         PF00557.27   209 Part:BBa_K5108009_creA_-_1 -            686   1.3e-25   87.5   0.0   2   2     1e-28   2.5e-25   86.6   0.0     2   207   174   389   173   391 0.84 Metallopeptidase family M24
+gi3006115embCAA73290.1 -            200 RVFV_Rift_valley_fever_2 -            563  2.2e-139  458.7   0.2   1   1  1.3e-142  3.1e-139  458.3   0.2     1   200    33   232    33   232 1.00 -
+#
+# Program:         hmmscan
+# Version:         3.4 (Aug 2023)
+# Pipeline mode:   SCAN
+# Query file:      /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.faa
+# Target file:     /mnt/data/home/ec2-user/cm-dbs/biorisk/biorisk.hmm
+# Option settings: hmmscan --domtblout /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.biorisk.hmmscan --cpu 12 /mnt/data/home/ec2-user/cm-dbs/biorisk/biorisk.hmm /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.faa 
+# Current dir:     /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07
+# Date:            Wed Aug  6 21:23:52 2025
+# [ok]

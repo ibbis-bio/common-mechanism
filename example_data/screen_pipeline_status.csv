@@ -1,0 +1,6 @@
+name,filepath,flag,biorisk,protein,nucleotide,low_concern,virus_flag,bacteria_flag,eukaryote_flag,low_concern_protein,low_concern_rna,low_concern_dna
+Part:BBa_K5108009_creA_-,2025-08-06/commec-examples.output.json,Warning,Warning,Pass,Skip,Warning,False,False,False,False,False,False
+encrypted,2025-08-06/commec-examples.output.json,Warning,Pass,Pass,Pass,Pass,False,False,False,False,False,False
+xylanase_zero_shot_des31,2025-08-06/commec-examples.output.json,Pass,Pass,Pass,Pass,Pass,False,False,False,False,False,False
+RVFV_Rift_valley_fever,2025-08-06/commec-examples.output.json,Flag,Warning,Flag,Flag,Flag,True,False,False,False,False,False
+BBa_K209429_A_15261,2025-08-06/commec-examples.output.json,Pass,Pass,Mixed,Pass,Pass,False,True,False,False,False,False

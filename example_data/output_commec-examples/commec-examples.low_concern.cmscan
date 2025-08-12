@@ -1,0 +1,12 @@
+#target name         accession query name               accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value inc description of target
+#------------------- --------- ------------------------ --------- --- -------- -------- -------- -------- ------ ----- ---- ---- ----- ------ --------- --- ---------------------
+#
+# Program:         cmscan
+# Version:         1.1.5 (Sep 2023)
+# Pipeline mode:   SCAN
+# Query file:      /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.cleaned.fasta
+# Target file:     /mnt/data/home/ec2-user/cm-dbs/low_concern/rna/benign.cm
+# Option settings: cmscan --tblout /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.low_concern.cmscan --cpu 12 /mnt/data/home/ec2-user/cm-dbs/low_concern/rna/benign.cm /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.cleaned.fasta 
+# Current dir:     /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07
+# Date:            Wed Aug  6 22:30:56 2025
+# [ok]
