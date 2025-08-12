@@ -45,7 +45,7 @@ The **screen_pipeline_status.csv** file has the following values:
 
 The flag column contains the overall recommendation is based on the following decision flow:
 
-![Flowchart showing decision-making by the common mechanism flag module.](https://ibbis.bio/wp-content/uploads/2024/05/common-mechanism-screening-flowcharts-decision-support.jpg "Decision Flow")
+![Flowchart showing decision-making by the common mechanism flag module.](https://ibbis.bio/wp-content/uploads/2025/08/commec-screening-flow-v1.jpg "Decision Flow")
 
 Documentation
 =============
