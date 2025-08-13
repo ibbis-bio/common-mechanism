@@ -19,10 +19,10 @@ The Common Mechanism offers several sub-commands through the `commec` entrypoint
 
 The `screen` command runs an input FASTA through four steps:
 
-  1. Biorisk scan (uses a hmmer search against custom databases)
-  2. Regulated protein scan (uses a BLASTX or DIAMOND search against NCBI nr)
-  3. Regulated nucleotide scan (uses BLASTN against NCBI nt)
-  4. Low-concern scan (uses hmmer, cmscan and BLASTN against custom databases)
+  1. Biorisk Search (uses a hmmer search against custom databases)
+  2. Regulated protein Search (uses a BLASTX or DIAMOND search against NCBI nr)
+  3. Regulated nucleotide Search (uses BLASTN against NCBI nt)
+  4. Low-concern Search (uses hmmer, cmscan and BLASTN against custom databases)
 
 The `.screen.json` file produced by that pipeline can be passed to `flag` to produce a convenient output CSV.
 The **screen_pipeline_status.csv** file has the following values:
@@ -45,7 +45,7 @@ The **screen_pipeline_status.csv** file has the following values:
 
 The flag column contains the overall recommendation is based on the following decision flow:
 
-![Flowchart showing decision-making by the common mechanism flag module.](https://ibbis.bio/wp-content/uploads/2024/05/common-mechanism-screening-flowcharts-decision-support.jpg "Decision Flow")
+![Flowchart showing decision-making by the common mechanism flag module.](https://ibbis.bio/wp-content/uploads/2025/08/commec-screening-flow-v1.jpg "Decision Flow")
 
 Documentation
 =============

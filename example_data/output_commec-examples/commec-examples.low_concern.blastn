@@ -1,0 +1,31 @@
+# BLASTN 2.16.0+
+# Query: Part:BBa_K5108009_creA_-
+# Database: /mnt/data/home/ec2-user/cm-dbs/low_concern/dna/benign.fasta
+# 0 hits found
+# BLASTN 2.16.0+
+# Query: encrypted
+# Database: /mnt/data/home/ec2-user/cm-dbs/low_concern/dna/benign.fasta
+# 0 hits found
+# BLASTN 2.16.0+
+# Query: xylanase_zero_shot_des31
+# Database: /mnt/data/home/ec2-user/cm-dbs/low_concern/dna/benign.fasta
+# 0 hits found
+# BLASTN 2.16.0+
+# Query: RVFV_Rift_valley_fever
+# Database: /mnt/data/home/ec2-user/cm-dbs/low_concern/dna/benign.fasta
+# 0 hits found
+# BLASTN 2.16.0+
+# Query: BBa_K209429_A_15261
+# Database: /mnt/data/home/ec2-user/cm-dbs/low_concern/dna/benign.fasta
+# Fields: query acc., subject title, subject acc., subject tax ids, evalue, bit score, % identity, query length, q. start, q. end, subject length, s. start, s. end
+# 9 hits found
+BBa_K209429_A_15261	BBa_K209429 A 15261 Composite "SSFYFP-hM2D-Tuba"	BBa_K209429	0	0.0	17813	100.000	9646	1	9646	9646	1	9646
+BBa_K209429_A_15261	BBa_K209440 A 15305 Composite "pEF1-SSFYFP-hM2D-Tuba"	BBa_K209440	0	0.0	12942	100.000	9646	2639	9646	7008	1	7008
+BBa_K209429_A_15261	BBa_K209427 A 15259 Composite "SSFYFP-hM2D-ActA(30-612)"	BBa_K209427	0	0.0	9070	100.000	9646	1	4911	6649	1	4911
+BBa_K209429_A_15261	BBa_K209430 A 15262 Composite "SSFYFP-hM2D-ITSN"	BBa_K209430	0	0.0	9068	100.000	9646	1	4910	6586	1	4910
+BBa_K209429_A_15261	BBa_K209431 A 15263 Composite "SSFYFP-hM2D-Beta Pix"	BBa_K209431	0	0.0	9066	100.000	9646	1	4909	6844	1	4909
+BBa_K209429_A_15261	BBa_K209428 A 15260 Composite "SSFYFP-hM2D-Vav"	BBa_K209428	0	0.0	9066	100.000	9646	1	4909	7246	1	4909
+BBa_K209429_A_15261	BBa_K209445 A 15308 Composite "pEF1-SSFYFP-Rs1.3-Tuba"	BBa_K209445	0	0.0	8765	100.000	9646	4901	9646	7019	2274	7019
+BBa_K209429_A_15261	BBa_K209424 A 15256 Composite "SSFYFP-Rs1.3-Tuba"	BBa_K209424	0	0.0	8765	100.000	9646	4901	9646	9657	4912	9657
+BBa_K209429_A_15261	BBa_K209409 A 15183 Coding "AarI C-D part, Tuba"	BBa_K209409	0	0.0	8754	100.000	9646	4907	9646	4740	1	4740
+# BLAST processed 5 queries

@@ -1,0 +1,50 @@
+# BLASTN 2.16.0+
+# Query: encrypted (1-552)
+# Database: /mnt/data/home/ec2-user/cm-dbs/nt_blast/core_nt
+# 0 hits found
+# BLASTN 2.16.0+
+# Query: xylanase_zero_shot_des31 (1-756)
+# Database: /mnt/data/home/ec2-user/cm-dbs/nt_blast/core_nt
+# Fields: query acc., subject title, subject acc., subject tax ids, evalue, bit score, % identity, query length, q. start, q. end, subject length, s. start, s. end
+# 5 hits found
+xylanase_zero_shot_des31	Escherichia albertii strain 205_2_TBG_B chromosome, complete genome	CP099890	208962	2.75e-31	150	75.542	756	16	333	4752472	4352667	4352984
+xylanase_zero_shot_des31	Enterobacter hormaechei strain A26358 chromosome, complete genome	CP163152	158836	1.28e-29	145	74.854	756	16	351	4839353	2207862	2207527
+xylanase_zero_shot_des31	Enterobacter hormaechei subsp. xiangfangensis strain HD2292 chromosome, complete genome	CP130333	1296536	1.28e-29	145	74.854	756	16	351	4806739	3158310	3157975
+xylanase_zero_shot_des31	Enterobacter hormaechei strain 2020CK-00204 chromosome, complete genome	CP115689	158836	1.28e-29	145	75.152	756	16	339	4935101	2693068	2693391
+xylanase_zero_shot_des31	Enterobacter hormaechei strain UCI161 chromosome	CP060481	158836	1.28e-29	145	75.152	756	16	339	4802325	2306527	2306850
+# BLASTN 2.16.0+
+# Query: RVFV_Rift_valley_fever (830.0-960.0)
+# Database: /mnt/data/home/ec2-user/cm-dbs/nt_blast/core_nt
+# Fields: query acc., subject title, subject acc., subject tax ids, evalue, bit score, % identity, query length, q. start, q. end, subject length, s. start, s. end
+# 5 hits found
+RVFV_Rift_valley_fever	Rift Valley fever virus strain SA-75 segment S, complete sequence	DQ380175	11588	5.95e-60	243	100.000	131	1	131	1691	830	960
+RVFV_Rift_valley_fever	Rift Valley fever virus segment S nonstructural protein and nucleocapsid genes, complete cds	OM744402	11588	5.95e-60	243	100.000	131	1	131	1691	830	960
+RVFV_Rift_valley_fever	Rift Valley fever virus strain H1825RSA75 segment S, complete sequence	EU312120	11588	5.95e-60	243	100.000	131	1	131	1691	830	960
+RVFV_Rift_valley_fever	Rift Valley fever virus strain 35/74 segment S, complete sequence	JF784388	11588	5.95e-60	243	100.000	131	1	131	1691	830	960
+RVFV_Rift_valley_fever	Rift Valley fever virus isolate M57/74 nonstructural protein and nucleocapsid protein genes, complete cds	KX944821	11588	5.95e-60	243	100.000	131	1	131	1654	801	931
+# BLASTN 2.16.0+
+# Query: BBa_K209429_A_15261 (643.0-758.0) (1833.0-1933.0) (2633.0-2764.0) (3497.0-3550.0)
+# Database: /mnt/data/home/ec2-user/cm-dbs/nt_blast/core_nt
+# Fields: query acc., subject title, subject acc., subject tax ids, evalue, bit score, % identity, query length, q. start, q. end, subject length, s. start, s. end
+# 20 hits found
+BBa_K209429_A_15261	Mammalian expression vector pNBioSec, complete sequence	EU082004	478810	6.39e-45	195	98.198	403	224	334	7032	1335	1445
+BBa_K209429_A_15261	Gateway entry vector pMpGE_En01 DNA, complete sequence	LC090754	1740675	2.97e-43	189	100.000	403	116	217	6126	5326	5427
+BBa_K209429_A_15261	Transformation vector pGL193, complete sequence	OK017460	2902901	2.97e-43	189	100.000	403	116	217	10319	9451	9552
+BBa_K209429_A_15261	Cloning vector pNRVL-caSAT1, complete sequence	MN989861	2713480	2.97e-43	189	100.000	403	116	217	5220	4420	4521
+BBa_K209429_A_15261	Cloning vector p5E-CAGGS, complete sequence	JN715850	1115837	2.97e-43	189	100.000	403	116	217	4511	3711	3812
+BBa_K209429_A_15261	Cloning vector pNRVL-N5L-ffDronpa, complete sequence	PP986966	3231919	2.97e-43	189	100.000	403	116	217	4951	4151	4252
+BBa_K209429_A_15261	PREDICTED: Bos indicus x Bos taurus prolactin (PRL), transcript variant X2, mRNA	XM_027524257	30522	1.39e-36	167	100.000	403	224	313	923	83	172
+BBa_K209429_A_15261	PREDICTED: Moschus berezovskii prolactin (LOC129543410), mRNA	XM_055406509	68408	1.39e-36	167	100.000	403	224	313	690	1	90
+BBa_K209429_A_15261	PREDICTED: Bison bison bison prolactin (LOC104992619), mRNA	XM_010845567	43346	1.39e-36	167	100.000	403	224	313	891	56	145
+BBa_K209429_A_15261	PREDICTED: Bos indicus prolactin (LOC109577296), transcript variant X2, mRNA	XM_019986186	9915	1.39e-36	167	100.000	403	224	313	945	105	194
+BBa_K209429_A_15261	Homo sapiens cholinergic receptor, muscarinic 2, mRNA (cDNA clone MGC:111772 IMAGE:6519221), complete cds	BC095547	9606	3.10e-13	89.8	100.000	403	356	403	1404	4	51
+BBa_K209429_A_15261	PREDICTED: Pan paniscus cholinergic receptor muscarinic 2 (CHRM2), transcript variant X4, mRNA	XM_055115415	9597	3.10e-13	89.8	100.000	403	356	403	6013	386	433
+BBa_K209429_A_15261	PREDICTED: Pan troglodytes cholinergic receptor muscarinic 2 (CHRM2), transcript variant X1, mRNA	XM_009454280	9598	3.10e-13	89.8	100.000	403	356	403	9169	766	813
+BBa_K209429_A_15261	PREDICTED: Pan paniscus cholinergic receptor muscarinic 2 (CHRM2), transcript variant X1, mRNA	XM_055115412	9597	3.10e-13	89.8	100.000	403	356	403	11057	5430	5477
+BBa_K209429_A_15261	Homo sapiens cholinergic receptor muscarinic 2 (CHRM2), transcript variant 5, mRNA	NM_001006631	9606	3.10e-13	89.8	100.000	403	356	403	5663	316	363
+BBa_K209429_A_15261	Cloning vector pE3n, complete sequence	EU334818	490921	8.74e-04	58.4	88.000	403	1	48	2595	432	481
+BBa_K209429_A_15261	Vector pENTR1A-3Flag-WFS1-IRES2-mCherry, complete sequence	OQ238874	3062755	0.003	56.5	97.059	403	1	33	6432	432	465
+BBa_K209429_A_15261	Cloning vector pIPKTA33, complete sequence	EF622217	444601	0.003	56.5	97.059	403	1	33	2311	141	174
+BBa_K209429_A_15261	Vector pETNR1A-R-GECO, complete sequence	OQ238871	3062760	0.003	56.5	97.059	403	1	33	3534	432	465
+BBa_K209429_A_15261	Cloning vector pE1c, complete sequence	EU334822	490916	0.003	56.5	97.059	403	1	33	2336	432	465
+# BLAST processed 4 queries

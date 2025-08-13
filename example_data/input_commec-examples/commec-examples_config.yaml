@@ -1,0 +1,34 @@
+base_paths:
+  default: /mnt/data/home/ec2-user/cm-dbs/
+databases:
+  biorisk:
+    annotations: /mnt/data/home/ec2-user/cm-dbs/biorisk/biorisk_annotations.csv
+    path: /mnt/data/home/ec2-user/cm-dbs/biorisk/biorisk.hmm
+    taxids: /mnt/data/home/ec2-user/cm-dbs/biorisk/reg_taxids.txt
+  low_concern:
+    annotations: /mnt/data/home/ec2-user/cm-dbs/low_concern/low_concern_annotations.tsv
+    dna:
+      path: /mnt/data/home/ec2-user/cm-dbs/low_concern/dna/benign.fasta
+    protein:
+      path: /mnt/data/home/ec2-user/cm-dbs/low_concern/protein/benign.hmm
+    rna:
+      path: /mnt/data/home/ec2-user/cm-dbs/low_concern/rna/benign.cm
+    taxids: /mnt/data/home/ec2-user/cm-dbs/low_concern/vax_taxids.txt
+  regulated_nt:
+    path: /mnt/data/home/ec2-user/cm-dbs/nt_blast/core_nt
+  regulated_protein:
+    blast:
+      path: /mnt/data/home/ec2-user/cm-dbs/nr_blast/nr
+    diamond:
+      path: /mnt/data/home/ec2-user/cm-dbs/nr_dmnd/nr.dmnd
+  taxonomy:
+    path: /mnt/data/home/ec2-user/cm-dbs/taxonomy/
+diamond_jobs: null
+do_cleanup: false
+force: false
+protein_search_tool: blastx
+resume: false
+skip_nt_search: false
+skip_taxonomy_search: false
+threads: 12
+verbose: true
