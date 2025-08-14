@@ -1,0 +1,1032 @@
+# BLASTX 2.16.0+
+# Query: Part:BBa_K5108009_creA_-
+# Database: /mnt/data/home/ec2-user/cm-dbs/nr_blast/nr
+# Fields: query acc., subject title, subject acc., subject tax ids, evalue, bit score, % identity, query length, q. start, q. end, subject length, s. start, s. end
+# 101 hits found
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_010954506	286;303;160488;361819;435519;1661036;1661060;1661693;1940621;2578115;3029195;3104264	0.0	843	100.000	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_108190647	303	0.0	842	99.752	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_020191657	286;303;1079364;2069256;2083052;2651048;2975391;2993589;2993591;3040601;3109348;3144665	0.0	842	99.752	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_252458662	286;303;1247546	0.0	842	99.752	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_161774640	303	0.0	841	99.504	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_003256102	286;303;306;70775;485880;1081940;1193146;1227924;1247546;1338689;1661033;1661040;1661054;1940621;2856556;2975375;2975383;2993592;2993593;2993595;3077325;3122582	0.0	840	99.504	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_014860027	286;306;1196325;3094916	0.0	840	99.504	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_014590572	286;303;931281;1150601;1215087;2093743;2093745;2202652;3058433;3083251	0.0	839	99.256	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_176682464	303	0.0	839	99.504	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_021782046	286;303;306;76759;1299319;2975368;3033801	0.0	839	99.504	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_012051990	303	0.0	839	99.504	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_185279495	286;303;2892442;2975379	0.0	839	99.256	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_014756254	286;303;231023;470150;1193499;2075558;2794351	0.0	838	99.256	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas sp. NBRC 111136]	WP_060546049	1661051	0.0	838	99.256	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_234546908	303	0.0	838	99.256	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas sp. A2]	WP_324737400	107445	0.0	837	99.256	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_121783295	303	0.0	837	99.007	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	EKT4474688	303	0.0	837	99.256	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas sp. Ap32]	WHH49817	3041813	0.0	836	99.007	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas sp. JR33AA]	WP_233690334	2899113	0.0	836	98.759	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [unclassified Pseudomonas]	WP_209966784	303;196821;438408;2817863	0.0	836	99.007	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas sp. TWI929]	WP_346644402	3136795	0.0	834	98.511	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas sp. S37]	WP_201206182	2767449	0.0	834	98.759	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas sp. 10-1B]	WP_051101160	1546029	0.0	833	98.263	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas asiatica]	WP_325979465	2219225	0.0	833	98.263	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas hunanensis]	WP_339534931	1247546	0.0	833	98.511	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	EKT4483304	303	0.0	832	98.263	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_258909260	303	0.0	832	98.263	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas kurunegalensis]	WP_286113336	485880	0.0	832	98.263	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_016487542	286;303;380021;1331671;1388760;1661049;2009000;2070643;2070644;2070645;2751314;2751366;2817854;2817855;2903146;2903148;2975361	0.0	832	98.015	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MAG: M24 family metallopeptidase [Candidatus Pseudomonas phytovorans]	WEK33164	3121377	0.0	831	98.015	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_258652362	303	0.0	831	98.015	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_016499212	286;303;1211579;2567891;2567893;2672566;2993590	0.0	830	98.015	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_336335661	303	0.0	830	97.767	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_138736788	303	0.0	830	98.015	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_266029722	286;2567895;2666183;2993594	0.0	830	97.767	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_284355629	303	0.0	830	98.015	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_198753576	286;76759;485880	0.0	830	98.015	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_284360679	286;303;3133145	0.0	830	97.767	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_012271881	286;303;76869;1247546;1661047;1661055;2735307;2821408;2903145;2935864;3068639	0.0	829	98.263	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [unclassified Pseudomonas]	WP_105948552	306;196821;1378074;1378083;1812180	0.0	829	98.015	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_306381088	303	0.0	829	97.767	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_043203920	303;1449986	0.0	829	97.767	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_268968376	303	0.0	829	97.767	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_028613148	303;1384061	0.0	829	97.767	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas sp. LPB4.O]	WP_341798430	3135229;3135254	0.0	828	97.767	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas sp. LB-090624]	WP_110743208	2213079	0.0	828	97.761	2058	25	1230	403	1	402
+Part:BBa_K5108009_creA_-	Creatinase [Pseudomonas sp. MM223]	CAI3800752	3018930;3019967	0.0	828	97.767	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	M24 family metallopeptidase [Pseudomonas putida]	WP_069943410	303	0.0	828	98.015	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: M24 family metallopeptidase [Pseudomonas]	WP_132841045	286;303;2976152	0.0	827	97.519	2058	25	1233	403	1	403
+Part:BBa_K5108009_creA_-	MULTISPECIES: creatininase [unclassified Pseudomonas]	WP_120653449	303;306;196821;404579;1755504;2567894;2603214;3090665	0.0	536	100.000	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	Chain A, Creatinine amidohydrolase [Pseudomonas putida]	3A6J_A	303	0.0	535	99.615	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	Chain A, Creatinine amidohydrolase [Pseudomonas putida]	3A6G_A	303	0.0	533	99.615	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	Chain A, Creatinine amidohydrolase [Pseudomonas putida]	3A6E_A	303	0.0	533	99.615	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	Chain A, Creatinine amidohydrolase [Pseudomonas putida]	3A6H_A	303	0.0	532	99.615	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas resinovorans]	WP_274801242	53412	0.0	525	97.308	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. BN415]	WP_280284093	2567889	1.02e-180	525	97.308	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas resinovorans]	WP_028631177	53412;1123020	1.50e-180	524	96.923	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. D(2018)]	WP_137823858	2502238	2.74e-180	523	96.923	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	Chain A, creatininase [Pseudomonas putida]	1Q3K_A	303	1.39e-178	519	96.911	2058	1272	2048	259	1	259
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. MOB-449]	MCO6060290	2954921	1.63e-178	519	96.154	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas lalkuanensis]	WP_151131442	2604832	4.69e-178	518	96.899	2058	1269	2042	260	1	258
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas taiwanensis]	WP_179058016	470150	6.29e-178	518	96.512	2058	1269	2042	260	1	258
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. A46]	WP_088190324	1973009	2.15e-177	516	95.769	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas furukawaii]	WP_003453784	1149133	2.83e-177	516	95.769	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas furukawaii]	WP_268130652	1149133	4.01e-177	515	95.769	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp.]	WP_343647673	306	1.10e-176	514	96.512	2058	1269	2042	260	1	258
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. BN515]	WP_280379448	2567892	1.40e-176	514	96.124	2058	1269	2042	260	1	258
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. OTU5201]	WP_342244094	3043850	1.92e-176	514	95.367	2058	1269	2045	260	1	259
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. BN102]	WP_280325546	2567886	3.14e-176	513	95.367	2058	1269	2045	260	1	259
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. JM0905a]	WP_190834304	2772484	1.27e-175	511	95.349	2058	1269	2042	260	1	258
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas oryzae]	WP_090349499	1392877	1.18e-174	509	94.615	2058	1269	2048	263	1	260
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sagittaria]	WP_092427685	1135990	1.19e-173	506	94.574	2058	1269	2042	258	1	258
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas linyingensis]	WP_090305315	915471	5.30e-173	505	94.186	2058	1269	2042	258	1	258
+Part:BBa_K5108009_creA_-	creatininase [Stutzerimonas stutzeri TS44]	EIK52273	477228	5.34e-171	500	92.692	2058	1269	2048	260	1	260
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas boanensis]	WP_215380957	2822138	1.45e-169	496	91.154	2058	1269	2048	263	1	260
+Part:BBa_K5108009_creA_-	MULTISPECIES: creatininase [Pseudomonas]	WP_057977859	286;1615674;2750625	3.13e-169	495	90.769	2058	1269	2048	263	1	260
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas benzenivorans]	WP_090448575	556533	5.17e-169	495	91.154	2058	1269	2048	263	1	260
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. TCU-HL1]	WP_069081710	1856685	2.91e-167	490	90.661	2058	1269	2039	261	1	257
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas jinjuensis]	WP_084312060	198616;1215105	2.93e-165	485	89.494	2058	1269	2039	261	1	257
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas lalucatii]	WP_213640211	1424203	8.89e-165	484	88.803	2058	1269	2045	261	1	259
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas benzenivorans]	WP_255838702	556533	1.53e-164	483	88.803	2058	1269	2045	261	1	259
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas panipatensis]	WP_090267541	428992	1.80e-164	483	88.803	2058	1269	2045	261	1	259
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas cavernicola]	WP_119952687	2320866	6.58e-164	482	88.716	2058	1269	2039	261	1	257
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas schmalbachii]	WP_208314079	2816993	2.48e-163	480	89.105	2058	1269	2039	261	1	257
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas knackmussii]	WP_043248242	65741;1301098	6.92e-162	477	87.645	2058	1269	2045	261	1	259
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas taeanensis]	WP_025163308	574962;1395571	1.42e-154	458	84.556	2058	1269	2045	261	1	259
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. MMS21 TM103]	WP_238043357	2886506	1.41e-153	456	84.047	2058	1269	2039	261	1	257
+Part:BBa_K5108009_creA_-	creatininase [uncultured Pseudomonas sp.]	WP_298188128	114707	3.02e-153	454	84.436	2058	1269	2039	261	1	257
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas borbori]	WP_090505672	289003	5.60e-153	454	84.436	2058	1269	2039	261	1	257
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas aestuarii]	WP_271348853	3018340	2.40e-152	452	83.784	2058	1269	2045	261	1	259
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp.]	WP_305253566	306	2.74e-152	452	84.047	2058	1269	2039	261	1	257
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. CC6-YY-74]	WP_079202637	1930532	2.92e-152	452	83.784	2058	1269	2045	261	1	259
+Part:BBa_K5108009_creA_-	MAG: creatininase [Pseudomonadales bacterium RIFCSPLOWO2_02_FULL_63_210]	OHC27852	1802007	9.61e-152	451	83.462	2058	1269	2048	263	1	260
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp.]	WP_318963653	306	3.67e-151	449	84.047	2058	1269	2039	261	1	257
+Part:BBa_K5108009_creA_-	creatininase [Candidatus Competibacteraceae bacterium]	HXH04485	2053538	4.43e-149	444	81.712	2058	1269	2039	259	1	257
+Part:BBa_K5108009_creA_-	MULTISPECIES: creatininase [Pseudomonas]	WP_090337592	286;301;316;489632;2975373;2975374;2975405	7.27e-149	443	82.101	2058	1269	2039	261	1	257
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. WS 5019]	WP_169969022	2717476	4.55e-148	441	81.712	2058	1269	2039	261	1	257
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. EGD-AK9]	WP_021442225	1386078	5.78e-148	441	81.712	2058	1269	2039	261	1	257
+Part:BBa_K5108009_creA_-	creatininase [Pseudomonas sp. ALS1279]	TRO34610	1734450	3.29e-143	449	82.101	2058	1269	2039	831	1	257
+Part:BBa_K5108009_creA_-	hypothetical protein PS685_04105 [Pseudomonas fluorescens]	VVN62616	294	4.50e-26	116	42.647	2058	615	208	136	1	136
+# BLASTX 2.16.0+
+# Query: encrypted
+# Database: /mnt/data/home/ec2-user/cm-dbs/nr_blast/nr
+# 0 hits found
+# BLASTX 2.16.0+
+# Query: xylanase_zero_shot_des31
+# Database: /mnt/data/home/ec2-user/cm-dbs/nr_blast/nr
+# Fields: query acc., subject title, subject acc., subject tax ids, evalue, bit score, % identity, query length, q. start, q. end, subject length, s. start, s. end
+# 50 hits found
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia coli]	ELO4812367	562	2.03e-68	229	55.159	756	1	753	453	2	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia coli]	WP_336477974	562	2.31e-68	228	55.159	756	1	753	453	2	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia coli]	WP_334273878	562	3.29e-68	228	51.793	756	1	753	453	2	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia fergusonii]	EHJ4128015	564	3.39e-68	228	54.365	756	1	753	452	1	250
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia coli]	WP_270339909	562	8.22e-68	227	53.968	756	1	753	453	2	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia coli]	HBH4548453	562	9.19e-68	226	54.365	756	1	753	429	2	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia coli]	WP_205277549	562	1.16e-67	227	54.365	756	1	753	453	2	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia coli]	EFH8041823	562	1.19e-67	227	54.365	756	1	753	452	1	250
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia coli]	HDQ1540994	562	1.21e-67	227	55.159	756	1	753	453	2	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia coli]	EKO0593409	562	1.24e-67	227	53.968	756	1	753	453	2	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia coli]	EGN4668040	562	1.39e-67	226	55.159	756	1	753	452	1	250
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia fergusonii]	EHG6000833	564	1.43e-67	226	54.150	756	1	756	452	1	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia fergusonii]	WP_181812730	564	1.63e-67	226	54.365	756	1	753	453	2	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia fergusonii]	HAI1304587	564	1.87e-67	226	54.365	756	1	753	452	1	250
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia coli]	WP_180993279	562	1.90e-67	226	54.365	756	1	753	453	2	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia coli]	HBC2458725	562	1.94e-67	226	54.365	756	1	753	453	2	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia fergusonii]	WP_072274143	564	2.83e-67	226	54.365	756	1	753	453	2	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Escherichia coli]	EME6421322	562	7.76e-67	224	53.968	756	1	753	453	2	251
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio sp. Of7-15]	WP_239182610	2724879	4.90e-57	199	51.626	756	1	735	454	1	244
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio litoralis]	WP_027696071	335972;1123493	1.74e-56	198	51.867	756	1	720	461	1	239
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio sp. CK2-1]	WP_237295600	2912249	3.17e-56	197	51.867	756	1	720	461	1	239
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio parahaemolyticus]	HBC3857255	670	8.20e-56	197	50.206	756	1	720	479	23	264
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio sp.]	WP_287025270	678	1.03e-55	196	51.867	756	1	720	461	1	239
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio galatheae]	WP_045954132	579748	2.40e-55	196	48.148	756	1	720	479	23	264
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio rhizosphaerae]	WP_038178338	398736;1123497	3.98e-55	194	48.333	756	1	720	469	16	254
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio parahaemolyticus]	MBE4158818	670	4.49e-55	195	49.794	756	1	720	479	23	264
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio parahaemolyticus]	EIV1736131	670	4.84e-55	195	49.794	756	1	720	479	23	264
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio parahaemolyticus]	EGR1580438	670	5.93e-55	194	49.794	756	1	720	481	25	266
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio spartinae]	WP_074373585	1918945	5.96e-55	194	48.333	756	1	720	469	16	254
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio parahaemolyticus]	WP_273991747	670	6.25e-55	194	49.794	756	1	720	479	23	264
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio gazogenes]	WP_072957174	687;1123492	6.36e-55	194	47.500	756	1	720	469	16	254
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio parahaemolyticus]	EGQ8157796	670	6.38e-55	194	49.794	756	1	720	481	25	266
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio parahaemolyticus]	WP_273993176	670	6.45e-55	194	49.794	756	1	720	479	23	264
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio parahaemolyticus]	EHK5154926	670	6.73e-55	194	49.794	756	1	720	479	23	264
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio parahaemolyticus]	EHR7287398	670	6.80e-55	194	49.794	756	1	720	479	23	264
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio gazogenes]	WP_088134492	687	8.20e-55	194	47.500	756	1	720	469	16	254
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio ruber]	WP_311845138	184755	1.14e-54	193	47.917	756	1	720	469	16	254
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio mangrovi]	WP_087479452	474394	2.12e-54	193	47.082	756	1	720	486	16	271
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Vibrio sp. SS-MA-C1-2]	WP_235061935	2908646	1.30e-49	180	47.967	756	1	735	464	1	244
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Candidatus Blochmannia sp. SNP]	WP_331828152	3118169	3.82e-48	176	42.623	756	4	732	455	3	245
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Gallibacterium salpingitidis]	WP_066113121	505341	6.14e-48	176	47.561	756	10	735	474	16	259
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Gallibacterium salpingitidis]	WP_066110228	505341	3.43e-47	174	47.561	756	10	735	474	16	259
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Blochmannia endosymbiont of Camponotus sp.]	WP_250232363	700220	1.70e-46	172	41.463	756	4	735	456	3	247
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Blochmannia endosymbiont of Camponotus sp.]	WP_250244145	700220	1.89e-46	172	41.463	756	4	735	456	3	247
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Allofrancisella inopinata]	WP_133940794	1085647	2.52e-46	171	45.643	756	1	720	453	1	239
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Candidatus Blochmanniella camponoti]	WP_250247375	108080	2.53e-46	171	42.292	756	4	756	456	3	254
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Candidatus Blochmanniella camponoti]	WP_250250069	108080	3.83e-46	171	42.292	756	4	756	456	3	254
+xylanase_zero_shot_des31	MAG: bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Candidatus Blochmannia vicinus]	WHL25257	251540	5.09e-46	171	40.711	756	4	756	456	3	254
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Blochmannia endosymbiont of Camponotus sp.]	WP_250230916	700220	6.09e-46	170	41.502	756	4	756	456	3	254
+xylanase_zero_shot_des31	bifunctional indole-3-glycerol-phosphate synthase TrpC/phosphoribosylanthranilate isomerase TrpF [Blochmannia endosymbiont of Camponotus sp.]	WP_250235047	700220	7.13e-46	170	41.502	756	4	756	456	3	254
+# BLASTX 2.16.0+
+# Query: RVFV_Rift_valley_fever
+# Database: /mnt/data/home/ec2-user/cm-dbs/nr_blast/nr
+# Fields: query acc., subject title, subject acc., subject tax ids, evalue, bit score, % identity, query length, q. start, q. end, subject length, s. start, s. end
+# 100 hits found
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	AEB20445	11588	1.11e-167	486	100.000	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein, partial [Rift Valley fever virus]	AAF00695	11588;3052676	1.13e-167	486	100.000	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	NP [Rift Valley fever virus]	ACA14363	11588	1.36e-167	486	100.000	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid [Rift Valley fever virus]	ABD38761	11588	1.41e-167	486	100.000	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	ACE78427	11588	1.70e-167	486	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein, partial [Rift Valley fever virus]	WES12370	11588	2.30e-167	485	100.000	1691	1653	961	242	1	231
+RVFV_Rift_valley_fever	nucleocapsid, partial [Rift Valley fever virus]	XAJ11185	11588	2.45e-167	485	100.000	1691	1653	961	241	1	231
+RVFV_Rift_valley_fever	nucleocapsid [Rift Valley fever virus]	ABD38753	11588	3.53e-167	485	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleoprotein [Rift Valley fever virus]	WOK70108	11588	3.93e-167	485	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	AEB20461	11588	4.63e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	AEC14303	11588	5.52e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	ACE78405	11588	5.52e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	ACE78457	11588	5.52e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	AEZ53094	11588	5.64e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid [Rift Valley fever virus]	AOS50858	11588	5.64e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	NP [Rift Valley fever virus]	ACA14365	11588	5.64e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	ATP66928	11588	5.76e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	AEZ53100	11588	6.15e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid [Rift Valley fever virus]	AYA44615	11588	6.22e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	AEB20457	11588	6.29e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	AGB13838	11588	6.29e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	WES12366	11588	7.57e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein, partial [Rift Valley fever virus]	UPK83343	11588	8.32e-167	484	100.000	1691	1650	961	244	1	230
+RVFV_Rift_valley_fever	nucleocapsid [Rift Valley fever virus]	AYA44643	11588	8.63e-167	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	AEB20442	11588	1.16e-166	484	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid [Rift Valley fever virus]	YP_003848707	11588;3052676	1.54e-166	483	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	NP [Rift Valley fever virus]	ACA14391	11588	1.54e-166	483	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	NP [Rift Valley fever virus]	ACA14381	11588	1.61e-166	483	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleoprotein [Rift Valley fever virus]	WOK70112	11588	1.74e-166	483	99.134	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid [Rift Valley fever virus]	ABD38741	11588	1.77e-166	483	99.134	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	AEZ53096	11588	2.07e-166	483	99.567	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid [Rift Valley fever virus]	ABD38737	11588	2.31e-166	483	99.134	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid [Rift Valley fever virus]	ABD38743	11588	5.17e-166	482	98.701	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein, partial [Rift Valley fever virus]	AAF00696	11588	5.96e-166	482	99.134	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	AEB20453	11588	7.49e-166	481	99.134	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein, partial [Rift Valley fever virus]	QBH70242	11588	8.95e-166	481	100.000	1691	1647	961	243	1	229
+RVFV_Rift_valley_fever	nucleocapsid protein [Rift Valley fever virus]	ATP66910	11588	2.52e-165	480	99.134	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	RecName: Full=Nucleoprotein; AltName: Full=Nucleocapsid protein; Short=Protein N [Rift valley fever virus (STRAIN ZH-548 M12)]	P21700	11588;11589	3.34e-165	480	98.701	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein, partial [Rift Valley fever virus]	QAX24673	11588	6.22e-165	479	100.000	1691	1644	961	242	1	228
+RVFV_Rift_valley_fever	RecName: Full=Nucleoprotein; AltName: Full=Nucleocapsid protein; Short=Protein N [Rift Valley fever virus]	D3K5I7	11588	1.54e-164	478	99.134	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid protein, partial [Rift Valley fever virus]	ATP66916	11588	1.37e-161	471	100.000	1691	1632	961	238	1	224
+RVFV_Rift_valley_fever	nucleocapsid protein, partial [Rift Valley fever virus]	ATP66914	11588	5.41e-161	469	100.000	1691	1629	961	237	1	223
+RVFV_Rift_valley_fever	nucleocapsid protein, partial [Rift Valley fever virus]	WES12327	11588	2.19e-159	465	100.000	1691	1623	961	235	1	221
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	ABD38780	11588	1.91e-155	456	100.000	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	ABD38778	11588	3.84e-155	455	99.623	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	Chain A, Nucleoprotein [Rift valley fever virus (STRAIN ZH-548 M12)]	3OUO_A	11589	4.07e-154	452	94.348	1691	1650	961	245	2	231
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	UTH39004	11588	5.09e-154	452	99.245	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AYA44568	11588	5.15e-154	452	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	ABD38770	11588	6.62e-154	452	97.736	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AEC14306	11588	6.99e-154	452	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AJA32701	11588	8.98e-154	452	96.981	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AQZ54758	11588	9.79e-154	452	97.736	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	NSs [Rift Valley fever virus]	ACA14398	11588	1.06e-153	451	98.491	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	NSs [Rift Valley fever virus]	ACA14436	11588	1.22e-153	451	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	NSs [Rift Valley fever virus]	ACA14428	11588;3052676	1.36e-153	451	97.736	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AYA44632	11588	1.60e-153	451	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AQZ54770	11588	1.60e-153	451	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	ABD38740	11588;3052676	1.65e-153	451	98.113	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	ABD38742	11588	1.65e-153	451	98.491	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	ABD38784	11588;3052676	1.71e-153	451	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	XAJ11172	11588	1.95e-153	451	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AEZ53095	11588	2.06e-153	451	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AQZ54790	11588	2.06e-153	451	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AEC14296	11588	2.06e-153	451	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	NSs [Rift Valley fever virus]	ACA14430	11588	2.15e-153	451	96.981	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	ABD38768	11588	2.61e-153	451	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AVK51669	11588	2.70e-153	451	97.736	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	ABD38790	11588	2.70e-153	451	96.981	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	ABD38750	11588	2.91e-153	450	97.736	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	ATP66921	11588	3.04e-153	450	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AEC14292	11588	3.14e-153	450	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AEZ53103	11588	3.14e-153	450	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AEC14304	11588	3.18e-153	450	96.981	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AYA44618	11588	3.54e-153	450	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	XAJ11132	11588	3.58e-153	450	96.981	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	NSs [Rift Valley fever virus]	ACA14420	11588	4.04e-153	450	97.736	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	NSs [Rift Valley fever virus]	ACA14414	11588	4.04e-153	450	97.736	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	UDP24146	11588	4.46e-153	450	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	ACE78452	11588	4.56e-153	450	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AQZ54794	11588	4.66e-153	450	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	NSs [Rift Valley fever virus]	ACA14402	11588	4.66e-153	450	96.981	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AGB13808	11588	4.66e-153	450	96.604	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	AQZ54774	11588	4.86e-153	450	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	ABD38758	11588	5.48e-153	450	97.736	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	XAJ11166	11588	7.28e-153	449	96.981	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	ACE78422	11588	7.36e-153	449	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	NSs [Rift Valley fever virus]	ACA14404	11588	7.52e-153	449	96.981	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Rift Valley fever virus]	ATP66899	11588	8.03e-153	449	97.736	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	AEB20450	11588	8.57e-153	449	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	nonstructural protein [Phlebovirus riftense]	QUE40319	3052676	9.66e-153	449	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	ABD38766	11588	1.09e-152	449	97.736	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	NSs [Rift Valley fever virus]	ACA14410	11588	1.11e-152	449	97.358	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	ABD38760	11588	1.11e-152	449	97.736	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	non-structural protein [Rift Valley fever virus]	ABD38776	11588	1.60e-152	449	97.736	1691	35	829	265	1	265
+RVFV_Rift_valley_fever	NP, partial [Phlebovirus riftense]	WBR34649	3052676	5.95e-138	409	100.000	1691	1545	961	209	1	195
+RVFV_Rift_valley_fever	nucleocapsid [Rift Valley fever virus]	ASF20656	11588	7.13e-121	365	99.429	1691	1485	961	189	1	175
+RVFV_Rift_valley_fever	nucleocapsid protein [Ambe virus]	YP_009346032	1926500	9.30e-107	331	65.801	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid [Tico virus]	YP_010839743	2846448	1.76e-102	320	63.319	1691	1653	967	245	1	229
+RVFV_Rift_valley_fever	nucleocapsid [Phlebovirus sp. Be Ar 371637]	ABQ23528	426787;439617	1.78e-99	312	60.606	1691	1653	961	245	1	231
+RVFV_Rift_valley_fever	nucleocapsid [Durania virus]	YP_010086128	1006585	8.15e-99	311	63.203	1691	1653	961	245	1	231
+# BLASTX 2.16.0+
+# Query: BBa_K209429_A_15261
+# Database: /mnt/data/home/ec2-user/cm-dbs/nr_blast/nr
+# Fields: query acc., subject title, subject acc., subject tax ids, evalue, bit score, % identity, query length, q. start, q. end, subject length, s. start, s. end
+# 756 hits found
+BBa_K209429_A_15261	dynamin-binding protein isoform 1 [Mus musculus]	NP_082305	10090;32630	0.0	3034	100.000	9646	4907	9646	1580	1	1580
+BBa_K209429_A_15261	RecName: Full=Dynamin-binding protein; AltName: Full=Scaffold protein Tuba [Mus musculus]	Q6TXD4	10090	0.0	3030	99.873	9646	4907	9646	1580	1	1580
+BBa_K209429_A_15261	dynamin-binding protein isoform 4 [Mus musculus]	NP_001390221	10090	0.0	3003	99.367	9646	4907	9646	1570	1	1570
+BBa_K209429_A_15261	dynamin-binding protein isoform 3 [Mus musculus]	NP_001390219	10090	0.0	2996	98.991	9646	4907	9646	1576	1	1576
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Mus caroli]	XP_021007464	10089	0.0	2927	96.910	9646	4907	9646	1576	1	1576
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Mus pahari]	XP_021054183	10093	0.0	2765	93.001	9646	4907	9646	1569	1	1569
+BBa_K209429_A_15261	dynamin-binding protein isoform X3 [Arvicanthis niloticus]	XP_034362827	61156	0.0	2689	89.553	9646	4907	9646	1579	1	1579
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Grammomys surdaster]	XP_028630512	491861	0.0	2670	89.239	9646	4907	9646	1577	1	1577
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Mastomys coucha]	XP_031246255	35658	0.0	2654	89.477	9646	4907	9646	1575	1	1575
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Apodemus sylvaticus]	XP_052041324	10129	0.0	2644	89.106	9646	4907	9646	1577	1	1577
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Rattus norvegicus]	XP_008758708	10116	0.0	2580	86.587	9646	4907	9646	1589	13	1589
+BBa_K209429_A_15261	dynamin-binding protein isoform 1 [Rattus norvegicus]	NP_001381930	10116	0.0	2580	86.587	9646	4907	9646	1577	1	1577
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Rattus rattus]	XP_032747916	10117	0.0	2567	86.452	9646	4907	9646	1576	1	1576
+BBa_K209429_A_15261	dynamin-binding protein isoform 5 [Mus musculus]	NP_001390222	10090	0.0	2523	98.807	9646	4907	8911	1512	1	1331
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Peromyscus californicus insignis]	XP_052618296	564181	0.0	2461	83.670	9646	4907	9646	1575	1	1575
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Acomys russatus]	XP_051002570	60746	0.0	2451	83.239	9646	4907	9646	1570	1	1570
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Peromyscus eremicus]	XP_059113669	42410	0.0	2438	83.291	9646	4907	9646	1575	1	1575
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Peromyscus leucopus]	XP_028744628	10041	0.0	2425	82.546	9646	4907	9646	1576	1	1576
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Peromyscus maniculatus bairdii]	XP_015841112	230844	0.0	2422	82.409	9646	4907	9646	1570	1	1570
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Onychomys torridus]	XP_036025776	38674	0.0	2420	82.735	9646	4907	9646	1566	1	1566
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Arvicola amphibius]	XP_038176352	1047088	0.0	2415	80.675	9646	4907	9646	1615	1	1615
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Chionomys nivalis]	XP_057633183	269649	0.0	2405	81.343	9646	4907	9646	1594	1	1594
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Meriones unguiculatus]	XP_021500319	10047	0.0	2387	80.474	9646	4907	9646	1571	1	1571
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Psammomys obesus]	XP_055447511	48139	0.0	2379	80.412	9646	4907	9646	1571	1	1571
+BBa_K209429_A_15261	dynamin-binding protein isoform X2 [Microtus oregoni]	XP_041517162	111838	0.0	2375	80.184	9646	4907	9646	1616	1	1616
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Microtus oregoni]	XP_041517160	111838	0.0	2363	79.647	9646	4907	9646	1627	1	1627
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Cricetulus griseus]	XP_007651067	10029	0.0	2362	81.297	9646	4907	9646	1572	1	1572
+BBa_K209429_A_15261	dynamin-binding protein [Phodopus roborovskii]	XP_051056044	109678	0.0	2360	81.423	9646	4907	9646	1569	1	1569
+BBa_K209429_A_15261	dynamin-binding protein [Microtus ochrogaster]	XP_013203658	79684	0.0	2347	78.370	9646	4907	9646	1655	1	1655
+BBa_K209429_A_15261	dynamin-binding protein isoform X3 [Rattus norvegicus]	XP_063120694	10116	0.0	2333	86.680	9646	5324	9646	1440	2	1440
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Mesocricetus auratus]	XP_005063616	10036	0.0	2329	80.201	9646	4907	9646	1570	1	1570
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Nannospalax galili]	XP_008830159	1026970	0.0	2325	80.314	9646	4907	9646	1575	1	1575
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Jaculus jaculus]	XP_045007985	51337	0.0	2258	78.050	9646	4907	9646	1564	1	1564
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Castor canadensis]	XP_020011896	51338	0.0	2243	77.589	9646	4907	9646	1571	1	1571
+BBa_K209429_A_15261	Dynamin-binding protein [Sciurus carolinensis]	MBZ3874521	30640	0.0	2222	77.568	9646	4907	9646	1574	1	1574
+BBa_K209429_A_15261	LOW QUALITY PROTEIN: dynamin-binding protein [Sciurus carolinensis]	XP_047409174	30640	0.0	2204	77.087	9646	4907	9646	1577	1	1577
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Cynocephalus volans]	XP_062958935	110931	0.0	2195	75.220	9646	4907	9646	1581	1	1581
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Marmota marmota marmota]	XP_015350121	9994	0.0	2190	75.957	9646	4907	9646	1580	1	1580
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Marmota flaviventris]	XP_027786141	93162	0.0	2190	76.020	9646	4907	9646	1580	1	1580
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Marmota monax]	XP_046306004	9995	0.0	2185	75.832	9646	4907	9646	1580	1	1580
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Macaca mulatta]	XP_015003401	9544	0.0	2183	75.799	9646	4907	9646	1577	1	1577
+BBa_K209429_A_15261	PREDICTED: dynamin-binding protein isoform X1 [Macaca fascicularis]	XP_005566230	9541	0.0	2183	75.737	9646	4907	9646	1577	1	1577
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Macaca nemestrina]	XP_011733979	9545	0.0	2182	75.737	9646	4907	9646	1577	1	1577
+BBa_K209429_A_15261	dynamin-binding protein isoform X2 [Ictidomys tridecemlineatus]	XP_005335287	43179	0.0	2180	75.737	9646	4907	9646	1582	1	1582
+BBa_K209429_A_15261	dynamin-binding protein [Urocitellus parryii]	XP_026250685	9999	0.0	2178	75.769	9646	4907	9646	1580	1	1580
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Aotus nancymaae]	XP_021528622	37293	0.0	2178	75.847	9646	4907	9646	1576	1	1576
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Pongo abelii]	XP_009243980	9601	0.0	2177	75.972	9646	4907	9646	1577	1	1577
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Pongo pygmaeus]	XP_054291522	9600	0.0	2176	75.910	9646	4907	9646	1577	1	1577
+BBa_K209429_A_15261	PREDICTED: dynamin-binding protein [Propithecus coquereli]	XP_012517230	379532	0.0	2173	75.518	9646	4907	9646	1579	1	1579
+BBa_K209429_A_15261	dynamin-binding protein isoform X1 [Nomascus leucogenys]	XP_003255383	61853	0.0	2167	75.799	9646	4907	9646	1577	1	1577
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Homo sapiens]	NP_000730	9595;9597;9598;9606;32630;81572;1958742	0.0	890	99.556	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	hypothetical protein, partial [synthetic construct]	CAL38394	32630	0.0	889	99.333	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 isoform X1 [Pan paniscus]	XP_054971387	9597	0.0	889	99.556	9646	3551	4900	489	40	489
+BBa_K209429_A_15261	Chain R, Muscarinic acetylcholine receptor M2, Vasopressin V2 receptor chimera [Homo sapiens]	6U1N_R	9606	0.0	889	99.556	9646	3551	4900	509	24	473
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Nomascus leucogenys]	XP_003261430	61853	0.0	888	99.333	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Symphalangus syndactylus]	XP_055140116	9590	0.0	888	99.333	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Pongo abelii]	XP_054415846	9600;9601	0.0	888	99.113	9646	3551	4903	479	17	467
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 isoform X2 [Pongo pygmaeus]	XP_054352008	9600;9601	0.0	888	99.333	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	CHRM2, partial [synthetic construct]	AKI71904	32630	0.0	885	99.333	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Macaca fascicularis]	XP_005550926	9541;9544;54180;60711;61622;257877;336983;591936	0.0	885	98.889	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Papio anubis]	XP_003896697	9555;9568	0.0	883	98.667	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 isoform X2 [Aotus nancymaae]	XP_012321139	37293	0.0	882	98.667	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	PREDICTED: muscarinic acetylcholine receptor M2 [Rhinopithecus bieti]	XP_017732000	61621	0.0	882	98.667	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Macaca nemestrina]	XP_011722062	9545	0.0	882	98.667	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 isoform X1 [Aotus nancymaae]	XP_012321135	37293	0.0	881	98.667	9646	3551	4900	482	33	482
+BBa_K209429_A_15261	PREDICTED: muscarinic acetylcholine receptor M2 [Cercocebus atys]	XP_011923624	9531;9565	0.0	856	98.444	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 isoform X2 [Callithrix jacchus]	XP_002751999	9483;9490	0.0	853	98.444	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 isoform X1 [Callithrix jacchus]	XP_009001249	9483	0.0	853	98.444	9646	3551	4900	482	33	482
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Sapajus apella]	XP_032131788	9515	0.0	852	98.444	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 isoform X2 [Cebus imitator]	XP_017359794	2715852	0.0	851	98.222	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 isoform X2 [Saimiri boliviensis boliviensis]	XP_039328998	39432	0.0	851	98.222	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Carlito syrichta]	XP_008053052	1868482	0.0	851	98.222	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 isoform X1 [Cebus imitator]	XP_017359791	2715852	0.0	851	98.222	9646	3551	4900	482	33	482
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 isoform X1 [Saimiri boliviensis boliviensis]	XP_010338661	39432	0.0	850	98.222	9646	3551	4900	482	33	482
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Hippopotamus amphibius kiboko]	XP_057588454	575201	0.0	850	98.000	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	hypothetical protein [Bos mutus]	MXQ97837	72004	0.0	850	97.556	9646	3551	4900	555	106	555
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Lepus europaeus]	XP_062050864	9983	0.0	850	97.778	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Neophocaena asiaeorientalis asiaeorientalis]	XP_024597408	9733;42100;1706337	0.0	849	98.000	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	PREDICTED: muscarinic acetylcholine receptor M2 [Capra hircus]	XP_005679565	9925	0.0	849	97.778	9646	3551	4900	465	16	465
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Cervus canadensis]	XP_043319736	9860;9886;9888;30532;84702;228257;1574408;3082113	0.0	849	97.556	9646	3551	4900	465	16	465
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Lagenorhynchus obliquidens]	XP_026957604	90247	0.0	849	98.000	9646	3551	4900	493	44	493
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 isoform X1 [Dama dama]	XP_061021861	30532	0.0	848	97.556	9646	3551	4900	498	49	498
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Physeter catodon]	XP_007111424	9755	0.0	848	97.778	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Lemur catta]	XP_045420008	9447	0.0	848	98.000	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	hypothetical protein MJT46_006197 [Ovis ammon polii x Ovis aries]	KAI4570680	2918886	0.0	848	97.556	9646	3551	4900	509	60	509
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Bos taurus]	NP_001074202	9906;9913;9915;30522;43346;72004	0.0	848	97.556	9646	3551	4900	465	16	465
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Budorcas taxicolor]	XP_052494933	37181	0.0	848	97.556	9646	3551	4900	465	16	465
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 isoform X1 [Canis lupus familiaris]	XP_005629635	9615;9627;34880;286419;494514	0.0	847	97.333	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Globicephala melas]	XP_030709789	9731	0.0	847	97.556	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Ovis aries]	XP_027824648	9940;230172	0.0	847	97.556	9646	3551	4900	465	16	465
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Mesoplodon densirostris]	XP_059964345	48708	0.0	847	97.778	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Odocoileus virginianus texanus]	XP_020741043	9880	0.0	847	97.333	9646	3551	4900	465	16	465
+BBa_K209429_A_15261	PREDICTED: muscarinic acetylcholine receptor M2 [Lipotes vexillifer]	XP_007466652	118797	0.0	847	97.556	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Neomonachus schauinslandi]	XP_021548644	29088	0.0	847	97.556	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	PREDICTED: muscarinic acetylcholine receptor M2 [Propithecus coquereli]	XP_012498219	379532	0.0	847	97.778	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Hyaena hyaena]	XP_039078357	95912	0.0	847	97.333	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	hypothetical protein MJG53_006650 [Ovis ammon polii x Ovis aries]	KAI4585116	2918886	0.0	847	97.556	9646	3551	4900	529	80	529
+BBa_K209429_A_15261	hypothetical protein JEQ12_015748 [Ovis aries]	KAG5210554	9940	0.0	847	97.556	9646	3551	4900	509	60	509
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Meles meles]	XP_045877582	9662	0.0	846	97.333	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	muscarinic acetylcholine receptor M2 [Suricata suricatta]	XP_029811290	37032	0.0	846	97.333	9646	3551	4900	466	17	466
+BBa_K209429_A_15261	mCherry-HMW2(dP28) fusion protein [synthetic construct]	BDF92672	32630	0.0	778	99.162	9646	759	1832	2419	2062	2419
+BBa_K209429_A_15261	aph(3\\')-Ia [Klebsiella pneumoniae]	ASK37968	573;2161723	0.0	584	98.947	9646	984	1832	285	1	285
+BBa_K209429_A_15261	KanR [Cloning vector pSUMO3_ck5]	AHY21932	1494601	0.0	581	98.940	9646	990	1832	283	1	283
+BBa_K209429_A_15261	phosphotransferase enzyme family protein [Corynebacterium sp. CMW7794]	KXI15614	1603887	0.0	575	97.527	9646	990	1832	283	1	283
+BBa_K209429_A_15261	MULTISPECIES: APH(3')-I family aminoglycoside O-phosphotransferase [Bacteria]	WP_099588326	2;139;562;1396;1496;1590;1718;32630;47715;66855;99822;119857;119971;183765;219746;224309;259258;424809;456494;456495;456496;456498;456499;491854;491855;747298;928675;1090674;1096444;1096445;1096446;1096447;1115837;1115838;1115839;1115840;1115841;1115842;1115843;1115844;1129353;1170625;1170626;1170627;1184578;1219415;1219763;1219764;1237879;1237880;1237881;1237882;1237883;1237884;1237885;1237886;1237887;1237888;1242764;1298533;1367419;1424654;1424655;1424656;1427725;1427726;1427727;1451181;1451182;1545814;1545815;1545816;1545817;1565116;1565117;1565118;1565120;1565121;1570414;1740675;1740676;1747829;1747830;1747831;1747832;1747833;1747834;1747835;1747836;1747837;1747838;1747839;1747840;1747841;1747842;1747843;1747844;1747845;1747846;1747847;1747848;1747849;1747850;1747851;1747852;1747853;1747854;1747855;1747856;1747857;1747858;1747859;1747860;1747861;1747862;1747863;1747864;1747865;1747866;1747867;1747868;1747869;1747870;1747871;1747872;1747873;1747874;1747875;1747876;1747877;1747878;1747879;1747880;1747881;1747882;1747883;1747884;1747885;1747886;1747887;1747888;1747889;1747890;1747891;1747892;1747893;1747894;1747895;1747896;1747897;1747898;1747899;1747900;1747901;1887388;1906600;1907937;1911011;1920724;1920725;1945295;1945296;1968273;2026119;2026120;2026121;2071714;2212999;2213000;2250208;2597304;2712183;2713477;2713479;2713480;2713485;2713486;2713487;2718651;2718652;2718653;2718654;2718655;2718656;2718657;2764130;2764131;2764132;2801916;2818239;2818240;2818241;2818242;2818243;2818244;2899239;2902901;2902902;2914156;2914157;2914158;2977077;3018075;3054414;3076383;3076384;3081644;3081645;3081646;3081647;3081648;3081649;3081650;3139005;3139009	8.72e-179	561	100.000	9646	1026	1832	269	1	269
+BBa_K209429_A_15261	kanamycin kinase [synthetic construct]	QSV52304	32630	1.97e-178	560	99.628	9646	1026	1832	269	1	269
+BBa_K209429_A_15261	kanamycin resistance protein [Cloning vector pIPKTA38]	ABQ65196	444601;444602;490916;490917;490918;490919;490920;490921;490922;490923;490924;490925;490926;490927;587430;1439699;1439700;1945294;2848383;2871695;3076713	9.25e-178	558	99.628	9646	1026	1832	269	1	269
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Sphingomonas koreensis]	WP_126053077	93064	1.24e-177	558	99.628	9646	1026	1832	269	1	269
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	WP_203130007	562	1.46e-177	558	99.257	9646	1026	1832	269	1	269
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	HCE8982156	562	3.80e-177	557	99.262	9646	1026	1832	282	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	EHH7639932	562	5.86e-177	556	99.262	9646	1026	1832	283	1	271
+BBa_K209429_A_15261	aminoglycoside 3'-phosphotransferase [Cloning vector pUK21]	AAF71713	119973;362869;398755;398756;1682344;1682345;1682346	6.02e-177	556	98.897	9646	1026	1832	272	1	272
+BBa_K209429_A_15261	MULTISPECIES: aminoglycoside O-phosphotransferase APH(3')-Ia [Bacteria]	WP_000018329	2;34;235;264;285;287;303;316;323;359;361;470;471;511;520;546;548;549;550;562;564;571;573;574;582;584;585;587;588;595;596;597;599;600;611;615;621;622;623;624;636;644;645;648;654;663;666;668;670;672;747;1063;1280;1283;1307;1313;1428;1625;1717;1718;1795;1902;2371;28144;28147;28150;28901;29472;29473;29474;31823;32630;33060;35356;35703;37762;37923;38313;39777;42895;43248;43249;43250;43251;43657;46015;46257;46626;47800;48296;48409;50422;51163;51669;53422;53444;53628;53707;54009;54291;55595;55601;57045;57706;57743;58095;58097;58712;59201;59203;59204;61645;61648;62101;64187;66269;67824;67825;67827;70803;72407;76522;76523;76531;76536;76862;77133;82633;82689;83333;83655;83817;84477;85569;88230;88231;88232;88282;88283;88284;89146;90105;90149;90371;92756;93999;94177;98360;102862;108619;110993;110994;111648;115981;117541;119912;121290;126385;130501;133448;134047;134364;136689;140096;141904;143221;147260;149384;149386;149387;149390;149391;149539;158836;158849;163914;163916;163919;165302;168927;169427;169430;171383;179478;179479;179480;179481;179482;179997;180282;180434;192853;192953;192954;192955;192956;194867;196023;196024;202950;208224;208962;211968;213659;213660;215169;218468;224729;225991;231720;244319;244366;251747;260048;260678;260680;260901;267887;272747;274582;274589;282076;283955;284487;286782;286783;291271;295024;299443;299766;301102;307505;311216;314254;315474;321314;322710;322832;323284;332945;333965;334821;336306;340190;341830;346225;346226;348044;353569;357347;363569;364947;364948;374280;376724;380021;396415;399586;399587;399588;399598;404219;404399;416331;420517;420519;420520;420521;424810;424811;433626;433627;435751;439855;440524;442573;442574;442634;454623;454625;458836;459231;477959;477961;485602;486990;486993;486998;486999;487002;487004;488447;488449;489632;491925;492670;495220;495221;508432;508436;511693;512279;525243;526969;528345;539813;553226;553227;555091;564294;565108;570157;570159;585396;590717;592014;593905;595496;595657;626774;633150;646102;646110;646111;646112;646113;646114;646115;646116;646117;646118;646119;646120;646121;646122;646123;646124;646125;646126;651561;660654;661031;665876;670877;670879;670880;679202;679205;682797;686263;686267;699281;706476;717998;717999;723923;743778;747347;748448;749533;749539;754452;755269;755270;795475;796013;862784;862785;862786;862787;864073;869681;869688;881260;886913;903396;908210;913076;913240;932693;941280;941322;990066;990067;990282;990925;992200;992201;992202;992203;994383;999509;1001989;1010796;1028764;1029989;1030005;1033846;1050617;1055535;1055537;1069495;1076926;1078034;1079932;1084325;1084326;1084327;1084336;1084346;1084347;1084352;1084356;1086030;1087440;1087441;1087443;1087444;1087445;1088860;1088861;1089838;1090674;1090869;1090926;1090929;1094167;1094168;1094169;1094170;1094171;1095709;1108600;1108803;1109410;1116802;1128946;1128948;1128950;1128951;1128952;1128953;1128954;1133977;1134687;1136950;1142142;1144303;1148056;1148157;1150128;1151173;1156081;1160757;1160769;1165386;1165843;1165939;1165943;1165944;1166513;1166514;1166516;1166519;1166521;1168062;1168063;1168064;1169334;1170225;1170226;1175534;1175536;1203547;1211113;1212766;1219766;1219768;1221261;1226115;1228988;1232154;1235825;1242084;1245474;1246695;1246696;1246697;1246698;1246699;1246700;1246701;1246702;1246703;1246704;1246705;1246706;1246707;1246708;1246709;1246710;1246711;1246712;1246713;1246714;1246715;1246716;1246717;1246718;1246719;1246720;1246721;1246722;1246723;1246724;1260097;1260098;1263550;1267897;1268985;1268991;1268997;1276652;1280986;1281105;1281109;1281172;1284798;1284805;1284819;1287737;1290996;1291080;1291081;1292100;1294138;1294139;1294140;1294141;1296536;1299088;1299211;1299279;1317130;1324319;1328377;1328383;1328387;1328398;1328401;1328404;1328407;1328409;1328411;1328815;1329843;1331664;1339227;1339228;1340181;1340182;1340183;1340184;1340185;1341693;1343063;1355079;1358116;1358422;1366854;1366855;1366856;1366857;1366858;1381121;1384549;1384550;1386015;1389422;1395574;1395575;1398492;1398944;1398968;1400181;1400182;1403157;1409965;1411646;1411696;1412816;1412817;1412829;1413252;1413253;1431455;1436143;1438699;1438701;1438703;1438708;1438709;1438711;1438712;1438714;1438715;1438718;1438719;1438722;1438725;1438731;1438732;1438733;1438734;1438735;1438736;1438737;1438738;1438739;1438740;1438741;1438742;1438743;1438744;1438745;1438747;1438748;1438750;1438753;1438755;1438757;1438759;1438764;1438765;1438768;1438770;1438771;1438773;1438774;1438775;1438777;1438778;1438779;1438780;1438782;1438790;1438802;1438808;1439836;1439838;1439850;1439851;1440148;1441627;1441631;1441928;1446524;1454586;1458520;1461749;1463164;1463165;1470146;1471066;1481665;1494600;1509197;1517758;1522072;1526701;1526930;1531861;1531944;1531945;1531946;1531947;1531948;1544371;1544372;1544373;1544374;1548278;1550567;1550570;1550571;1550572;1550574;1572690;1574161;1581410;1582277;1617785;1620419;1622173;1630352;1630353;1639133;1649172;1649173;1649174;1649175;1655161;1655371;1655372;1655373;1655374;1655375;1655376;1655377;1655378;1655379;1655380;1655381;1655382;1655383;1655384;1655385;1655386;1655387;1655388;1655389;1655390;1655391;1655392;1655393;1655394;1655395;1655396;1655397;1655398;1655399;1655400;1655401;1655402;1655403;1655404;1655405;1655406;1655407;1655408;1655409;1655410;1655411;1655412;1655413;1655414;1655416;1655417;1655418;1667327;1673854;1673855;1673856;1673857;1673858;1673859;1673860;1673861;1673862;1674920;1679948;1679949;1686391;1701604;1701605;1701606;1706332;1734033;1748967;1758179;1767046;1777131;1780132;1785145;1805589;1812934;1812935;1825575;1825579;1881972;1897730;1898031;1898032;1898204;1898207;1903134;1903327;1914286;1919061;1920041;1920043;1920044;1920045;1920046;1926307;1929939;1941511;1941512;1941513;1941514;1941515;1941516;1941517;1941518;1941519;1941520;1941521;1941522;1941523;1941524;1941525;1941526;1941527;1941528;1941529;1941530;1941531;1941532;1941533;1941534;1941535;1941536;1941537;1941538;1941539;1941540;1941541;1941542;1941543;1941544;1941545;1941546;1941547;1941548;1941549;1941550;1941551;1941552;1941553;1941554;1941555;1941556;1941557;1941558;1941559;1941560;1941561;1941562;1941563;1941564;1941565;1941566;1941567;1941568;1941569;1941570;1941571;1941572;1941573;1941574;1941575;1941576;1941577;1941578;1941579;1941580;1941581;1941582;1941583;1941584;1941585;1941586;1941587;1941588;1941589;1941590;1941591;1941592;1941593;1941594;1941595;1941596;1941597;1941598;1941599;1941600;1941601;1941602;1941603;1941604;1941605;1941606;1941607;1941608;1941609;1941610;1941611;1941612;1941613;1941614;1941615;1941616;1941617;1941618;1941619;1941620;1941621;1941622;1941623;1941624;1941625;1941626;1941627;1941628;1941629;1941630;1941631;1941632;1941633;1941634;1941635;1941636;1941637;1941638;1941639;1941640;1941641;1941642;1941643;1941644;1941645;1941646;1941647;1941648;1941649;1941650;1941651;1941652;1941653;1941654;1941655;1941656;1941657;1941658;1941659;1941660;1941661;1941662;1941663;1941664;1941665;1941666;1941667;1941668;1941669;1941670;1941671;1941672;1941673;1941674;1941675;1941676;1941677;1941678;1941679;1941680;1941681;1941682;1941683;1941684;1941685;1941686;1941687;1941688;1941689;1941690;1941691;1941692;1941693;1941694;1941695;1941696;1941697;1941698;1941699;1941700;1941701;1941702;1941703;1941704;1941705;1941706;1941707;1941708;1941709;1941710;1941711;1941712;1941713;1941714;1941715;1941716;1941717;1941718;1941719;1941720;1941721;1941722;1941723;1941724;1941725;1941726;1941727;1941728;1941729;1941730;1941731;1941732;1941733;1941734;1941735;1941736;1941737;1941738;1941739;1941740;1941741;1941742;1941743;1941744;1941745;1941746;1941747;1941748;1941749;1941750;1941751;1941752;1941753;1941754;1941755;1941756;1941757;1941758;1941759;1941760;1941761;1941762;1941763;1941764;1941765;1941766;1941767;1941768;1941769;1941770;1941771;1941772;1941773;1941774;1941775;1941776;1941777;1941778;1941779;1941780;1941781;1941782;1941783;1941784;1941785;1941786;1941787;1941788;1941789;1941790;1941791;1941792;1941793;1941794;1941795;1941796;1941797;1941798;1941799;1941800;1941801;1941802;1941803;1941804;1941805;1941806;1941807;1941808;1941809;1941810;1941811;1941812;1941813;1941814;1941815;1941816;1941817;1941818;1941819;1941820;1941821;1941822;1941823;1941824;1941825;1941826;1941827;1941828;1941829;1941830;1941831;1941832;1941833;1941834;1941835;1941836;1941837;1941838;1941839;1941840;1941841;1941842;1941843;1941844;1941845;1941846;1941847;1941848;1941849;1941850;1941851;1941852;1941853;1941854;1941855;1941856;1941857;1941858;1941859;1941860;1941861;1941862;1941863;1941864;1941865;1941866;1941867;1941868;1941869;1941870;1941871;1941872;1941873;1941874;1941875;1941876;1941877;1941878;1941879;1941880;1941881;1941882;1941883;1941884;1941885;1941886;1941887;1941888;1941889;1941890;1941891;1941892;1941893;1941894;1941895;1941896;1941897;1941898;1941899;1941900;1941901;1941902;1941903;1941904;1941905;1941906;1941907;1941908;1941909;1941910;1941911;1941912;1941913;1941914;1941915;1941916;1941917;1941918;1941919;1941920;1941921;1941922;1941923;1941924;1941925;1941926;1941927;1941928;1941929;1941930;1941931;1941932;1941933;1941934;1941935;1941936;1941937;1941938;1941939;1941940;1941941;1941942;1941943;1941944;1941945;1941946;1941947;1941948;1941949;1941950;1941951;1941952;1941953;1941954;1941955;1941956;1941957;1941958;1941959;1941960;1941961;1941962;1941963;1941964;1941965;1941966;1941967;1941968;1941969;1941970;1941971;1941972;1941973;1941974;1941975;1941976;1941977;1941978;1941979;1941980;1941981;1941982;1941983;1941984;1941985;1941986;1941987;1941988;1941989;1941990;1941991;1941992;1941993;1941994;1941995;1941996;1941997;1941998;1941999;1942000;1942001;1942002;1942003;1942004;1942005;1942006;1942007;1942008;1942009;1942010;1942011;1942012;1942013;1942014;1942015;1942016;1942017;1942018;1942019;1942020;1942021;1942022;1942023;1942024;1942025;1942026;1942027;1942028;1942029;1942030;1942031;1942032;1942033;1942034;1942035;1942036;1942037;1942038;1942039;1942040;1942041;1942042;1942043;1942044;1942045;1942046;1942047;1942048;1942049;1942050;1942051;1942052;1942053;1942054;1942055;1942056;1942057;1942058;1942059;1942060;1942061;1942062;1942063;1942064;1942065;1942066;1942067;1942068;1942069;1942070;1942071;1942072;1942073;1942074;1942075;1942076;1942077;1942078;1942079;1942080;1942081;1942082;1942083;1942084;1942085;1942086;1942087;1942088;1942089;1942090;1942091;1942092;1942093;1942094;1942095;1942096;1942097;1942098;1942099;1942100;1942101;1942102;1942103;1942104;1942105;1942106;1942107;1942108;1942109;1942110;1942111;1942112;1942113;1942114;1942115;1942116;1942117;1942118;1942119;1942120;1942121;1942122;1942123;1942124;1942125;1942126;1942127;1942128;1942129;1942130;1942131;1942132;1942133;1942134;1942135;1942136;1942137;1942138;1942139;1942140;1942141;1942142;1942143;1942144;1942145;1942146;1942147;1942148;1942149;1942150;1942151;1942152;1942153;1942154;1942155;1942156;1942157;1942158;1942159;1942160;1942161;1942162;1942163;1942164;1942165;1942166;1942167;1942168;1942169;1942170;1942171;1942172;1942173;1942174;1942175;1942176;1942177;1942178;1942179;1942180;1942181;1942182;1942183;1942184;1942185;1942186;1942187;1942188;1942189;1942190;1942191;1942192;1942193;1942194;1942195;1942196;1942197;1942198;1942199;1942200;1942201;1942202;1942203;1942204;1942205;1942206;1942207;1942208;1942209;1942210;1942211;1942212;1942213;1942214;1942215;1942216;1942217;1942218;1942219;1942220;1942221;1942222;1942223;1942224;1942225;1942226;1942227;1942228;1942229;1942230;1942231;1942232;1942233;1942234;1942235;1942236;1942237;1942238;1942239;1942240;1942241;1942242;1942243;1942244;1942245;1942246;1942247;1942248;1942249;1942250;1942251;1942252;1942253;1942254;1942255;1942256;1942257;1942258;1942259;1942260;1942261;1942262;1942263;1942264;1942265;1942266;1942267;1942268;1942269;1942270;1942271;1942272;1942273;1942274;1942275;1942276;1942277;1942278;1942279;1942280;1942281;1942282;1942283;1942284;1942285;1942286;1942287;1942288;1942289;1942290;1942291;1942292;1942293;1942294;1942295;1942296;1942297;1942298;1942299;1942300;1942301;1942302;1942303;1942304;1942305;1942306;1942307;1942308;1942309;1942310;1942311;1942312;1942313;1942314;1942315;1942316;1942317;1942318;1942319;1942320;1942321;1942322;1942323;1942324;1942325;1942326;1942327;1942328;1942329;1942330;1942331;1942332;1942333;1942334;1942335;1942336;1942337;1942338;1942339;1942340;1942341;1942342;1942343;1942344;1942345;1942346;1942347;1942348;1942349;1942350;1942351;1942352;1942353;1942354;1942355;1942356;1942357;1942358;1942359;1942360;1942361;1942362;1942363;1942364;1942365;1942366;1942367;1942368;1942369;1942370;1942371;1942372;1942373;1942374;1942375;1942376;1942377;1942378;1942379;1942380;1942381;1942382;1942383;1942384;1942385;1942386;1942387;1942388;1942389;1942390;1942391;1942392;1942393;1942394;1942395;1942396;1942397;1942398;1942399;1942400;1942401;1942402;1942403;1942404;1942405;1942406;1942407;1942408;1942409;1942410;1942411;1942412;1942413;1942414;1942415;1942416;1942417;1942418;1942419;1942420;1942421;1942422;1942423;1942424;1942425;1942426;1942427;1942428;1942429;1942430;1942431;1942432;1942433;1942434;1942435;1942436;1942437;1942438;1942439;1942440;1942441;1942442;1942443;1942444;1942445;1942446;1942447;1942448;1942449;1942450;1942451;1942452;1942453;1942454;1942455;1942456;1942457;1942458;1942459;1942460;1942461;1942462;1942463;1944673;1944674;1944677;1944678;1944687;1944688;1944689;1944690;1944691;1944716;1944717;1945235;1945236;1945278;1945280;1945324;1945325;1945362;1945364;1945365;1945380;1945381;1945382;1945411;1945417;1945432;1961793;1967839;1967989;1969376;1977087;1979214;1979216;2005483;2016259;2016260;2016261;2016262;2016263;2016264;2016265;2016272;2016273;2016274;2016279;2022770;2026240;2027290;2027919;2033003;2051859;2051860;2051861;2051862;2051863;2051864;2051865;2051866;2051867;2051868;2051869;2051870;2051871;2051872;2051873;2051874;2051875;2051876;2051883;2051884;2051904;2060071;2070486;2070487;2070488;2072452;2072458;2073060;2077197;2079049;2079050;2079051;2079052;2079053;2079054;2079055;2079056;2079057;2079058;2079059;2079060;2079061;2079062;2079063;2079064;2079065;2079066;2079067;2079068;2079069;2079070;2079071;2079072;2079073;2079074;2079075;2079076;2079077;2079078;2079079;2079080;2079081;2079082;2079083;2079084;2079085;2079086;2079087;2079088;2079089;2079090;2079091;2079092;2079093;2079153;2079163;2079200;2080744;2080745;2080746;2080748;2082628;2082632;2099696;2161719;2161720;2161721;2161722;2162672;2162673;2162674;2162675;2162676;2162677;2162678;2162679;2162680;2169401;2212680;2212681;2259398;2268476;2268478;2268484;2268485;2268486;2268487;2268488;2268489;2268490;2268491;2268492;2268493;2268494;2268495;2268496;2268497;2268498;2268499;2268500;2268501;2268502;2268503;2268504;2268505;2268506;2268507;2268508;2268509;2268510;2268511;2268512;2268513;2268514;2268515;2268516;2268517;2268518;2268519;2268520;2268521;2268522;2268523;2268524;2268525;2268526;2268527;2268528;2268529;2268530;2268531;2268532;2268533;2268534;2268535;2268536;2268537;2268538;2268539;2268540;2268541;2268542;2268543;2268544;2268545;2268546;2268547;2268548;2268549;2268550;2268551;2268552;2294146;2301143;2301144;2301145;2301146;2301147;2301148;2301149;2301150;2301151;2301152;2301153;2301154;2301155;2301156;2301158;2301159;2301160;2301161;2301163;2301164;2301165;2301166;2301167;2301168;2301169;2304578;2320923;2320924;2320925;2320926;2320927;2320928;2320929;2320930;2340755;2340756;2340757;2340773;2340777;2364170;2364171;2364172;2364173;2364892;2364893;2364894;2364895;2364896;2461524;2461525;2461526;2461527;2461528;2461529;2461530;2461531;2461532;2461533;2461534;2461535;2461536;2461537;2461538;2461539;2461540;2461541;2461542;2461543;2461544;2461545;2461546;2461547;2461548;2461549;2479853;2482682;2482683;2482684;2482685;2482686;2482687;2482688;2482689;2482690;2482691;2482692;2482693;2482694;2482695;2482696;2482697;2482698;2482699;2482700;2482701;2482702;2482703;2482704;2482705;2482706;2482707;2482708;2482709;2482710;2482711;2482712;2482713;2486972;2491650;2491651;2491652;2491680;2491686;2491698;2497875;2510797;2511819;2511982;2511989;2511990;2511991;2511992;2511993;2517786;2561927;2562449;2562526;2565148;2571223;2571224;2571225;2571226;2571227;2571228;2573023;2573024;2573026;2573027;2573028;2573029;2573030;2573031;2573032;2573033;2573034;2573035;2573036;2573037;2573038;2573039;2576830;2576834;2576835;2583588;2586432;2587529;2590157;2597272;2597273;2597274;2597275;2597317;2597318;2597319;2597320;2597321;2600296;2600301;2603244;2603245;2605619;2605620;2614152;2614153;2614154;2614155;2614156;2614157;2652256;2654491;2661551;2662213;2662214;2662215;2662216;2665553;2665556;2665558;2665559;2665564;2665572;2665590;2665591;2665592;2665593;2665594;2665630;2681721;2681722;2681723;2681724;2681725;2681726;2681734;2681735;2681736;2681737;2681742;2681743;2681744;2681745;2681751;2681752;2681753;2681754;2681760;2681761;2681762;2681763;2684709;2692624;2697019;2697024;2698865;2698867;2698868;2698869;2713150;2713151;2713599;2713600;2717401;2717402;2720393;2721226;2721227;2721228;2721229;2721230;2721231;2725547;2725548;2725549;2725991;2725992;2726072;2729176;2729179;2732840;2735150;2735152;2735153;2743767;2744475;2744478;2745891;2745892;2750816;2759564;2759565;2759568;2772255;2772256;2777028;2777029;2777030;2777976;2781233;2781234;2782031;2782032;2782033;2782034;2782035;2782036;2782037;2782038;2782039;2782040;2782041;2782043;2782044;2782046;2782147;2782148;2784129;2784141;2784142;2791982;2793282;2794895;2798587;2798588;2800166;2800167;2800168;2800171;2803919;2806528;2810405;2810406;2810409;2811403;2811404;2813732;2813733;2813734;2813735;2816075;2819691;2819705;2819706;2819715;2819719;2819726;2819744;2819780;2838321;2838322;2838323;2838324;2838325;2838326;2839007;2839018;2842053;2842475;2842476;2842477;2842478;2842479;2842480;2854804;2866311;2870752;2870755;2870757;2870758;2870765;2870766;2870767;2870768;2870769;2870770;2870771;2870773;2870774;2870775;2870776;2870779;2870780;2870781;2886367;2886368;2891578;2891579;2891580;2891581;2891582;2891583;2891584;2891585;2893562;2893563;2893564;2893565;2893566;2893567;2900154;2908513;2908515;2908517;2908518;2911173;2916907;2917806;2924024;2924025;2924029;2924864;2925348;2925351;2928639;2931885;2933295;2933298;2933302;2933316;2933332;2933337;2933339;2935450;2936778;2936781;2942480;2942489;2944768;2944769;2949750;2949751;2949754;2949755;2949767;2949807;2949823;2949840;2949848;2949852;2949854;2949856;2949870;2949874;2949884;2949893;2949910;2949918;2949919;2949920;2949931;2949936;2949949;2949958;2950158;2959626;2974588;2974899;2977120;2979132;2979133;2981907;2983529;2983530;2983531;2983532;2983533;2983534;2983637;2984192;2985030;2985142;2989083;2989085;2989086;2989092;2989094;2989725;2989727;2989824;2989825;2990474;2990477;2990502;2990503;2990504;2990505;2990506;2990508;2992185;2995566;3003322;3003323;3003324;3003325;3003326;3003327;3003328;3003329;3003330;3003331;3003332;3003333;3003334;3003335;3003336;3016014;3023208;3025937;3026967;3029725;3029726;3030528;3030530;3034157;3034164;3034165;3035219;3037554;3037604;3037605;3037606;3037607;3037608;3037609;3037610;3037611;3037612;3037613;3037614;3037615;3037616;3037617;3037618;3037619;3037620;3037621;3037622;3037623;3037624;3040678;3040686;3040687;3040688;3040689;3040690;3040691;3043353;3043354;3043363;3043364;3043365;3043366;3043367;3046298;3050972;3050976;3054774;3054775;3056539;3056540;3056541;3056542;3056543;3056544;3056545;3056546;3056547;3056548;3060761;3060762;3060763;3060764;3060765;3060766;3060767;3060920;3061103;3061627;3064541;3070704;3074612;3074613;3074614;3074709;3076353;3076354;3076355;3076356;3079077;3079178;3079179;3079190;3079200;3079235;3079246;3079247;3079248;3079249;3096048;3096632;3096633;3096634;3102994;3102996;3102997;3102998;3102999;3103000;3104275;3109994;3114159;3114161;3114163;3114165;3114167;3114169;3114171;3114173;3114175;3114197;3114199;3114201;3114203;3114205;3114207;3114209;3114211;3114213;3114215;3114217;3114219;3114221;3114223;3114225;3114227;3114229;3114231;3115365;3121427;3125862;3125863;3125864;3125865;3125866;3125869;3125870;3125871;3125873;3125874;3129117;3129118;3129119;3129120;3129121;3129122;3129123;3129124;3129125;3129126;3129127;3129128;3129129;3129130;3129131;3129132;3129133;3129134;3129135;3129136;3129137;3133375;3133376;3133377;3133378;3133379;3133380;3133382;3133383;3133384;3133385;3133386;3133387;3133388;3133692;3133693;3134026;3134027;3134028;3135203;3136090;3136214;3137200;3137201;3137202;3137203;3137485;3140798;3140804;3140805;3140806;3140807;3140808;3140811;3140817;3140818;3140819;3140820;3140821;3153442;3153443;3153445;3153446	7.25e-177	556	99.262	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	Aph [Cloning vector pEN-Km]	ABV03164	436665;436668;436669	8.22e-177	556	99.262	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Klebsiella pneumoniae]	HCC6210978	573	9.60e-177	555	99.262	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Salmonella enterica]	EIN9282579	28901	1.07e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	HCJ8979450	562	1.20e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	WP_247200794	562	1.20e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	MULTISPECIES: APH(3')-I family aminoglycoside O-phosphotransferase [Enterobacteriaceae]	WP_063090588	543;562;573	1.28e-176	555	99.262	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Klebsiella pneumoniae]	HBQ2074979	573	1.41e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Salmonella enterica]	EAZ1769069	28901	1.41e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	WP_254199385	562	1.41e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	HBA5730839	562	1.57e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	WP_219389837	562;28901;2564621	1.67e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Streptomyces sp. Lzd4kr]	MCZ4612364	3014556	1.73e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Klebsiella pneumoniae]	HBR5401472	573	1.75e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Klebsiella pneumoniae subsp. pneumoniae]	HBX3948727	72407	1.75e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	KanA [Cloning vector pANY6]	AWP40280	2212682	1.78e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Enterobacter hormaechei subsp. xiangfangensis]	MCU3420813	1296536	1.84e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	HBB1933760	562	1.89e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	kanamycin 3'-phosphotransferase [Cloning vector p34S-Km3]	AAC64939	81481;146497;342896;1670625;1803915	1.89e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	MULTISPECIES: APH(3')-I family aminoglycoside O-phosphotransferase [Bacteria]	WP_042896151	2;548;562;1280;1299;1833;45850;46202;46437;46438;46439;46440;46441;46442;46443;46444;84726;84727;84728;84729;84730;84731;102152;102153;191024;191025;537217;674031;684763;931131;931605;1929409;2033402;2033404;2077117;2754840;2881490;2881491;2908159;2908162	1.91e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	MULTISPECIES: APH(3')-I family aminoglycoside O-phosphotransferase [Enterobacteriaceae]	WP_000018322	543;546;562;573;584;621;624;28144;28901;37762;58095;59201;72407;90105;90371;134047;286783;399586;440524;487004;679206;941322;1010796;1010800;1095709;1134687;1169396;1181767;1280958;1281127;1355058;1416754;1954180;2067420;2067429;2072454;2072463;2100510;2511819;2605620;3128928;3153429;3153431	1.91e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Pantoea agglomerans]	WP_187491314	549	1.93e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	HBA5386078	562	1.93e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	WP_247173969	562	1.95e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	Tn903 aminoglycoside phosphotransferase [synthetic construct]	AAB63351	32630	1.95e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Salmonella enterica]	EAX4346306	573;28901	2.04e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Paracoccus sp. WLY502]	WP_306610406	3068891	2.04e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Klebsiella pneumoniae]	HCK1588416	562;573	2.04e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	MULTISPECIES: APH(3')-I family aminoglycoside O-phosphotransferase [Bacteria]	WP_136637824	2;235;337;446;1772;255043;1945373;1945374;1945375;1945376;1945383;1945384;1945385;2509809;2592094	2.04e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Salmonella enterica]	EAM1884616	562;573;611;28144;28901;58095;82689;98360;149387	2.19e-176	555	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Klebsiella pneumoniae]	MBL9603243	573	2.38e-176	554	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Klebsiella pneumoniae]	WP_241478674	573	2.38e-176	554	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Klebsiella pneumoniae]	ELT5685629	573	2.38e-176	554	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Klebsiella pneumoniae]	HBY1974557	573	2.38e-176	554	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	HCY3427589	562	2.48e-176	554	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	WP_069199697	562	2.48e-176	554	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Escherichia coli]	HDC8872827	562	2.98e-176	554	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	APH(3')-I family aminoglycoside O-phosphotransferase [Salmonella enterica subsp. enterica serovar Dublin]	EBB4909900	98360	3.19e-176	554	98.893	9646	1026	1832	271	1	271
+BBa_K209429_A_15261	nuclear venus YFP [Transformation vector nvYFP w-]	ABI54178	399388	5.20e-157	499	99.582	9646	2780	3496	282	1	239
+BBa_K209429_A_15261	Fucci-S* phase probe, partial [synthetic construct]	BBB06697	32630	5.25e-156	504	100.000	9646	2780	3496	456	117	355
+BBa_K209429_A_15261	Fucci2-S/G2/M phase probe [synthetic construct]	BAJ04356	32630	7.33e-156	499	100.000	9646	2780	3496	359	1	239
+BBa_K209429_A_15261	mDegron/Venus/N7-NLS [Cloning vector pAL004(Ubi-nos)mDII]	APM87887	1927825	9.52e-156	500	99.582	9646	2777	3493	373	51	289
+BBa_K209429_A_15261	venus YFP [Cloning vector pBOB]	AEH43767	1042257	1.22e-155	494	99.170	9646	2774	3496	246	6	246
+BBa_K209429_A_15261	Degron/Venus/N7-NLS [Cloning vector pAL004(Ubi-nos)DII]	APM87885	1927824	1.43e-155	499	99.582	9646	2777	3493	373	51	289
+BBa_K209429_A_15261	yellow fluorescent protein Venus [Cloning vector pHC04]	ACQ43942	32630;455498;470291;470294;470297;470298;470303;470306;642118;642121;748439;930754;931124;931125;931126;931127;931128;931129;1337867;1337868;1795357;1795359;2049404;2049405;2049406;2049407;2049408;2049409;2049411;2049412;2049413;2049417;2049419;2049426;2200773;2200774;2502849;2502853;2502872;2502878;2782046;2782147	1.53e-155	493	100.000	9646	2780	3496	239	1	239
+BBa_K209429_A_15261	mcs1-mVenus fusion protein [Binary vector pDOE-13]	AIN46654	1544603;1544605;1544607;1544609	2.21e-155	493	99.583	9646	2777	3496	255	16	255
+BBa_K209429_A_15261	zFucci-S/G2/M phase probe [synthetic construct]	BAP11995	32630	2.40e-155	498	99.582	9646	2780	3496	349	1	239
+BBa_K209429_A_15261	Venus+Strep tag [Cloning and transformation vector pHPdestVenus]	ACZ51347	693962	2.90e-155	493	100.000	9646	2780	3496	249	1	239
+BBa_K209429_A_15261	yellow fluorescence protein [synthetic construct]	BBL45167	32630	3.42e-155	492	99.582	9646	2780	3496	239	1	239
+BBa_K209429_A_15261	venus YFP [Cloning vector pJPVCS]	ATY93173	2057152	3.49e-155	492	99.582	9646	2780	3496	239	1	239
+BBa_K209429_A_15261	mVenus-mcs3 fusion protein [Binary vector pDOE-20]	AIN46602	1544604;1544606;1544608;1544610	3.72e-155	493	99.582	9646	2780	3496	260	1	239
+BBa_K209429_A_15261	mVenus yellow fluorescent protein [Cloning vector pOpt_mVenus_Paro]	AIS68748	1544374;1549213;1549214	8.01e-155	493	97.942	9646	2768	3496	268	10	252
+BBa_K209429_A_15261	PB1-Venus [synthetic construct]	BBA16893	32630	8.33e-155	497	100.000	9646	2780	3496	371	130	368
+BBa_K209429_A_15261	dVenus [Cloning vector pTVDll42AdVenus]	AIA24530	1501982	2.53e-154	492	100.000	9646	2780	3493	292	1	238
+BBa_K209429_A_15261	venus and 3 Flag tags fusion protein [Cloning vector pBacN-puro-IE2-Venus-FLAG3-DEST]	BAP90240	1572327	7.91e-154	493	100.000	9646	2780	3496	338	1	239
+BBa_K209429_A_15261	Venus::TnpA [Synthetic plasmid pJK14-Tn4rev]	WFD50001	32630;3036726	1.21e-153	495	99.582	9646	2780	3496	399	1	239
+BBa_K209429_A_15261	Venus [Cloning vector pSTB205]	AST51816	2026119;2026121	2.06e-153	503	100.000	9646	2780	3496	592	1	239
+BBa_K209429_A_15261	VenusGFP-Vps36 transgene fusion protein [synthetic construct]	ABM66115	32630	6.31e-153	503	98.361	9646	2765	3496	648	7	250
+BBa_K209429_A_15261	Venus-AG [synthetic construct]	BBA16890	32630	8.42e-152	494	100.000	9646	2780	3496	496	1	239
+BBa_K209429_A_15261	Chain W, Tic20-Venus-Flag [Chlamydomonas reinhardtii]	7VCF_W	3055	1.30e-151	495	100.000	9646	2780	3496	532	270	508
+BBa_K209429_A_15261	AG-Venus [synthetic construct]	BBA16891	32630	1.38e-151	493	100.000	9646	2780	3496	495	254	492
+BBa_K209429_A_15261	Chain C, C-C chemokine receptor type 8, Green fluorescent protein fusion [synthetic construct]	8TLM_C	32630	2.50e-151	500	98.361	9646	2768	3496	671	397	640
+BBa_K209429_A_15261	PKG#5 [synthetic construct]	ANH79565	32630	1.14e-150	496	100.000	9646	2780	3496	617	1	239
+BBa_K209429_A_15261	PKG Yellow cGMP biosensor [synthetic construct]	QOJ79822	32630	1.39e-150	496	100.000	9646	2780	3496	630	392	630
+BBa_K209429_A_15261	sensor protein FLII81PE, partial [synthetic construct]	ABB92746	32630	1.68e-150	501	100.000	9646	2777	3496	753	514	753
+BBa_K209429_A_15261	PKG#6 [synthetic construct]	ANH79566	32630	1.78e-150	495	100.000	9646	2780	3496	624	1	239
+BBa_K209429_A_15261	Fucci variant [synthetic construct]	BBA65123	32630	2.16e-150	499	99.582	9646	2780	3496	736	378	616
+BBa_K209429_A_15261	Fucci variant protein [synthetic construct]	BBA65120	32630	2.31e-150	499	99.582	9646	2780	3496	727	369	607
+BBa_K209429_A_15261	LOTUS-V [synthetic construct]	BAW98419	32630	3.31e-150	496	100.000	9646	2780	3496	668	430	668
+BBa_K209429_A_15261	glutamate sensor protein FLIPE-600n [synthetic construct]	ABB92744	32630	3.83e-150	500	100.000	9646	2777	3496	764	525	764
+BBa_K209429_A_15261	Chain A, C-C motif chemokine 1,C-C chemokine receptor type 8,EGFP fusion protein [synthetic construct]	8U1U_A	32630	4.00e-150	499	98.361	9646	2768	3496	743	469	712
+BBa_K209429_A_15261	PKG#1 [synthetic construct]	ANH79561	32630	9.17e-150	493	99.163	9646	2780	3496	617	379	617
+BBa_K209429_A_15261	ScGI [synthetic construct]	WZB50846	32630	1.49e-149	497	100.000	9646	2780	3496	733	495	733
+BBa_K209429_A_15261	JcCS-mVenus [Vector pCSB339]	XAJ73444	3144096;3144097;3144098;3144099;3144100;3144101	1.50e-149	499	99.167	9646	2777	3496	798	559	798
+BBa_K209429_A_15261	BRET-based auto-luminescent calcium indicator [synthetic construct]	ADF42668	32630	1.69e-149	497	99.582	9646	2780	3496	730	1	239
+BBa_K209429_A_15261	PKG#3 [synthetic construct]	ANH79563	32630	1.93e-149	493	99.163	9646	2780	3496	624	386	624
+BBa_K209429_A_15261	Chain A, Potassium voltage-gated channel subfamily A member 3,Green fluorescent protein fusion [synthetic construct]	7SSV_A	32630	1.22e-147	496	99.167	9646	2777	3496	856	587	826
+BBa_K209429_A_15261	Camuialpha [synthetic construct]	AAX22059	32630	7.41e-147	499	87.018	9646	2780	3634	997	1	281
+BBa_K209429_A_15261	TRPC5-SYFP2 fusion protein [synthetic construct]	QYK20653	32630	2.13e-146	504	99.170	9646	2774	3496	1220	980	1220
+BBa_K209429_A_15261	TRPC5-DogTag-SYFP2 fusion protein [synthetic construct]	QYK20654	32630	1.16e-145	503	99.170	9646	2774	3496	1253	1013	1253
+BBa_K209429_A_15261	3xVenus-SYP [Cloning vector PjCADL1pro::3xVenus-SYP]	QNN02187	2767379;2767380;2767381;2767382;2767383	1.40e-145	497	100.000	9646	2780	3496	1060	1	239
+BBa_K209429_A_15261	3xVenus-SYP [Cloning vector PjCADL1pro::3xVenus-SYP]	QNN02187	2767379;2767380;2767381;2767382;2767383	1.40e-145	497	100.000	9646	2780	3496	1060	240	478
+BBa_K209429_A_15261	3xVenus-SYP [Cloning vector PjCADL1pro::3xVenus-SYP]	QNN02187	2767379;2767380;2767381;2767382;2767383	1.40e-145	497	100.000	9646	2780	3496	1060	479	717
+BBa_K209429_A_15261	EcadTS [synthetic construct]	AID22384	32630	1.36e-138	498	99.170	9646	2777	3499	2033	1652	1892
+BBa_K209429_A_15261	YFVdeltaNS1-mVenus [Cloning vector pYFVdeltaNS1-mVenus]	UBZ25906	2877164	4.61e-138	502	99.582	9646	2780	3496	3632	28	266
+BBa_K209429_A_15261	YFVdelCME-mVenus [Cloning vector pYFVdelCME-mVenus]	UBZ25902	2877160	4.94e-138	501	99.582	9646	2780	3496	3045	28	266
+BBa_K209429_A_15261	DE-cadherin [synthetic construct]	AID22385	32630	5.61e-138	496	99.167	9646	2777	3496	2032	1793	2032
+BBa_K209429_A_15261	mCherry-HMW2(dP28)-EYFP fusion protein [synthetic construct]	BDF92678	32630	6.22e-138	498	97.521	9646	2771	3496	2340	2099	2340
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	HAI4532814	562	4.21e-77	264	94.326	9646	2613	2191	142	2	142
+BBa_K209429_A_15261	hypothetical protein BGL45_06810 [Fructilactobacillus sanfranciscensis]	POH17992	1625	3.88e-75	258	96.875	9646	2317	1934	131	1	128
+BBa_K209429_A_15261	hypothetical protein [Erwinia amylovora ATCC BAA-2158]	AAM94882	889211	5.00e-75	258	100.000	9646	2631	2248	135	8	135
+BBa_K209429_A_15261	hypothetical protein NCLIV_068840, partial [Neospora caninum Liverpool]	CCA30004	572307	7.30e-75	258	100.000	9646	2631	2248	139	12	139
+BBa_K209429_A_15261	Uncharacterised protein [Yersinia similis]	CNG70246	367190	9.85e-75	258	100.000	9646	2631	2248	150	23	150
+BBa_K209429_A_15261	hypothetical protein L499_A3769 [Bordetella holmesii CDC-H635-BH]	KAK89041	1331208	1.61e-74	256	100.000	9646	2631	2248	135	8	135
+BBa_K209429_A_15261	hypothetical protein AC239_22870 [Bacteroides fragilis]	OCR40908	817	2.43e-74	259	100.000	9646	2631	2248	203	76	203
+BBa_K209429_A_15261	hypothetical protein AC239_22870 [Bacteroides fragilis]	OCR40908	817	7.25e-33	140	93.243	9646	224	3	203	1	74
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MBV7195004	562	3.03e-74	256	94.161	9646	2613	2203	143	2	138
+BBa_K209429_A_15261	hypothetical protein CLOSAC_45880 [Clostridium saccharobutylicum]	OOM05407	36839;169679	3.89e-74	255	99.219	9646	2631	2248	129	2	129
+BBa_K209429_A_15261	dynamin-binding protein isoform X5 [Pezoporus occidentalis]	XP_062466387	407982	5.09e-74	283	76.216	9646	4907	5461	999	1	183
+BBa_K209429_A_15261	unnamed protein product [Homo sapiens]	BAG64005	9606	6.21e-74	267	100.000	9646	2631	2248	424	297	424
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EEZ6860573	562;28901	2.11e-73	253	96.923	9646	2583	2194	132	2	131
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	AER93371	562	2.33e-73	254	92.701	9646	2613	2203	144	2	138
+BBa_K209429_A_15261	predicted protein [Escherichia coli O119:H6]	BAU62308	562;397448	5.79e-73	253	92.701	9646	2613	2203	144	2	138
+BBa_K209429_A_15261	hypothetical 16.9K protein - Salmonella typhimurium plasmid NTP16 [Salmonella enterica subsp. enterica serovar Typhimurium]	JQ1541	90371	1.25e-72	252	90.714	9646	2613	2194	149	2	141
+BBa_K209429_A_15261	hypothetical protein H476_3454, partial [[Clostridium] sordellii VPI 9048] [Paraclostridium sordellii VPI 9048]	EPZ62486	1292035	2.78e-72	251	99.206	9646	2625	2248	155	30	155
+BBa_K209429_A_15261	hypothetical protein [Pseudomonas aeruginosa]	MBF3325166	287	6.01e-71	246	98.400	9646	2622	2248	125	1	125
+BBa_K209429_A_15261	hypothetical protein PPBFPJLL_00001 [Escherichia coli]	WBW56881	562	9.60e-71	246	89.286	9646	2613	2194	149	2	141
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EET2556571	562	3.37e-70	244	100.000	9646	2613	2248	123	2	123
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFN0692215	562	6.42e-69	240	99.180	9646	2613	2248	123	2	123
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFT7705804	562	2.11e-68	239	96.032	9646	2613	2236	127	2	127
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EGB1109614	562	6.28e-68	238	94.531	9646	2631	2248	130	6	130
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFT9801444	562	6.37e-68	238	92.424	9646	2631	2236	133	6	133
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Derby]	EEC6205180	562;28144;28901;440524	7.19e-68	237	96.000	9646	2613	2239	126	2	126
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar 4,[5],12:i:-]	EEI7466318	562;611;28144;28901;90371;192955;440524	9.04e-68	237	97.541	9646	2613	2248	123	2	123
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EEQ7978330	562;28147;28901;913076	9.75e-68	237	92.424	9646	2631	2236	133	6	133
+BBa_K209429_A_15261	hypothetical protein HmCmsJML207_04593 [Escherichia coli]	GDB93956	562	9.86e-68	238	89.922	9646	2571	2185	149	16	144
+BBa_K209429_A_15261	probable plasmid replication initiation protein [Escherichia coli]	CUA64303	562	1.16e-67	238	89.922	9646	2571	2185	149	16	144
+BBa_K209429_A_15261	hypothetical protein ECP02989421_5334 [Escherichia coli P0298942.1]	ENA26134	1116141	1.21e-67	239	84.828	9646	2203	2637	175	3	143
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EEV1452183	562	1.22e-67	237	93.750	9646	2631	2248	129	6	129
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EEZ0275788	562	1.34e-67	237	92.366	9646	2628	2236	133	7	133
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	HAN1922622	562;573	1.85e-67	236	97.541	9646	2613	2248	123	2	123
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFM0119944	562;28901	2.49e-67	236	95.200	9646	2613	2239	126	2	126
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	HAW1892061	562	2.67e-67	235	96.721	9646	2613	2248	123	2	123
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFL9682338	562	2.78e-67	235	97.541	9646	2613	2248	123	2	123
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EEC3396625	562;564;573;595;596;611;622;623;624;28144;28901;29472;29473;46626;54388;57741;58095;58097;58712;59201;70803;82689;90105;90371;98360;108619;115981;149386;149387;149390;149539;165302;192953;192955;192956;286783;340188;340190;358771;363569;440524;486998;487004;913076;941322;1045010;1055535;1160769;1192593;1232392;1268997;2079154;2162909;2564284;2564314;2564391;2928639	2.90e-67	235	95.200	9646	2613	2239	126	2	126
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EEU3543396	562	4.64e-67	235	94.444	9646	2613	2236	127	2	127
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFM1404469	562	4.69e-67	235	93.651	9646	2613	2236	127	2	127
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFA2207321	562	7.76e-67	234	96.721	9646	2613	2248	123	2	123
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	HAP2511447	562	9.93e-67	234	94.400	9646	2613	2239	126	2	126
+BBa_K209429_A_15261	hypothetical protein [Shigella sonnei]	EFZ3330238	624;28901	1.08e-66	234	93.750	9646	2631	2248	129	6	129
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	HAH7702905	562	1.22e-66	233	95.902	9646	2613	2248	123	2	123
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFC9960282	562	1.25e-66	234	93.651	9646	2613	2236	127	2	127
+BBa_K209429_A_15261	hypothetical protein BvCmsKKP002_05432 [Escherichia coli]	GDG83483	562	1.32e-66	234	89.147	9646	2571	2185	149	16	144
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli O26]	EEC7192827	562;621;624;28142;28901;149385;244319;340188;340190;404399;1045010;1055535;1055536;1095705	1.43e-66	233	93.651	9646	2613	2236	127	2	127
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFG1074098	562	1.46e-66	233	93.651	9646	2613	2236	127	2	127
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	HAG3279469	28901	1.55e-66	233	94.400	9646	2613	2239	126	2	126
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EGU3328120	28901	1.55e-66	233	94.400	9646	2613	2239	126	2	126
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EET1544483	562	1.82e-66	233	96.721	9646	2613	2248	123	2	123
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar 4,[5],12:i:-]	EEC5942764	562;596;623;28144;28147;28901;58095;58712;59201;90371;149387;149390;192953;440524;1160769	2.86e-66	233	94.400	9646	2613	2239	126	2	126
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFF0533222	562	2.92e-66	233	92.969	9646	2631	2248	129	6	129
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFG8088969	562;28901	3.57e-66	232	94.400	9646	2613	2239	126	2	126
+BBa_K209429_A_15261	hypothetical protein ECP02989421_5339 [Escherichia coli P0298942.1]	ENA26139	1116141	3.81e-66	234	84.138	9646	2203	2637	175	3	143
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MBA4434881	562	9.00e-66	231	92.969	9646	2631	2248	129	6	129
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_044804787	562	1.05e-50	189	77.419	9646	2341	1976	140	1	121
+BBa_K209429_A_15261	hypothetical protein [Mycoplasmopsis anatis]	MBW0597145	171279	2.79e-50	188	100.000	9646	1964	2233	158	69	158
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Bacteria]	WP_075085914	2;470;562;2751006	3.81e-50	185	100.000	9646	1964	2233	90	1	90
+BBa_K209429_A_15261	hypothetical protein F8159_22565, partial [Bacillus cereus]	KAB2476471	1396	4.14e-50	185	100.000	9646	1964	2233	99	10	99
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_336138754	562;28142;28901;58096;72407;98360;117541;149539;363569;440524	4.25e-50	185	100.000	9646	1964	2233	91	2	91
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_077633843	562;869682	9.46e-50	184	96.774	9646	2000	2278	93	1	93
+BBa_K209429_A_15261	hypothetical protein, partial [Vibrio parahaemolyticus]	WP_219622995	670	2.02e-49	183	98.889	9646	1964	2233	90	1	90
+BBa_K209429_A_15261	hypothetical protein, partial [Streptococcus pseudopneumoniae]	WP_138707486	257758	2.56e-49	183	98.889	9646	1964	2233	91	2	91
+BBa_K209429_A_15261	hypothetical protein BU055_13125, partial [Staphylococcus succinus]	PTJ79798	61015	2.59e-49	183	98.889	9646	1964	2233	92	3	92
+BBa_K209429_A_15261	hypothetical protein BUZ25_12430, partial [Staphylococcus haemolyticus]	PTK75438	670;1283	2.82e-49	183	98.889	9646	1964	2233	95	6	95
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MDF6710338	562	3.06e-49	184	75.806	9646	2341	1976	140	1	121
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_247171999	562	7.57e-49	182	97.778	9646	1964	2233	101	12	101
+BBa_K209429_A_15261	hypothetical protein, partial [Vibrio parahaemolyticus]	WP_219587192	670	9.89e-49	181	98.876	9646	1967	2233	89	1	89
+BBa_K209429_A_15261	hypothetical protein, partial [Acinetobacter baumannii]	WP_317024937	470	1.13e-48	181	97.778	9646	1964	2233	94	5	94
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_053899694	562	1.23e-48	183	75.610	9646	2338	1976	139	1	120
+BBa_K209429_A_15261	hypothetical protein BACCAP_02838 [Pseudoflavonifractor capillosus ATCC 29799]	EDM99319	31234;411467	1.67e-48	181	100.000	9646	1970	2233	96	9	96
+BBa_K209429_A_15261	hypothetical protein, partial [Salmonella enterica]	WP_265290295	597;28901;115981;165302	2.86e-48	181	76.667	9646	2329	1976	136	1	117
+BBa_K209429_A_15261	hypothetical protein [Bacillus cereus]	MDA2520285	1396	7.21e-48	178	98.864	9646	1970	2233	88	1	88
+BBa_K209429_A_15261	hypothetical protein, partial [Burkholderia anthinoferrum]	WP_323662545	3090833;3090837	1.04e-47	178	96.667	9646	1964	2233	95	6	95
+BBa_K209429_A_15261	antimicrobial protein [uncultured bacterium]	AQW80360	77133	4.76e-47	188	69.231	9646	2633	2109	412	193	358
+BBa_K209429_A_15261	antimicrobial protein [uncultured bacterium]	AQW80360	77133	1.21e-12	86.3	81.250	9646	235	2	412	115	193
+BBa_K209429_A_15261	hypothetical protein [Vector sGnoK1]	UTM74989	2963962	1.29e-46	182	94.565	9646	2890	3441	257	50	233
+BBa_K209429_A_15261	enhanced green fluorescent protein [Bacillus cereus]	ACV20892	1396	1.46e-46	185	95.109	9646	2890	3441	359	87	270
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein [Bacteria]	WP_006573365	2;562;28131;33934;46206;411467;1915389;2716335;2717487;2793196;2799915;3075404	1.95e-46	174	98.810	9646	2317	2066	84	1	84
+BBa_K209429_A_15261	hypothetical protein, partial [Priestia aryabhattai]	WP_142294791	1311;412384	2.20e-46	174	100.000	9646	1979	2233	85	1	85
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_207230874	562	2.93e-46	176	76.068	9646	2320	1976	133	1	114
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Enterobacteriaceae]	WP_241186173	543;562;2058152	3.35e-46	176	71.774	9646	2341	1976	138	1	121
+BBa_K209429_A_15261	hypothetical protein, partial [Serratia marcescens]	WP_241164227	615	4.04e-46	176	71.774	9646	2341	1976	141	4	124
+BBa_K209429_A_15261	hypothetical protein, partial [Serratia marcescens]	WP_241171288	615	5.32e-46	175	71.774	9646	2341	1976	142	5	125
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCV1951058	562	7.39e-46	176	72.358	9646	2338	1976	163	27	146
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein [Bacteria]	WP_039267533	2;210;446;470;546;553;562;596;598;611;659;813;817;818;853;1304;1314;1352;1422;1428;1585;1639;1765;1784;1901;28131;28144;28898;28901;29459;29497;33894;36809;39777;46126;46206;56192;59201;64187;90105;90371;92488;93064;108619;108980;115862;137779;149539;158836;171438;192954;214675;342002;363569;412384;440524;553510;683150;754774;887465;910996;1134687;1296536;1340177;1506515;1560197;1813019;1821960;1827288;1871177;1884477;1913989;2019672;2023717;2026188;2054178;2056188;2056189;2056190;2056191;2056495;2067658;2071714;2071715;2080755;2162708;2202417;2202516;2202838;2248751;2320879;2483112;2510797;2562682;2600309;2600598;2656757;2935520	1.70e-45	171	98.810	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	aminoglycoside resistance protein, chloroplastic [Tanacetum cinerariifolium]	GFA39473	118510	2.86e-45	186	61.272	9646	1964	2482	528	341	455
+BBa_K209429_A_15261	hypothetical protein DKX24_22495 [Enterobacter sp. HPCN14]	PWS05642	2202832	4.15e-45	171	97.619	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	hypothetical protein AMK98_03125, partial [Escherichia coli]	KYR19594	562	4.91e-45	172	75.000	9646	2317	1976	130	1	113
+BBa_K209429_A_15261	hypothetical protein FYJ86_10055 [Corynebacterium urealyticum]	TYT20134	43771	5.88e-45	170	97.619	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	hypothetical protein F4V54_10905 [Corynebacterium tuscaniense]	KAA8727386	302449	6.30e-45	170	97.619	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	hypothetical protein, partial [Serratia marcescens]	WP_241170745	615	6.55e-45	172	71.545	9646	2338	1976	137	1	120
+BBa_K209429_A_15261	hypothetical protein EU245_15400 [Lentibacillus lipolyticus]	RYG70817	2510307	7.79e-45	170	97.619	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	hypothetical protein [Ferrovum sp. PN-J185]	WP_057267196	521;562;573;670;1048;1076;1292;1296;1352;1423;1428;1773;13725;28068;28901;29382;29388;29459;35804;46126;69359;72407;149539;246432;257758;382777;485602;492670;1265608;1356306;1898204;1898207;1967839;2033586;2052836;2080744;2080745;2282308;2304571;2304578;2316723;2497683;2552766;2597270;2740565	1.02e-44	169	97.619	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_206611694	562	1.05e-44	171	75.652	9646	2314	1976	131	1	112
+BBa_K209429_A_15261	hypothetical protein [Liquorilactobacillus hordei]	MBZ2406777	468911	1.12e-44	169	97.619	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	hypothetical protein F7P73_18660 [Acinetobacter bohemicus]	KAB0649062	1435036	1.19e-44	169	97.619	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	hypothetical protein FEZ33_11950 [Ruoffia tabacinasalis]	TLQ38369	87458	1.33e-44	169	97.619	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	dopamine receptor D1/EGFP fusion protein [Mammalian expression vector pKR43]	AHA35648	1419743	1.95e-44	187	95.109	9646	2890	3441	697	490	673
+BBa_K209429_A_15261	hypothetical protein FPQ13_12955 [Allobacillus salarius]	TSJ59927	1955272	2.50e-44	168	96.429	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	hypothetical protein, partial [Ideonella sp. DXS22W]	WP_341413337	2984192	2.59e-44	168	98.780	9646	642	397	82	1	82
+BBa_K209429_A_15261	hypothetical protein E3V25_11805 [Streptococcus pseudopneumoniae]	TMR49303	257758	3.03e-44	168	96.429	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Cerro]	EEE5269183	562;340188	3.06e-44	168	96.429	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	hypothetical protein BU675_10350 [Staphylococcus chromogenes]	PTG68027	46126	3.06e-44	168	96.429	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Bacteria]	WP_214295104	2;287;562;28901;380393	3.11e-44	168	100.000	9646	1988	2233	82	1	82
+BBa_K209429_A_15261	hypothetical protein BSU05_16690 [Brucella melitensis]	PHL00571	29459	3.47e-44	168	96.429	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	hypothetical protein BUY76_13855 [Staphylococcus equorum]	RIL45921	246432	4.78e-44	167	96.429	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Bacteria]	WP_078729220	2;287;470;573;1351;1773	8.44e-44	167	100.000	9646	1991	2233	81	1	81
+BBa_K209429_A_15261	hypothetical protein CJU95_16755 [Brucella melitensis]	PAO87363	29459	1.11e-43	166	95.294	9646	1979	2233	87	3	87
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MDZ8784815	562	1.20e-43	168	75.439	9646	2311	1976	130	1	111
+BBa_K209429_A_15261	hypothetical protein [Halorhodospira halophila]	MBK1730189	1053	1.45e-43	166	96.429	9646	1982	2233	84	1	84
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	WP_052895114	562	1.46e-43	168	73.276	9646	2317	1976	132	1	113
+BBa_K209429_A_15261	hypothetical protein, partial [Enterobacter roggenkampii]	WP_248262418	1812935	1.93e-43	169	70.732	9646	2338	1976	154	18	137
+BBa_K209429_A_15261	RNA-dependent RNA polymerase [synthetic construct]	WAN70643	32630	3.09e-43	188	95.109	9646	2890	3441	1168	959	1142
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Bacteria]	WP_075207512	2;573;1066;2115968;2762618	4.75e-43	164	98.765	9646	1991	2233	81	1	81
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFE8311761	562	4.89e-43	165	83.838	9646	1982	2278	99	1	99
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella grimontii]	WP_262368752	2058152	4.92e-43	166	71.795	9646	2320	1976	131	1	114
+BBa_K209429_A_15261	putative protein, partial [uncultured bacterium]	AMJ34926	77133	5.32e-43	164	100.000	9646	2302	2066	79	1	79
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_204117732	562	1.13e-42	163	98.750	9646	1994	2233	80	1	80
+BBa_K209429_A_15261	hypothetical protein [Vibrio parahaemolyticus]	MDF5565795	670	2.23e-42	162	100.000	9646	2299	2066	78	1	78
+BBa_K209429_A_15261	hypothetical protein, partial [Salmonella enterica]	WP_149865973	28901;57743	2.99e-42	162	98.750	9646	1994	2233	80	1	80
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein [Enterobacter cloacae complex]	WP_323145342	158836;354276;1812935	4.43e-42	164	71.552	9646	2317	1976	130	1	113
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Bacteria]	WP_126655838	2;470;615;3018053	1.07e-41	160	100.000	9646	2000	2233	78	1	78
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_204165376	562	2.00e-41	160	98.734	9646	1997	2233	79	1	79
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Pseudomonadota]	WP_072088377	470;1224;29484;321846;413497;488447	3.68e-41	159	100.000	9646	2003	2233	77	1	77
+BBa_K209429_A_15261	hypothetical protein CGJ62_24100, partial [Vibrio parahaemolyticus]	TOD50265	670	5.76e-41	158	98.718	9646	2000	2233	78	1	78
+BBa_K209429_A_15261	hypothetical protein [Enterobacter cloacae]	WP_250209260	550;573;244366	9.39e-41	160	70.690	9646	2317	1976	130	1	113
+BBa_K209429_A_15261	hypothetical protein [Enterobacter hormaechei]	WP_341485596	158836	9.73e-41	160	70.690	9646	2317	1976	132	1	113
+BBa_K209429_A_15261	hypothetical protein, partial [Vibrio parahaemolyticus]	WP_107623830	670;1283	1.86e-40	157	98.701	9646	2003	2233	77	1	77
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Terrabacteria group]	WP_151153143	1639;1773;487004;1783272;2767430	2.07e-40	157	100.000	9646	2006	2233	76	1	76
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EGO4659189	562	8.64e-40	157	86.667	9646	1964	2233	121	32	121
+BBa_K209429_A_15261	hypothetical protein, partial [Staphylococcus lugdunensis]	WP_252931250	28035	8.89e-40	155	97.403	9646	627	397	77	1	77
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_210160234	562	1.39e-39	155	89.535	9646	1976	2233	86	1	86
+BBa_K209429_A_15261	hypothetical protein, partial [Enterobacter hormaechei]	WP_226865532	158836	2.11e-39	156	71.053	9646	2311	1976	130	1	111
+BBa_K209429_A_15261	hypothetical protein, partial [Leclercia adecarboxylata]	WP_236560496	83655	4.00e-39	155	70.175	9646	2311	1976	130	1	111
+BBa_K209429_A_15261	hypothetical protein F3G02_27995, partial [Klebsiella pneumoniae]	KAA5889945	573;670	4.15e-39	153	100.000	9646	2287	2066	74	1	74
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_207104875	562	4.67e-39	154	80.851	9646	540	259	97	3	96
+BBa_K209429_A_15261	hypothetical protein CGJ01_23775, partial [Vibrio parahaemolyticus]	TOG40050	670	3.68e-38	150	100.000	9646	2284	2066	73	1	73
+BBa_K209429_A_15261	hypothetical protein CGK44_24690, partial [Vibrio parahaemolyticus]	TNZ55180	670	4.30e-38	150	100.000	9646	2293	2078	72	1	72
+BBa_K209429_A_15261	hypothetical protein CGI92_25535, partial [Vibrio parahaemolyticus]	TOG85757	670	8.09e-38	149	100.000	9646	2290	2075	72	1	72
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_214671679	562	9.24e-38	150	79.570	9646	540	262	117	2	94
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_213058471	562	1.03e-37	151	79.570	9646	540	262	122	7	99
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MED9556546	562	1.20e-37	149	82.222	9646	1964	2233	93	4	93
+BBa_K209429_A_15261	hypothetical protein CIG17_00500 [Escherichia coli]	RVE07478	562	2.06e-37	149	77.660	9646	540	259	95	1	94
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFJ2997914	562;90371	2.50e-37	148	95.890	9646	2317	2099	77	1	73
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_207105694	562	2.61e-37	149	77.895	9646	540	256	96	2	96
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFH1635545	562	2.72e-37	149	83.333	9646	1964	2233	121	32	121
+BBa_K209429_A_15261	hypothetical protein CI692_19015, partial [Escherichia coli]	OYI62896	562;621	3.78e-37	148	77.660	9646	540	259	96	2	95
+BBa_K209429_A_15261	hypothetical protein BWX35_13940 [Escherichia coli]	OMH04344	562	4.33e-37	148	77.660	9646	540	259	100	6	99
+BBa_K209429_A_15261	hypothetical protein C7A11_31185, partial [Pseudomonas simiae]	PRW82965	321846	6.15e-37	147	100.000	9646	2278	2066	71	1	71
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter freundii]	WP_226999388	546	1.21e-36	147	71.296	9646	2317	2000	106	1	105
+BBa_K209429_A_15261	hypothetical protein DD587_32290, partial [Klebsiella pneumoniae]	RXX87783	573;670	2.17e-36	145	100.000	9646	2275	2066	70	1	70
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_286636429	562	2.92e-36	146	76.596	9646	540	259	99	5	98
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Typhi]	NRI15684	90370	3.33e-36	145	97.222	9646	2281	2066	74	3	74
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Inverness]	EDS4367417	670;913074	1.01e-35	143	100.000	9646	2272	2066	69	1	69
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Cairina]	EAB5867563	2572702	2.28e-35	143	95.833	9646	2209	2424	103	32	103
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_213058703	562	2.34e-35	142	87.342	9646	495	259	80	1	79
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter freundii]	WP_226999346	546	4.24e-35	143	70.370	9646	2317	2000	106	1	105
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_215200872	562	4.35e-35	142	87.342	9646	495	259	80	1	79
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_215199621	562	6.01e-35	142	81.395	9646	516	259	113	30	112
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Typhimurium]	ECF0328272	59201;90371	7.07e-35	141	95.833	9646	2209	2424	80	9	80
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_212739244	562	7.25e-35	142	73.684	9646	540	256	103	9	103
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_317418407	562	7.61e-35	142	73.684	9646	540	256	99	5	99
+BBa_K209429_A_15261	hypothetical protein CGH41_24310, partial [Vibrio parahaemolyticus]	TOO17507	670	1.84e-34	139	100.000	9646	2275	2075	67	1	67
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MDU9537132	562	2.11e-34	139	93.243	9646	2203	2424	75	2	75
+BBa_K209429_A_15261	hypothetical protein, partial [Bacteroides acidifaciens]	WP_130055389	85831	3.39e-34	139	100.000	9646	2266	2066	67	1	67
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCO1633207	562	4.69e-34	139	87.013	9646	489	259	78	1	77
+BBa_K209429_A_15261	hypothetical protein, partial [Geobacillus thermoleovorans]	AZM68782	33941	6.63e-34	144	90.722	9646	2633	2343	217	127	217
+BBa_K209429_A_15261	hypothetical protein, partial [Geobacillus thermoleovorans]	AZM68782	33941	1.35e-13	85.5	77.108	9646	250	2	217	47	127
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Typhimurium]	EDN3715247	90371	9.65e-34	138	90.789	9646	2197	2424	93	18	93
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	ECC4931537	670;28901;90370	1.35e-33	137	100.000	9646	2263	2066	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_225092575	562	2.01e-33	137	86.842	9646	486	259	77	1	76
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia sp. MOD1-EC7011]	WP_206748915	2093901	2.12e-33	137	83.133	9646	531	283	83	1	83
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCK3330181	562	3.09e-33	137	89.189	9646	483	262	97	1	74
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Paratyphi A]	ECI7971761	54388	3.20e-33	136	90.541	9646	2203	2424	76	3	76
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MDG5610698	562	4.17e-33	137	100.000	9646	2431	2631	101	1	67
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia albertii]	WP_236565872	208962	4.51e-33	137	82.022	9646	2371	2637	117	1	85
+BBa_K209429_A_15261	hypothetical protein CGH28_24875, partial [Vibrio parahaemolyticus]	TOO76397	670	5.15e-33	135	100.000	9646	2260	2066	65	1	65
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MDN0517964	562	6.63e-33	135	90.541	9646	2203	2424	76	3	76
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_206778773	562;1446525	7.36e-33	137	71.717	9646	2266	1976	115	1	96
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCN5364183	562	1.02e-32	135	86.667	9646	483	259	76	1	75
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia fergusonii]	WP_223674111	564	1.26e-32	135	83.750	9646	540	301	84	5	84
+BBa_K209429_A_15261	hypothetical protein, partial [Serratia marcescens]	WP_241171418	615	2.31e-32	135	69.307	9646	2272	1976	115	1	98
+BBa_K209429_A_15261	hypothetical protein, partial [Enterobacter hormaechei]	WP_241015763	158836	2.42e-32	135	69.307	9646	2272	1976	117	1	98
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_318070447	562	3.03e-32	134	83.750	9646	540	301	81	2	81
+BBa_K209429_A_15261	hypothetical protein F8156_19895, partial [Bacillus cereus]	KAB2502080	1396	3.36e-32	133	100.000	9646	2437	2631	77	1	65
+BBa_K209429_A_15261	hypothetical protein CGH98_24550, partial [Vibrio parahaemolyticus]	TOL39709	670	3.74e-32	133	100.000	9646	2257	2066	64	1	64
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Enterobacteriaceae]	WP_217451213	543;562;624	5.43e-32	133	83.750	9646	540	301	81	2	81
+BBa_K209429_A_15261	hypothetical protein FG717_23780, partial [Salmonella enterica subsp. enterica serovar Agona]	TVO49797	58095	7.29e-32	132	94.366	9646	2212	2424	71	1	71
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	NUV23232	562	8.06e-32	136	91.667	9646	2209	2424	181	110	181
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_231833176	562	8.44e-32	132	86.486	9646	480	259	75	1	74
+BBa_K209429_A_15261	unnamed protein product [Salmonella enterica subsp. enterica serovar Typhimurium]	CAB3272729	573;90371;149539	9.41e-32	136	91.667	9646	2209	2424	181	110	181
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia fergusonii]	WP_220471092	564	9.61e-32	132	82.500	9646	540	301	80	1	80
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EAV6452436	562;28901;90371;165302	1.09e-31	133	89.189	9646	2203	2424	106	33	106
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EBA4602980	562;28901;90371	1.10e-31	134	89.189	9646	2203	2424	137	64	137
+BBa_K209429_A_15261	hypothetical protein, partial [Ideonella sp. DXS22W]	WP_341413336	2984192	1.20e-31	134	98.361	9646	759	941	147	87	147
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EAP9875944	562;595;622;28901;108619	1.29e-31	134	89.189	9646	2203	2424	140	67	140
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MQL30965	562	1.31e-31	131	100.000	9646	2254	2066	63	1	63
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_213833478	562	1.79e-31	131	82.500	9646	540	301	81	2	81
+BBa_K209429_A_15261	hypothetical protein, partial [Pseudomonas aeruginosa]	WP_208536781	287	1.83e-31	132	100.000	9646	2440	2631	98	1	64
+BBa_K209429_A_15261	hypothetical protein FGAF1022_44630 [Escherichia coli]	CAK0673880	562	1.84e-31	135	83.529	9646	276	530	191	37	117
+BBa_K209429_A_15261	hypothetical protein FGAF138_41260 [Escherichia coli]	CAK0707265	562	1.87e-31	134	83.529	9646	276	530	154	37	117
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_309803779	562	2.87e-31	131	82.500	9646	540	301	84	5	84
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	HAL9284150	562	3.80e-31	132	80.952	9646	540	289	121	6	89
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_231360428	562	3.86e-31	130	82.500	9646	540	301	80	1	80
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MDA6994526	562	4.11e-31	132	80.952	9646	540	289	117	2	85
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_206746002	562	4.13e-31	130	82.500	9646	540	301	81	2	81
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MDZ9986785	562	4.48e-31	130	82.500	9646	540	301	84	5	84
+BBa_K209429_A_15261	hypothetical protein, partial [Salmonella enterica]	WP_226303009	28901;59204	5.26e-31	132	73.626	9646	540	268	123	3	93
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_255399975	562	5.44e-31	130	87.500	9646	474	259	73	1	72
+BBa_K209429_A_15261	hypothetical protein, partial [Burkholderia cenocepacia]	WP_323662207	95486	7.99e-31	130	98.438	9646	2440	2631	98	1	64
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_212505453	562	9.32e-31	129	84.615	9646	534	301	78	1	78
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MED9441379	562	1.19e-30	129	81.250	9646	540	301	86	7	86
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_283797558	562	1.31e-30	129	81.250	9646	540	301	82	3	82
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_214676717	562	1.35e-30	129	81.250	9646	540	301	81	2	81
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_212740296	562	1.41e-30	129	81.250	9646	540	301	85	6	85
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Enterobacteriaceae]	WP_206746474	543;562;624	1.52e-30	129	81.250	9646	540	301	81	2	81
+BBa_K209429_A_15261	hypothetical protein BZL66_23745 [Escherichia coli]	ONF77078	562	1.77e-30	129	81.250	9646	540	301	80	1	80
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_215254505	562	2.70e-30	128	81.250	9646	540	301	82	3	82
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_211437624	562;1182711	2.90e-30	128	81.250	9646	540	301	86	7	86
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MDW7314774	562	3.22e-30	128	81.250	9646	540	301	85	6	85
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Enterobacteriaceae]	WP_205249084	543;562;624	3.47e-30	128	81.250	9646	540	301	81	2	81
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_213056712	562	3.72e-30	128	81.250	9646	540	301	84	5	84
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_215412751	562	4.46e-30	127	80.000	9646	540	301	81	2	81
+BBa_K209429_A_15261	hypothetical protein, partial [Enterobacter hormaechei]	WP_205913772	158836	5.39e-30	129	68.367	9646	2263	1976	114	1	95
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar 1,4,[5],12:i:-]	MCY6153531	2583588	6.80e-30	127	100.000	9646	2446	2631	96	1	62
+BBa_K209429_A_15261	hypothetical protein C3F00_032700, partial [Pseudomonas sp. MWU13-2860]	RBH52169	2071714	1.18e-29	129	100.000	9646	759	941	143	83	143
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Enteritidis]	MKE62303	90371;149539	1.29e-29	125	95.455	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella sp. GG_Kp174]	WP_348849512	3153485	1.39e-29	129	91.429	9646	288	497	160	82	151
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Enteritidis]	EDF3043685	115981;149390;149539	1.45e-29	125	95.455	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_335243345	1463165	1.55e-29	129	82.716	9646	288	530	167	82	158
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella michiganensis]	WP_227635439	1134687	1.76e-29	127	80.000	9646	257	496	119	23	102
+BBa_K209429_A_15261	hypothetical protein E0D98_26610, partial [Escherichia sp. KCJ4928]	TDE69090	2545464	1.89e-29	125	94.030	9646	2224	2424	67	1	67
+BBa_K209429_A_15261	hypothetical protein, partial [Salmonella enterica]	WP_265278464	597;28901	1.96e-29	127	70.213	9646	2251	1976	110	1	91
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_248784822	562	2.19e-29	127	68.041	9646	2260	1976	111	1	94
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MBW9655881	562	2.19e-29	125	93.939	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EDC2987943	562;624;28901	2.51e-29	125	93.939	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	ybl209 [Escherichia coli BL21(DE3)]	CAQ34360	469008	3.30e-29	127	96.875	9646	306	497	145	1	64
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella aerogenes]	WP_315712461	548	3.97e-29	127	73.000	9646	489	193	140	1	95
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_263063045	1463165	4.02e-29	129	91.429	9646	288	497	191	115	184
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EBS7423883	28901	4.40e-29	125	88.571	9646	2203	2412	102	33	102
+BBa_K209429_A_15261	hypothetical protein, partial [Pseudomonas viridiflava]	WP_206211559	33069	4.42e-29	125	100.000	9646	2449	2631	95	1	61
+BBa_K209429_A_15261	hypothetical protein [Klebsiella pneumoniae]	MBK2594635	573	4.52e-29	126	83.784	9646	276	497	128	53	126
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [unclassified Klebsiella]	WP_348853155	2608929;3153365;3153366;3153371;3153374;3153375	4.56e-29	129	91.429	9646	288	497	193	115	184
+BBa_K209429_A_15261	hypothetical protein [Klebsiella sp. GG_Kp174]	MEP9815889	3153485	4.56e-29	129	91.429	9646	288	497	193	115	184
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_218189711	1463165	4.57e-29	129	91.429	9646	288	497	198	115	184
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_241514863	1463165	5.13e-29	129	91.429	9646	288	497	199	115	184
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_214184080	1463165;1667327	5.33e-29	129	91.429	9646	288	497	199	115	184
+BBa_K209429_A_15261	hypothetical protein E2130_27565, partial [Escherichia coli]	TEV36679	562	5.51e-29	124	95.385	9646	2230	2424	65	1	65
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_221176680	1463165;1667327	5.65e-29	129	91.429	9646	288	497	200	115	184
+BBa_K209429_A_15261	hypothetical protein [Escherichia albertii]	MCZ8940369	208962	5.79e-29	124	86.111	9646	256	471	79	8	79
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia albertii]	WP_223112091	208962	6.81e-29	124	84.000	9646	247	471	85	11	85
+BBa_K209429_A_15261	hypothetical protein C6A76_26020 [Escherichia coli]	RCE43054	562	8.04e-29	123	92.424	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein B5001_24785 [Salmonella enterica subsp. enterica serovar Dublin]	ORH84729	98360	8.12e-29	123	92.424	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein CI722_18865 [Shigella sonnei]	OYK21047	624	1.22e-28	123	92.424	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein FG602_23680 [Salmonella enterica subsp. enterica serovar Derby]	TSH49960	28144	1.35e-28	123	93.939	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_282279739	1463165	1.51e-28	127	90.000	9646	288	497	199	115	184
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Weltevreden]	MBW6838518	57743	1.53e-28	124	100.000	9646	2452	2631	94	1	60
+BBa_K209429_A_15261	hypothetical protein, partial [Salmonella enterica]	WP_206665951	28901;487002;487004	1.58e-28	124	76.190	9646	540	289	110	2	85
+BBa_K209429_A_15261	hypothetical protein [Shigella sonnei]	EAB5768998	562;621;624;2137853	1.60e-28	122	92.424	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Salmonella enterica]	WP_217986969	28901;57741	1.63e-28	124	76.190	9646	540	289	111	3	86
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_219619573	1463165;1667327	2.03e-28	126	81.250	9646	291	530	167	83	158
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasivariicola]	WP_285307426	2026240	2.10e-28	123	75.309	9646	254	496	84	1	81
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EEI3623254	562;28901;90371;108619	2.21e-28	122	90.909	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein [Shigella sonnei]	EFV8853153	562;624	2.25e-28	122	92.424	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein E2130_27575, partial [Escherichia coli]	TEV36627	562	2.39e-28	122	93.846	9646	2230	2424	65	1	65
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_232684744	244366;2590157	2.75e-28	123	77.500	9646	257	496	101	6	85
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_346724439	244366	2.89e-28	122	78.481	9646	260	496	90	1	79
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	MDJ3889484	28901	3.23e-28	124	76.190	9646	540	289	136	1	84
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_346723461	244366	3.44e-28	122	78.481	9646	260	496	91	1	79
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCV5073044	562	4.25e-28	123	60.484	9646	2569	2207	115	1	115
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Hadar]	ECU7615044	149385	4.67e-28	121	92.424	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_285212980	1463165	5.14e-28	124	90.909	9646	288	485	147	82	147
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasivariicola]	WP_343517221	2026240	5.26e-28	122	75.309	9646	254	496	95	1	81
+BBa_K209429_A_15261	hypothetical protein, partial [Pseudomonas aeruginosa]	WP_337161765	287	6.56e-28	122	100.000	9646	2455	2631	93	1	59
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	MDJ6631749	28901	7.43e-28	122	69.565	9646	2245	1976	108	1	89
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	NNQ53187	562	7.89e-28	120	90.909	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Heidelberg]	EAA6978641	562;573;611;58712;59201;340188	8.28e-28	120	90.909	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein [Shigella sonnei]	EAB7457379	562;623;624;28901	8.28e-28	120	92.424	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein CNEO4_1490005 [Clostridium neonatale]	CAI3588904	137838	8.49e-28	120	98.361	9646	224	42	61	1	61
+BBa_K209429_A_15261	hypothetical protein EAI68_22835 [Escherichia coli]	RLW84628	562	8.69e-28	120	90.909	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein CUN20_14205 [Enterococcus faecium]	PQB94888	1352	9.40e-28	120	90.909	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein [Klebsiella quasipneumoniae]	MRE42003	1463165	9.75e-28	122	88.060	9646	291	491	108	14	80
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFN4117406	562	1.04e-27	120	90.909	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_231792191	1463165;1667327	1.11e-27	121	89.706	9646	293	496	96	23	90
+BBa_K209429_A_15261	hypothetical protein [Shigella sonnei]	EAB9046099	562;624	1.12e-27	120	90.909	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_255983375	1463165	1.20e-27	121	89.706	9646	293	496	104	16	83
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_072060976	1463165	1.20e-27	122	89.706	9646	293	496	109	21	88
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_211774882	1463165	1.32e-27	121	89.706	9646	293	496	103	21	88
+BBa_K209429_A_15261	hypothetical protein FV305_25775, partial [Escherichia coli]	TXR11024	562	1.37e-27	120	100.000	9646	2455	2631	76	1	59
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_322249384	1463165	1.42e-27	121	89.706	9646	293	496	108	21	88
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_264978833	244366	1.44e-27	120	90.769	9646	302	496	67	2	66
+BBa_K209429_A_15261	hypothetical protein CT150_24815 [Escherichia coli]	PIM11013	562	1.46e-27	120	90.909	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein [Campylobacter jejuni]	EAI3746560	197;562;28144;29472;58712;59201;90371	1.46e-27	120	89.394	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein DTL25_25420 [Escherichia coli]	RCY20770	562	1.50e-27	120	90.909	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_277557571	1463165	1.53e-27	121	89.706	9646	293	496	109	21	88
+BBa_K209429_A_15261	hypothetical protein BE930_00040 [Escherichia coli]	AQV65411	562;573;624	1.64e-27	121	86.111	9646	2221	2424	100	29	100
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_218186793	1463165	1.66e-27	121	89.706	9646	293	496	107	21	88
+BBa_K209429_A_15261	hypothetical protein DS981_28125 [Escherichia coli]	RBX31276	562	1.73e-27	119	90.909	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_234282754	1463165	1.94e-27	120	89.706	9646	293	496	98	16	83
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella sp. GB_Kp047]	WP_348878388	3153399	2.84e-27	120	88.235	9646	293	496	86	16	83
+BBa_K209429_A_15261	hypothetical protein ELU83_24090 [Escherichia coli]	TFQ81352	562	2.85e-27	119	89.394	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_203559675	1463165;1667327	3.26e-27	120	88.235	9646	293	496	100	18	85
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Enteritidis]	ECY8113571	90371;149539	3.63e-27	119	90.909	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Acinetobacter baumannii]	WP_334423874	470;597	3.95e-27	119	100.000	9646	2458	2631	92	1	58
+BBa_K209429_A_15261	hypothetical protein DTL96_25180 [Escherichia coli]	RCZ38697	562	3.96e-27	119	90.909	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Chester]	EBX8493973	562;624;149386	4.12e-27	119	89.394	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_131729257	1463165	4.23e-27	119	88.235	9646	293	496	93	16	83
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia albertii]	WP_223112090	208962	4.32e-27	119	86.957	9646	265	471	69	1	69
+BBa_K209429_A_15261	hypothetical protein, partial [Vibrio parahaemolyticus]	WP_219599621	670	4.99e-27	119	100.000	9646	2458	2631	86	1	58
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_217896519	1463164;1463165	5.88e-27	119	88.235	9646	293	496	98	16	83
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_322357552	1463165	6.23e-27	119	88.235	9646	293	496	103	16	83
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Kentucky]	EBW5492864	562;90371;192955	6.38e-27	118	89.394	9646	2227	2424	66	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_345761000	1463165	6.49e-27	119	89.394	9646	293	490	86	21	86
+BBa_K209429_A_15261	hypothetical protein [Klebsiella quasipneumoniae]	MBM5551108	1463165	6.58e-27	118	90.769	9646	302	496	81	2	66
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Java]	ECD1209829	224729	9.41e-27	118	71.765	9646	245	499	88	3	87
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_071702725	562;1116047	9.58e-27	119	74.118	9646	2380	2634	99	4	86
+BBa_K209429_A_15261	hypothetical protein B577_24850, partial [Salmonella enterica subsp. enterica serovar Typhimurium str. STm9]	EQM55705	1218149	1.19e-26	119	100.000	9646	2455	2625	105	1	57
+BBa_K209429_A_15261	hypothetical protein [Klebsiella pneumoniae]	MDM7115877	573	1.21e-26	117	93.750	9646	2428	2237	64	1	64
+BBa_K209429_A_15261	hypothetical protein, partial [Acinetobacter baumannii]	WP_345786832	470	1.53e-26	118	96.610	9646	2455	2631	93	1	59
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Typhimurium]	MEO1736522	90371	2.35e-26	120	77.778	9646	288	530	159	50	126
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_192874588	1463165	2.46e-26	120	89.231	9646	291	485	180	116	180
+BBa_K209429_A_15261	hypothetical protein AI2913V1_4093, partial [Klebsiella aerogenes]	CAF9460129	548	2.52e-26	122	78.750	9646	291	530	224	117	192
+BBa_K209429_A_15261	hypothetical protein [Enterobacter hormaechei]	MCM7663513	158836	2.84e-26	117	65.957	9646	2251	1976	93	1	91
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_220095927	244366	2.85e-26	116	90.476	9646	302	490	64	2	64
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella sp. GB_Kp056]	WP_348890921	3153405	2.89e-26	117	89.231	9646	302	496	91	19	83
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_256765728	1463165;1667327	5.22e-26	119	84.286	9646	288	497	163	82	151
+BBa_K209429_A_15261	hypothetical protein, partial [Salmonella enterica]	WP_217699558	28901	7.78e-26	115	85.507	9646	2428	2634	82	1	69
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Enterobacteriaceae]	WP_063081681	543;562;611;28901;108619	1.16e-25	115	84.058	9646	2428	2634	82	1	69
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	MDJ1781221	28901	1.29e-25	115	84.058	9646	2428	2634	82	1	69
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_227502698	1463165;1667327	1.78e-25	114	89.062	9646	293	484	84	21	84
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_227524299	1463165	1.83e-25	114	89.062	9646	293	484	84	21	84
+BBa_K209429_A_15261	hypothetical protein, partial [Shigella boydii]	WP_114142314	621	2.16e-25	114	73.171	9646	2431	2664	82	1	82
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_218014969	1463165	2.21e-25	114	89.062	9646	293	484	85	22	85
+BBa_K209429_A_15261	hypothetical protein [Escherichia albertii]	MCZ8777432	208962	2.55e-25	114	84.058	9646	2428	2634	82	1	69
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Enterobacteriaceae]	WP_216084218	543;624;108619	2.64e-25	114	85.294	9646	2431	2634	81	1	68
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	HDT1670317	562	2.86e-25	114	82.353	9646	2431	2634	82	2	69
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter braakii]	WP_203457791	57706	3.73e-25	115	80.000	9646	288	497	127	42	111
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_283797922	562	3.98e-25	113	83.824	9646	2431	2634	81	1	68
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	MDJ1666675	28901	4.26e-25	113	83.824	9646	2431	2634	81	1	68
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_213923768	244366	4.46e-25	113	86.154	9646	302	496	67	2	66
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	WP_251033263	562	5.92e-25	113	72.941	9646	2431	2685	90	2	82
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	WP_247179863	562;621;624	6.04e-25	113	83.824	9646	2431	2634	82	2	69
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_261629012	562	6.28e-25	113	84.058	9646	2428	2634	82	1	69
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	WP_072048510	562;2848143	6.35e-25	113	83.824	9646	2431	2634	82	2	69
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_214672440	562	6.99e-25	113	84.058	9646	2428	2634	82	1	69
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_215253614	562	7.71e-25	112	72.289	9646	2428	2664	83	1	83
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFO0850252	562	8.49e-25	112	83.824	9646	2431	2634	82	2	69
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MDH7281035	562	8.93e-25	112	72.289	9646	2428	2664	83	1	83
+BBa_K209429_A_15261	ARHGEF36 [Mytilus edulis]	CAG2191128	6550	9.25e-25	128	26.179	9646	4775	5812	1419	200	606
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_270435303	244366	9.33e-25	112	86.154	9646	302	496	67	2	66
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCF7301305	562	1.04e-24	112	81.429	9646	2428	2637	71	1	70
+BBa_K209429_A_15261	hypothetical protein [Klebsiella michiganensis]	MDU4136250	1134687	1.04e-24	112	87.692	9646	302	496	78	2	66
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_205715696	562	1.24e-24	112	93.103	9646	254	427	70	13	70
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Enterobacteriaceae]	WP_214276626	543;562;29472	1.29e-24	112	83.582	9646	2434	2634	80	1	67
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_277128595	244366	1.44e-24	112	86.154	9646	302	496	82	2	66
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCW3190981	562	1.65e-24	112	81.159	9646	2428	2634	82	1	69
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_213076769	562	1.73e-24	112	93.103	9646	254	427	81	24	81
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_259608776	1463165;1667327	1.75e-24	115	91.667	9646	288	467	174	115	174
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	HAM4318694	562	1.81e-24	112	71.765	9646	2431	2685	90	2	82
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_072042554	1463165	2.00e-24	111	87.500	9646	293	484	84	21	84
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_236523457	562	2.22e-24	111	83.824	9646	2431	2634	81	1	68
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_218776124	573;72407	2.37e-24	111	80.597	9646	276	476	78	4	70
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_252257229	562	2.63e-24	112	83.582	9646	2434	2634	106	1	67
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MBK3152490	562	2.77e-24	111	68.605	9646	2227	2484	89	1	83
+BBa_K209429_A_15261	hypothetical protein, partial [Salmonella enterica]	WP_216642035	28901;29472;108619	2.94e-24	111	83.582	9646	2434	2634	80	1	67
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCC4129231	562	2.95e-24	111	89.706	9646	2428	2631	98	1	64
+BBa_K209429_A_15261	hypothetical protein, partial [Shigella sonnei]	WP_216087608	624	3.37e-24	110	82.353	9646	2431	2634	81	1	68
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_227523411	1463165	3.71e-24	110	87.302	9646	293	481	78	16	78
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCM4717681	562	4.19e-24	110	85.075	9646	2152	1952	85	3	69
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_042634831	562	6.23e-24	110	81.159	9646	2428	2634	82	1	69
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	MDJ1988658	28901	6.80e-24	110	82.609	9646	2428	2634	82	1	69
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_270761032	244366	9.25e-24	109	84.615	9646	302	496	74	2	66
+BBa_K209429_A_15261	hypothetical protein, partial [Salmonella enterica]	WP_340606632	28901	9.89e-24	109	85.484	9646	291	476	72	11	72
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCZ5970711	562	1.28e-23	110	82.857	9646	2428	2637	111	14	79
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCV7780335	562	2.14e-23	109	82.857	9646	2428	2637	98	1	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella michiganensis]	WP_204370055	1134687	2.64e-23	108	84.615	9646	302	496	71	2	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_336265473	1463165	2.70e-23	112	90.000	9646	288	467	174	115	174
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_243817083	1463165;1667327	2.73e-23	112	90.000	9646	288	467	174	115	174
+BBa_K209429_A_15261	PREDICTED: dynamin-binding protein [Hipposideros armiger]	XP_019491825	186990	3.50e-23	123	88.710	9646	9461	9646	1519	1458	1519
+BBa_K209429_A_15261	hypothetical protein D782_0723 [Enterobacteriaceae bacterium strain FGI 57]	AGB76773	693444	3.99e-23	108	72.000	9646	203	427	83	9	83
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_335260481	244366	4.94e-23	107	83.077	9646	302	496	81	2	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_217769217	244366	5.25e-23	107	83.077	9646	302	496	85	2	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_222616814	244366	5.27e-23	107	83.077	9646	302	496	73	2	66
+BBa_K209429_A_15261	diacylglycerol kinase family protein, partial [Mycoplasmopsis anatis]	WP_235732317	171279	5.53e-23	109	95.000	9646	2121	1942	130	1	60
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter portucalensis]	WP_275377515	1639133	6.43e-23	108	83.871	9646	288	473	127	61	122
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EAO9209563	28901	6.94e-23	108	61.468	9646	2026	2352	106	1	106
+BBa_K209429_A_15261	diacylglycerol kinase family protein [Mycoplasmopsis anatis]	WP_235732322	171279	7.69e-23	108	95.000	9646	2121	1942	130	1	60
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_207159897	244366;2590157	8.94e-23	107	83.077	9646	302	496	82	2	66
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella variicola]	WP_130940229	244366	9.88e-23	107	83.077	9646	302	496	85	2	66
+BBa_K209429_A_15261	hypothetical protein [Klebsiella pneumoniae]	MDM7115634	573	1.14e-22	105	87.097	9646	2368	2553	62	1	62
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	WP_032268329	562;624;1116025	1.47e-22	106	69.412	9646	2431	2685	84	2	76
+BBa_K209429_A_15261	hypothetical protein, partial [Shigella flexneri]	WP_216084550	623	1.48e-22	106	69.136	9646	2434	2664	81	1	81
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella quasipneumoniae]	WP_334079773	1463165;1667327	1.78e-22	109	89.831	9646	288	464	173	115	173
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCL8449356	562	1.86e-22	106	69.412	9646	2431	2685	83	1	75
+BBa_K209429_A_15261	hypothetical protein, partial [Salmonella enterica]	WP_072161671	28901;57045	2.65e-22	105	69.231	9646	245	478	80	3	80
+BBa_K209429_A_15261	SH319 protein [Ramphastos sulfuratus]	NXP75831	322582	3.11e-22	119	25.323	9646	4748	5806	776	424	772
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Java]	EAA1315940	595;29473;224729	3.38e-22	105	70.130	9646	245	475	79	3	79
+BBa_K209429_A_15261	hypothetical protein FYK18_14770 [Escherichia albertii]	QTA22047	208962	4.01e-22	104	83.871	9646	286	471	62	1	62
+BBa_K209429_A_15261	hypothetical protein [Klebsiella quasipneumoniae]	ELT0941101	1463165;1667327	4.40e-22	108	88.136	9646	291	467	174	116	174
+BBa_K209429_A_15261	conserved hypothetical protein [Klebsiella pneumoniae]	SAL92679	573	1.71e-21	103	73.239	9646	233	427	91	21	91
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter braakii]	WP_233612981	57706	1.82e-21	104	84.746	9646	288	464	116	57	115
+BBa_K209429_A_15261	hypothetical protein [Klebsiella pneumoniae]	MDZ2654284	573	1.85e-21	103	73.239	9646	233	427	91	21	91
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter braakii]	WP_219816055	57706	1.94e-21	104	84.746	9646	288	464	127	42	100
+BBa_K209429_A_15261	hypothetical protein [Escherichia albertii]	EFB5189309	208962	1.94e-21	102	83.871	9646	286	471	62	1	62
+BBa_K209429_A_15261	hypothetical protein [Klebsiella pneumoniae]	MDZ2556070	573	1.98e-21	103	73.239	9646	233	427	90	20	90
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter braakii]	WP_219816482	57706	2.00e-21	104	84.746	9646	288	464	120	42	100
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter braakii]	WP_219816961	57706	2.02e-21	105	84.746	9646	288	464	130	42	100
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter sp. XY323]	WP_259687238	2976537	2.05e-21	104	84.746	9646	288	464	125	40	98
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter braakii]	WP_207389920	57706	2.06e-21	104	84.746	9646	288	464	116	57	115
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter braakii]	WP_233618853	57706	2.30e-21	104	84.746	9646	288	464	118	57	115
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter braakii]	WP_217278116	57706	2.50e-21	104	83.333	9646	288	467	122	57	116
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter braakii]	WP_207389532	57706	2.96e-21	103	84.746	9646	288	464	117	57	115
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_227627382	562	2.98e-21	104	49.219	9646	2355	1972	133	1	127
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	MDL2692846	28901	3.21e-21	104	49.194	9646	2343	1972	129	1	123
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia albertii]	WP_223112089	208962	3.49e-21	101	85.000	9646	292	471	60	1	60
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Citrobacter]	WP_216425623	544;57706;2846982;2985004;2985027;2985033	3.94e-21	104	84.746	9646	288	464	142	57	115
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MWO66388	562	4.27e-21	103	55.200	9646	1978	2352	122	3	122
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter sp.]	WP_332668330	1896336	4.52e-21	103	83.333	9646	288	467	131	57	116
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter sp. Cb004]	WP_286454912	2985006	4.74e-21	104	84.746	9646	288	464	142	57	115
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter sp. Cb027]	WP_287110539	2985023	4.92e-21	104	84.746	9646	288	464	142	57	115
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter braakii]	WP_219816483	57706	5.17e-21	104	84.746	9646	288	464	145	57	115
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Citrobacter]	WP_207388554	544;57706;2652397	5.31e-21	102	84.746	9646	288	464	103	40	98
+BBa_K209429_A_15261	hypothetical protein [Citrobacter braakii]	MEB0967797	57706	5.48e-21	104	84.746	9646	288	464	142	57	115
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter sp. Cb009]	WP_286482453	2985010	5.69e-21	103	84.746	9646	288	464	142	57	115
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter braakii]	WP_323579399	57706	5.69e-21	103	84.746	9646	288	464	142	57	115
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter sp.]	WP_332555454	1896336	6.58e-21	103	83.333	9646	288	467	142	57	116
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter braakii]	WP_233623594	57706	8.25e-21	103	83.333	9646	288	467	152	57	116
+BBa_K209429_A_15261	hypothetical protein [Citrobacter braakii]	MBS9487127	57706	8.44e-21	102	84.483	9646	288	461	116	57	114
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar 1,4,[5],12:i:-]	MCY6182855	2583588	2.72e-20	99.0	100.000	9646	61	210	50	1	50
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_250694396	562	9.03e-20	100	46.479	9646	2566	2150	129	1	129
+BBa_K209429_A_15261	hypothetical protein B7764_22045 [Pantoea ananatis]	ASN17862	553	1.69e-19	98.2	62.626	9646	2335	2625	96	2	93
+BBa_K209429_A_15261	hypothetical protein DBZ47_26885 [Escherichia coli]	PUB66700	562	3.06e-19	96.3	81.967	9646	2527	2345	62	2	62
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_227653293	573	3.84e-19	97.1	63.291	9646	182	418	87	9	87
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MDT1589929	562	5.93e-19	95.9	97.959	9646	2534	2388	76	28	76
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MDT1696244	562	6.07e-19	95.5	97.959	9646	2534	2388	66	18	66
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EDX4929923	28901	9.42e-19	95.9	76.471	9646	259	462	89	21	87
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_267658299	562	1.01e-18	96.3	56.364	9646	2512	2192	102	1	101
+BBa_K209429_A_15261	hypothetical protein [Enterobacter cloacae]	MDH1482979	550	1.47e-18	95.1	61.111	9646	2461	2192	86	2	85
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_206745488	573	1.56e-18	95.1	62.821	9646	182	415	87	10	87
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_206745074	573	1.77e-18	95.1	62.821	9646	182	415	86	9	86
+BBa_K209429_A_15261	hypothetical protein B4U29_29640, partial [Klebsiella pneumoniae]	PVZ79406	573	2.42e-18	95.1	62.245	9646	2059	2352	104	11	104
+BBa_K209429_A_15261	hypothetical protein [Citrobacter freundii]	MEB2754770	546	3.93e-18	94.7	60.784	9646	2440	2736	112	2	101
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_250665225	562	4.01e-18	97.1	54.369	9646	2407	2126	176	19	114
+BBa_K209429_A_15261	hypothetical protein [Clostridioides difficile]	MCQ4384313	1496	5.09e-18	92.4	100.000	9646	70	210	47	1	47
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. diarizonae]	EED7682227	59204	6.80e-18	92.0	81.818	9646	307	471	55	1	55
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_247192542	562;623	1.07e-17	93.2	55.455	9646	2512	2192	102	1	101
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. houtenae str. CFSAN000557]	ECG1392413	1299292	1.49e-17	92.4	76.923	9646	259	453	86	21	84
+BBa_K209429_A_15261	SocE [Bacillus cereus W]	EDX54372	405917	2.10e-17	91.3	100.000	9646	173	42	64	21	64
+BBa_K209429_A_15261	hypothetical protein, partial [uncultured bacterium]	AMP55719	77133	2.27e-17	90.5	100.000	9646	73	210	46	1	46
+BBa_K209429_A_15261	hypothetical protein, partial [Shigella flexneri]	WP_252689406	623;1434139;1434141	2.64e-17	92.0	55.963	9646	2509	2192	101	1	100
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_220381095	573	3.00e-17	91.3	61.842	9646	182	409	84	9	84
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EEW7865113	562	3.57e-17	90.9	62.025	9646	2612	2376	80	2	80
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_221890822	573	3.58e-17	91.3	61.039	9646	182	412	86	10	86
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_064174051	573	3.98e-17	90.9	61.039	9646	182	412	85	9	85
+BBa_K209429_A_15261	hypothetical protein EYF80_006252 [Liparis tanakae]	TNN83271	230148	6.35e-17	101	35.838	9646	4150	3632	592	336	508
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_213045543	562	6.85e-17	90.1	89.362	9646	313	453	75	29	75
+BBa_K209429_A_15261	hypothetical protein, partial [uncultured bacterium]	AMP47107	77133	8.58e-17	88.6	100.000	9646	76	210	45	1	45
+BBa_K209429_A_15261	Uncharacterised protein [Shigella flexneri]	SRN44637	623	1.18e-16	90.1	53.763	9646	2455	2177	92	1	87
+BBa_K209429_A_15261	hypothetical protein, partial [Shigella flexneri]	WP_071993926	623;1434132;1434142;1434160;1434163	1.29e-16	90.1	55.556	9646	2506	2192	100	1	99
+BBa_K209429_A_15261	putative acetyltransferase [Escherichia coli]	STM08366	562	1.80e-16	92.4	83.333	9646	292	453	174	121	174
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_139843376	562	3.07e-16	87.8	88.679	9646	2464	2306	62	1	53
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_220455294	573	4.45e-16	89.0	55.140	9646	2440	2736	112	2	101
+BBa_K209429_A_15261	Aminoglycoside 3'-phosphotransferase [Klebsiella pneumoniae]	QTX14602	573	5.30e-16	87.4	68.493	9646	1666	1878	73	1	73
+BBa_K209429_A_15261	hypothetical protein [Citrobacter freundii]	MEB2479057	546	5.78e-16	87.8	57.955	9646	2470	2207	82	1	82
+BBa_K209429_A_15261	hypothetical protein, partial [Salmonella enterica]	WP_219928384	28901;59201	6.06e-16	87.4	79.630	9646	268	429	78	25	78
+BBa_K209429_A_15261	hypothetical protein, partial [Shigella flexneri]	WP_252672350	623;1434135;1434136	1.38e-15	87.0	54.630	9646	2506	2192	100	1	99
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Enteritidis]	MCL9317672	149539	2.10e-15	86.7	52.586	9646	2527	2207	101	1	101
+BBa_K209429_A_15261	hypothetical protein, partial [Enterobacter hormaechei]	WP_234783799	158836;1296536	2.80e-15	85.9	54.839	9646	2473	2195	90	1	87
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCD6913047	562	3.36e-15	85.5	55.056	9646	2443	2709	82	1	82
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_282328000	573	3.67e-15	85.5	60.274	9646	182	400	81	9	81
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EAO6315803	562;624;28144;28901;58096;59201;90105;90371	3.85e-15	85.1	58.228	9646	2612	2376	81	3	81
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Anatum]	MEA7548715	58712	7.00e-15	85.1	97.674	9646	2540	2412	95	53	95
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_213060888	562	8.10e-15	87.8	67.606	9646	2380	2592	183	12	73
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MDU9498068	562	8.22e-15	83.6	75.926	9646	2537	2376	60	7	60
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_214660420	562	1.02e-14	83.2	95.238	9646	328	453	62	21	62
+BBa_K209429_A_15261	hypothetical protein VEE65_46060 [Escherichia coli]	BED11152	562	1.17e-14	84.3	50.538	9646	2455	2177	92	1	87
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_216354083	573	1.20e-14	84.0	59.722	9646	182	397	80	9	80
+BBa_K209429_A_15261	hypothetical protein HMPREF9539_05516, partial [Escherichia coli MS 110-3]	EFU43993	749536	1.24e-14	83.6	82.000	9646	2207	2356	78	15	64
+BBa_K209429_A_15261	aminoglycoside-3-phospho transferase [Acetobacter pasteurianus]	CAL26906	438	1.26e-14	88.2	95.556	9646	1510	1644	209	164	208
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Typhimurium]	EDG3157057	562;90371;1620419	1.28e-14	84.0	56.962	9646	2612	2376	81	3	81
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_250187765	562	1.33e-14	83.6	57.647	9646	2461	2207	80	2	80
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MEB7169539	562	1.36e-14	86.3	66.197	9646	2380	2592	148	2	70
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EBT7965113	28901	2.06e-14	82.8	85.417	9646	328	471	75	28	75
+BBa_K209429_A_15261	conserved hypothetical protein [Klebsiella grimontii]	SNU37452	2058152	3.91e-14	85.1	48.182	9646	2455	2126	161	1	100
+BBa_K209429_A_15261	lac repressor [Aquimarina celericrescens]	MBQ0740127	1964542	4.18e-14	80.9	97.674	9646	82	210	43	1	43
+BBa_K209429_A_15261	unnamed protein product [Oncorhynchus mykiss]	CDQ87421	8022	4.49e-14	93.2	24.934	9646	4772	5806	1083	734	1081
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Kentucky]	MDI4721199	192955	5.29e-14	81.6	82.979	9646	313	453	66	20	66
+BBa_K209429_A_15261	hypothetical protein [Enterobacter kobei]	MCK7006855	208224	5.51e-14	81.6	55.422	9646	2455	2207	77	1	77
+BBa_K209429_A_15261	hypothetical protein EY722_28815 [Klebsiella pneumoniae]	KAA6239311	573	5.61e-14	82.0	97.436	9646	2492	2376	80	42	80
+BBa_K209429_A_15261	hypothetical protein [Phocaeicola dorei]	WP_149943200	357276	5.83e-14	82.0	92.683	9646	2498	2376	80	40	80
+BBa_K209429_A_15261	conserved hypothetical protein, partial [Wolbachia endosymbiont of Drosophila ananassae]	EAL57752	307502	6.09e-14	81.3	75.000	9646	2160	1972	63	1	63
+BBa_K209429_A_15261	hypothetical protein ELY07_26090, partial [Escherichia coli]	TFL95826	562	7.67e-14	80.9	92.683	9646	2498	2376	59	19	59
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Bredeney]	EBY1369791	134047	8.70e-14	81.3	92.683	9646	2498	2376	78	38	78
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EAM2538774	28901	8.79e-14	81.3	83.333	9646	310	453	77	30	77
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Abortusequi]	MCV2457669	607	8.87e-14	82.0	49.123	9646	2512	2207	97	2	97
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella aerogenes]	WP_205414678	548	9.48e-14	80.9	67.742	9646	268	453	67	6	67
+BBa_K209429_A_15261	hypothetical protein FG663_023190 [Salmonella enterica subsp. enterica serovar Mbandaka]	TRH48394	192954	9.87e-14	81.3	97.436	9646	2492	2376	80	42	80
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Minnesota]	MEA1714744	70803	1.25e-13	81.6	50.000	9646	2521	2207	99	1	99
+BBa_K209429_A_15261	hypothetical protein AWP93_26210 [Escherichia coli]	OKX06566	562	1.30e-13	80.9	97.436	9646	2492	2376	79	41	79
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFI9965700	562	1.47e-13	80.9	59.722	9646	2591	2376	81	10	81
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFI3473759	562	1.49e-13	80.9	59.722	9646	2591	2376	81	10	81
+BBa_K209429_A_15261	hypothetical protein [Raoultella ornithinolytica]	WP_186337647	54291	2.09e-13	81.3	60.563	9646	244	453	107	37	107
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_207204707	562	3.74e-13	80.5	54.639	9646	2446	2730	105	1	96
+BBa_K209429_A_15261	hypothetical protein NUBL19415_49800 [Klebsiella pneumoniae]	GKP25195	573	4.01e-13	79.7	52.809	9646	2455	2189	83	1	83
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Heidelberg]	MCV9439234	611;593905	4.37e-13	80.1	50.450	9646	2512	2207	97	2	97
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EGO6606660	562	4.60e-13	79.3	90.244	9646	2498	2376	80	40	80
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_220385247	573	5.27e-13	79.0	57.746	9646	182	394	80	10	80
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCV5372189	562	5.77e-13	79.0	60.870	9646	2170	1970	74	1	66
+BBa_K209429_A_15261	hypothetical protein HMPREF1063_05178, partial [Phocaeicola dorei CL02T00C15]	EIY16078	997875	6.84e-13	77.8	87.805	9646	247	125	54	1	41
+BBa_K209429_A_15261	hypothetical protein E0E06_26850, partial [Escherichia coli]	TCD26845	562	7.51e-13	78.2	90.244	9646	2498	2376	64	24	64
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_227509674	573	8.05e-13	79.7	53.271	9646	2440	2736	113	5	102
+BBa_K209429_A_15261	hypothetical protein [Bacillus safensis]	WP_004989554	562;94328;561879;566461	8.55e-13	77.4	87.805	9646	247	125	49	1	41
+BBa_K209429_A_15261	hypothetical protein [Klebsiella pneumoniae]	AVI43695	573	1.07e-12	77.0	97.297	9646	1666	1776	42	1	37
+BBa_K209429_A_15261	hypothetical protein, partial [Citrobacter sp. Colony322]	WP_219377268	2861801	1.09e-12	77.8	64.615	9646	259	453	72	8	72
+BBa_K209429_A_15261	lac repressor, partial [Bacillus halotolerans]	PRP48823	59201;260554	1.26e-12	76.6	100.000	9646	94	210	39	1	39
+BBa_K209429_A_15261	hypothetical protein BNIPNGOD_00090 [Salmonella enterica subsp. enterica serovar Typhimurium]	UPI13756	573;90371	1.34e-12	76.6	97.297	9646	1666	1776	42	1	37
+BBa_K209429_A_15261	hypothetical protein [Raoultella ornithinolytica]	WP_334557387	54291	1.36e-12	79.0	59.155	9646	244	453	107	37	107
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_215254432	562	1.36e-12	79.0	54.167	9646	2449	2730	104	1	95
+BBa_K209429_A_15261	hypothetical protein ANCDUO_18946 [Ancylostoma duodenale]	KIH50972	51022	1.81e-12	77.4	78.000	9646	2207	2356	73	10	59
+BBa_K209429_A_15261	hypothetical protein, partial [Escherichia coli]	WP_250186195	562	2.13e-12	77.4	55.556	9646	2449	2207	75	1	75
+BBa_K209429_A_15261	hypothetical protein [Shigella sonnei]	EFW1909718	624	2.14e-12	76.6	90.244	9646	2498	2376	62	22	62
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EBF1661090	562;28901;90371;2316723	2.19e-12	77.4	87.805	9646	2498	2376	80	40	80
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_229561878	573	2.32e-12	77.0	57.971	9646	182	388	77	9	77
+BBa_K209429_A_15261	hypothetical protein, partial [Raoultella ornithinolytica]	WP_204112105	54291	2.76e-12	77.4	80.000	9646	488	354	86	1	45
+BBa_K209429_A_15261	Uncharacterised protein [Klebsiella pneumoniae]	SVY68445	573	2.81e-12	75.9	94.595	9646	1666	1776	42	1	37
+BBa_K209429_A_15261	hypothetical protein ECW_P2m0003 [Escherichia coli W]	ADT78147	566546	2.81e-12	77.4	51.765	9646	2455	2201	88	1	79
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_220428356	573	3.30e-12	77.8	52.475	9646	2458	2736	105	1	94
+BBa_K209429_A_15261	hypothetical protein [Klebsiella variicola]	MBZ7744679	244366;1581110	4.15e-12	77.8	84.091	9646	322	453	116	73	116
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	EFB9236338	562	4.41e-12	76.6	52.381	9646	2627	2376	80	1	80
+BBa_K209429_A_15261	hypothetical protein [Raoultella ornithinolytica]	WP_182952263	54291	4.66e-12	75.9	75.510	9646	325	471	58	10	58
+BBa_K209429_A_15261	lac repressor [Bacillus cereus group sp. TH147LC]	MDA1691555	3018062	4.92e-12	75.1	100.000	9646	97	210	39	2	39
+BBa_K209429_A_15261	hypothetical protein MGAS2111_2316 [Streptococcus pyogenes MGAS2111]	KGE53788	561522	5.28e-12	75.9	100.000	9646	2088	1972	64	26	64
+BBa_K209429_A_15261	hypothetical protein MGAS2111_2246, partial [Streptococcus pyogenes MGAS2111]	KGE55699	561522	5.68e-12	76.3	100.000	9646	2088	1972	83	45	83
+BBa_K209429_A_15261	hypothetical protein, partial [Bacillus subtilis]	WP_214284568	1423;565143	5.90e-12	76.3	100.000	9646	2088	1972	85	47	85
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Muenchen]	EDK2579073	596	5.95e-12	75.5	87.805	9646	2498	2376	62	22	62
+BBa_K209429_A_15261	hypothetical protein [Shigella sonnei]	EAB6998777	624	6.32e-12	76.3	90.244	9646	2498	2376	80	40	80
+BBa_K209429_A_15261	hypothetical protein FV299_27810, partial [Escherichia coli]	TXQ81893	562	6.53e-12	75.5	87.805	9646	2498	2376	65	25	65
+BBa_K209429_A_15261	hypothetical protein [Klebsiella electrica]	WP_167686212	1259973	7.09e-12	75.1	74.000	9646	322	471	58	9	58
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Newport]	EBV1587405	108619	9.52e-12	75.5	87.805	9646	2498	2376	80	40	80
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica]	EBA1801523	562;611;28901;46626;59201;90371;149385;399587;593905	1.04e-11	75.5	87.805	9646	2498	2376	80	40	80
+BBa_K209429_A_15261	hypothetical protein [uncultured prokaryote]	CRY96536	198431	1.14e-11	75.5	87.805	9646	247	125	83	1	41
+BBa_K209429_A_15261	hypothetical protein, partial [Salmonella enterica]	WP_253891812	28901;29472	1.20e-11	74.7	56.164	9646	2455	2237	69	1	67
+BBa_K209429_A_15261	hypothetical protein, partial [Klebsiella pneumoniae]	WP_220270318	573	1.28e-11	75.9	52.000	9646	2461	2736	104	1	93
+BBa_K209429_A_15261	hypothetical protein [Escherichia coli]	MCF2206041	562	1.50e-11	74.3	90.244	9646	2100	1978	62	22	62
+BBa_K209429_A_15261	hypothetical protein CSC08_0005, partial [Escherichia coli]	PRW56360	562	1.77e-11	73.6	95.122	9646	2467	2345	41	1	41
+BBa_K209429_A_15261	hypothetical protein [uncultured bacterium]	QKY82986	77133	2.08e-11	73.2	100.000	9646	2375	2491	39	1	39
+BBa_K209429_A_15261	hypothetical protein EC930055_4328, partial [Escherichia coli 93.0055]	EKW07281	1005403	2.21e-11	73.2	87.179	9646	337	453	39	1	39
+BBa_K209429_A_15261	MULTISPECIES: hypothetical protein, partial [Bacteria]	WP_072629088	2;1833;696762	2.32e-11	74.3	97.222	9646	2525	2632	76	1	36
+BBa_K209429_A_15261	hypothetical protein [Raoultella ornithinolytica]	ELT0847452	54291	2.62e-11	73.2	77.273	9646	322	453	52	9	52
+BBa_K209429_A_15261	hypothetical protein [Raoultella ornithinolytica]	WP_186342789	54291	3.79e-11	72.8	77.273	9646	322	453	52	9	52
+BBa_K209429_A_15261	hypothetical protein DDAECAJI_00005 [Escherichia coli]	WVX99343	562	3.97e-11	74.3	56.098	9646	2380	2625	91	11	79
+BBa_K209429_A_15261	hypothetical protein [Klebsiella pneumoniae]	MDS0185304	573	4.23e-11	74.3	52.041	9646	2467	2736	102	1	91
+BBa_K209429_A_15261	hypothetical protein [Salmonella enterica subsp. enterica serovar Java]	EDS8303510	181736;224729	4.28e-11	72.8	76.000	9646	325	471	57	8	57
+BBa_K209429_A_15261	hypothetical protein [Raoultella ornithinolytica]	WP_193313511	54291;1444039;1444067	7.36e-11	72.0	75.000	9646	322	453	52	9	52
+BBa_K209429_A_15261	hypothetical protein ATN83_1265 [Raoultella ornithinolytica]	ALQ45390	54291;1444067	9.24e-11	71.6	76.744	9646	325	453	45	3	45
+# BLAST processed 5 queries

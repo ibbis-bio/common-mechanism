@@ -1,0 +1,651 @@
+{
+    "commec_info": {
+        "commec_version": "1.0.0",
+        "json_output_version": "0.3",
+        "time_taken": "01:07:09",
+        "date_run": "",
+        "search_tool_info": {
+            "biorisk_search_info": {
+                "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
+                "database_info": "HMMER3/f [3.3.2 | Nov 2020]"
+            },
+            "protein_search_info": {
+                "tool_info": "blastx: 2.16.0+\n Package: blast 2.16.0, build Mar 28 2025 16:30:45",
+                "database_info": "BLASTDB Version: 5Date: Jun 11, 2024  5:28 AM\tLongest sequence: 98,182 residues"
+            },
+            "nucleotide_search_info": {
+                "tool_info": "blastn: 2.16.0+\n Package: blast 2.16.0, build Mar 28 2025 16:30:45",
+                "database_info": "BLASTDB Version: 5Date: Jul 18, 2025  11:24 PM\tLongest sequence: 99,993,016 bases"
+            },
+            "low_concern_protein_search_info": {
+                "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
+                "database_info": "HMMER3/f [3.1b2 | February 2015]"
+            },
+            "low_concern_rna_search_info": {
+                "tool_info": "INFERNAL 1.1.5 (Sep 2023)",
+                "database_info": "INFERNAL1/a [1.1.4 | Dec 2020]"
+            },
+            "low_concern_dna_search_info": {
+                "tool_info": "blastn: 2.16.0+\n Package: blast 2.16.0, build Mar 28 2025 16:30:45",
+                "database_info": "BLASTDB Version: 5Date: Nov 22, 2021  4:57 PM\tLongest sequence: 66,879 bases"
+            }
+        }
+    },
+    "query_info": {
+        "file": "/mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/commec-examples.fasta",
+        "number_of_queries": 5,
+        "total_query_length": 14703
+    },
+    "queries": {
+        "Part:BBa_K5108009_creA_-": {
+            "query": "Part:BBa_K5108009_creA_-",
+            "length": 2058,
+            "status": {
+                "screen_status": "Warning",
+                "biorisk": "Warning",
+                "protein_taxonomy": "Pass",
+                "nucleotide_taxonomy": "Skip",
+                "low_concern": "Warning",
+                "rationale": "Matches sequence with virulence factor."
+            },
+            "hits": {
+                "PeptidaseM24": {
+                    "recommendation": {
+                        "status": "Warning",
+                        "from_step": "Biorisk Search"
+                    },
+                    "name": "PeptidaseM24",
+                    "description": " Metallopeptidase family M24",
+                    "ranges": [
+                        {
+                            "e_value": 1.3e-25,
+                            "match_start": 20,
+                            "match_end": 43,
+                            "query_start": 112,
+                            "query_end": 174
+                        },
+                        {
+                            "e_value": 1.3e-25,
+                            "match_start": 2,
+                            "match_end": 207,
+                            "query_start": 520,
+                            "query_end": 1167
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "not assigned"
+                        ],
+                        "regulated": [
+                            "Virulence Factor"
+                        ]
+                    }
+                }
+            }
+        },
+        "encrypted": {
+            "query": "encrypted",
+            "length": 552,
+            "status": {
+                "screen_status": "Warning",
+                "biorisk": "Pass",
+                "protein_taxonomy": "Pass",
+                "nucleotide_taxonomy": "Pass",
+                "low_concern": "Pass",
+                "rationale": "No matches found during any stage of analysis. Sequence risk is unknown, possibly generated in silico. "
+            },
+            "hits": {}
+        },
+        "xylanase_zero_shot_des31": {
+            "query": "xylanase_zero_shot_des31",
+            "length": 756,
+            "status": {
+                "screen_status": "Pass",
+                "biorisk": "Pass",
+                "protein_taxonomy": "Pass",
+                "nucleotide_taxonomy": "Pass",
+                "low_concern": "Pass",
+                "rationale": "No regions of concern."
+            },
+            "hits": {}
+        },
+        "RVFV_Rift_valley_fever": {
+            "query": "RVFV_Rift_valley_fever",
+            "length": 1691,
+            "status": {
+                "screen_status": "Flag",
+                "biorisk": "Warning",
+                "protein_taxonomy": "Flag",
+                "nucleotide_taxonomy": "Flag",
+                "low_concern": "Flag",
+                "rationale": "Matches protein and nucleotide sequence with regulated organisms; as well as virulence factor."
+            },
+            "hits": {
+                "DQ380175": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Nucleotide Taxonomy Search"
+                    },
+                    "name": "DQ380175",
+                    "description": "Rift Valley fever virus strain SA-75 segment S, complete sequence",
+                    "ranges": [
+                        {
+                            "e_value": 5.95e-60,
+                            "match_start": 830,
+                            "match_end": 960,
+                            "query_start": 830.0,
+                            "query_end": 960.0
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "11588"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "Phlebovirus riftense"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "WBR34649": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "WBR34649",
+                    "description": "NP, partial [Phlebovirus riftense]",
+                    "ranges": [
+                        {
+                            "e_value": 5.95e-138,
+                            "match_start": 1,
+                            "match_end": 195,
+                            "query_start": 961,
+                            "query_end": 1545
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "2",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "11588",
+                                    "3052676"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "Phlebovirus riftense"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "gi3006115embCAA73290.1": {
+                    "recommendation": {
+                        "status": "Warning",
+                        "from_step": "Biorisk Search"
+                    },
+                    "name": "gi3006115embCAA73290.1",
+                    "description": "NSs, partial [Rift Valley fever virus]",
+                    "ranges": [
+                        {
+                            "e_value": 2.1999999999999997e-139,
+                            "match_start": 1,
+                            "match_end": 200,
+                            "query_start": 98,
+                            "query_end": 697
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Virus"
+                        ],
+                        "regulated": [
+                            "Virulence Factor"
+                        ]
+                    }
+                },
+                "ABD38780": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "ABD38780",
+                    "description": "non-structural protein [Rift Valley fever virus]",
+                    "ranges": [
+                        {
+                            "e_value": 1.91e-155,
+                            "match_start": 1,
+                            "match_end": 265,
+                            "query_start": 35,
+                            "query_end": 829
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "11588"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "Phlebovirus riftense"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "WES12327": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "WES12327",
+                    "description": "nucleocapsid protein, partial [Rift Valley fever virus]",
+                    "ranges": [
+                        {
+                            "e_value": 2.19e-159,
+                            "match_start": 1,
+                            "match_end": 221,
+                            "query_start": 961,
+                            "query_end": 1623
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "2",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "11588",
+                                    "3052676"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "Phlebovirus riftense"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "ATP66914": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "ATP66914",
+                    "description": "nucleocapsid protein, partial [Rift Valley fever virus]",
+                    "ranges": [
+                        {
+                            "e_value": 5.410000000000001e-161,
+                            "match_start": 1,
+                            "match_end": 223,
+                            "query_start": 961,
+                            "query_end": 1629
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "2",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "11588",
+                                    "3052676"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "Phlebovirus riftense"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "ATP66916": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "ATP66916",
+                    "description": "nucleocapsid protein, partial [Rift Valley fever virus]",
+                    "ranges": [
+                        {
+                            "e_value": 1.37e-161,
+                            "match_start": 1,
+                            "match_end": 224,
+                            "query_start": 961,
+                            "query_end": 1632
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "2",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "11588",
+                                    "3052676"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "Phlebovirus riftense"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "QAX24673": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "QAX24673",
+                    "description": "nucleocapsid protein, partial [Rift Valley fever virus]",
+                    "ranges": [
+                        {
+                            "e_value": 6.22e-165,
+                            "match_start": 1,
+                            "match_end": 228,
+                            "query_start": 961,
+                            "query_end": 1644
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "2",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "11588",
+                                    "3052676"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "Phlebovirus riftense"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "QBH70242": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "QBH70242",
+                    "description": "nucleocapsid protein, partial [Rift Valley fever virus]",
+                    "ranges": [
+                        {
+                            "e_value": 8.950000000000001e-166,
+                            "match_start": 1,
+                            "match_end": 229,
+                            "query_start": 961,
+                            "query_end": 1647
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "2",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "11588",
+                                    "3052676"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "Phlebovirus riftense"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "UPK83343": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "UPK83343",
+                    "description": "nucleocapsid protein, partial [Rift Valley fever virus]",
+                    "ranges": [
+                        {
+                            "e_value": 8.32e-167,
+                            "match_start": 1,
+                            "match_end": 230,
+                            "query_start": 961,
+                            "query_end": 1650
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "2",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "11588",
+                                    "3052676"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "Phlebovirus riftense"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "XAJ11185": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "XAJ11185",
+                    "description": "nucleocapsid, partial [Rift Valley fever virus]",
+                    "ranges": [
+                        {
+                            "e_value": 2.45e-167,
+                            "match_start": 1,
+                            "match_end": 231,
+                            "query_start": 961,
+                            "query_end": 1653
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "2",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxids": [
+                                    "11588",
+                                    "3052676"
+                                ],
+                                "non_regulated_taxids": [],
+                                "regulated_species": [
+                                    "Phlebovirus riftense"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "BBa_K209429_A_15261": {
+            "query": "BBa_K209429_A_15261",
+            "length": 9646,
+            "status": {
+                "screen_status": "Pass",
+                "biorisk": "Pass",
+                "protein_taxonomy": "Pass",
+                "nucleotide_taxonomy": "Pass",
+                "low_concern": "Pass",
+                "rationale": "No regions of concern."
+            },
+            "hits": {
+                "ECC4931537": {
+                    "recommendation": {
+                        "status": "Pass",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "ECC4931537",
+                    "description": "hypothetical protein [Salmonella enterica]",
+                    "ranges": [
+                        {
+                            "e_value": 1.35e-33,
+                            "match_start": 1,
+                            "match_end": 66,
+                            "query_start": 2066,
+                            "query_end": 2263
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Bacteria"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "7",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "1",
+                                "regulated_viruses": "0",
+                                "regulated_taxids": [
+                                    "90370"
+                                ],
+                                "non_regulated_taxids": [
+                                    "28901",
+                                    "321846",
+                                    "573",
+                                    "670",
+                                    "77133",
+                                    "85831",
+                                    "913074"
+                                ],
+                                "regulated_species": [
+                                    "Salmonella enterica"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "WP_099588326": {
+                    "recommendation": {
+                        "status": "Pass",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "WP_099588326",
+                    "description": "MULTISPECIES: APH(3')-I family aminoglycoside O-phosphotransferase [Bacteria]",
+                    "ranges": [
+                        {
+                            "e_value": 8.72e-179,
+                            "match_start": 1,
+                            "match_end": 269,
+                            "query_start": 1026,
+                            "query_end": 1832
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Bacteria"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "12",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "1",
+                                "regulated_viruses": "0",
+                                "regulated_taxids": [
+                                    "119857"
+                                ],
+                                "non_regulated_taxids": [
+                                    "139",
+                                    "1396",
+                                    "1496",
+                                    "1590",
+                                    "1718",
+                                    "2071714",
+                                    "2801916",
+                                    "3018075",
+                                    "47715",
+                                    "562",
+                                    "66855",
+                                    "99822"
+                                ],
+                                "regulated_species": [
+                                    "Francisella tularensis"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
