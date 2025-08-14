@@ -13,12 +13,13 @@ The `commec` package is a tool for DNA sequence screening that is part of the
     setup   A command-line helper tool to download the required databases
     split   Split a multi-record FASTA file into individual files, one for each record
 
-The `commec screen` command runs an input FASTA through four steps:
+The `commec screen` command runs an input FASTA through the following screening steps:
 
-  1. Biorisk search (uses a hmmer search against custom databases)
-  2. Protein taxonomy search (uses a BLASTX or DIAMOND search against NCBI nr)
-  3. Nucleotide taxonomy search (uses BLASTN against NCBI core_nt)
-  4. Low-concern search (uses hmmer, cmscan and BLASTN against custom databases)
+1. **Biorisk search**: Fast HMM-based search against curated sequence profiles
+2. **Taxonomy Search**: look for best matches to regulated pathogens using a two-step process:
+   * **Protein search**: BLASTX/DIAMOND search against NCBI nr
+   *  **Nucleotide search**: BLASTN search against NCBI core_nt
+3. **Low concern search**: Clear earlier flags based on matches to common or conserved sequences
 
 ![Flowchart showing decision-making by the common mechanism flag module.](https://ibbis.bio/wp-content/uploads/2025/08/commec-screening-flow-v1.jpg "Decision Flow")
 
