@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "commec"
-version = '1.0.0'
+version = '1.0.1'
 requires-python = ">=3.10"
 # This is not a pure python project; dependencies are managed through environment.yml
 authors = [
