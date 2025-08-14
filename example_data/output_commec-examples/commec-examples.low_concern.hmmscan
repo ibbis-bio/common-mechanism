@@ -1,0 +1,18 @@
+#                                                                                  --- full sequence --- -------------- this domain -------------   hmm coord   ali coord   env coord
+# target name        accession   tlen query name                 accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias  from    to  from    to  from    to  acc description of target
+#------------------- ---------- -----       -------------------- ---------- ----- --------- ------ ----- --- --- --------- --------- ------ ----- ----- ----- ----- ----- ----- ----- ---- ---------------------
+COG0006              -            321 Part:BBa_K5108009_creA_-_1 -            686   9.9e-57  187.1   0.8   1   1     8e-59   1.4e-56  186.6   0.8     3   314    29   402    26   411 0.82 -
+COG0024              -            475 Part:BBa_K5108009_creA_-_1 -            686   9.5e-17   55.5   0.0   1   1   8.2e-19   1.4e-16   54.9   0.0   217   428   159   373    29   406 0.86 -
+COG0042              -            326 xylanase_zero_shot_des31_1 -            252    0.0017   12.0   0.0   1   2      0.58     1e+02   -3.7   0.0    70    88   136   155   129   163 0.73 -
+COG0042              -            326 xylanase_zero_shot_des31_1 -            252    0.0017   12.0   0.0   2   2   1.7e-05    0.0031   11.2   0.0   184   240   193   250   180   252 0.82 -
+COG0516              -            472 xylanase_zero_shot_des31_1 -            252    0.0027   11.1   0.0   1   1   2.1e-05    0.0037   10.6   0.0   225   283   156   237   115   241 0.72 -
+#
+# Program:         hmmscan
+# Version:         3.4 (Aug 2023)
+# Pipeline mode:   SCAN
+# Query file:      /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.faa
+# Target file:     /mnt/data/home/ec2-user/cm-dbs/low_concern/protein/benign.hmm
+# Option settings: hmmscan --domtblout /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/output_commec-examples/commec-examples.low_concern.hmmscan --cpu 12 /mnt/data/home/ec2-user/cm-dbs/low_concern/protein/benign.hmm /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07/2025-08-06/input_commec-examples/commec-examples.faa 
+# Current dir:     /mnt/data/home/ec2-user/analysis/v1.0.0-2025-07
+# Date:            Wed Aug  6 22:30:55 2025
+# [ok]
