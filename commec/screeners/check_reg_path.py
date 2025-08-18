@@ -228,33 +228,49 @@ def parse_taxonomy_hits(
                 regulated_taxa = pd.concat(regulated_taxa, ignore_index=True)
                 non_regulated_taxa = pd.concat(non_regulated_taxa, ignore_index=True)
 
-                regulated_taxa_list = []
-                non_regulated_taxa_list = []
+                def unique_taxa_dicts(df):
+                    return [
+                        dict(t)
+                        for t in {
+                            tuple({
+                                "taxid": row["subject tax ids"],
+                                "name": row["species"],
+                                "kingdom": row["superkingdom"],
+                                "genus": row["genus"],
+                                "target_hit": row["subject acc."],
+                                "target_description": row["subject title"],
+                            }.items())
+                            for _, row in df.iterrows()
+                        }
+                    ]
+
+                regulated_taxa_list = unique_taxa_dicts(regulated_taxa)
+                non_regulated_taxa_list =  unique_taxa_dicts(non_regulated_taxa)
 
                 # Construct some dictionaries for storing the specific
                 # regulated and non-regulated hit information.
-                for _, taxa in regulated_taxa.iterrows():
-                    regulated_taxa_list.append(
-                        {
-                            "taxid" : taxa["subject tax ids"],
-                            "name" : taxa["species"],
-                            "kingdom" : taxa["superkingdom"],
-                            "genus" : taxa["genus"],
-                            "target_hit" : taxa["subject acc."],
-                            "target_description" : taxa['subject title']
-                        }
-                    )
-                for _, taxa in non_regulated_taxa.iterrows():
-                    non_regulated_taxa_list.append(
-                        {
-                            "taxid" : taxa["subject tax ids"],
-                            "name" : taxa["species"],
-                            "kingdom" : taxa["superkingdom"],
-                            "genus" : taxa["genus"],
-                            "target_hit" : taxa["subject acc."],
-                            "target_description" : taxa['subject title']
-                        }
-                    )
+                #for _, taxa in regulated_taxa.iterrows():
+                #    regulated_taxa_list.append(
+                #        {
+                #            "taxid" : taxa["subject tax ids"],
+                #            "name" : taxa["species"],
+                #            "kingdom" : taxa["superkingdom"],
+                #            "genus" : taxa["genus"],
+                #            "target_hit" : taxa["subject acc."],
+                #            "target_description" : taxa['subject title']
+                #        }
+                #    )
+                #for _, taxa in non_regulated_taxa.iterrows():
+                #    non_regulated_taxa_list.append(
+                #        {
+                #            "taxid" : taxa["subject tax ids"],
+                #            "name" : taxa["species"],
+                #            "kingdom" : taxa["superkingdom"],
+                #            "genus" : taxa["genus"],
+                #            "target_hit" : taxa["subject acc."],
+                #            "target_description" : taxa['subject title']
+                #        }
+                #    )
 
                 # Uniquefy.
                 reg_species = list(set(reg_species))
@@ -328,6 +344,7 @@ def parse_taxonomy_hits(
                 if query_write.add_new_hit_information(new_hit):
                     write_hit = query_write.get_hit(hit)
                     if write_hit:
+                        write_hit.ranges.extend(match_ranges)
                         write_hit.annotations["domain"] = domains
                         write_hit.annotations["regulated_taxonomy"].append(regulation_dict)
                         write_hit.recommendation.status = compare(write_hit.recommendation.status, screen_status)

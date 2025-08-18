@@ -1,10 +1,25 @@
+"""
+Helper module to quickly create a test run for a full commec screen call.
+Simply create a ScreenFactory object,
+call add_query() to add a query to the screen.
+call add_hits() to add hits to queries.
+Call run() to get the ScreenResult object from the test.
+
+This abstracts the difficulty in dealing with external database files,
+as well as dealing with the various regulated annotations etc.
+"""
+
 import os
-import pandas as pd
+import math
+import json
+from dataclasses import asdict
 from unittest.mock import patch
+
+import pandas as pd
+
 from commec.screen import run, ScreenArgumentParser, add_args
 from commec.config.result import ScreenResult, ScreenStep
 from commec.config.json_io import get_screen_data_from_json
-import math
 
 def skip_taxonomy_info(
     blast: pd.DataFrame,
@@ -92,6 +107,10 @@ class ScreenTesterFactory:
         json_output_path = self.tmp_path / f"{self.name}.output.json"
         assert os.path.isfile(json_output_path)
         actual_screen_result : ScreenResult = get_screen_data_from_json(json_output_path)
+
+        print(f"Raw {self.name} test output: ")
+        print(json.dumps(asdict(actual_screen_result), indent=2))
+
         return actual_screen_result
 
     def add_query(self, name, size):
