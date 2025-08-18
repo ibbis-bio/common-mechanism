@@ -233,14 +233,19 @@ def test_screen_factory(tmp_path):
 def test_different_regions(tmp_path):
     screen_test = ScreenTesterFactory("repeating_taxonomy", tmp_path)
     screen_test.add_query("repeats",1000)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 30, 60, "RegRepeat", "RR55", 500, regulated=True)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 60, 90, "RegRepeat", "RR55", 500, regulated=True)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 120, 150, "RegRepeat", "RR55", 500, regulated=True)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 170, 190, "RegRepeat", "RR55", 500, regulated=True)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 200, 260, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 30, 90, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 100, 170, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 190, 260, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 300, 390, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 400, 750, "RegRepeat", "RR55", 500, regulated=True)
     result = screen_test.run()
-    encode_screen_data_to_json(result, "testing_json.json")
 
-    assert len(result.queries["repeats"].hits) == 1
-    print(result.queries["repeats"].hits["RR55"])
-    assert len(result.queries["repeats"].hits["RR55"].ranges) == 5
+    print("Raw test output: ")
+    print(json.dumps(asdict(result), indent=2))
+
+    num_hits = len(result.queries["repeats"].hits)
+    num_regions = len(result.queries["repeats"].hits["RR55"].ranges)
+
+    assert  num_hits == 1, f"Expected a a single hit, got {num_hits}."
+    assert  num_regions == 5, (f"Number of ranges [{num_regions}] in hit `RR55` for "
+                            "query `repeats` not equal to expected number (5).")

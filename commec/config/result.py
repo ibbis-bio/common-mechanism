@@ -433,6 +433,7 @@ class QueryResult:
                     new_region.query_start == existing_region.query_start
                     and new_region.query_end == existing_region.query_end
                 ):
+                    logger.debug(new_region, "Region already exists...")
                     is_unique_region = False
             if is_unique_region:
                 hits_is_updated = True
