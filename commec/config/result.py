@@ -413,13 +413,13 @@ class QueryResult:
         hits_is_updated: bool = False
 
         # Nothing matches in Name, try a matched region.
-        if not existing_hit:
-            for region in new_hit.ranges:
-                existing_hit = self.check_hit_range(region)
-                if existing_hit:
-                    logger.debug("Using existing hit from shared region: %s", existing_hit)
-                    hits_is_updated = True # We want to append info if new hit is differently named.
-                    break
+        #if not existing_hit:
+        #    for region in new_hit.ranges:
+        #        existing_hit = self.check_hit_range(region)
+        #        if existing_hit:
+        #            logger.debug("Using existing hit from shared region: %s", existing_hit)
+        #            hits_is_updated = True # We want to append info if new hit is differently named.
+        #            break
 
         # Nothing matches in Name or region... new hit!
         if not existing_hit:
@@ -433,7 +433,7 @@ class QueryResult:
                     new_region.query_start == existing_region.query_start
                     and new_region.query_end == existing_region.query_end
                 ):
-                    logger.debug(new_region, "Region already exists...")
+                    logger.debug(f"[{new_region.query_start}-{new_region.query_end}] Region already exists...")
                     is_unique_region = False
             if is_unique_region:
                 hits_is_updated = True
@@ -647,6 +647,14 @@ class QueryResult:
         sorted_items_desc = sorted(
             self.hits.items(), key=lambda item: item[1].get_e_value(), reverse=True
         )
+
+        # Sort the annotations for each hit based on taxid
+        for _, hit in self.hits.items():
+            annotations = hit.annotations.get("regulated_taxonomy")
+            if annotations:
+                for entry in hit.annotations["regulated_taxonomy"]:
+                    entry["regulated_taxa"].sort(key=lambda x: x["taxid"])
+
         self.hits = dict(sorted_items_desc)
         self._update_step_flags(query_data)
 
