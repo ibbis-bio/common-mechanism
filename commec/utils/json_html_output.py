@@ -240,7 +240,7 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
                 non_regulated_taxids.extend(r["non_regulated_taxa"])
             
             for entry in regulated_taxids:
-                regulated_species.append(entry["name"])
+                regulated_species.append(entry["species"])
             
             domain_string = " across multiple domains."
             if n_regulated_bacteria > 0 and n_regulated_viruses == 0 and n_regulated_eukaryotes == 0:

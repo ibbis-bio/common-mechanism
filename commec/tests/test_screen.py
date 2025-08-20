@@ -66,9 +66,9 @@ def test_functional_screen(tmp_path, request):
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 490, "ShouldClearBySynBio", "NR_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus")
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 500, "ShouldntClear", "NR_HIT_FLAG3", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus")
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 310, 370, "ShouldClear", "NR_HIT_FLAG4", "12346", regulated = True, superkingdom = "Viruses", species = "fine-icus")
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedReg", "NR_HIT_MIXED", "12347", regulated = True, superkingdom = "Viruses", species = "danger-poop")
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixednonReg", "NR_HIT_MIXED", "12348", regulated = False, superkingdom = "Bacteria", species = "cute-happy-bacter")
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedNonReg", "NR_HIT_MIXED", "12349", regulated = False, superkingdom = "Bacteria", species = "poopicus")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedReg", "NR_HIT_MIXED1", "12347", regulated = True, superkingdom = "Viruses", species = "danger-poop")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixednonReg", "NR_HIT_MIXED2", "12348", regulated = False, superkingdom = "Bacteria", species = "cute-happy-bacter")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedNonReg", "NR_HIT_MIXED3", "12349", regulated = False, superkingdom = "Bacteria", species = "poopicus")
     # Nucleotide Taxonomy
     functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 220, 280, "SUBJECT", "NT_HIT_FLAG1", "12345", regulated = True, superkingdom = "Viruses")
     functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 190, "SUBJECT", "NT_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses")
@@ -82,9 +82,6 @@ def test_functional_screen(tmp_path, request):
 
     result = functional_test.run()
 
-    # Generates .gitignored functional.html for quick human comparison.
-    generate_html_from_screen_data(result, html_output_path)
-
     # If we are writing exemplare data, do it in raw, to test the json_io simultaneously.
     gen_examples = request.config.getoption("--gen-examples")
     if gen_examples:
@@ -95,6 +92,9 @@ def test_functional_screen(tmp_path, request):
     actual_screen_result : ScreenResult = get_screen_data_from_json(json_output_path)
     sanitize_for_test(expected_screen_result)
     sanitize_for_test(actual_screen_result)
+
+    # Generates .gitignored functional.html for quick human comparison.
+    generate_html_from_screen_data(actual_screen_result, html_output_path)
 
     # Convert both original and retrieved data to dictionaries and compare
     assert asdict(expected_screen_result) == asdict(actual_screen_result), (

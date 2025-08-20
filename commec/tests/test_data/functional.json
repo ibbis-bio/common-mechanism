@@ -2,7 +2,7 @@
     "commec_info": {
         "commec_version": "1.0.1",
         "json_output_version": "0.3",
-        "time_taken": "00:00:04",
+        "time_taken": "00:00:01",
         "date_run": "",
         "search_tool_info": {
             "biorisk_search_info": {
@@ -32,7 +32,7 @@
         }
     },
     "query_info": {
-        "file": "/tmp/pytest-of-root/pytest-49/test_functional_screen0/functional.fasta",
+        "file": "/tmp/pytest-of-root/pytest-66/test_functional_screen0/functional.fasta",
         "number_of_queries": 1,
         "total_query_length": 600
     },
@@ -160,10 +160,10 @@
                                 "regulated_viruses": "1",
                                 "regulated_taxa": [
                                     {
-                                        "taxid": 12345,
-                                        "name": "fine-icus",
-                                        "kingdom": "Viruses",
+                                        "taxid": 12346,
+                                        "species": "fine-icus",
                                         "genus": "unclassified",
+                                        "superkingdom": "Viruses",
                                         "target_hit": "NR_HIT_FLAG4",
                                         "target_description": "ShouldClear"
                                     }
@@ -203,9 +203,9 @@
                                 "regulated_taxa": [
                                     {
                                         "taxid": 12345,
-                                        "name": "regulaticus",
-                                        "kingdom": "Viruses",
+                                        "species": "regulaticus",
                                         "genus": "unclassified",
+                                        "superkingdom": "Viruses",
                                         "target_hit": "NR_HIT_FLAG1",
                                         "target_description": "ShouldntClear"
                                     }
@@ -215,13 +215,13 @@
                         ]
                     }
                 },
-                "NR_HIT_MIXED": {
+                "NR_HIT_MIXED1": {
                     "recommendation": {
                         "status": "Pass",
                         "from_step": "Protein Taxonomy Search"
                     },
-                    "name": "NR_HIT_MIXED",
-                    "description": "ShouldMixednonReg",
+                    "name": "NR_HIT_MIXED1",
+                    "description": "ShouldMixedReg",
                     "ranges": [
                         {
                             "e_value": 0.0,
@@ -237,137 +237,39 @@
                         ],
                         "regulated_taxonomy": [
                             {
-                                "number_of_regulated_taxids": "3",
-                                "number_of_unregulated_taxids": "3",
-                                "regulated_eukaryotes": "0",
-                                "regulated_bacteria": "0",
-                                "regulated_viruses": "3",
-                                "regulated_taxa": [
-                                    {
-                                        "taxid": 12345,
-                                        "name": "danger-poop",
-                                        "kingdom": "Viruses",
-                                        "genus": "unclassified",
-                                        "target_hit": "NR_HIT_MIXED",
-                                        "target_description": "ShouldMixedReg"
-                                    },
-                                    {
-                                        "taxid": 12346,
-                                        "name": "danger-poop",
-                                        "kingdom": "Viruses",
-                                        "genus": "unclassified",
-                                        "target_hit": "NR_HIT_MIXED",
-                                        "target_description": "ShouldMixednonReg"
-                                    },
-                                    {
-                                        "taxid": 12347,
-                                        "name": "danger-poop",
-                                        "kingdom": "Viruses",
-                                        "genus": "unclassified",
-                                        "target_hit": "NR_HIT_MIXED",
-                                        "target_description": "ShouldMixedNonReg"
-                                    }
-                                ],
-                                "non_regulated_taxa": [
-                                    {
-                                        "taxid": 12345,
-                                        "name": "cute-happy-bacter",
-                                        "kingdom": "Bacteria",
-                                        "genus": "unclassified",
-                                        "target_hit": "NR_HIT_MIXED",
-                                        "target_description": "ShouldMixedReg"
-                                    },
-                                    {
-                                        "taxid": 12346,
-                                        "name": "poopicus",
-                                        "kingdom": "Bacteria",
-                                        "genus": "unclassified",
-                                        "target_hit": "NR_HIT_MIXED",
-                                        "target_description": "ShouldMixednonReg"
-                                    },
-                                    {
-                                        "taxid": 12346,
-                                        "name": "cute-happy-bacter",
-                                        "kingdom": "Bacteria",
-                                        "genus": "unclassified",
-                                        "target_hit": "NR_HIT_MIXED",
-                                        "target_description": "ShouldMixednonReg"
-                                    },
-                                    {
-                                        "taxid": 12347,
-                                        "name": "cute-happy-bacter",
-                                        "kingdom": "Bacteria",
-                                        "genus": "unclassified",
-                                        "target_hit": "NR_HIT_MIXED",
-                                        "target_description": "ShouldMixedNonReg"
-                                    },
-                                    {
-                                        "taxid": 12347,
-                                        "name": "poopicus",
-                                        "kingdom": "Bacteria",
-                                        "genus": "unclassified",
-                                        "target_hit": "NR_HIT_MIXED",
-                                        "target_description": "ShouldMixedNonReg"
-                                    },
-                                    {
-                                        "taxid": 12345,
-                                        "name": "poopicus",
-                                        "kingdom": "Bacteria",
-                                        "genus": "unclassified",
-                                        "target_hit": "NR_HIT_MIXED",
-                                        "target_description": "ShouldMixedReg"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                },
-                "NR_HIT_FLAG3": {
-                    "recommendation": {
-                        "status": "Flag",
-                        "from_step": "Protein Taxonomy Search"
-                    },
-                    "name": "NR_HIT_FLAG3",
-                    "description": "ShouldntClear",
-                    "ranges": [
-                        {
-                            "e_value": 0.0,
-                            "match_start": 1,
-                            "match_end": 90,
-                            "query_start": 410,
-                            "query_end": 500
-                        }
-                    ],
-                    "annotations": {
-                        "domain": [
-                            "Viruses"
-                        ],
-                        "regulated_taxonomy": [
-                            {
                                 "number_of_regulated_taxids": "1",
-                                "number_of_unregulated_taxids": "0",
+                                "number_of_unregulated_taxids": "2",
                                 "regulated_eukaryotes": "0",
                                 "regulated_bacteria": "0",
                                 "regulated_viruses": "1",
                                 "regulated_taxa": [
                                     {
-                                        "taxid": 12345,
-                                        "name": "regulaticus",
-                                        "kingdom": "Viruses",
+                                        "taxid": 12347,
+                                        "species": "danger-poop",
                                         "genus": "unclassified",
-                                        "target_hit": "NR_HIT_FLAG3",
-                                        "target_description": "ShouldntClear"
-                                    },
-                                    {
-                                        "taxid": 12345,
-                                        "name": "regulaticus",
-                                        "kingdom": "Viruses",
-                                        "genus": "unclassified",
-                                        "target_hit": "NR_HIT_FLAG2",
-                                        "target_description": "ShouldClearBySynBio"
+                                        "superkingdom": "Viruses",
+                                        "target_hit": "NR_HIT_MIXED1",
+                                        "target_description": "ShouldMixedReg"
                                     }
                                 ],
-                                "non_regulated_taxa": []
+                                "non_regulated_taxa": [
+                                    {
+                                        "taxid": 12348,
+                                        "species": "cute-happy-bacter",
+                                        "genus": "unclassified",
+                                        "superkingdom": "Bacteria",
+                                        "target_hit": "NR_HIT_MIXED2",
+                                        "target_description": "ShouldMixednonReg"
+                                    },
+                                    {
+                                        "taxid": 12349,
+                                        "species": "poopicus",
+                                        "genus": "unclassified",
+                                        "superkingdom": "Bacteria",
+                                        "target_hit": "NR_HIT_MIXED3",
+                                        "target_description": "ShouldMixedNonReg"
+                                    }
+                                ]
                             }
                         ]
                     }
@@ -402,17 +304,67 @@
                                 "regulated_taxa": [
                                     {
                                         "taxid": 12345,
-                                        "name": "regulaticus",
-                                        "kingdom": "Viruses",
+                                        "species": "regulaticus",
                                         "genus": "unclassified",
+                                        "superkingdom": "Viruses",
                                         "target_hit": "NR_HIT_FLAG3",
                                         "target_description": "ShouldntClear"
                                     },
                                     {
                                         "taxid": 12345,
-                                        "name": "regulaticus",
-                                        "kingdom": "Viruses",
+                                        "species": "regulaticus",
                                         "genus": "unclassified",
+                                        "superkingdom": "Viruses",
+                                        "target_hit": "NR_HIT_FLAG2",
+                                        "target_description": "ShouldClearBySynBio"
+                                    }
+                                ],
+                                "non_regulated_taxa": []
+                            }
+                        ]
+                    }
+                },
+                "NR_HIT_FLAG3": {
+                    "recommendation": {
+                        "status": "Flag",
+                        "from_step": "Protein Taxonomy Search"
+                    },
+                    "name": "NR_HIT_FLAG3",
+                    "description": "ShouldntClear",
+                    "ranges": [
+                        {
+                            "e_value": 0.0,
+                            "match_start": 1,
+                            "match_end": 90,
+                            "query_start": 410,
+                            "query_end": 500
+                        }
+                    ],
+                    "annotations": {
+                        "domain": [
+                            "Viruses"
+                        ],
+                        "regulated_taxonomy": [
+                            {
+                                "number_of_regulated_taxids": "1",
+                                "number_of_unregulated_taxids": "0",
+                                "regulated_eukaryotes": "0",
+                                "regulated_bacteria": "0",
+                                "regulated_viruses": "1",
+                                "regulated_taxa": [
+                                    {
+                                        "taxid": 12345,
+                                        "species": "regulaticus",
+                                        "genus": "unclassified",
+                                        "superkingdom": "Viruses",
+                                        "target_hit": "NR_HIT_FLAG3",
+                                        "target_description": "ShouldntClear"
+                                    },
+                                    {
+                                        "taxid": 12345,
+                                        "species": "regulaticus",
+                                        "genus": "unclassified",
+                                        "superkingdom": "Viruses",
                                         "target_hit": "NR_HIT_FLAG2",
                                         "target_description": "ShouldClearBySynBio"
                                     }
@@ -452,17 +404,17 @@
                                 "regulated_taxa": [
                                     {
                                         "taxid": 12345,
-                                        "name": "unclassified",
-                                        "kingdom": "Viruses",
+                                        "species": "unclassified",
                                         "genus": "unclassified",
+                                        "superkingdom": "Viruses",
                                         "target_hit": "NT_HIT_FLAG3",
                                         "target_description": "SUBJECT"
                                     },
                                     {
                                         "taxid": 12345,
-                                        "name": "unclassified",
-                                        "kingdom": "Viruses",
+                                        "species": "unclassified",
                                         "genus": "unclassified",
+                                        "superkingdom": "Viruses",
                                         "target_hit": "NT_HIT_FLAG2",
                                         "target_description": "SUBJECT"
                                     }
@@ -502,17 +454,17 @@
                                 "regulated_taxa": [
                                     {
                                         "taxid": 12345,
-                                        "name": "unclassified",
-                                        "kingdom": "Viruses",
+                                        "species": "unclassified",
                                         "genus": "unclassified",
+                                        "superkingdom": "Viruses",
                                         "target_hit": "NT_HIT_FLAG3",
                                         "target_description": "SUBJECT"
                                     },
                                     {
                                         "taxid": 12345,
-                                        "name": "unclassified",
-                                        "kingdom": "Viruses",
+                                        "species": "unclassified",
                                         "genus": "unclassified",
+                                        "superkingdom": "Viruses",
                                         "target_hit": "NT_HIT_FLAG2",
                                         "target_description": "SUBJECT"
                                     }
@@ -552,9 +504,9 @@
                                 "regulated_taxa": [
                                     {
                                         "taxid": 12345,
-                                        "name": "unclassified",
-                                        "kingdom": "Viruses",
+                                        "species": "unclassified",
                                         "genus": "unclassified",
+                                        "superkingdom": "Viruses",
                                         "target_hit": "NT_HIT_FLAG1",
                                         "target_description": "SUBJECT"
                                     }
@@ -594,9 +546,9 @@
                                 "regulated_taxa": [
                                     {
                                         "taxid": 12345,
-                                        "name": "unclassified",
-                                        "kingdom": "Viruses",
+                                        "species": "unclassified",
                                         "genus": "unclassified",
+                                        "superkingdom": "Viruses",
                                         "target_hit": "NT_HIT_MIXED",
                                         "target_description": "Main"
                                     }
@@ -604,9 +556,9 @@
                                 "non_regulated_taxa": [
                                     {
                                         "taxid": 12346,
-                                        "name": "unclassified",
-                                        "kingdom": "Bacteria",
+                                        "species": "unclassified",
                                         "genus": "unclassified",
+                                        "superkingdom": "Bacteria",
                                         "target_hit": "NT_HIT_MIXED2",
                                         "target_description": "NonRegMixedWithMain"
                                     }

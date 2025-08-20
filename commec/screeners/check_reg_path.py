@@ -20,6 +20,7 @@ from commec.tools.blast_tools import (
 )
 from commec.config.result import (
     ScreenResult,
+    TaxonomyContainer,
     HitResult,
     ScreenStep,
     ScreenStatus,
@@ -168,8 +169,34 @@ def parse_taxonomy_hits(
                 domains = [] # List of domains.
                 match_ranges = [] # Ranges where hit matches query.
 
-                regulated_taxa = []
-                non_regulated_taxa = []
+                regulated_taxa = set()
+                non_regulated_taxa = set()
+                
+                def unique_taxa_set(df) -> set[TaxonomyContainer]:
+                    return {
+                        TaxonomyContainer(
+                            taxid=row["subject tax ids"],
+                            species=row["species"],
+                            genus=row["genus"],
+                            superkingdom=row["superkingdom"],
+                            target_hit=row["subject acc."],
+                            target_description=row["subject title"],
+                        )
+                        for _, row in df.iterrows()
+                    }
+
+                def fast_unique_taxa_set(df) -> set[TaxonomyContainer]:
+                    return {
+                        TaxonomyContainer(*row)
+                        for row in df[[
+                            "subject tax ids",
+                            "species",
+                            "genus",
+                            "superkingdom",
+                            "subject acc.",
+                            "subject title"
+                        ]].itertuples(index=False, name=None)
+                    }
 
                 for _, region in regulated_hit_data.iterrows():
                     match_range = MatchRange(
@@ -215,37 +242,15 @@ def parse_taxonomy_hits(
                     reg_taxids.extend(map(str, regulated["subject tax ids"]))
                     non_reg_taxids.extend(map(str, non_regulated["subject tax ids"]))
 
-                    regulated_taxa.append(regulated)
-                    non_regulated_taxa.append(non_regulated)
 
-                    # These are the old values, now we simply count the size of the regulated, and non_regulated taxid arrays.
-                    #n_reg += (top_hits["regulated"][top_hits['q. start'] == region['q. start']] != False).sum()
-                    #n_total += len(top_hits["regulated"][top_hits['q. start'] == region['q. start']])
+                    regulated_taxa = regulated_taxa | unique_taxa_set(regulated)
+                    non_regulated_taxa = non_regulated_taxa | unique_taxa_set(non_regulated)
 
                 logger.debug(regulated_taxa)
                 logger.debug(non_regulated_taxa)
 
-                regulated_taxa = pd.concat(regulated_taxa, ignore_index=True)
-                non_regulated_taxa = pd.concat(non_regulated_taxa, ignore_index=True)
-
-                def unique_taxa_dicts(df):
-                    return [
-                        dict(t)
-                        for t in {
-                            tuple({
-                                "taxid": row["subject tax ids"],
-                                "name": row["species"],
-                                "kingdom": row["superkingdom"],
-                                "genus": row["genus"],
-                                "target_hit": row["subject acc."],
-                                "target_description": row["subject title"],
-                            }.items())
-                            for _, row in df.iterrows()
-                        }
-                    ]
-
-                regulated_taxa_list = unique_taxa_dicts(regulated_taxa)
-                non_regulated_taxa_list =  unique_taxa_dicts(non_regulated_taxa)
+                regulated_taxa_list = list(regulated_taxa)
+                non_regulated_taxa_list =  list(non_regulated_taxa)
 
                 # Uniquefy.
                 reg_species = list(set(reg_species))
