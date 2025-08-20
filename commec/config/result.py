@@ -109,6 +109,14 @@ class ScreenStatus(StrEnum):
         if self == ScreenStatus.FLAG:
             return ScreenStatus.CLEARED_FLAG
         return self
+
+    def revert_clear(self):
+        """Convert a WARN CLEARED or FLAG CLEARED into its uncleared counterpart"""
+        if self == ScreenStatus.CLEARED_WARN:
+            return ScreenStatus.WARN
+        if self == ScreenStatus.CLEARED_FLAG:
+            return ScreenStatus.FLAG
+        return self
     
     def __gt__(self, value):
         return self.importance > value.importance
@@ -435,6 +443,7 @@ class QueryResult:
                 ):
                     logger.debug(f"[{new_region.query_start}-{new_region.query_end}] Region already exists...")
                     is_unique_region = False
+
             if is_unique_region:
                 hits_is_updated = True
                 existing_hit.ranges.append(new_region)
@@ -476,7 +485,7 @@ class QueryResult:
         # Track status sets for rationale (only for specific steps that need it)
         status_sets = {
             ScreenStep.BIORISK: set(),
-            ScreenStep.TAXONOMY_AA: set(), 
+            ScreenStep.TAXONOMY_AA: set(),
             ScreenStep.TAXONOMY_NT: set(),
         }
 

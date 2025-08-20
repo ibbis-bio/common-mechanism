@@ -247,31 +247,6 @@ def parse_taxonomy_hits(
                 regulated_taxa_list = unique_taxa_dicts(regulated_taxa)
                 non_regulated_taxa_list =  unique_taxa_dicts(non_regulated_taxa)
 
-                # Construct some dictionaries for storing the specific
-                # regulated and non-regulated hit information.
-                #for _, taxa in regulated_taxa.iterrows():
-                #    regulated_taxa_list.append(
-                #        {
-                #            "taxid" : taxa["subject tax ids"],
-                #            "name" : taxa["species"],
-                #            "kingdom" : taxa["superkingdom"],
-                #            "genus" : taxa["genus"],
-                #            "target_hit" : taxa["subject acc."],
-                #            "target_description" : taxa['subject title']
-                #        }
-                #    )
-                #for _, taxa in non_regulated_taxa.iterrows():
-                #    non_regulated_taxa_list.append(
-                #        {
-                #            "taxid" : taxa["subject tax ids"],
-                #            "name" : taxa["species"],
-                #            "kingdom" : taxa["superkingdom"],
-                #            "genus" : taxa["genus"],
-                #            "target_hit" : taxa["subject acc."],
-                #            "target_description" : taxa['subject title']
-                #        }
-                #    )
-
                 # Uniquefy.
                 reg_species = list(set(reg_species))
                 reg_taxids = list(set(reg_taxids))
