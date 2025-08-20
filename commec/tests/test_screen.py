@@ -54,21 +54,21 @@ def test_functional_screen(tmp_path, request):
     # Screen Test Factory
     functional_test = ScreenTesterFactory("functional", tmp_path)
     functional_test.add_query("FCTEST1", 600)
-    
+
     #Biorisk
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 7, 95, "Toxin1", "ShouldntClear", 12345, description="LargeAreaFlag", score = 500, regulated = True, superkingdom = "Viruses", species = "horriblus")
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 34, 65, "Toxin1", "ShouldntClear", 12345, description="SmallImportantFlag", score = 1000, regulated = True, superkingdom = "Viruses", species = "extra-horriblus")
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 49, 80, "Toxin1", "ShouldTrim", 12345, description="SmallUnimportantTRIM", score = 100, regulated = True, superkingdom = "Viruses", species = "unimporticus")
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 593, 505, "Toxin3", "ShouldWarn", 12345, description="ReverseExample", score = 500, regulated = False, superkingdom = "Viruses", species = "horriblus-factor")
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 109, 191, "Toxin2", "ShouldWarn", 12345, description="WarningExample",score = 1000, regulated = False, superkingdom = "Viruses", species = "extra-horriblus-factor")
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 7, 95, "Toxin1", "ShouldntClear", 11111, description="LargeAreaFlag", score = 500, regulated = True, superkingdom = "Viruses", species = "horriblus")
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 34, 65, "Toxin1", "ShouldntClear", 22222, description="SmallImportantFlag", score = 1000, regulated = True, superkingdom = "Viruses", species = "extra-horriblus")
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 49, 80, "Toxin1", "ShouldTrim", 33333, description="SmallUnimportantTRIM", score = 100, regulated = True, superkingdom = "Viruses", species = "unimporticus")
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 109, 191, "Toxin2", "ShouldWarn", 22222, description="WarningExample",score = 1000, regulated = False, superkingdom = "Viruses", species = "extra-horriblus-factor")
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 593, 505, "Toxin3", "ShouldWarn", 11111, description="ReverseExample", score = 500, regulated = False, superkingdom = "Viruses", species = "horriblus-factor")
     # Protein Taxonomy
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 320, 380, "ShouldntClear", "NR_HIT_FLAG1", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus")
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 490, "ShouldClearBySynBio", "NR_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus")
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 500, "ShouldntClear", "NR_HIT_FLAG3", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus")
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 310, 370, "ShouldClear", "NR_HIT_FLAG4", "12345", regulated = True, superkingdom = "Viruses", species = "fine-icus")
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedReg", "NR_HIT_MIXED", "12345", regulated = True, superkingdom = "Viruses", species = "danger-poop")
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixednonReg", "NR_HIT_MIXED", "12346", regulated = False, superkingdom = "Bacteria", species = "cute-happy-bacter")
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedNonReg", "NR_HIT_MIXED", "12347", regulated = False, superkingdom = "Bacteria", species = "poopicus")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 310, 370, "ShouldClear", "NR_HIT_FLAG4", "12346", regulated = True, superkingdom = "Viruses", species = "fine-icus")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedReg", "NR_HIT_MIXED", "12347", regulated = True, superkingdom = "Viruses", species = "danger-poop")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixednonReg", "NR_HIT_MIXED", "12348", regulated = False, superkingdom = "Bacteria", species = "cute-happy-bacter")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedNonReg", "NR_HIT_MIXED", "12349", regulated = False, superkingdom = "Bacteria", species = "poopicus")
     # Nucleotide Taxonomy
     functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 220, 280, "SUBJECT", "NT_HIT_FLAG1", "12345", regulated = True, superkingdom = "Viruses")
     functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 190, "SUBJECT", "NT_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses")
@@ -293,6 +293,12 @@ def test_screen_factory(tmp_path):
     assert result.queries["query_01"].status.low_concern == ScreenStatus.FLAG
 
 def test_different_regions(tmp_path):
+    """
+    Creates a single hit, with many regions, then a single clear on one of those regions.
+    The low concern hit should only clear a single region, and not the whole query.
+    Final result should be FLAG. 
+    Tests that hits with multiple regions are being cleared correctly.
+    """
     screen_test = ScreenTesterFactory("repeating_taxonomy", tmp_path)
     screen_test.add_query("query1",1000)
     screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 30, 90, "RegRepeat", "RR55", 500, regulated=True)
@@ -300,11 +306,14 @@ def test_different_regions(tmp_path):
     screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 190, 260, "RegRepeat", "RR55", 500, regulated=True)
     screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 300, 390, "RegRepeat", "RR55", 500, regulated=True)
     screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 400, 750, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "query1", 400, 750, "ClearProtein", "RR55CLEAR", 500)
     result = screen_test.run()
 
     num_hits = len(result.queries["query1"].hits)
     num_regions = len(result.queries["query1"].hits["RR55"].ranges)
-
-    assert  num_hits == 1, f"Expected a a single hit, got {num_hits}."
+    status = result.queries["query1"].status.screen_status
+    assert  num_hits == 2, f"Expected two hits, got {num_hits}."
     assert  num_regions == 5, (f"Number of ranges [{num_regions}] in hit `RR55` for "
                             " `query1` not equal to expected number (5).")
+    assert status == ScreenStatus.FLAG, ("Expected status is to FLAG, current status"
+                                        f" is {status}, likely multiple region clearing issue.")

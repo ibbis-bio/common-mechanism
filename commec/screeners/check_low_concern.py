@@ -280,30 +280,45 @@ def _update_low_concern_data_for_query(query : Query,
             logger.debug("\t\t\tIgnoring %s [%s], cannot clear step 1.", hit.name, hit.recommendation.status)
             continue
 
+        cleared_regions = 0
+        total_regions_to_clear = len(hit.ranges)
+        logger.debug("Hit has %i regions required to clear.", total_regions_to_clear)
+
         for region in hit.ranges:
 
             if not low_concern_protein_for_query.empty:
                 query.confirm_has_hits()
-                new_low_concern_protein_hits.extend(
-                    _filter_low_concern_proteins(query, hit, region,
+                low_concern_proteins = _filter_low_concern_proteins(query, hit, region,
                                             low_concern_protein_for_query,
                                             low_concern_descriptions)
-                    )
+                if low_concern_proteins:
+                    cleared_regions += 1
+                    new_low_concern_protein_hits.extend(low_concern_proteins)
             
             if not low_concern_rna_for_query.empty:
                 query.confirm_has_hits()
-                new_low_concern_rna_hits.extend(
-                    _filter_low_concern_rna(query, hit, region,
+                low_concern_rna = _filter_low_concern_rna(query, hit, region,
                                        low_concern_rna_for_query)
-                )
+                if low_concern_rna:
+                    cleared_regions += 1
+                    new_low_concern_rna_hits.extend(low_concern_rna)
                 
             if not low_concern_dna_for_query.empty:
                 query.confirm_has_hits()
-                new_low_concern_dna_hits.extend(
-                    _filter_low_concern_dna(query, hit, region,
+                low_concern_dna = _filter_low_concern_dna(query, hit, region,
                                           low_concern_dna_for_query)
-                    )
-                
+                if low_concern_dna:
+                    cleared_regions += 1
+                    new_low_concern_dna_hits.extend(low_concern_dna)
+
+        # Quickly check if this hit had all regions cleared.
+        if cleared_regions >= total_regions_to_clear:
+            logger.debug("Cleared %i / %i regions. This hit is cleared.", cleared_regions, total_regions_to_clear)
+            hit.recommendation.status.clear()
+        else:
+            logger.debug("Only cleared %i/%i regions. This hit was not cleared.", cleared_regions, total_regions_to_clear)
+            hit.recommendation.status = hit.recommendation.status.revert_clear()
+
     # Report Query Specific lack of hits.
     if len(new_low_concern_protein_hits) == 0:
         logger.info("\t ... no housekeeping protein hits.")
