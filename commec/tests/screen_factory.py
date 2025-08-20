@@ -150,10 +150,14 @@ class ScreenTesterFactory:
         query_length = len(self.queries[to_query])
         query_length_aa = math.floor(query_length/3)
         # Calculate frame if appropriate:
-        frame = (start-1) % 3 + 1
+        frame = (start - 1) % 3 + 1
         if start > stop:
             # Frame must be reversed.
             frame += 3
+
+            # Flip the start and stop to account for reverse frames.
+            start = query_length - start
+            stop = query_length - stop
 
         print(f"Added Hit using frame {frame}")
 
@@ -195,8 +199,14 @@ class ScreenTesterFactory:
 
         if to_step == ScreenStep.LOW_CONCERN_RNA:
             self.lowconcern_rna.append(
-                f"{title}   {accession}   {to_query}   999   {length}   1  {length}   {length}   {start}   {stop}"
+                f"{title}\t{accession}\t{to_query}\tQA999\t{length}\t1\t{length}\t{start}\t{stop}\tSTRAND\tTRUNC\tPASS\tGC\t10\t{score}\t0.0\t100\t{description}"
             )
+            #RNA, mdl = target, seq = query
+            #"""\
+            #target name         accession query name                accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value  inc description of target
+            #------------------- --------- ------------------------- --------- --- -------- -------- -------- -------- ------ ----- ---- ---- ----- ------ ---------  --- ---------------------
+            #BENIGNRNA            12346     FCTEST1	                 Q1         50	    100      200       50      150 STRAND TRUNC PASS   GC    10   1000       0.0  100    BenignCMTestOutput
+            #"""
             return
 
         if to_step == ScreenStep.LOW_CONCERN_DNA:
@@ -221,7 +231,7 @@ class ScreenTesterFactory:
 
         # --RESUME FILES::
         # BIORISK FILES
-        header = "# tname    accession  tlen qname        accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias  from    to  from    to  from    to  acc description of target\n"
+        header = "#tname    accession  tlen qname        accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias  from    to  from    to  from    to  acc description of target\n"
         biorisk_db_output_path = self.tmp_path / f"output_{self.name}/{self.name}.biorisk.hmmscan"
         hmmer_biorisk_to_parse = header + "\n".join(self.biorisks)
         biorisk_db_output_path.write_text(hmmer_biorisk_to_parse)
@@ -241,19 +251,19 @@ class ScreenTesterFactory:
         print("writing blast nt: \n", blastnt_to_parse)
 
         # LOW CONCERN FILES:
-        header = " # tname    accession        tlen qname        accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias    from    to  from    to  from    to  acc description of target\n"
+        header = " #tname    accession        tlen qname        accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias    from    to  from    to  from    to  acc description of target\n"
         low_concern_hmm_output_path = self.tmp_path / f"output_{self.name}/{self.name}.low_concern.hmmscan"
         low_concern_hmmscan_to_parse = header + "\n".join(self.lowconcern_protein)
         low_concern_hmm_output_path.write_text(low_concern_hmmscan_to_parse)
         print("writing lowconcern hmm: \n", low_concern_hmmscan_to_parse)
 
-        header = "        #target name         accession query name                accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value  inc description of target\n"
+        header = "#target name         accession query name                accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value  inc description of target\n"
         low_concern_cmscan_output_path = self.tmp_path / f"output_{self.name}/{self.name}.low_concern.cmscan"
         low_concern_cmscan_to_parse = header + "\n".join(self.lowconcern_rna)
         low_concern_cmscan_output_path.write_text(low_concern_cmscan_to_parse)
         print("writing lowconcern rna: \n", low_concern_cmscan_to_parse)
 
-        header = "        #query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	    s.len	s. start	s. end\n"
+        header = "#query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	    s.len	s. start	s. end\n"
         low_concern_nt_output_path = self.tmp_path / f"output_{self.name}/{self.name}.low_concern.blastn"
         low_concern_blastnt_to_parse = header + "\n".join(self.lowconcern_dna)
         low_concern_nt_output_path.write_text(low_concern_blastnt_to_parse)

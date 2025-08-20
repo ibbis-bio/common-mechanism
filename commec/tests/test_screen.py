@@ -42,8 +42,70 @@ def print_tmp_path_contents(tmp_path):
     for path in tmp_path.rglob("*"):  # Recursively list all files and directories
         print(path.relative_to(tmp_path), "->", "DIR" if path.is_dir() else "FILE")
 
-@pytest.mark.filterwarnings("ignore:.*scattermapbox.*is deprecated.*:DeprecationWarning")
 def test_functional_screen(tmp_path, request):
+    """
+    Rewrite of the functional test using ScreenTestFactory
+    """
+    # File directories
+    html_output_path = os.path.join(os.path.dirname(__file__), "test_data/functional")
+    json_output_path = tmp_path / "functional.output.json"
+    expected_json_output_path = os.path.join(os.path.dirname(__file__), "test_data/functional.json")
+
+    # Screen Test Factory
+    functional_test = ScreenTesterFactory("functional", tmp_path)
+    functional_test.add_query("FCTEST1", 600)
+    
+    #Biorisk
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 7, 95, "Toxin1", "ShouldntClear", 12345, description="LargeAreaFlag", score = 500, regulated = True, superkingdom = "Viruses", species = "horriblus")
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 34, 65, "Toxin1", "ShouldntClear", 12345, description="SmallImportantFlag", score = 1000, regulated = True, superkingdom = "Viruses", species = "extra-horriblus")
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 49, 80, "Toxin1", "ShouldTrim", 12345, description="SmallUnimportantTRIM", score = 100, regulated = True, superkingdom = "Viruses", species = "unimporticus")
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 593, 505, "Toxin3", "ShouldWarn", 12345, description="ReverseExample", score = 500, regulated = False, superkingdom = "Viruses", species = "horriblus-factor")
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 109, 191, "Toxin2", "ShouldWarn", 12345, description="WarningExample",score = 1000, regulated = False, superkingdom = "Viruses", species = "extra-horriblus-factor")
+    # Protein Taxonomy
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 320, 380, "ShouldntClear", "NR_HIT_FLAG1", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 490, "ShouldClearBySynBio", "NR_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 500, "ShouldntClear", "NR_HIT_FLAG3", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 310, 370, "ShouldClear", "NR_HIT_FLAG4", "12345", regulated = True, superkingdom = "Viruses", species = "fine-icus")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedReg", "NR_HIT_MIXED", "12345", regulated = True, superkingdom = "Viruses", species = "danger-poop")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixednonReg", "NR_HIT_MIXED", "12346", regulated = False, superkingdom = "Bacteria", species = "cute-happy-bacter")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedNonReg", "NR_HIT_MIXED", "12347", regulated = False, superkingdom = "Bacteria", species = "poopicus")
+    # Nucleotide Taxonomy
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 220, 280, "SUBJECT", "NT_HIT_FLAG1", "12345", regulated = True, superkingdom = "Viruses")
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 190, "SUBJECT", "NT_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses")
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 200, "SUBJECT", "NT_HIT_FLAG3", "12345", regulated = True, superkingdom = "Viruses")
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 310, 390, "Main", "NT_HIT_MIXED", "12345", regulated = True, superkingdom = "Viruses")
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 310, 390, "NonRegMixedWithMain", "NT_HIT_MIXED2", "12346", regulated = False, superkingdom = "Bacteria")
+    # Low Concern
+    functional_test.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "FCTEST1", 202, 370, "Benign1", "Benign1", description = "BenignHMMClear")
+    functional_test.add_hit(ScreenStep.LOW_CONCERN_RNA, "FCTEST1", 50, 150, "BENIGNRNA", "12346", description = "BenignCMTestOutput")
+    functional_test.add_hit(ScreenStep.LOW_CONCERN_DNA, "FCTEST1", 410, 480, "BENIGNSYNBIO", "210", description = "BenignBlastClear")
+
+    result = functional_test.run()
+
+    # Generates .gitignored functional.html for quick human comparison.
+    generate_html_from_screen_data(result, html_output_path)
+
+    # If we are writing exemplare data, do it in raw, to test the json_io simultaneously.
+    gen_examples = request.config.getoption("--gen-examples")
+    if gen_examples:
+        encode_screen_data_to_json(result, expected_json_output_path)
+
+    # Test results vs expected results.
+    expected_screen_result : ScreenResult = get_screen_data_from_json(expected_json_output_path)
+    actual_screen_result : ScreenResult = get_screen_data_from_json(json_output_path)
+    sanitize_for_test(expected_screen_result)
+    sanitize_for_test(actual_screen_result)
+
+    # Convert both original and retrieved data to dictionaries and compare
+    assert asdict(expected_screen_result) == asdict(actual_screen_result), (
+        f"Functional test does not match predicted output, fix code,"
+        f" or if new output is expected, run with --gen-examples\n"
+        f"Test JSON Reference data: \n{asdict(actual_screen_result)}\n"
+        f"Test JSON output data: \n{asdict(expected_screen_result)}"
+    )
+
+@pytest.mark.filterwarnings("ignore:.*scattermapbox.*is deprecated.*:DeprecationWarning")
+def old_test_functional_screen(tmp_path, request):
     """
     Full test, utilising --resume to ignore database runs,
     thus including pre-file parsing to create db outputs, and input fasta file.
@@ -106,6 +168,7 @@ def test_functional_screen(tmp_path, request):
         Benign1    Benign1          1000  FCTEST1_1     21345     60       0.0   1000  10.1   1   1         0         0    1116.0  10.1    67   123    67   123    67   123  1.00  BenignHMMClear
         """
     )
+    #   Benign1    Benign1            56  FCTEST1_3       999    200  0.0   1000    10.0    1   1                 0    0    1000  10.0      1    56    67   123     1    56  1.00  BenignHMMClear
 
     #RNA, mdl = target, seq = query
     low_concern_cmscan_to_parse = textwrap.dedent(
@@ -219,33 +282,29 @@ def test_screen_factory(tmp_path):
     my_factory.add_hit(ScreenStep.BIORISK, "query_01", 99, 399, "bad_risk", "BR500", 200, regulated = True)
     my_factory.add_hit(ScreenStep.TAXONOMY_AA, "query_01", 100, 300, "reg_gene", "ACC500", 500, "imaginary_species", regulated = True)
     my_factory.add_hit(ScreenStep.TAXONOMY_NT, "query_01", 1, 90, "reg_gene2", "ACC501", 501, "imaginary_species", regulated = True)
-    my_factory.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "query_01", 97, 402, "safe_protein", "SF21YKN", 256, "saficius")
+    my_factory.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "query_01", 97, 402, "safe_protein", "SF21YKN", 256, "safeicius")
+    my_factory.add_hit(ScreenStep.LOW_CONCERN_DNA, "query_01", 97, 402, "safe_dna", "SF22YKN", 256, "safeicius")
+    my_factory.add_hit(ScreenStep.LOW_CONCERN_RNA, "query_01", 97, 402, "safe_rna", "SF23YKN", 256, "safeicius")
     result = my_factory.run()
-
-    # Generating these outputs is useful for checking visually, however not needed in the repo.
-    # generate_html_from_screen_data(result, "testing_html.html")
-    # encode_screen_data_to_json(result, "testing_json.json")
     assert result.queries["query_01"].status.screen_status == ScreenStatus.FLAG
     assert result.queries["query_01"].status.biorisk == ScreenStatus.FLAG
     assert result.queries["query_01"].status.protein_taxonomy == ScreenStatus.CLEARED_FLAG
     assert result.queries["query_01"].status.nucleotide_taxonomy == ScreenStatus.FLAG
+    assert result.queries["query_01"].status.low_concern == ScreenStatus.FLAG
 
 def test_different_regions(tmp_path):
     screen_test = ScreenTesterFactory("repeating_taxonomy", tmp_path)
-    screen_test.add_query("repeats",1000)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 30, 90, "RegRepeat", "RR55", 500, regulated=True)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 100, 170, "RegRepeat", "RR55", 500, regulated=True)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 190, 260, "RegRepeat", "RR55", 500, regulated=True)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 300, 390, "RegRepeat", "RR55", 500, regulated=True)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "repeats", 400, 750, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_query("query1",1000)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 30, 90, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 100, 170, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 190, 260, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 300, 390, "RegRepeat", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 400, 750, "RegRepeat", "RR55", 500, regulated=True)
     result = screen_test.run()
 
-    print("Raw test output: ")
-    print(json.dumps(asdict(result), indent=2))
-
-    num_hits = len(result.queries["repeats"].hits)
-    num_regions = len(result.queries["repeats"].hits["RR55"].ranges)
+    num_hits = len(result.queries["query1"].hits)
+    num_regions = len(result.queries["query1"].hits["RR55"].ranges)
 
     assert  num_hits == 1, f"Expected a a single hit, got {num_hits}."
     assert  num_regions == 5, (f"Number of ranges [{num_regions}] in hit `RR55` for "
-                            "query `repeats` not equal to expected number (5).")
+                            " `query1` not equal to expected number (5).")
