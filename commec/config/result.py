@@ -674,7 +674,7 @@ class QueryResult:
             annotations = hit.annotations.get("regulated_taxonomy")
             if annotations:
                 for entry in hit.annotations["regulated_taxonomy"]:
-                    entry["regulated_taxa"].sort(key=lambda x: x.taxid)
+                    entry["regulated_taxa"].sort(key=lambda x: x["taxid"])
 
         self.hits = dict(sorted_items_desc)
         self._update_step_flags(query_data)
