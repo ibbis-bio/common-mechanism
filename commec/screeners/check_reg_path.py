@@ -11,6 +11,7 @@ Usage:
 import logging
 import os
 import pandas as pd
+from dataclasses import asdict
 from commec.tools.search_handler import SearchHandler
 from commec.config.query import Query
 from commec.tools.blast_tools import (
@@ -249,8 +250,8 @@ def parse_taxonomy_hits(
                 logger.debug(regulated_taxa)
                 logger.debug(non_regulated_taxa)
 
-                regulated_taxa_list = list(regulated_taxa)
-                non_regulated_taxa_list =  list(non_regulated_taxa)
+                regulated_taxa_list = [asdict(t) for t in regulated_taxa]
+                non_regulated_taxa_list = [asdict(t) for t in non_regulated_taxa]
 
                 # Uniquefy.
                 reg_species = list(set(reg_species))
