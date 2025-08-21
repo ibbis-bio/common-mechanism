@@ -82,7 +82,7 @@ def main():
 
     # Sub-command for "list"
     list_parser = subparsers.add_parser("list", description=list_DESCRIPTION)
-    setup_add_args(list_parser)
+    list_add_args(list_parser)
 
     args = parser.parse_args()
 
