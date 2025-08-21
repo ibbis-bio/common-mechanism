@@ -50,14 +50,20 @@ def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
     a tuple containing the list, as well as the 
     taxid specific regulation information.
     """
+    logger.debug("Checking taxid [%i] for regulation ", taxid)
     output_data : list[tuple[RegulationList, TaxidRegulation]] = []
 
     taxids_to_check = [taxid]
     taxid_parents_to_check = data.CHILD_TAXID_MAP[data.CHILD_TAXID_MAP["TaxID"] == taxid]["ParentTaxID"].to_list()
-    taxids_to_check.append(taxid_parents_to_check)
+    taxids_to_check.extend(taxid_parents_to_check)
+    # Convert to string - we should probably just import taxids as ints, not strings.
+    taxids_to_check = [str(i) for i in taxids_to_check]
+    
+    logger.debug("Additional taxids to check: %s", taxid_parents_to_check)
 
     filtered_regulated_taxid_annotations = data.REGULATED_TAXID_ANNOTATIONS[
-        data.REGULATED_TAXID_ANNOTATIONS["taxid"] in taxids_to_check]
+        data.REGULATED_TAXID_ANNOTATIONS["taxid"].isin(taxids_to_check)
+    ]
 
     for _, row in filtered_regulated_taxid_annotations.iterrows():
         taxid_regulation_info = TaxidRegulation(
@@ -65,8 +71,8 @@ def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
             row["taxonomy_name"],
             row["notes"],
             row["preferred_taxonomy_name"],
-            row["Taxid"],
             row["list_acronym"],
+            int(row["taxid"]),
             row["target"],
             row["hazard_group"]
         )
@@ -130,7 +136,8 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 
 def run(args: argparse.Namespace):
-    """Run CLI with an parsed argument parser input."""
+    """Run CLI for list printing etc. Currently also functions as a convenient test bed
+    for ensuring the import scripts have worked. Tidy in future."""
 
     # Start logging to console
     log_level = logging.DEBUG
@@ -149,6 +156,11 @@ def run(args: argparse.Namespace):
         logger.info("%s\nRegulated Taxid Entries: %s",value, number_of_regulated_taxids)
 
     logger.info("\nTotal number of Taxid Relationships: %i", data.CHILD_TAXID_MAP.shape[0])
+
+    # Test Taxid retrieval:
+    test_taxid = 86060
+    outcome = get_regulation(test_taxid)
+    print(outcome)
 
     logger.debug("", extra={"no_prefix": True, "box_up" : True})
 
