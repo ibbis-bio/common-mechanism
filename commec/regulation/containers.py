@@ -34,7 +34,7 @@ class Region:
     acronym : str = ""
 
     def __str__(self):
-        return self.acronym
+        return self.name
 
     def __repr__(self):
         return self.name + " ["+self.acronym+"]"
@@ -49,6 +49,13 @@ class RegulationList:
     acronym : str = ""
     url : str = ""
     regions : list[Region] = field(default_factory=list[Region])
+
+    def __str__(self):
+        regions_text = ""
+        for r in self.regions:
+            regions_text += str(r) + ", "
+        regions_text = regions_text[:-2]
+        return f"[{self.acronym}] {self.name} - {regions_text}\n({self.url})"
 
 @dataclass
 class TaxidRegulation:
