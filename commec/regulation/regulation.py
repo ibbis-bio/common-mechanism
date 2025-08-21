@@ -22,19 +22,22 @@ annotated regulated lists used during commec screen"""
 
 logger = logging.getLogger(__name__)
 
-def load(import_path : str | os.PathLike):
+def load_regulation_data(import_path : str | os.PathLike):
     """
     Load a filepath recursively. Searches for valid "list folders"
     One found, the list folder is loaded into the modules state, and will
     """
+    logger.debug("Checking path for list annotations: %s", import_path)
 
     if import_regulations(import_path):
         return
-    
+
+    logger.debug("Invalid path: %s ... searching for more sub-directories...", import_path)
+
     # check for existance of sub folders and recurse on any present.
     for entry in os.scandir(import_path):
         if os.path.isdir(entry):
-            load(entry)
+            load_regulation_data(entry)
     return
 
 def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
@@ -134,11 +137,11 @@ def run(args: argparse.Namespace):
     setup_console_logging(log_level)
     logger.info(" The Common Mechanism : List", extra={"no_prefix": True, "box_down" : True})
 
-    logger.debug("Parsing input parameters...")
+    logger.debug("Parsing input parameters... %s", args.database_dir)
 
     if args.database_dir:
         logger.debug("Starting to load!")
-        load(args.database_dir)
+        load_regulation_data(args.database_dir)
 
     logger.debug("", extra={"no_prefix": True, "box_up" : True})
 
