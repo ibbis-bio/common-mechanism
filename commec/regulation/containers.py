@@ -18,12 +18,9 @@ Also defines the storage data for
     * per taxid regulation information per list, 
     * and child to parent taxid mapping.
 """
-
 from dataclasses import dataclass, field
 from enum import StrEnum
-
-# Regions:
-# Regions are always represented as a size 2 tuple, (name, acronym)
+import pandas as pd
 
 @dataclass
 class Region:
@@ -33,8 +30,8 @@ class Region:
     e.g. European Union, EU
     e.g. New Zealand, NZ
     """
-    name = ""
-    acronym = ""
+    name : str = ""
+    acronym : str = ""
 
     def __str__(self):
         return self.acronym
@@ -47,7 +44,6 @@ class Region:
 class RegulationList:
     """
     Contains the name, acronym, url, and affected regions for a regulated list.
-    Will be output
     """
     name : str = ""
     acronym : str = ""
@@ -60,10 +56,6 @@ class TaxidRegulation:
     Container for regulatory information of a given taxid from
     a specific list.
     """
-    # full_list_name : str = ""
-    # list_url : str = ""
-    # region : str = ""
-
     taxonomy_category : str = ""
     taxonomy_name : str = ""
     notes : str = ""
@@ -72,7 +64,6 @@ class TaxidRegulation:
     target : str = ""
     hazard_group : str = ""
     in_reg_taxids : str = ""
-    parent_taxid : int = 0
 
 @dataclass
 class RegulationLevel(StrEnum):
@@ -98,19 +89,30 @@ class RegulationOutput:
     """
     name_str : str = ""
     region_str : list[str] = field(default_factory=list(str))
-    regulation_level : RegulationLevel = field(default_factory=RegulationLevel) # At what level this list is regulated.
+    # regulation_level : RegulationLevel = field(default_factory=RegulationLevel) # At what level this list is regulated.
     # toxicity : str = "no data" - TBD
 
 
 # Module Storage globals:
 # The information of a single list, key on the list acronym.
-REG_LISTS : dict[str, RegulationList] = {}
+REGULATION_LISTS : dict[str, RegulationList] = {}
 # Information for every taxid within a list, keyed on list acronym, and taxid.
-REG_TAXID_LISTS : dict[str, dict[int, TaxidRegulation]] = {}
-# To be decided - if each TaxidRegulation simply contains a parent taxid,
-# and bridging entries are used for each intermediary, then we might
-# not require a global taxid map LUT...
-TAXID_MAP : dict[int, tuple[int, list[int]]] = {}
+# REG_TAXID_LISTS : dict[str, dict[int, TaxidRegulation]] = {}
+REGULATED_TAXID_ANNOTATIONS : pd.DataFrame = pd.DataFrame(columns = [
+    "taxonomy_category",
+    "taxonomy_name",
+    "notes",
+    "preferred_taxonomy_name",
+    "Taxid",
+    "list_acronym",
+    "target",
+    "hazard_group"
+    ])
+# Map of children taxids to the regulated taxid in the lists.
+CHILD_TAXID_MAP : pd.DataFrame = pd.DataFrame(columns = [
+    "TaxID",
+    "ParentTaxID"
+    ])
 
 def clear(target : str | None = None) -> bool:
     """
@@ -118,13 +120,71 @@ def clear(target : str | None = None) -> bool:
     if no target is provided, clears the entired module state.
     returns whether operation was successful.
     """
-    if target and target in REG_LISTS:
-        # implement targetted rmeoval logic.
-        del REG_LISTS[target]
+    global REGULATION_LISTS
+
+    if target and target in REGULATION_LISTS:
+        # implement targetted removal logic.
+        del REGULATION_LISTS[target]
+        # Consider updating the REG_TAXID_LISTS too.
         return True
 
     if not target:
-        REG_LISTS = None
+        REGULATION_LISTS = None
         return True
 
     return False
+
+def add_regulated_taxid_data(input_data : pd.DataFrame):
+    """
+    Calls concatenate to append new data to the regulated taxid annotations list.
+    """
+    global REGULATED_TAXID_ANNOTATIONS
+    expected_cols = {"taxonomy_category",
+                    "taxonomy_name",
+                    "notes",
+                    "preferred_taxonomy_name",
+                    "Taxid",
+                    "list_acronym",
+                    "target",
+                    "hazard_group"}
+
+    # Check for missing columns
+    if not expected_cols.issubset(input_data.columns):
+        raise ValueError(f"Input data must contain columns {expected_cols}, "
+                         f"got {list(input_data.columns)}")
+
+    # Restrict to only the expected columns
+    input_data = input_data[["TaxID", "ParentTaxID"]]
+
+    # Concatenate and drop exact duplicates
+    REGULATED_TAXID_ANNOTATIONS = pd.concat(
+        [REGULATED_TAXID_ANNOTATIONS, input_data], 
+        ignore_index=True)
+
+def add_child_lut_data(input_data: pd.DataFrame):
+    """
+    Append validated child TaxID mappings to CHILD_TAXID_MAP.
+    Ensures correct columns, restricts to them, and removes duplicates.
+    """
+    global CHILD_TAXID_MAP
+
+    expected_cols = {"TaxID", "ParentTaxID"}
+
+    # Check for missing columns
+    if not expected_cols.issubset(input_data.columns):
+        raise ValueError(f"Input data must contain columns {expected_cols}, "
+                         f"got {list(input_data.columns)}")
+
+    # Restrict to only the expected columns
+    input_data = input_data[["TaxID", "ParentTaxID"]]
+
+    # Concatenate and drop exact duplicates
+    CHILD_TAXID_MAP = (
+        pd.concat([CHILD_TAXID_MAP, input_data], ignore_index=True)
+          .drop_duplicates()
+          .reset_index(drop=True)
+    )
+
+def add_regulated_list(input : RegulationList):
+    global REGULATION_LISTS
+    REGULATION_LISTS[input.acronym] = input
