@@ -6,9 +6,14 @@
 """
 import os
 import logging
+import argparse
 from commec.regulation.containers import TaxidRegulation, RegulationList
 import commec.regulation.containers as data
 from commec.regulation.initialisation import import_regulations
+from commec.utils.file_utils import directory_arg, file_arg
+
+DESCRIPTION = """Tool for displaying information on 
+annotated regulated lists used during commec screen"""
 
 logger = logging.getLogger(__name__)
 
@@ -62,4 +67,67 @@ def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
 
     return output_data
 
+def print_regulation_list_information():
+    ...
 
+
+### Exact CLI arguments to be decided.
+def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    """
+    Add module arguments to an ArgumentParser object.
+    """
+    parser_obj.add_argument(
+        "-d",
+        "--databases",
+        dest="database_dir",
+        type=directory_arg,
+        default=None,
+        help="Path to directory containing reference databases (e.g. taxonomy, protein, HMM)",
+    )
+    parser_obj.add_argument(
+        "-y",
+        "--config",
+        dest="config_yaml",
+        type = file_arg,
+        help="Configuration for screen run in YAML format, including custom database paths",
+        default="",
+    )
+
+    parser_obj.add_argument(
+        "-l",
+        "--list",
+        dest="showlists",
+        default=False,
+        action="store_true",
+        help="Display annotation list information",
+    )
+
+    parser_obj.add_argument(
+        "-d",
+        "--taxids",
+        dest="showtaxiddata",
+        default=False,
+        action="store_true",
+        help="Display summary statistics on taxids",
+    )
+
+
+
+    # --pretty?
+
+    # --markdown? 
+
+    # --regions?
+
+    return parser_obj
+
+
+def run(args: argparse.Namespace):
+    """Run CLI with an parsed argument parser input."""
+    print("Running Commec List!!!")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    add_args(parser)
+    args = parser.parse_args()
+    run(args)
