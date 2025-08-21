@@ -88,7 +88,7 @@ class RegulationOutput:
     See results.py for other examples.
     """
     name_str : str = ""
-    region_str : list[str] = field(default_factory=list(str))
+    region_str : list[str] = field(default_factory=list[str])
     # regulation_level : RegulationLevel = field(default_factory=RegulationLevel) # At what level this list is regulated.
     # toxicity : str = "no data" - TBD
 
