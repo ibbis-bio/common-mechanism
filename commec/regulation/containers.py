@@ -103,7 +103,7 @@ REGULATED_TAXID_ANNOTATIONS : pd.DataFrame = pd.DataFrame(columns = [
     "taxonomy_name",
     "notes",
     "preferred_taxonomy_name",
-    "Taxid",
+    "taxid",
     "list_acronym",
     "target",
     "hazard_group"
@@ -143,7 +143,7 @@ def add_regulated_taxid_data(input_data : pd.DataFrame):
                     "taxonomy_name",
                     "notes",
                     "preferred_taxonomy_name",
-                    "Taxid",
+                    "taxid",
                     "list_acronym",
                     "target",
                     "hazard_group"}
@@ -154,7 +154,14 @@ def add_regulated_taxid_data(input_data : pd.DataFrame):
                          f"got {list(input_data.columns)}")
 
     # Restrict to only the expected columns
-    input_data = input_data[["TaxID", "ParentTaxID"]]
+    input_data = input_data[["taxonomy_category",
+                    "taxonomy_name",
+                    "notes",
+                    "preferred_taxonomy_name",
+                    "taxid",
+                    "list_acronym",
+                    "target",
+                    "hazard_group"]]
 
     # Concatenate and drop exact duplicates
     REGULATED_TAXID_ANNOTATIONS = pd.concat(

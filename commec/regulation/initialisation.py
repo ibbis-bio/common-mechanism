@@ -43,9 +43,11 @@ def is_valid_regulation_list_folder(input_path : str | os.PathLike) -> bool:
     Checks if the supplies folder is a valid regulation list.
     i.e. contains the regulated_taxids.csv, regions_info.csv
     """
-    info_filename = os.path.join(input_path, "info.csv")
+    info_filename = os.path.join(input_path, "list_info.csv")
     data_filename = os.path.join(input_path, "regulated_taxids.csv")
     child_lut_filename = os.path.join(input_path, "children_of_regulated_taxids.csv")
+
+    logger.debug("Checking the following for existance: %s\n%s\n%s\n", info_filename, data_filename, child_lut_filename)
 
     if not os.path.isdir(input_path): return False
     if not os.path.isfile(info_filename): return False
@@ -69,8 +71,8 @@ def _import_regulation_list_info(input_path : str | os.PathLike):
             row["full_list_name"],
             row["list_acronym"],
             row["list_url"],
-            list(Region(name = row["region_name"],
-                    acronym = row["region_code"])))
+            [Region(name = row["region_name"],
+                    acronym = row["region_code"])])
 
         # Check list doesn't already exist, or is not overwritting another.
         list_key = row["list_acronym"]
@@ -120,7 +122,7 @@ def _import_child_to_regulated_taxid_relationship(input_path : str | os.PathLike
     """
     child_lut = pd.read_csv(input_path)
     # Append the new list data:
-    rc.add_regulated_taxid_data(child_lut)
+    rc.add_child_lut_data(child_lut)
 
 def import_regulations(input_path : str | os.PathLike) -> bool:
     """
@@ -132,7 +134,7 @@ def import_regulations(input_path : str | os.PathLike) -> bool:
     if not is_valid_regulation_list_folder(input_path):
         return False
 
-    info_filename = os.path.join(input_path, "info.csv")
+    info_filename = os.path.join(input_path, "list_info.csv")
     data_filename = os.path.join(input_path, "regulated_taxids.csv")
     child_lut_filename = os.path.join(input_path, "children_of_regulated_taxids.csv")
 
