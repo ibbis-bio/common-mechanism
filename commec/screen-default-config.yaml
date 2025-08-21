@@ -23,6 +23,8 @@ databases:
     annotations: '{default}low_concern/low_concern_annotations.tsv'
   taxonomy:
       path: "{default}taxonomy/"
+  regulated_lists:
+      path: "{default}regulated_lists"
 threads: 1
 diamond_jobs: null
 do_cleanup: False
