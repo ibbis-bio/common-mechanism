@@ -172,21 +172,8 @@ def parse_taxonomy_hits(
 
                 regulated_taxa = set()
                 non_regulated_taxa = set()
-                
-                def unique_taxa_set(df) -> set[TaxonomyContainer]:
-                    return {
-                        TaxonomyContainer(
-                            taxid=row["subject tax ids"],
-                            species=row["species"],
-                            genus=row["genus"],
-                            superkingdom=row["superkingdom"],
-                            target_hit=row["subject acc."],
-                            target_description=row["subject title"],
-                        )
-                        for _, row in df.iterrows()
-                    }
 
-                def fast_unique_taxa_set(df) -> set[TaxonomyContainer]:
+                def unique_taxa_set(df) -> set[TaxonomyContainer]:
                     return {
                         TaxonomyContainer(*row)
                         for row in df[[
@@ -246,9 +233,6 @@ def parse_taxonomy_hits(
 
                     regulated_taxa = regulated_taxa | unique_taxa_set(regulated)
                     non_regulated_taxa = non_regulated_taxa | unique_taxa_set(non_regulated)
-
-                logger.debug(regulated_taxa)
-                logger.debug(non_regulated_taxa)
 
                 regulated_taxa_list = [asdict(t) for t in regulated_taxa]
                 non_regulated_taxa_list = [asdict(t) for t in non_regulated_taxa]
