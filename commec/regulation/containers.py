@@ -68,9 +68,9 @@ class TaxidRegulation:
     notes : str = ""
     preferred_taxonomy_name : str = ""
     list_acronym : str = ""
+    taxid : int = 0
     target : str = ""
     hazard_group : str = ""
-    in_reg_taxids : str = ""
 
 @dataclass
 class RegulationLevel(StrEnum):
