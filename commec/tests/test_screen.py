@@ -1,46 +1,32 @@
+#!/usr/bin/env python3
+# Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
+"""
+Functional tests for commec screen.
+"""
 
 import os
-import json
 from dataclasses import asdict
-import textwrap
-from unittest.mock import patch
-import pytest
-import pandas as pd
-from commec.screen import run, ScreenArgumentParser, add_args
 from commec.config.json_io import get_screen_data_from_json, encode_screen_data_to_json
 from commec.utils.json_html_output import generate_html_from_screen_data
 from commec.config.result import ScreenResult, ScreenStep, ScreenStatus
-
 from commec.tests.screen_factory import ScreenTesterFactory
 
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
 
-def cheat_taxonomy_info(
-    blast: pd.DataFrame,
-    _regulated_taxids: list[str],
-    _vaccine_taxids: list[str],
-    _db_path: str | os.PathLike,
-    _threads: int,
-):
-    """ 
-    Used to override get_taxonomic_labels()
-    Everything is a virus, and 
-    anything with 12345 taxid is regulated.
+def sanitize_for_test(screen_result: ScreenResult):
     """
-    blast["regulated"] = blast["subject tax ids"] == 12345
-    blast["superkingdom"] = "Viruses"
-    blast["phylum"] = "phylum"
-    blast["genus"] = "genus"
-    blast["species"] = "species"
-    return blast
+    Remove arbitrary changes to the JSON that may arise during testing but are not
+    relevant and should not be compared or versioned. 
+    """
+    # Runtime for pytest may be different
+    screen_result.commec_info.time_taken = None
+    screen_result.commec_info.date_run = None
 
-def print_tmp_path_contents(tmp_path):
-    """ 
-    Debug print, to see what was created within tmp_path
-    """
-    print(f"Contents of {tmp_path}:")
-    for path in tmp_path.rglob("*"):  # Recursively list all files and directories
-        print(path.relative_to(tmp_path), "->", "DIR" if path.is_dir() else "FILE")
+    # All search tool versions etc may change.
+    screen_result.commec_info.search_tool_info = None
+
+    # Pytest increments the filename version, so ignore the input file.
+    screen_result.query_info.file = "/test_placeholder/"
 
 def test_functional_screen(tmp_path, request):
     """
@@ -104,21 +90,6 @@ def test_functional_screen(tmp_path, request):
         f"Test JSON output data: \n{asdict(expected_screen_result)}"
     )
 
-def sanitize_for_test(screen_result: ScreenResult):
-    """
-    Remove arbitrary changes to the JSON that may arise during testing but are not
-    relevant and should not be compared or versioned. 
-    """
-    # Runtime for pytest may be different
-    screen_result.commec_info.time_taken = None
-    screen_result.commec_info.date_run = None
-
-    # All search tool versions etc may change.
-    screen_result.commec_info.search_tool_info = None
-
-    # Pytest increments the filename version, so ignore the input file.
-    screen_result.query_info.file = "/test_placeholder/"
-
 def test_screen_factory(tmp_path):
     my_factory = ScreenTesterFactory("test_01", tmp_path)
     my_factory.add_query("query_01", 500)
@@ -151,6 +122,8 @@ def test_different_regions(tmp_path):
     screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 400, 750, "RegRepeat", "RR55", 500, regulated=True)
     screen_test.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "query1", 400, 750, "ClearProtein", "RR55CLEAR", 500)
     result = screen_test.run()
+
+    encode_screen_data_to_json(result, "../test_output.json")
 
     num_hits = len(result.queries["query1"].hits)
     num_regions = len(result.queries["query1"].hits["RR55"].ranges)
