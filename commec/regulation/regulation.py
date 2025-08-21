@@ -143,8 +143,14 @@ def run(args: argparse.Namespace):
         logger.debug("Starting to load!")
         load_regulation_data(args.database_dir)
 
-    logger.debug("", extra={"no_prefix": True, "box_up" : True})
+    logger.info("The following Regulation Lists have been identified: ")
+    for _, value in data.REGULATION_LISTS.items():
+        number_of_regulated_taxids = (data.REGULATED_TAXID_ANNOTATIONS["list_acronym"] == value.acronym).sum()
+        logger.info("%s\nRegulated Taxid Entries: %s",value, number_of_regulated_taxids)
 
+    logger.info("\nTotal number of Taxid Relationships: %i", data.CHILD_TAXID_MAP.shape[0])
+
+    logger.debug("", extra={"no_prefix": True, "box_up" : True})
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=DESCRIPTION)
