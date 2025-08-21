@@ -7,6 +7,11 @@
 import os
 import logging
 import argparse
+from commec.utils.logger import (
+    setup_console_logging,
+    setup_file_logging,
+    set_log_level,
+)
 from commec.regulation.containers import TaxidRegulation, RegulationList
 import commec.regulation.containers as data
 from commec.regulation.initialisation import import_regulations
@@ -88,7 +93,6 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "-y",
         "--config",
         dest="config_yaml",
-        type = file_arg,
         help="Configuration for screen run in YAML format, including custom database paths",
         default="",
     )
@@ -103,7 +107,7 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
 
     parser_obj.add_argument(
-        "-d",
+        "-t",
         "--taxids",
         dest="showtaxiddata",
         default=False,
@@ -124,7 +128,20 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 def run(args: argparse.Namespace):
     """Run CLI with an parsed argument parser input."""
-    print("Running Commec List!!!")
+
+    # Start logging to console
+    log_level = logging.DEBUG
+    setup_console_logging(log_level)
+    logger.info(" The Common Mechanism : List", extra={"no_prefix": True, "box_down" : True})
+
+    logger.debug("Parsing input parameters...")
+
+    if args.database_dir:
+        logger.debug("Starting to load!")
+        load(args.database_dir)
+
+    logger.debug("", extra={"no_prefix": True, "box_up" : True})
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=DESCRIPTION)
