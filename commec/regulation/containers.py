@@ -39,6 +39,20 @@ class Region:
     def __repr__(self):
         return self.name + " ["+self.acronym+"]"
 
+class ListMode(StrEnum):
+    """
+    Describes how a list is interpreted, typically based on regional information.
+    When a Taxonomy ID is identified as part of a list, whether or not we treat
+    that taxid as regulated or not will depend on the list(s) mode.
+    -----
+    * COMPLIANCE - All taxids from this list are regulated.
+    * CONDITIONAL - Only mark taxid as regulated if it appears in more than 1 list.
+    * IGNORE - Ignore this list entirely.
+    """
+    COMPLIANCE = "Compliance"
+    CONDITIONAL_NUM = "Conditional Compliance"
+    COMPLIANCE_WARN = "Comply with Warning"
+    IGNORE = "Ignored"
 
 @dataclass
 class RegulationList:
@@ -49,6 +63,7 @@ class RegulationList:
     acronym : str = ""
     url : str = ""
     regions : list[Region] = field(default_factory=list[Region])
+    status : ListMode = field(default_factory=ListMode)
 
     def __str__(self):
         regions_text = ""

@@ -31,10 +31,12 @@ import pandas as pd
 
 from commec.regulation.containers import (
     RegulationList,
+    ListMode,
     Region
     )
 
 import commec.regulation.containers as rc
+from commec.regulation.region import get_regions_set
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +49,7 @@ def is_valid_regulation_list_folder(input_path : str | os.PathLike) -> bool:
     data_filename = os.path.join(input_path, "regulated_taxids.csv")
     child_lut_filename = os.path.join(input_path, "children_of_regulated_taxids.csv")
 
-    logger.debug("Checking the following for existance: %s\n%s\n%s\n", info_filename, data_filename, child_lut_filename)
+    logger.debug("Checking the following for existance:\n %s\n%s\n%s\n", info_filename, data_filename, child_lut_filename)
 
     if not os.path.isdir(input_path): return False
     if not os.path.isfile(info_filename): return False
@@ -66,13 +68,13 @@ def _import_regulation_list_info(input_path : str | os.PathLike):
 
     list_info = pd.read_csv(input_path)
     for _, row in list_info.iterrows():
-
         new_list = RegulationList(
             row["full_list_name"],
             row["list_acronym"],
             row["list_url"],
             [Region(name = row["region_name"],
-                    acronym = row["region_code"])])
+                    acronym = row["region_code"])],
+            ListMode.COMPLIANCE)
 
         # Check list doesn't already exist, or is not overwritting another.
         list_key = row["list_acronym"]
@@ -124,7 +126,7 @@ def _import_child_to_regulated_taxid_relationship(input_path : str | os.PathLike
     # Append the new list data:
     rc.add_child_lut_data(child_lut)
 
-def import_regulations(input_path : str | os.PathLike) -> bool:
+def import_regulations(input_path : str | os.PathLike, regions_of_interest : list[str] = None) -> bool:
     """
     Given a directory, checks that the directory is valid,
     If the directory is valid, it will load the regulation data.
@@ -138,8 +140,48 @@ def import_regulations(input_path : str | os.PathLike) -> bool:
     data_filename = os.path.join(input_path, "regulated_taxids.csv")
     child_lut_filename = os.path.join(input_path, "children_of_regulated_taxids.csv")
 
+    logger.debug("Importing regulation list info")
     _import_regulation_list_info(info_filename) # Always load first.
     _import_regulation_taxid_data(data_filename)
     _import_child_to_regulated_taxid_relationship(child_lut_filename)
+    update_regional_context(regions_of_interest)
 
     return True
+
+def update_regional_context(regions_of_interest : list[str] = None):
+    """
+    Updates all loaded regulation lists based on a regional context.
+    Regulation lists which affect the same regions as the context are
+    marked as requiring full compliance.
+    Regions that do not affect regions of interest are ignored,
+    or marked for conditional compliance.
+    """
+    # Which alternative mode to use, defaults to CONDITIONAL by NUMBER,
+    # Update this with kwargs in the future to determine changes from
+    # input settings etc.
+    alternative_mode = ListMode.CONDITIONAL_NUM
+
+    if not regions_of_interest:
+        regions_of_interest = ["all"]
+
+    force_all_regions = ("all" in regions_of_interest)
+
+    if force_all_regions:
+        logger.debug("Regulation list compliance set to affect all regions.")
+
+    for reg_list in rc.REGULATION_LISTS.values():
+        # Skip if forcing all regions.
+        if force_all_regions:
+            reg_list.status = ListMode.COMPLIANCE
+            continue
+
+        # Update regulation list mode based on region.
+        list_affected_regions = get_regions_set(reg_list.regions)
+
+        for region in list_affected_regions:
+            if region in regions_of_interest:
+                reg_list.status = ListMode.COMPLIANCE
+            else:
+                reg_list.status = alternative_mode
+
+

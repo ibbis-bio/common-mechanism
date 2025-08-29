@@ -8,14 +8,13 @@ import os
 import logging
 import argparse
 from commec.utils.logger import (
-    setup_console_logging,
-    setup_file_logging,
-    set_log_level,
+    setup_console_logging
 )
 from commec.regulation.containers import TaxidRegulation, RegulationList
 import commec.regulation.containers as data
 from commec.regulation.initialisation import import_regulations
-from commec.utils.file_utils import directory_arg, file_arg
+from commec.regulation.region import load_region_list_data
+from commec.utils.file_utils import directory_arg
 
 DESCRIPTION = """Tool for displaying information on 
 annotated regulated lists used during commec screen"""
@@ -23,6 +22,14 @@ annotated regulated lists used during commec screen"""
 logger = logging.getLogger(__name__)
 
 def load_regulation_data(import_path : str | os.PathLike):
+    """
+    Entry point to load regulation data.
+    Loads region definitions, then recursively loads data.
+    """
+    load_region_list_data(os.path.join(import_path, "region_definitions.json"))
+    _load_regulation_data(import_path)
+
+def _load_regulation_data(import_path : str | os.PathLike):
     """
     Load a filepath recursively. Searches for valid "list folders"
     One found, the list folder is loaded into the modules state, and will
@@ -37,7 +44,7 @@ def load_regulation_data(import_path : str | os.PathLike):
     # check for existance of sub folders and recurse on any present.
     for entry in os.scandir(import_path):
         if os.path.isdir(entry):
-            load_regulation_data(entry)
+            _load_regulation_data(entry)
     return
 
 def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
