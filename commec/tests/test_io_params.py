@@ -39,8 +39,12 @@ def expected_defaults():
             },
             "taxonomy": {
                 "path": "commec-dbs/taxonomy/",
+            },
+            "regulated_lists": {
+                "path": "commec-dbs/regulated_lists"
             }
         },
+        "regions": "ALL",
         "threads": 1,
         "protein_search_tool": "blastx",
         "skip_taxonomy_search": False,
@@ -93,8 +97,12 @@ def expected_updated_from_custom_yaml():
             },
             "taxonomy": {
                 "path": "commec-dbs/taxonomy/",
+            },
+            "regulated_lists": {
+                "path": "commec-dbs/regulated_lists"
             }
         },
+        "regions": "ALL",
         "threads": 8,
         "protein_search_tool": "blastx",
         "skip_taxonomy_search": True,
