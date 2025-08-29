@@ -21,22 +21,24 @@ annotated regulated lists used during commec screen"""
 
 logger = logging.getLogger(__name__)
 
-def load_regulation_data(import_path : str | os.PathLike):
+def load_regulation_data(import_path : str | os.PathLike,
+                         regional_context : list[str] = None):
     """
     Entry point to load regulation data.
     Loads region definitions, then recursively loads data.
     """
     load_region_list_data(os.path.join(import_path, "region_definitions.json"))
-    _load_regulation_data(import_path)
+    _load_regulation_data(import_path, regional_context)
 
-def _load_regulation_data(import_path : str | os.PathLike):
+def _load_regulation_data(import_path : str | os.PathLike,
+                          regional_context : list[str]):
     """
     Load a filepath recursively. Searches for valid "list folders"
     One found, the list folder is loaded into the modules state, and will
     """
     logger.debug("Checking path for list annotations: %s", import_path)
 
-    if import_regulations(import_path):
+    if import_regulations(import_path, regional_context):
         return
 
     logger.debug("Invalid path: %s ... searching for more sub-directories...", import_path)
@@ -44,7 +46,7 @@ def _load_regulation_data(import_path : str | os.PathLike):
     # check for existance of sub folders and recurse on any present.
     for entry in os.scandir(import_path):
         if os.path.isdir(entry):
-            _load_regulation_data(entry)
+            _load_regulation_data(entry, regional_context)
     return
 
 def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
@@ -56,12 +58,14 @@ def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
     attributed to the original taxid and its parents, in the form of 
     a tuple containing the list, as well as the 
     taxid specific regulation information.
+
+    TODO: Update to accept Uniprot and genbank accessions, not just taxid.
     """
     logger.debug("Checking taxid [%i] for regulation ", taxid)
     output_data : list[tuple[RegulationList, TaxidRegulation]] = []
 
     taxids_to_check = [taxid]
-    taxid_parents_to_check = data.CHILD_TAXID_MAP[data.CHILD_TAXID_MAP["TaxID"] == taxid]["ParentTaxID"].to_list()
+    taxid_parents_to_check = data.CHILD_TAXID_MAP[data.CHILD_TAXID_MAP["child_taxid"] == taxid]["regulated_taxid"].to_list()
     taxids_to_check.extend(taxid_parents_to_check)
     # Convert to string - we should probably just import taxids as ints, not strings.
     taxids_to_check = [str(i) for i in taxids_to_check]
@@ -88,9 +92,17 @@ def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
 
     return output_data
 
-def print_regulation_list_information():
-    ...
-
+def regulation_list_information():
+    """
+    Summarises all loaded regulation list information,
+    as well as their compliance under regional context.
+    """
+    output = "The following Regulation Lists have been identified: "
+    for _, value in data.REGULATION_LISTS.items():
+        number_of_regulated_taxids = (data.REGULATED_TAXID_ANNOTATIONS["list_acronym"] == value.acronym).sum()
+        output += f"\n{value}\nRegulated Taxid Entries: {number_of_regulated_taxids}, Status : {value.status}"
+    output += f"\nTotal number of Taxid Relationships:{data.CHILD_TAXID_MAP.shape[0]}"
+    return output
 
 ### Exact CLI arguments to be decided.
 def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -135,7 +147,7 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
     # --pretty?
 
-    # --markdown? 
+    # --markdown?
 
     # --regions?
 
@@ -157,17 +169,13 @@ def run(args: argparse.Namespace):
         logger.debug("Starting to load!")
         load_regulation_data(args.database_dir)
 
-    logger.info("The following Regulation Lists have been identified: ")
-    for _, value in data.REGULATION_LISTS.items():
-        number_of_regulated_taxids = (data.REGULATED_TAXID_ANNOTATIONS["list_acronym"] == value.acronym).sum()
-        logger.info("%s\nRegulated Taxid Entries: %s",value, number_of_regulated_taxids)
-
-    logger.info("\nTotal number of Taxid Relationships: %i", data.CHILD_TAXID_MAP.shape[0])
+    if args.showlists:
+        logger.info(regulation_list_information())
 
     # Test Taxid retrieval:
     test_taxid = 86060
     outcome = get_regulation(test_taxid)
-    print(outcome)
+    logger.info(outcome)
 
     logger.debug("", extra={"no_prefix": True, "box_up" : True})
 
