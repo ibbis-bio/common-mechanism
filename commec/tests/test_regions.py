@@ -1,6 +1,6 @@
 import json
-import pytest
 import logging
+import pytest
 
 from commec.regulation.region import (
     Region,
@@ -65,10 +65,11 @@ def region_file(tmp_path):
         ("GB", {"GB"}), # Direct
         ("United kingdom", {"GB"}), # Search
         ("United States", {"US"}), # Indirect search
-        ("Murica", set()), # Poor search
+        ("Murica", set()), # Bad search
         (["United States of America", "US"], {"US"}), # Same inputs to set collapse
         (["United States of America", "US", "GB"], {"US", "GB"}), # Different inputs
-        ("UK", {"GB"}) # United Kingdom, UK, should create GB for Great Britain.
+        ("UK", {"GB"}), # United Kingdom, UK, should create GB for Great Britain.
+        ("GBR", {"GB"}) # Alpha3 to alpha2
     ]
 ])
 def test_get_regions_set(region_file, acronym, expected):
