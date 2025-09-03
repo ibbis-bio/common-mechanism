@@ -119,13 +119,12 @@ class RegulationOutput:
 # The information of a single list, key on the list acronym.
 REGULATION_LISTS : dict[str, RegulationList] = {}
 # Information for every taxid within a list, keyed on list acronym, and taxid.
-# REG_TAXID_LISTS : dict[str, dict[int, TaxidRegulation]] = {}
 REGULATED_TAXID_ANNOTATIONS : pd.DataFrame = pd.DataFrame({
     "taxonomy_category": pd.Series(dtype="str"),
     "taxonomy_name": pd.Series(dtype="str"),
     "notes": pd.Series(dtype="str"),
     "preferred_taxonomy_name": pd.Series(dtype="str"),
-    "taxid": pd.Series(dtype="int64"),
+    "taxid": pd.Series(dtype="Int64"),
     "list_acronym": pd.Series(dtype="str"),
     "target": pd.Series(dtype="str"),
     "hazard_group": pd.Series(dtype="str")
@@ -133,8 +132,8 @@ REGULATED_TAXID_ANNOTATIONS : pd.DataFrame = pd.DataFrame({
 
 # Map of children taxids to the regulated taxid in the lists.
 CHILD_TAXID_MAP = pd.DataFrame({
-    "child_taxid": pd.Series(dtype="int64"),
-    "regulated_taxid": pd.Series(dtype="int64")
+    "child_taxid": pd.Series(dtype="Int64"),
+    "regulated_taxid": pd.Series(dtype="Int64")
     })
 
 def clear(target : str | None = None) -> bool:
@@ -162,36 +161,22 @@ def add_regulated_taxid_data(input_data : pd.DataFrame):
     Calls concatenate to append new data to the regulated taxid annotations list.
     """
     global REGULATED_TAXID_ANNOTATIONS
-    expected_cols = {"taxonomy_category",
-                    "taxonomy_name",
-                    "notes",
-                    "preferred_taxonomy_name",
-                    "taxid",
-                    "list_acronym",
-                    "target",
-                    "hazard_group"}
+    expected_cols = set(REGULATED_TAXID_ANNOTATIONS.columns)
 
     # Check for missing columns
     if not expected_cols.issubset(input_data.columns):
         raise ValueError(f"Input data must contain columns {expected_cols}, "
                          f"got {list(input_data.columns)}")
 
-    # Restrict to only the expected columns
-    input_data = input_data[["taxonomy_category",
-                    "taxonomy_name",
-                    "notes",
-                    "preferred_taxonomy_name",
-                    "taxid",
-                    "list_acronym",
-                    "target",
-                    "hazard_group"]]
-    
-    print("GLOBAL:")
-    print(REGULATED_TAXID_ANNOTATIONS)
-    print("LOCAL:")
-    print(input_data)
+    input_data = input_data.reindex(columns=expected_cols)
+    # Coerce invalid entries ("TBD", empty, etc.) to NaN, then cast to Int64
+    input_data["taxid"] = (
+        pd.to_numeric(input_data["taxid"], errors="coerce")
+        .astype("Int64")
+    )
 
-    # Concatenate and drop exact duplicates
+    # The input data requires dtypes to be specified for any missing info.
+    input_data = input_data.astype(REGULATED_TAXID_ANNOTATIONS.dtypes.to_dict())
     REGULATED_TAXID_ANNOTATIONS = pd.concat(
         [REGULATED_TAXID_ANNOTATIONS, input_data],
         ignore_index=True)
@@ -202,8 +187,7 @@ def add_child_lut_data(input_data: pd.DataFrame):
     Ensures correct columns, restricts to them, and removes duplicates.
     """
     global CHILD_TAXID_MAP
-
-    expected_cols = {"child_taxid", "regulated_taxid"}
+    expected_cols = set(CHILD_TAXID_MAP.columns)
 
     # Check for missing columns
     if not expected_cols.issubset(input_data.columns):
@@ -211,19 +195,17 @@ def add_child_lut_data(input_data: pd.DataFrame):
                          f"got {list(input_data.columns)}")
 
     # Restrict to only the expected columns
-    input_data = input_data[["child_taxid", "regulated_taxid"]]
-
-
-    print("GLOBAL:")
-    print(CHILD_TAXID_MAP)
-    print("LOCAL:")
-    print(input_data)
-
-    # Concatenate and drop exact duplicates
+    input_data = input_data.reindex(columns=expected_cols)
+    input_data["child_taxid"] = pd.to_numeric(input_data["child_taxid"], errors="coerce").astype("Int64")
+    input_data["regulated_taxid"] = pd.to_numeric(input_data["regulated_taxid"], errors="coerce").astype("Int64")
+    input_data = input_data.astype(CHILD_TAXID_MAP.dtypes.to_dict())
     CHILD_TAXID_MAP = pd.concat(
         [CHILD_TAXID_MAP, input_data], ignore_index=True
         ).drop_duplicates().reset_index(drop=True)
 
 def add_regulated_list(input : RegulationList):
+    """
+    Wrapper for adding a list to global data.
+    """
     global REGULATION_LISTS
     REGULATION_LISTS[input.acronym] = input
