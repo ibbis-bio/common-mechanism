@@ -18,9 +18,12 @@ Also defines the storage data for
     * per taxid regulation information per list, 
     * and child to parent taxid mapping.
 """
+import logging
 from dataclasses import dataclass, field
 from enum import StrEnum
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class Region:
@@ -41,12 +44,13 @@ class Region:
 
 class ListMode(StrEnum):
     """
-    Describes how a list is interpreted, typically based on regional information.
+    Describes how a list is interpreted, based on regional context.
     When a Taxonomy ID is identified as part of a list, whether or not we treat
-    that taxid as regulated or not will depend on the list(s) mode.
-    -----
+    that taxid as regulated or not will depend on the following mode.
+    
     * COMPLIANCE - All taxids from this list are regulated.
-    * CONDITIONAL - Only mark taxid as regulated if it appears in more than 1 list.
+    * CONDITIONAL_NUM - Only mark taxid as regulated if it appears in more than 1 list.
+    * COMPLIANCE_WARN - Mark Taxid as only a WARNING.
     * IGNORE - Ignore this list entirely.
     """
     COMPLIANCE = "Compliance"
@@ -71,6 +75,15 @@ class RegulationList:
             regions_text += str(r) + ", "
         regions_text = regions_text[:-2]
         return f"[{self.acronym}] {self.name} - {regions_text}\n({self.url})"
+    
+    def __eq__(self, value):
+        if (self.name != value.name or
+            self.url != value.url or 
+            set(self.regions) != set(value.regions) or
+            self.acronym != value.acronym):
+            return False
+        else:
+            return True
 
 @dataclass
 class TaxidRegulation:
@@ -87,26 +100,29 @@ class TaxidRegulation:
     target : str = ""
     hazard_group : str = ""
 
-@dataclass
-class RegulationLevel(StrEnum):
+class RegulationType(StrEnum):
     """
     At what level a regulation is for i.e. "regulated at the species level."
     ??? These delineations require further thought before being practical.
-    Specifically, protein may only apply to biorisk hits, not taxonomy screening.
+    Specifically, the idea is to capture with an enum the type of regulation
+    we are dealing with, which may derive some information about what it might have:
+    taxid, uniprot, genbank accession. Whether or not it is pathogenic or if it targets
+    something like Brazilian mushrooms.
     """
+    INVASIVE = "invasive" # Non-pathogenic risk factors
     ORGANISM = "organism" # All species of this organism are regulated.
     SPECIES = "species" # This specific species is regulated.
-    PROTEIN = "protein" # This protein is regulated, regardless of organism.
+    PEPTIDE = "peptide" # This toxin/protein/peptide is regulated, regardless of organism.
 
 @dataclass
 class RegulationOutput:
     """
     Container for regulation list information. Formatted for use in output JSON.
-    -----
+
     * `name` ( str ) : Common name identification for this regulation list.
     * `region` ( str ) : 2 Letter Country codes for which this regulation applies
     * `regulation_level` ( str ) : At what level does this regulation apply to the hit (e.g. organism, species, protein)
-    -----
+
     See results.py for other examples.
     """
     name_str : str = ""
@@ -116,6 +132,7 @@ class RegulationOutput:
 
 
 # Module Storage globals:
+
 # The information of a single list, key on the list acronym.
 REGULATION_LISTS : dict[str, RegulationList] = {}
 # Information for every taxid within a list, keyed on list acronym, and taxid.
@@ -203,9 +220,22 @@ def add_child_lut_data(input_data: pd.DataFrame):
         [CHILD_TAXID_MAP, input_data], ignore_index=True
         ).drop_duplicates().reset_index(drop=True)
 
-def add_regulated_list(input : RegulationList):
+def add_regulated_list(new_list : RegulationList) -> bool:
     """
-    Wrapper for adding a list to global data.
+    Wrapper for safely adding a list to global data.
     """
     global REGULATION_LISTS
-    REGULATION_LISTS[input.acronym] = input
+
+    # Overwrite protection:
+    existing = REGULATION_LISTS.get(new_list.acronym)
+    # Save the list.
+    if existing:
+        if existing == new_list:
+            REGULATION_LISTS[new_list.acronym] = new_list
+            return True
+        logger.warning("Attempting to assign different list information to the same"
+        "list identifier:\nExisting:\n%sNew:\n%s. List will be skipped.", existing, new_list)
+        return False
+
+    REGULATION_LISTS[new_list.acronym] = new_list
+    return True

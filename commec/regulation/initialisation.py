@@ -7,7 +7,7 @@ module state and imports regulation lists.
 Import is handled recursively.
 
 A valid list folder has the following layout:
-
+```
 regulated-lists/  		# This is the level at which pass to yaml / cli
 ├── uk-coshh/			# Arbitrary filename, contains 1x list.  
 ├── austgroup/          # The valid list folder layout:
@@ -23,7 +23,7 @@ regulated-lists/  		# This is the level at which pass to yaml / cli
 |   |		”
 │   └── ...
 └── ...
-
+```
 """
 import os
 import logging
