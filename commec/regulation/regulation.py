@@ -69,19 +69,19 @@ def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
 
     TODO: Update to accept Uniprot and genbank accessions, not just taxid.
     """
-    logger.debug("Checking taxid [%i] for regulation ", taxid)
+    #logger.debug("Checking taxid [%i] for regulation ", taxid)
     output_data : list[tuple[RegulationList, TaxidRegulation]] = []
 
     taxids_to_check = [taxid]
     taxid_parents_to_check = data.CHILD_TAXID_MAP[data.CHILD_TAXID_MAP["child_taxid"] == taxid]["regulated_taxid"].to_list()
     taxids_to_check.extend(taxid_parents_to_check)
-    logger.debug("Additional taxids to check: %s", taxid_parents_to_check)
+    #logger.debug("Additional taxids to check: %s", taxid_parents_to_check)
 
     filtered_regulated_taxid_annotations = data.REGULATED_TAXID_ANNOTATIONS[
         data.REGULATED_TAXID_ANNOTATIONS["taxid"].isin(taxids_to_check)
     ]
 
-    logger.debug("Filtered Output DBS: %s", filtered_regulated_taxid_annotations.to_string())
+    #logger.debug("Filtered Output DBS: %s", filtered_regulated_taxid_annotations.to_string())
 
     for _, row in filtered_regulated_taxid_annotations.iterrows():
         taxid_regulation_info = TaxidRegulation(
@@ -96,6 +96,9 @@ def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
         )
         list_data = data.REGULATION_LISTS[taxid_regulation_info.list_acronym]
         output_data.append((list_data, taxid_regulation_info))
+
+    if len(output_data) > 0:
+        logger.debug("Checking taxid [%i] for regulation resulted in %i annotations", taxid, len(output_data))
 
     return output_data
 

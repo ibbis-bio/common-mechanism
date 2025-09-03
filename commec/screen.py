@@ -81,6 +81,10 @@ from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.tools.search_handler import DatabaseValidationError
 from commec.config.json_io import encode_screen_data_to_json
 from commec.config.constants import MINIMUM_QUERY_LENGTH
+from commec.regulation.regulation import (
+    load_regulation_data, 
+    regulation_list_information
+)
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -303,7 +307,7 @@ class Screen:
         # Needed to initialize parameters before logging to files
         setup_file_logging(self.params.output_screen_file, log_level)
 
-        logger.info("Validating input query and databases...")
+        logger.info("Validating input query, regulations, and databases...")
         try:
             self.database_tools: ScreenTools = ScreenTools(self.params)
         except(DatabaseValidationError) as e:
@@ -312,6 +316,12 @@ class Screen:
 
         logger.info("Input query file: ")
         logger.info(self.params.input_fasta_path, extra={"no_prefix":True,"cap":True})
+
+        # Initialize the regulation list data
+        regulation_path = self.params.config["databases"]["regulated_lists"]["path"]
+        region_context = self.params.config["databases"]["regulated_lists"]["regions"]
+        load_regulation_data(regulation_path, region_context)
+        logger.info(regulation_list_information())
 
         # Initialize the queries
         try:

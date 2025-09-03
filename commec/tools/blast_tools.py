@@ -14,6 +14,7 @@ import pytaxonkit
 import pandas as pd
 import numpy as np
 from commec.tools.search_handler import SearchHandler, DatabaseValidationError
+from commec.regulation.regulation import get_regulation
 
 TAXID_SYNTHETIC_CONSTRUCTS = 32630
 TAXID_VECTORS = 29278
@@ -158,6 +159,18 @@ def get_taxonomic_labels(
         )
     # Filter to only those rows which have a matching taxonomic lineage
     blast = blast[blast[TAXIDS_COL].isin(lin["TaxID"])]
+
+
+    # Get unique taxids
+    unique_taxids = blast[TAXIDS_COL].dropna().unique()
+    logger.debug("Checking %s unique taxids", len(unique_taxids))
+    # Build a mapping {taxid: truthiness}
+    taxid_to_regulated = {
+        taxid: bool(get_regulation(int(taxid)))
+        for taxid in unique_taxids
+    }
+    # Map back to the dataframe
+    blast["regulated"] = blast[TAXIDS_COL].map(taxid_to_regulated)
 
     # Process each hit
     rows_to_drop = []
