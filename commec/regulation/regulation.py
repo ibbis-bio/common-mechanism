@@ -75,14 +75,13 @@ def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
     taxids_to_check = [taxid]
     taxid_parents_to_check = data.CHILD_TAXID_MAP[data.CHILD_TAXID_MAP["child_taxid"] == taxid]["regulated_taxid"].to_list()
     taxids_to_check.extend(taxid_parents_to_check)
-    # Convert to string - we should probably just import taxids as ints, not strings.
-    taxids_to_check = [str(i) for i in taxids_to_check]
-    
     logger.debug("Additional taxids to check: %s", taxid_parents_to_check)
 
     filtered_regulated_taxid_annotations = data.REGULATED_TAXID_ANNOTATIONS[
         data.REGULATED_TAXID_ANNOTATIONS["taxid"].isin(taxids_to_check)
     ]
+
+    logger.debug("Filtered Output DBS: %s", filtered_regulated_taxid_annotations.to_string())
 
     for _, row in filtered_regulated_taxid_annotations.iterrows():
         taxid_regulation_info = TaxidRegulation(
@@ -109,7 +108,20 @@ def regulation_list_information():
     for _, value in data.REGULATION_LISTS.items():
         number_of_regulated_taxids = (data.REGULATED_TAXID_ANNOTATIONS["list_acronym"] == value.acronym).sum()
         output += f"\n{value}\nRegulated Taxid Entries: {number_of_regulated_taxids}, Status : {value.status}"
-    output += f"\nTotal number of Taxid Relationships:{data.CHILD_TAXID_MAP.shape[0]}"
+    output += f"\n    [Total number of Taxid Relationships:{data.CHILD_TAXID_MAP.shape[0]}]"
+    return output + "\n"
+
+def regulation_taxid_information(input_data : list[tuple[RegulationList, TaxidRegulation]]):
+    """
+    Returns a formatted string of the regulated taxid information for logging purposes.
+    """
+    plural = (len(input_data) > 1)
+    output = "Regulated by the following lists:\n" if plural else ""
+    offset = "   > " if plural else ""
+    for reglist, annotations in input_data:
+        output += (offset + annotations.taxonomy_category + " "
+                    + annotations.preferred_taxonomy_name
+                    + " regulated by " + reglist.name + f" [{reglist.acronym}]" + "\n")
     return output
 
 ### Exact CLI arguments to be decided.
@@ -132,7 +144,14 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="Configuration for screen run in YAML format, including custom database paths",
         default="",
     )
-
+    parser_obj.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbose",
+        help="Output debug logs.",
+        default=False,
+        action="store_true"
+    )
     parser_obj.add_argument(
         "-l",
         "--list",
@@ -141,16 +160,14 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         action="store_true",
         help="Display annotation list information",
     )
-
     parser_obj.add_argument(
         "-t",
         "--taxids",
-        dest="showtaxiddata",
-        default=False,
-        action="store_true",
-        help="Display summary statistics on taxids",
+        dest="showtaxids",
+        nargs="+",
+        default=[],
+        help="Display any available list information for the supplied taxids.",
     )
-
     parser_obj.add_argument(
         "-r",
         "--regions",
@@ -160,41 +177,42 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="A list of countries or regions to add context to list compliance",
     )
 
-
-
     # --pretty?
-
-    # --markdown?
+    # --markdown? csv tsv etc
 
     return parser_obj
 
 
-def run(args: argparse.Namespace):
+def run(arguments: argparse.Namespace):
     """Run CLI for list printing etc. Currently also functions as a convenient test bed
     for ensuring the import scripts have worked. Tidy in future."""
 
     # Start logging to console
-    log_level = logging.DEBUG
+    log_level = logging.DEBUG if arguments.verbose else logging.INFO
     setup_console_logging(log_level)
     logger.info(" The Common Mechanism : List", extra={"no_prefix": True, "box_down" : True})
 
-    logger.debug("Parsing input parameters... %s", args.database_dir)
+    logger.debug("Parsing input parameters... %s", arguments.database_dir)
 
-    regions = args.regions or None
+    regions = arguments.regions or None
 
-    if args.database_dir:
-        logger.debug("Starting to load!")
-        load_regulation_data(args.database_dir, regions)
+    if arguments.database_dir:
+        load_regulation_data(arguments.database_dir, regions)
 
-    if args.showlists:
+    if arguments.showlists:
+        logger.info(" *----------* REGULATION LISTS *----------* ")
         logger.info(regulation_list_information())
 
-    # Test Taxid retrieval:
-    test_taxid = 86060
-    outcome = get_regulation(test_taxid)
-    logger.info(outcome)
+    if arguments.showtaxids:
+        logger.info(" *----------* REGULATED TAXIDS *----------* ")
+        logger.info("Regulation Annotations "
+                    "for supplied taxids (#%i):\n", len(arguments.showtaxids))
+        for taxid in arguments.showtaxids:
+            outcome = get_regulation(int(taxid))
 
-    logger.debug("", extra={"no_prefix": True, "box_up" : True})
+            logger.info("Taxid %s: %s",taxid,regulation_taxid_information(outcome))
+
+    logger.info("", extra={"no_prefix": True, "box_up" : True})
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=DESCRIPTION)
