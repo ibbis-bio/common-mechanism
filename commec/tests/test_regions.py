@@ -36,6 +36,11 @@ def region_file(tmp_path):
                 "UA", "US"
             ],
         },
+        {
+            "name": "United Kingdom",
+            "acronym":"UK",
+            "regions":["GB"]
+        }
     ]
     file_path = tmp_path / "regions.json"
     file_path.write_text(json.dumps(data, indent=2))
@@ -63,6 +68,7 @@ def region_file(tmp_path):
         ("Murica", set()), # Poor search
         (["United States of America", "US"], {"US"}), # Same inputs to set collapse
         (["United States of America", "US", "GB"], {"US", "GB"}), # Different inputs
+        ("UK", {"GB"}) # United Kingdom, UK, should create GB for Great Britain.
     ]
 ])
 def test_get_regions_set(region_file, acronym, expected):

@@ -13,10 +13,10 @@ from commec.utils.logger import (
 from commec.regulation.containers import TaxidRegulation, RegulationList
 import commec.regulation.containers as data
 from commec.regulation.initialisation import import_regulations
-from commec.regulation.region import load_region_list_data
+from commec.regulation.region import load_region_list_data, get_regions_set
 from commec.utils.file_utils import directory_arg
 
-DESCRIPTION = """Tool for displaying information on 
+DESCRIPTION = """Tool for displaying information on
 annotated regulated lists used during commec screen"""
 
 logger = logging.getLogger(__name__)
@@ -27,8 +27,16 @@ def load_regulation_data(import_path : str | os.PathLike,
     Entry point to load regulation data.
     Loads region definitions, then recursively loads data.
     """
+    # This needs to occur before we interpret regional context.
     load_region_list_data(os.path.join(import_path, "region_definitions.json"))
-    _load_regulation_data(import_path, regional_context)
+
+    # If the user puts in EU for example, we need to expand the set.
+    cleaned_context = get_regions_set(regional_context)
+    logger.debug("Using the following regional context: \n")
+    logger.debug(cleaned_context)
+
+    # Load the actual data.
+    _load_regulation_data(import_path, cleaned_context)
 
 def _load_regulation_data(import_path : str | os.PathLike,
                           regional_context : list[str]):
@@ -143,13 +151,20 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="Display summary statistics on taxids",
     )
 
+    parser_obj.add_argument(
+        "-r",
+        "--regions",
+        dest="regions",
+        nargs="+",
+        default=[],
+        help="A list of countries or regions to add context to list compliance",
+    )
+
 
 
     # --pretty?
 
     # --markdown?
-
-    # --regions?
 
     return parser_obj
 
@@ -165,9 +180,11 @@ def run(args: argparse.Namespace):
 
     logger.debug("Parsing input parameters... %s", args.database_dir)
 
+    regions = args.regions or None
+
     if args.database_dir:
         logger.debug("Starting to load!")
-        load_regulation_data(args.database_dir)
+        load_regulation_data(args.database_dir, regions)
 
     if args.showlists:
         logger.info(regulation_list_information())

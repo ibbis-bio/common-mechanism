@@ -26,8 +26,9 @@ REGION_DATA_LUT = {}
 
 def load_region_list_data(input_filepath : str | os.PathLike):
     """
-    Load the region to country data from a single source of truth...
-    To be decided, source is hardcoded for now.
+    Load the region to country data based on input filepath.
+    Input filepath contains a json list containing mapping of 
+    two letter codes and names, to a list of affected regions.
     """
     region_array = []
     global REGION_DATA_LUT
@@ -47,7 +48,7 @@ def load_region_list_data(input_filepath : str | os.PathLike):
             }
 
 
-def get_regions_set(input : str | list[str]) -> set[str]:
+def get_regions_set(region_info : str | list[str] | list[Region]) -> set[str]:
     """
     Takes a single, or list of, region information in the form of 
     * alpha-2 codes (i.e. UK, DE, FR)
@@ -57,12 +58,12 @@ def get_regions_set(input : str | list[str]) -> set[str]:
     commec supported grouping i.e. EU, European Union.
     and returns a set of alpha-2 codes encapulsating all affected regions.
     """
-    if not isinstance(input, list):
-        return set(_return_country_set_from_unknown(input))
+    if not isinstance(region_info, list):
+        return set(_return_country_set_from_unknown(region_info))
     
     # Deal with listed inputs.
     flattened = []
-    for a in input:
+    for a in region_info:
         flattened.extend(_return_country_set_from_unknown(a))
     return set(flattened)
 
@@ -87,12 +88,18 @@ def _return_country_set_from_unknown(region_info : str | Region = "") -> set[str
         data = REGION_DATA_LUT[search_string]["regions"]
         return set(data)
 
+    # Try 2 letter code retrieval
+    if len(search_string) == 2:
+        retrieved_country = pc.countries.get(alpha_2 = search_string)
+        if retrieved_country:
+            return set([search_string])
+
     # Search with pycountry for alpha_2 codes.
     try:
         countries = pc.countries.search_fuzzy(search_string)
     except(LookupError):
         logger.error("Unrecognised region data: \"%s\"", search_string)
-        return []
+        return set()
 
     if len(countries) > 1:
         logger.debug("%i countries were returned for input \"%s\".",

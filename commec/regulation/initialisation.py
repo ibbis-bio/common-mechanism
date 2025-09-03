@@ -178,10 +178,20 @@ def update_regional_context(regions_of_interest : list[str] = None):
         # Update regulation list mode based on region.
         list_affected_regions = get_regions_set(reg_list.regions)
 
-        for region in list_affected_regions:
-            if region in regions_of_interest:
-                reg_list.status = ListMode.COMPLIANCE
-            else:
-                reg_list.status = alternative_mode
+        common_regions = set(list_affected_regions) & set(regions_of_interest)
+
+        if common_regions:
+            logger.debug(reg_list.name + " contains shared regions with context: " + str(common_regions))
+            reg_list.status = ListMode.COMPLIANCE
+        else:
+            logger.debug(reg_list.name + " no regions of context: " + str(list_affected_regions))
+            reg_list.status = alternative_mode
+        
+
+        #for region in list_affected_regions:
+        #    if region in regions_of_interest:
+        #        reg_list.status = ListMode.COMPLIANCE
+        #    else:
+        #        reg_list.status = alternative_mode
 
 
