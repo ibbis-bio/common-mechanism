@@ -25,7 +25,7 @@ databases:
       path: "{default}taxonomy/"
   regulated_lists:
       path: "{default}regulated_lists"
-regions : "ALL"
+      regions : "all"
 threads: 1
 diamond_jobs: null
 do_cleanup: False
