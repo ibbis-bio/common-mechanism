@@ -40,22 +40,94 @@ from commec.regulation.region import get_regions_set
 
 logger = logging.getLogger(__name__)
 
-def is_valid_regulation_list_folder(input_path : str | os.PathLike) -> bool:
+def import_regulations(input_path : str | os.PathLike, regions_of_interest : set[str] = None) -> bool:
     """
-    Checks if the supplies folder is a valid regulation list.
-    i.e. contains the regulated_taxids.csv, regions_info.csv
+    Given a directory, checks that the directory is valid,
+    If the directory is valid, it will load the regulation data.
+    If the directory is invalid, it will return false.
+
+    ### Inputs:
+    *input_path* : **PathLike | str**, Input directory to be searched.
+    *regions_of_interest* : **set[str]**, 
+        A set of alpha_2 country codes representing regions of interest. 
+        Regulation lists which share at least one of these codes will be 
+        marked for full compliance.
+    
+    ### outputs:
+        **Boolean**: Returns True if the correct list files were detected, and
+            a Regulated List and annotatations were imported.
     """
     info_filename = os.path.join(input_path, "list_info.csv")
     data_filename = os.path.join(input_path, "regulated_taxids.csv")
     child_lut_filename = os.path.join(input_path, "children_of_regulated_taxids.csv")
 
-    logger.debug("Checking the following for existance:\n %s\n%s\n%s\n", info_filename, data_filename, child_lut_filename)
-
+    # Check required files.
     if not os.path.isdir(input_path): return False
-    if not os.path.isfile(info_filename): return False
-    if not os.path.isfile(data_filename): return False
-    if not os.path.isfile(child_lut_filename): return False
+    for file in [info_filename, data_filename, child_lut_filename]:
+        if not os.path.isfile(file): return False
+
+    logger.debug("Importing regulation list from %s", input_path)
+    _import_regulation_list_info(info_filename) # Always load first.
+    _import_regulation_taxid_data(data_filename)
+    _import_child_to_regulated_taxid_relationship(child_lut_filename)
+    update_regional_context(regions_of_interest)
     return True
+
+
+def update_regional_context(
+    regions_of_interest : set[str] = None,
+    alternative_mode = ListMode.CONDITIONAL_NUM
+    ):
+    """
+    Updates all loaded regulation lists based on a regional context.
+    Regulation lists which affect the same regions as the context are
+    marked as requiring full compliance.
+    Regions that do not affect regions of interest are labelled
+    with the alternative mode, by default conditional based on number.
+
+    ### inputs:
+    
+    *regions_of_interest* : **set[str]**, 
+        A set of alpha_2 country codes representing regions of interest. 
+        Regulation lists which share at least one of these codes will be 
+        marked for full compliance.
+    *alternative_mode* : **ListMode**, 
+        What mode the regulation lists will be marked in the absence of 
+        affecting any region of interest. Defaults to conditional based on 
+        number of other lists also hit.
+    
+    ### outputs:
+        *None*
+    """
+
+    if not regions_of_interest:
+        regions_of_interest = set(["all"])
+
+    force_all_regions = ("all" in regions_of_interest)
+
+    if force_all_regions:
+        logger.debug("Regulation list compliance set to affect all regions.")
+
+    for reg_list in rc.REGULATION_LISTS.values():
+        # Skip if forcing all regions.
+        if force_all_regions:
+            reg_list.status = ListMode.COMPLIANCE
+            continue
+
+        # Update regulation list mode based on region.
+        list_affected_regions = get_regions_set(reg_list.regions)
+
+        common_regions = set(list_affected_regions) & set(regions_of_interest)
+
+        if common_regions:
+            logger.debug("%s contains shared regions with context: %s",
+                         reg_list.name, str(common_regions))
+            reg_list.status = ListMode.COMPLIANCE
+        else:
+            logger.debug("%s no regions of context: %s",
+                         reg_list.name, str(list_affected_regions))
+            reg_list.status = alternative_mode
+
 
 def _import_regulation_list_info(input_path : str | os.PathLike):
     """
@@ -65,7 +137,6 @@ def _import_regulation_list_info(input_path : str | os.PathLike):
     Ensures that existing regulation lists are not overwritten, and 
     warns the user if overwritting unique data (i.e. acroynym clash) has occured.
     """
-
     list_info = pd.read_csv(input_path)
     for _, row in list_info.iterrows():
         new_list = RegulationList(
@@ -92,6 +163,7 @@ def _import_regulation_list_info(input_path : str | os.PathLike):
         # Add list.
         rc.REGULATION_LISTS[list_key] = new_list
 
+
 def _import_regulation_taxid_data(input_path : str | os.PathLike):
     """
     Imports annotated regulated taxid information from the regulated_taxids.csv file
@@ -116,6 +188,7 @@ def _import_regulation_taxid_data(input_path : str | os.PathLike):
     # Append the new list data:
     rc.add_regulated_taxid_data(valid_list_taxid_info)
 
+
 def _import_child_to_regulated_taxid_relationship(input_path : str | os.PathLike):
     """
     Imports child to regulated taxid look up data data from the 
@@ -123,75 +196,4 @@ def _import_child_to_regulated_taxid_relationship(input_path : str | os.PathLike
     Concatenates the child LUT info into the global dataframe.
     """
     child_lut = pd.read_csv(input_path)
-    # Append the new list data:
     rc.add_child_lut_data(child_lut)
-
-def import_regulations(input_path : str | os.PathLike, regions_of_interest : list[str] = None) -> bool:
-    """
-    Given a directory, checks that the directory is valid,
-    If the directory is valid, it will load the regulation data.
-    If the directory is invalid, it will return false.
-    """
-
-    if not is_valid_regulation_list_folder(input_path):
-        return False
-
-    info_filename = os.path.join(input_path, "list_info.csv")
-    data_filename = os.path.join(input_path, "regulated_taxids.csv")
-    child_lut_filename = os.path.join(input_path, "children_of_regulated_taxids.csv")
-
-    logger.debug("Importing regulation list info")
-    _import_regulation_list_info(info_filename) # Always load first.
-    _import_regulation_taxid_data(data_filename)
-    _import_child_to_regulated_taxid_relationship(child_lut_filename)
-    update_regional_context(regions_of_interest)
-
-    return True
-
-def update_regional_context(regions_of_interest : list[str] = None):
-    """
-    Updates all loaded regulation lists based on a regional context.
-    Regulation lists which affect the same regions as the context are
-    marked as requiring full compliance.
-    Regions that do not affect regions of interest are ignored,
-    or marked for conditional compliance.
-    """
-    # Which alternative mode to use, defaults to CONDITIONAL by NUMBER,
-    # Update this with kwargs in the future to determine changes from
-    # input settings etc.
-    alternative_mode = ListMode.CONDITIONAL_NUM
-
-    if not regions_of_interest:
-        regions_of_interest = ["all"]
-
-    force_all_regions = ("all" in regions_of_interest)
-
-    if force_all_regions:
-        logger.debug("Regulation list compliance set to affect all regions.")
-
-    for reg_list in rc.REGULATION_LISTS.values():
-        # Skip if forcing all regions.
-        if force_all_regions:
-            reg_list.status = ListMode.COMPLIANCE
-            continue
-
-        # Update regulation list mode based on region.
-        list_affected_regions = get_regions_set(reg_list.regions)
-
-        common_regions = set(list_affected_regions) & set(regions_of_interest)
-
-        if common_regions:
-            logger.debug(reg_list.name + " contains shared regions with context: " + str(common_regions))
-            reg_list.status = ListMode.COMPLIANCE
-        else:
-            logger.debug(reg_list.name + " no regions of context: " + str(list_affected_regions))
-            reg_list.status = alternative_mode
-        
-
-        #for region in list_affected_regions:
-        #    if region in regions_of_interest:
-        #        reg_list.status = ListMode.COMPLIANCE
-        #    else:
-        #        reg_list.status = alternative_mode
-
-
