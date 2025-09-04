@@ -87,6 +87,9 @@ def _return_country_set_from_unknown(region_info : str | Region = "") -> set[str
 
     search_string = region_info
 
+    if region_info == "all":
+        return set(["all"])
+
     # Handle Region object
     if isinstance(region_info, Region):
         search_string = region_info.acronym
