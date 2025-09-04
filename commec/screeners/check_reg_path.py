@@ -208,7 +208,11 @@ def parse_taxonomy_hits(
 
                     # Filter for regulated and non-regulated entries
                     regulated = shared_site[shared_site["regulated"] == True]
-                    non_regulated = shared_site[shared_site["regulated"] == False]
+                    non_regulated = (
+                        shared_site[shared_site["regulated"] == False]
+                        .sort_values(by="evalue", ascending=True)
+                        .head(10) # we only care for max 10 non-regulated.
+                    )
 
                     # Count domain information.
                     domain = region['superkingdom']
@@ -236,7 +240,14 @@ def parse_taxonomy_hits(
 
                 regulated_taxa_list = [asdict(t) for t in regulated_taxa]
                 non_regulated_taxa_list = [asdict(t) for t in non_regulated_taxa]
-
+                regulated_taxa_list = sorted(
+                    regulated_taxa_list,
+                    key=lambda d: d["taxid"]
+                )
+                non_regulated_taxa_list = sorted(
+                    non_regulated_taxa_list,
+                    key=lambda d: d["taxid"]
+                )
                 # Uniquefy.
                 reg_species = list(set(reg_species))
                 reg_taxids = list(set(reg_taxids))
