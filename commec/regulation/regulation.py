@@ -38,6 +38,12 @@ def load_regulation_data(import_path : str | os.PathLike,
     # Load the actual data.
     _load_regulation_data(import_path, cleaned_context)
 
+    # These dataframes are always access via taxid, so it is much faster
+    # to index them based off this for querying.
+    # However, we may need to rethink this when using uniprot and genbank accessions.
+    data.REGULATED_TAXID_ANNOTATIONS.set_index("taxid", inplace=True)
+    data.REGULATED_TAXID_ANNOTATIONS.sort_index(inplace=True)
+
 def _load_regulation_data(import_path : str | os.PathLike,
                           regional_context : list[str]):
     """
@@ -69,28 +75,31 @@ def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
 
     TODO: Update to accept Uniprot and genbank accessions, not just taxid.
     """
-    #logger.debug("Checking taxid [%i] for regulation ", taxid)
     output_data : list[tuple[RegulationList, TaxidRegulation]] = []
 
     taxids_to_check = [taxid]
     taxid_parents_to_check = data.CHILD_TAXID_MAP[data.CHILD_TAXID_MAP["child_taxid"] == taxid]["regulated_taxid"].to_list()
     taxids_to_check.extend(taxid_parents_to_check)
-    #logger.debug("Additional taxids to check: %s", taxid_parents_to_check)
+
+    logger.debug("Taxids to check: %s", taxids_to_check)
+
+    # Commented out code for the general case - may be useful when using genbank or accession.
+    #filtered_regulated_taxid_annotations = data.REGULATED_TAXID_ANNOTATIONS[
+    #    data.REGULATED_TAXID_ANNOTATIONS["taxid"].isin(taxids_to_check)]
 
     filtered_regulated_taxid_annotations = data.REGULATED_TAXID_ANNOTATIONS[
-        data.REGULATED_TAXID_ANNOTATIONS["taxid"].isin(taxids_to_check)
-    ]
+        data.REGULATED_TAXID_ANNOTATIONS.index.isin(taxids_to_check)]
+    
+    logger.debug("Filtered Output DBS: %s", filtered_regulated_taxid_annotations.to_string())
 
-    #logger.debug("Filtered Output DBS: %s", filtered_regulated_taxid_annotations.to_string())
-
-    for _, row in filtered_regulated_taxid_annotations.iterrows():
+    for hash_taxid, row in filtered_regulated_taxid_annotations.iterrows():
         taxid_regulation_info = TaxidRegulation(
             row["taxonomy_category"],
             row["taxonomy_name"],
             row["notes"],
             row["preferred_taxonomy_name"],
             row["list_acronym"],
-            int(row["taxid"]),
+            hash_taxid,#int(row["taxid"]),
             row["target"],
             row["hazard_group"]
         )

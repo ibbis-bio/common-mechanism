@@ -82,7 +82,7 @@ from commec.tools.search_handler import DatabaseValidationError
 from commec.config.json_io import encode_screen_data_to_json
 from commec.config.constants import MINIMUM_QUERY_LENGTH
 from commec.regulation.regulation import (
-    load_regulation_data, 
+    load_regulation_data,
     regulation_list_information
 )
 
