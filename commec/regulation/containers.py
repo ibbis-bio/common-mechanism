@@ -3,7 +3,7 @@
 """
 Defines Containers to show default layouts for regulation data.
 What is the shape of the regulation data, and where to store it.
------
+
     RegulationContainer : 
         A standard output that may be associated with a hit.
         Contains list, region, and level information.
@@ -12,18 +12,69 @@ What is the shape of the regulation data, and where to store it.
     TaxidRegulationContainer :
         Storage of all regulation data for a given taxid from a given list.
 
------
 Also defines the storage data for 
     * regulation lists, 
     * per taxid regulation information per list, 
     * and child to parent taxid mapping.
 """
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
+from typing import Optional
 from enum import StrEnum
 import pandas as pd
 
 logger = logging.getLogger(__name__)
+
+class AccesionFormat(StrEnum):
+    """
+    Supported hashable accesion formats.
+    """
+    TAXID = "Taxonomy ID"
+    GENBANK = "Genbank Protein Accession"
+    UNIPROT = "Uniprot ID"
+
+    def __repr__(self):
+        return f"<Fmt:{self}>"
+
+@dataclass(frozen=True)
+class Accession:
+    """
+    A unified hashable identifier for 
+    taxonomy IDs, GenBank, or UniProt accessions.
+
+    Used for hashed index accession for rapid annotations retrieval
+    from a pandas DataFrame.
+    """
+    code: str
+    type: AccesionFormat   # one of: "taxid", "genbank", "uniprot"
+
+    def __init__(self, taxid: Optional[int]=None,
+                       uniprot: Optional[str]=None,
+                       genbank: Optional[str]=None):
+        
+        # ensure only one is set
+        values = [(taxid, AccesionFormat.TAXID),
+                  (uniprot, AccesionFormat.UNIPROT),
+                  (genbank, AccesionFormat.GENBANK)]
+        non_empty = [(v, t) for v, t in values if not pd.isna(v)]
+        if len(non_empty) != 1:
+            #raise ValueError(f"Accession must have exactly one non-empty value, got {non_empty} from {values}")
+            non_empty = [("0", AccesionFormat.TAXID)]
+
+
+        object.__setattr__(self, "code", str(non_empty[0][0]))
+        object.__setattr__(self, "type", non_empty[0][1])
+
+    def get(self) -> tuple[str, str]:
+        """Return (code, type)."""
+        return self.code, self.type
+
+    #def __hash__(self):
+    #    # frozen dataclasses already hash on all fields, but explicit is nice
+    #    return hash((self.code, self.type))
+
+    def __repr__(self):
+        return f"<Accession {self.type}:{self.code}>"
 
 @dataclass
 class Region:
@@ -89,16 +140,40 @@ class RegulationList:
 class TaxidRegulation:
     """
     Container for regulatory information of a given taxid from
-    a specific list.
+    a specific list. Structure data that is an expected output from
+    the regulations module.
     """
-    taxonomy_category : str = ""
-    taxonomy_name : str = ""
+    category : str = ""
+    name : str = ""
     notes : str = ""
+    derived_from : str = ""
     preferred_taxonomy_name : str = ""
+    other_taxonomy_name : str = ""
+    tax_id : int = 0
     list_acronym : str = ""
-    taxid : int = 0
     target : str = ""
     hazard_group : str = ""
+    uniprot : str = ""
+    genbank_protein : str = ""
+
+    @classmethod
+    def from_row(cls, row: pd.Series, index_val=None):
+        """
+        Construct a TaxidRegulation from a pandas row returned by .iterrows().
+        The optional index_val can be passed in if the DataFrame index should
+        map to the `taxid` field.
+        """
+        # dataclass field names
+        dataclass_fields = {f.name for f in fields(cls)}
+
+        # build kwargs by selecting overlapping keys
+        kwargs = {col: row[col] for col in row.index if col in dataclass_fields}
+
+        # if the dataframe index is intended to represent `taxid`, override here
+        if index_val is not None and "tax_id" in dataclass_fields:
+            kwargs["tax_id"] = index_val
+
+        return cls(**kwargs)
 
 class RegulationType(StrEnum):
     """
@@ -137,11 +212,15 @@ class RegulationOutput:
 REGULATION_LISTS : dict[str, RegulationList] = {}
 # Information for every taxid within a list, keyed on list acronym, and taxid.
 REGULATED_TAXID_ANNOTATIONS : pd.DataFrame = pd.DataFrame({
-    "taxonomy_category": pd.Series(dtype="str"),
-    "taxonomy_name": pd.Series(dtype="str"),
+    "category": pd.Series(dtype="str"),
+    "name": pd.Series(dtype="str"),
     "notes": pd.Series(dtype="str"),
+    "derived_from": pd.Series(dtype="str"),
     "preferred_taxonomy_name": pd.Series(dtype="str"),
-    "taxid": pd.Series(dtype="Int64"),
+    "other_taxonomy_name": pd.Series(dtype="str"),
+    "tax_id": pd.Series(dtype="Int64"),
+    "genbank_protein": pd.Series(dtype="str"),
+    "uniprot": pd.Series(dtype="str"),
     "list_acronym": pd.Series(dtype="str"),
     "target": pd.Series(dtype="str"),
     "hazard_group": pd.Series(dtype="str")
@@ -179,16 +258,18 @@ def add_regulated_taxid_data(input_data : pd.DataFrame):
     """
     global REGULATED_TAXID_ANNOTATIONS
     expected_cols = set(REGULATED_TAXID_ANNOTATIONS.columns)
-
+    essential_cols = {"list_acronym", "tax_id"}
+    input_cols = set(input_data.columns)
     # Check for missing columns
-    if not expected_cols.issubset(input_data.columns):
-        raise ValueError(f"Input data must contain columns {expected_cols}, "
-                         f"got {list(input_data.columns)}")
+    if not essential_cols.issubset(input_data.columns):
+    #if not (essential_cols in input_cols):
+        raise ValueError(f"Input data must contain columns {essential_cols}, "
+                         f"got {set(input_data.columns)}")
 
     input_data = input_data.reindex(columns=expected_cols)
     # Coerce invalid entries ("TBD", empty, etc.) to NaN, then cast to Int64
-    input_data["taxid"] = (
-        pd.to_numeric(input_data["taxid"], errors="coerce")
+    input_data["tax_id"] = (
+        pd.to_numeric(input_data["tax_id"], errors="coerce")
         .astype("Int64")
     )
 

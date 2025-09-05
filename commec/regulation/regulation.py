@@ -38,11 +38,16 @@ def load_regulation_data(import_path : str | os.PathLike,
     # Load the actual data.
     _load_regulation_data(import_path, cleaned_context)
 
-    # These dataframes are always access via taxid, so it is much faster
-    # to index them based off this for querying.
-    # However, we may need to rethink this when using uniprot and genbank accessions.
-    data.REGULATED_TAXID_ANNOTATIONS.set_index("taxid", inplace=True)
-    data.REGULATED_TAXID_ANNOTATIONS.sort_index(inplace=True)
+    # These dataframes are always access via taxid, genbank, or uniprot,
+    # so it is much faster to index them based off this for querying.
+    data.REGULATED_TAXID_ANNOTATIONS["accession"] = data.REGULATED_TAXID_ANNOTATIONS.apply(
+        lambda row: data.Accession(taxid=row["tax_id"], genbank=row["genbank_protein"], uniprot=row["uniprot"]),
+        axis=1
+    )
+    data.REGULATED_TAXID_ANNOTATIONS.set_index("accession", inplace=True)
+    #data.REGULATED_TAXID_ANNOTATIONS.sort_index(inplace=True)
+
+    logger.debug("Loaded the following dataset: Top 100:\n%s", data.REGULATED_TAXID_ANNOTATIONS.head(100).to_string())
 
 def _load_regulation_data(import_path : str | os.PathLike,
                           regional_context : list[str]):
@@ -63,7 +68,7 @@ def _load_regulation_data(import_path : str | os.PathLike,
             _load_regulation_data(entry, regional_context)
     return
 
-def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
+def get_regulation(accesion : str, format : data.AccesionFormat) -> list[tuple[RegulationList, TaxidRegulation]]:
     """
     Check the given TaxID against all imported regulated lists.
     The input taxid is 
@@ -77,37 +82,31 @@ def get_regulation(taxid : int) -> list[tuple[RegulationList, TaxidRegulation]]:
     """
     output_data : list[tuple[RegulationList, TaxidRegulation]] = []
 
-    taxids_to_check = [taxid]
-    taxid_parents_to_check = data.CHILD_TAXID_MAP[data.CHILD_TAXID_MAP["child_taxid"] == taxid]["regulated_taxid"].to_list()
-    taxids_to_check.extend(taxid_parents_to_check)
+    accesion_to_check = [data.Accession(taxid=accesion)]
+    if format == data.AccesionFormat.TAXID:
+        taxid_parents_to_check = data.CHILD_TAXID_MAP[
+            data.CHILD_TAXID_MAP["child_taxid"] == accesion]["regulated_taxid"].to_list()
+        taxid_parents_to_check = [data.Accession(taxid=tid) for tid in taxid_parents_to_check]
+        accesion_to_check.extend(taxid_parents_to_check)
 
-    logger.debug("Taxids to check: %s", taxids_to_check)
+    logger.debug("accesions to check: %s", accesion_to_check)
 
     # Commented out code for the general case - may be useful when using genbank or accession.
-    #filtered_regulated_taxid_annotations = data.REGULATED_TAXID_ANNOTATIONS[
+    # filtered_regulated_taxid_annotations = data.REGULATED_TAXID_ANNOTATIONS[
     #    data.REGULATED_TAXID_ANNOTATIONS["taxid"].isin(taxids_to_check)]
 
     filtered_regulated_taxid_annotations = data.REGULATED_TAXID_ANNOTATIONS[
-        data.REGULATED_TAXID_ANNOTATIONS.index.isin(taxids_to_check)]
+        data.REGULATED_TAXID_ANNOTATIONS.index.isin(accesion_to_check)]
     
     logger.debug("Filtered Output DBS: %s", filtered_regulated_taxid_annotations.to_string())
 
     for hash_taxid, row in filtered_regulated_taxid_annotations.iterrows():
-        taxid_regulation_info = TaxidRegulation(
-            row["taxonomy_category"],
-            row["taxonomy_name"],
-            row["notes"],
-            row["preferred_taxonomy_name"],
-            row["list_acronym"],
-            hash_taxid,#int(row["taxid"]),
-            row["target"],
-            row["hazard_group"]
-        )
+        taxid_regulation_info = TaxidRegulation.from_row(row, hash_taxid)
         list_data = data.REGULATION_LISTS[taxid_regulation_info.list_acronym]
         output_data.append((list_data, taxid_regulation_info))
 
     if len(output_data) > 0:
-        logger.debug("Checking taxid [%i] for regulation resulted in %i annotations", taxid, len(output_data))
+        logger.debug("Checking %s [%s] for regulation resulted in %i annotations", format, accesion, len(output_data))
 
     return output_data
 
@@ -131,7 +130,7 @@ def regulation_taxid_information(input_data : list[tuple[RegulationList, TaxidRe
     output = "Regulated by the following lists:\n" if plural else ""
     offset = "   > " if plural else ""
     for reglist, annotations in input_data:
-        output += (offset + annotations.taxonomy_category + " "
+        output += (offset + annotations.category + " "
                     + annotations.preferred_taxonomy_name
                     + " regulated by " + reglist.name + f" [{reglist.acronym}]" + "\n")
     return output
@@ -220,7 +219,7 @@ def run(arguments: argparse.Namespace):
         logger.info("Regulation Annotations "
                     "for supplied taxids (#%i):\n", len(arguments.showtaxids))
         for taxid in arguments.showtaxids:
-            outcome = get_regulation(int(taxid))
+            outcome = get_regulation(int(taxid), data.AccesionFormat.TAXID)
 
             logger.info("Taxid %s: %s",taxid,regulation_taxid_information(outcome))
 
