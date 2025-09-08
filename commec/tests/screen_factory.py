@@ -130,6 +130,7 @@ class ScreenTesterFactory:
         phylum = "unclassified",
         regulated = False,          # Used to update taxonomy, and also biorisk Must flag.
         score = 1000,               # Used for HMMSCAN
+        evalue = 0.0,               # can affect order.
         description = "no description",
         ):
 
@@ -175,31 +176,31 @@ class ScreenTesterFactory:
                 title, description, regulated]
             print(f"Added Biorisk Annotation: {title},{description},{regulated}")
             self.biorisks.append(
-                f"{title}    {accession}    {length_aa}    {query_name}    999    {query_length_aa}  0.0   {score}    10.0    1   1   0    0    {score}  10.0  1   {length_aa}  {start_aa}  {end_aa}  1  {length_aa}  1.00  {description}"
+                f"{title}\t{accession}\t{length_aa}\t{query_name}\t999\t{query_length_aa}\t{evalue}\t{score}\t10.0\t1\t1\t0\t0\t{score}\t10.0\t1\t{length_aa}\t{start_aa}\t{end_aa}\t1\t{length_aa}\t1.00\t{description}"
             )
             return
 
         if to_step == ScreenStep.TAXONOMY_AA:
             self.protein_tx.append(
-                f"{to_query}\t{title}\t{accession}\t{taxid}\t0.0\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
+                f"{to_query}\t{title}\t{accession}\t{taxid}\t{evalue}\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
             )
             return
         
         if to_step == ScreenStep.TAXONOMY_NT:
             self.nucl_tx.append(
-                f"{to_query}\t{title}\t{accession}\t{taxid}\t0.0\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
+                f"{to_query}\t{title}\t{accession}\t{taxid}\t{evalue}\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
             )
             return
 
         if to_step == ScreenStep.LOW_CONCERN_PROTEIN:
             self.lowconcern_protein.append(
-                f"{title}    {accession}    {length_aa}    {query_name}    999    {query_length_aa}  0.0   {score}    10.0    1   1   0    0    {score}  10.0  1   {length_aa}  {start_aa}  {end_aa}  1  {length_aa}  1.00  {description}"
+                f"{title}\t{accession}\t{length_aa}\t{query_name}\t999\t{query_length_aa}\t{evalue}\t{score}\t10.0\t1\t1\t0\t0\t{score}\t10.0\t1\t{length_aa}\t{start_aa}\t{end_aa}\t1\t{length_aa}\t1.00\t{description}"
             )
             return
 
         if to_step == ScreenStep.LOW_CONCERN_RNA:
             self.lowconcern_rna.append(
-                f"{title}\t{accession}\t{to_query}\tQA999\t{length}\t1\t{length}\t{start}\t{stop}\tSTRAND\tTRUNC\tPASS\tGC\t10\t{score}\t0.0\t100\t{description}"
+                f"{title}\t{accession}\t{to_query}\tQA999\t{length}\t1\t{length}\t{start}\t{stop}\tSTRAND\tTRUNC\tPASS\tGC\t10\t{score}\t{evalue}\t100\t{description}"
             )
             #RNA, mdl = target, seq = query
             #"""\
@@ -211,7 +212,7 @@ class ScreenTesterFactory:
 
         if to_step == ScreenStep.LOW_CONCERN_DNA:
             self.lowconcern_dna.append(
-                f"{to_query}\t{title}\t{accession}\t{taxid}\t0.0\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
+                f"{to_query}\t{title}\t{accession}\t{taxid}\t{evalue}\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
             )
             return
 

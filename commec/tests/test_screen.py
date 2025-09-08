@@ -42,29 +42,29 @@ def test_functional_screen(tmp_path, request):
     functional_test.add_query("FCTEST1", 600)
 
     #Biorisk
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 7, 95, "Toxin1", "ShouldntClear", 11111, description="LargeAreaFlag", score = 500, regulated = True, superkingdom = "Viruses", species = "horriblus")
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 34, 65, "Toxin1", "ShouldntClear", 22222, description="SmallImportantFlag", score = 1000, regulated = True, superkingdom = "Viruses", species = "extra-horriblus")
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 49, 80, "Toxin1", "ShouldTrim", 33333, description="SmallUnimportantTRIM", score = 100, regulated = True, superkingdom = "Viruses", species = "unimporticus")
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 109, 191, "Toxin2", "ShouldWarn", 22222, description="WarningExample",score = 1000, regulated = False, superkingdom = "Viruses", species = "extra-horriblus-factor")
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 593, 505, "Toxin3", "ShouldWarn", 11111, description="ReverseExample", score = 500, regulated = False, superkingdom = "Viruses", species = "horriblus-factor")
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 7, 95, "Toxin1", "ShouldntClear", 11111, description="LargeAreaFlag", score = 500, regulated = True, superkingdom = "Viruses", species = "horriblus", evalue = 1e-21)
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 34, 65, "Toxin1", "ShouldntClear", 22222, description="SmallImportantFlag", score = 1000, regulated = True, superkingdom = "Viruses", species = "extra-horriblus", evalue = 1e-22)
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 49, 80, "Toxin1", "ShouldTrim", 33333, description="SmallUnimportantTRIM", score = 100, regulated = True, superkingdom = "Viruses", species = "unimporticus", evalue = 1e-23)
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 109, 191, "Toxin2", "ShouldWarn", 22222, description="WarningExample",score = 1000, regulated = False, superkingdom = "Viruses", species = "extra-horriblus-factor", evalue = 1e-24)
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 593, 505, "Toxin3", "ShouldWarn", 11111, description="ReverseExample", score = 500, regulated = False, superkingdom = "Viruses", species = "horriblus-factor", evalue = 1e-25)
     # Protein Taxonomy
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 320, 380, "ShouldntClear", "NR_HIT_FLAG1", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus")
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 490, "ShouldClearBySynBio", "NR_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus")
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 500, "ShouldntClear", "NR_HIT_FLAG3", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus")
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 310, 370, "ShouldClear", "NR_HIT_FLAG4", "12346", regulated = True, superkingdom = "Viruses", species = "fine-icus")
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedReg", "NR_HIT_MIXED1", "12347", regulated = True, superkingdom = "Viruses", species = "danger-poop")
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixednonReg", "NR_HIT_MIXED2", "12348", regulated = False, superkingdom = "Bacteria", species = "cute-happy-bacter")
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedNonReg", "NR_HIT_MIXED3", "12349", regulated = False, superkingdom = "Bacteria", species = "poopicus")
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 320, 380, "ShouldntClear", "NR_HIT_FLAG1", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus", evalue = 0.06)
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 490, "ShouldClearBySynBio", "NR_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus", evalue = 0.07)
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 500, "ShouldntClear", "NR_HIT_FLAG3", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus", evalue = 0.08)
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 310, 370, "ShouldClear", "NR_HIT_FLAG4", "12346", regulated = True, superkingdom = "Viruses", species = "fine-icus", evalue = 0.09)
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedReg", "NR_HIT_MIXED1", "12347", regulated = True, superkingdom = "Viruses", species = "danger-poop", evalue = 0.10)
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixednonReg", "NR_HIT_MIXED2", "12348", regulated = False, superkingdom = "Bacteria", species = "cute-happy-bacter", evalue = 0.11)
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedNonReg", "NR_HIT_MIXED3", "12349", regulated = False, superkingdom = "Bacteria", species = "poopicus", evalue = 0.12)
     # Nucleotide Taxonomy
-    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 220, 280, "SUBJECT", "NT_HIT_FLAG1", "12345", regulated = True, superkingdom = "Viruses")
-    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 190, "SUBJECT", "NT_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses")
-    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 200, "SUBJECT", "NT_HIT_FLAG3", "12345", regulated = True, superkingdom = "Viruses")
-    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 310, 390, "Main", "NT_HIT_MIXED", "12345", regulated = True, superkingdom = "Viruses")
-    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 310, 390, "NonRegMixedWithMain", "NT_HIT_MIXED2", "12346", regulated = False, superkingdom = "Bacteria")
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 220, 280, "SUBJECT", "NT_HIT_FLAG1", "12345", regulated = True, superkingdom = "Viruses", evalue = 0.13)
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 190, "SUBJECT", "NT_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses", evalue = 0.14)
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 200, "SUBJECT", "NT_HIT_FLAG3", "12350", regulated = True, superkingdom = "Viruses", evalue = 0.15)
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 310, 390, "Main", "NT_HIT_MIXED", "12345", regulated = True, superkingdom = "Viruses", evalue = 0.16)
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 310, 390, "NonRegMixedWithMain", "NT_HIT_MIXED2", "12346", regulated = False, superkingdom = "Bacteria", evalue = 0.17)
     # Low Concern
-    functional_test.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "FCTEST1", 202, 370, "Benign1", "Benign1", description = "BenignHMMClear")
-    functional_test.add_hit(ScreenStep.LOW_CONCERN_RNA, "FCTEST1", 50, 150, "BENIGNRNA", "12346", description = "BenignCMTestOutput")
-    functional_test.add_hit(ScreenStep.LOW_CONCERN_DNA, "FCTEST1", 410, 480, "BENIGNSYNBIO", "210", description = "BenignBlastClear")
+    functional_test.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "FCTEST1", 202, 370, "Benign1", "Benign1", description = "BenignHMMClear", evalue = 1e-26)
+    functional_test.add_hit(ScreenStep.LOW_CONCERN_RNA, "FCTEST1", 50, 150, "BENIGNRNA", "12346", description = "BenignCMTestOutput", evalue = 1e-27)
+    functional_test.add_hit(ScreenStep.LOW_CONCERN_DNA, "FCTEST1", 410, 480, "BENIGNSYNBIO", "210", description = "BenignBlastClear", evalue = 1e-28)
 
     result = functional_test.run()
 
@@ -85,9 +85,7 @@ def test_functional_screen(tmp_path, request):
     # Convert both original and retrieved data to dictionaries and compare
     assert asdict(expected_screen_result) == asdict(actual_screen_result), (
         f"Functional test does not match predicted output, fix code,"
-        f" or if new output is expected, run with --gen-examples\n"
-        f"Test JSON Reference data: \n{asdict(actual_screen_result)}\n"
-        f"Test JSON output data: \n{asdict(expected_screen_result)}"
+        " or if new output is expected, run with --gen-examples\n"
     )
 
 def test_screen_factory(tmp_path):
