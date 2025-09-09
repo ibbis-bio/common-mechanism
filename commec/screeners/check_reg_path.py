@@ -296,9 +296,11 @@ def parse_taxonomy_hits(
                 # Logging logic.
                 alt_text = "only " if screen_status == ScreenStatus.FLAG else "both regulated and non-"
                 s = "" if len(reg_taxids) == 1 else "'s"
+                ss = "" if len(non_reg_taxids) == 1 else "'s"
                 log_message = (
                     f"\t --> {screen_status} at bases ({match_ranges_text}) found in {alt_text}regulated {domains_text}.\n"
-                    f"\t   (Regulated Species: {reg_species_text}. Regulated TaxID{s}: {reg_taxids_text})"
+                    f"\t   (Regulated Species: {reg_species_text}.\n\t    Regulated TaxID{s}: {reg_taxids_text}\n"
+                    f"\t   Non-Regulated TaxID{ss}: {non_reg_taxids_text})"
                 )
                 logger.debug(log_message)
                 log_container[query].append(log_message)
