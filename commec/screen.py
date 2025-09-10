@@ -53,8 +53,6 @@ import argparse
 import datetime
 import time
 import logging
-import shutil
-import os
 import sys
 import traceback
 import pandas as pd
@@ -366,7 +364,7 @@ class Screen:
             _info.low_concern_dna_search_info = _tools.low_concern_blastn.get_version_information()
 
         # Store start time.
-        _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.screen_data.commec_info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def run(self, args : argparse.Namespace):
         """
