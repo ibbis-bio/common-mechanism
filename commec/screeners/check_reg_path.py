@@ -132,205 +132,201 @@ def parse_taxonomy_hits(
     if top_hits["regulated"].sum() == 0:
         logger.info("\t...no regulated hits\n")
         return 0
-    
-    # if ANY of the trimmed hits are regulated
-    with pd.option_context('display.max_rows', None,
-                    'display.max_columns', None,
-                    'display.precision', 3,
-                    ):
 
-        unique_queries = top_hits['query acc.'].unique()
-        logger.debug("%s Unique Queries: shape: %s preview:\n%s", step, unique_queries.shape, unique_queries)
-        for query in unique_queries:
-            logger.debug("\tProcessing query: %s", query)
-            query_write = data.get_query(query)
-            if not query_write:
-                logger.error("Query during %s could not be found! [%s]", str(step), query)
-                continue
+    unique_queries = top_hits['query acc.'].unique()
+    logger.debug("%s Unique Queries: shape: %s preview:\n%s", step, unique_queries.shape, unique_queries)
+    for query in unique_queries:
+        logger.debug("\tProcessing query: %s", query)
+        query_write = data.get_query(query)
+        if not query_write:
+            logger.error("Query during %s could not be found! [%s]", str(step), query)
+            continue
 
-            unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
-            unique_query_data.dropna(subset = ['species'])
-            regulated_only_data = unique_query_data[unique_query_data["regulated"] == True]
-            regulated_hits = regulated_only_data['subject acc.'].unique()
-            logger.debug("\t%s Regulated hits: shape: %s preview:\n%s", step, regulated_hits.shape, regulated_hits)
+        unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
+        unique_query_data.dropna(subset = ['species'])
+        regulated_only_data = unique_query_data[unique_query_data["regulated"] == True]
+        regulated_hits = regulated_only_data['subject acc.'].unique()
+        logger.debug("\t%s Regulated hits: shape: %s preview:\n%s",
+                     step, regulated_hits.shape, regulated_hits)
 
-            for hit in regulated_hits:
-                logger.debug("\t\tProcessing Hit: %s", hit)
-                regulated_hit_data : pd.DataFrame = regulated_only_data[regulated_only_data["subject acc."] == hit]
-                logger.debug("%s Regulated Hit Data: shape: %s preview:\n%s", step, regulated_hit_data.shape, regulated_hit_data.head())
-                hit_description = regulated_hit_data['subject title'].values[0]
+        for hit in regulated_hits:
+            logger.debug("\t\tProcessing Hit: %s", hit)
+            regulated_hit_data : pd.DataFrame = regulated_only_data[regulated_only_data["subject acc."] == hit]
+            logger.debug("%s Regulated Hit Data: shape: %s preview:\n%s",
+                         step, regulated_hit_data.shape, regulated_hit_data.head())
+            hit_description = regulated_hit_data['subject title'].values[0]
 
-                n_regulated_bacteria = 0
-                n_regulated_virus = 0
-                n_regulated_eukaryote = 0
-                
-                reg_taxids = [] # Regulated Taxonomy IDS
-                non_reg_taxids = [] # Non-regulated Taxonomy IDS.
-                reg_species = [] # List of species
-                domains = [] # List of domains.
-                match_ranges = [] # Ranges where hit matches query.
+            n_regulated_bacteria = 0
+            n_regulated_virus = 0
+            n_regulated_eukaryote = 0
+            
+            reg_taxids = [] # Regulated Taxonomy IDS
+            non_reg_taxids = [] # Non-regulated Taxonomy IDS.
+            reg_species = [] # List of species
+            domains = [] # List of domains.
+            match_ranges = [] # Ranges where hit matches query.
 
-                regulated_taxa = set()
-                non_regulated_taxa = set()
+            regulated_taxa = set()
+            non_regulated_taxa = set()
 
-                def unique_taxa_set(df) -> set[TaxonomyContainer]:
-                    return {
-                        TaxonomyContainer(*row)
-                        for row in df[[
-                            "subject tax ids",
-                            "species",
-                            "genus",
-                            "superkingdom",
-                            "subject acc.",
-                            "subject title"
-                        ]].itertuples(index=False, name=None)
-                    }
+            def unique_taxa_set(df) -> set[TaxonomyContainer]:
+                return {
+                    TaxonomyContainer(*row)
+                    for row in df[[
+                        "subject tax ids",
+                        "species",
+                        "genus",
+                        "superkingdom",
+                        "subject acc.",
+                        "subject title"
+                    ]].itertuples(index=False, name=None)
+                }
 
-                for _, region in regulated_hit_data.iterrows():
-                    match_range = MatchRange(
-                        float(region['evalue']),
-                        int(region['s. start']), int(region['s. end']),
-                        int(region['q. start']), int(region['q. end'])
-                    )
-                    logger.debug("Processing region from hit: %s", region)
-                    # Convert from non-coding to nt query coordinates if we're doing a NT taxonomy step.
-                    if step == ScreenStep.TAXONOMY_NT:
-                        match_range.query_start = queries[query].nc_to_nt_query_coords(match_range.query_start)
-                        match_range.query_end = queries[query].nc_to_nt_query_coords(match_range.query_end)
-
-                    match_ranges.append(match_range)
-
-                    # Filter shared_site based on 'q. start' or 'q. end' (Previously only shared starts were used)
-                    shared_site = unique_query_data[
-                        (unique_query_data['q. start'] == region['q. start']) |
-                        (unique_query_data['q. end'] == region['q. end'])
-                        ]
-
-                    # Filter for regulated and non-regulated entries
-                    regulated = shared_site[shared_site["regulated"] == True]
-                    non_regulated = (
-                        shared_site[shared_site["regulated"] == False]
-                        .sort_values(by="evalue", ascending=True)
-                        .head(10) # we only care for max 10 non-regulated.
-                    )
-
-                    # Optimise for conciseness by unique TaxID
-                    regulated = regulated.drop_duplicates(subset=["subject tax ids"], keep="first")
-                    non_regulated = non_regulated.drop_duplicates(subset=["subject tax ids"], keep="first")
-
-                    # Count domain information.
-                    domain = region['superkingdom']
-                    if domain == "Viruses":
-                        n_regulated_virus += 1
-                        logger.debug("\t\t\tAdded Virus.")
-                    if domain == "Bacteria":
-                        n_regulated_bacteria +=1
-                        logger.debug("\t\t\tAdded Bacteria.")
-                    if domain == "Eukaryota":
-                        n_regulated_eukaryote+=1
-                        logger.debug("\t\t\tAdded Eukaryote.")
-                    domains.append(domain)
-
-                    # Collect unique species from both regulated and non-regulated
-                    reg_species.extend(regulated["species"])
-
-                    # JSON serialization requires int, not np.int64, hence the map()
-                    reg_taxids.extend(map(str, regulated["subject tax ids"]))
-                    non_reg_taxids.extend(map(str, non_regulated["subject tax ids"]))
-
-
-                    regulated_taxa = regulated_taxa | unique_taxa_set(regulated)
-                    non_regulated_taxa = non_regulated_taxa | unique_taxa_set(non_regulated)
-
-                regulated_taxa_list = [asdict(t) for t in regulated_taxa]
-                non_regulated_taxa_list = [asdict(t) for t in non_regulated_taxa]
-                regulated_taxa_list = sorted(
-                    regulated_taxa_list,
-                    key=lambda d: d["taxid"]
+            for _, region in regulated_hit_data.iterrows():
+                match_range = MatchRange(
+                    float(region['evalue']),
+                    int(region['s. start']), int(region['s. end']),
+                    int(region['q. start']), int(region['q. end'])
                 )
-                non_regulated_taxa_list = sorted(
-                    non_regulated_taxa_list,
-                    key=lambda d: d["taxid"]
-                )
-                # Uniquefy.
-                reg_species = list(set(reg_species))
-                reg_taxids = list(set(reg_taxids))
-                non_reg_taxids = list(set(non_reg_taxids))
-                match_ranges = list(set(match_ranges))
+                logger.debug("Processing region from hit: %s", region)
+                # Convert from non-coding to nt query coordinates if we're doing a NT taxonomy step.
+                if step == ScreenStep.TAXONOMY_NT:
+                    match_range.query_start = queries[query].nc_to_nt_query_coords(match_range.query_start)
+                    match_range.query_end = queries[query].nc_to_nt_query_coords(match_range.query_end)
 
-                reg_species_text = ", ".join(reg_species)
-                reg_taxids_text = ", ".join(reg_taxids)
-                non_reg_taxids_text = ", ".join(non_reg_taxids)
-                match_ranges_text = ", ".join(map(str,match_ranges))
-                domains_text = ", ".join(set(domains))
+                match_ranges.append(match_range)
 
-                reg_species.sort()
-                reg_taxids.sort()
-                non_reg_taxids.sort()
+                # Filter shared_site based on 'q. start' or 'q. end' (Previously only shared starts were used)
+                shared_site = unique_query_data[
+                    (unique_query_data['q. start'] == region['q. start']) |
+                    (unique_query_data['q. end'] == region['q. end'])
+                    ]
 
-                logger.debug("\t\tRegulated Species: %s", reg_species)
-                logger.debug("\t\tRegulated Taxids: %s", regulated_taxa_list)
-                logger.debug("\t\tNon Regulated Taxids: %s", non_regulated_taxa_list)
-                logger.debug("\t\tRanges: %s", match_ranges)
-
-                screen_status : ScreenStatus = ScreenStatus.FLAG
-
-                # TODO: Currently, we recapitulate old behaviour,
-                # # " no top hit exclusive to a regulated pathogen: PASS"
-                #  however in the future:
-                # if all hits are in the same genus n_reg > 0, and n_total > n_reg, WARN, or other logic.
-                # the point is, this is where you do it.
-
-                logger.debug("Checking number of non regulated taxids: %i", len(non_reg_taxids))
-                if len(non_reg_taxids) > 0:
-                    logger.debug("Non-regulated taxids present, treating as MIXED result.")
-                    screen_status = ScreenStatus.PASS
-
-                # Update the query level recommendation of this step.
-                query_write.status.update_step_status(step, screen_status)
-
-                regulation_dict = {"number_of_regulated_taxids" : str(len(reg_taxids)),
-                                   "number_of_unregulated_taxids" : str(len(non_reg_taxids)),
-                                   "regulated_eukaryotes": str(n_regulated_eukaryote),
-                                   "regulated_bacteria": str(n_regulated_bacteria),
-                                   "regulated_viruses": str(n_regulated_virus),
-                                   "regulated_taxa": regulated_taxa_list,
-                                   "non_regulated_taxa" : non_regulated_taxa_list}
-
-                # Logging logic.
-                alt_text = "only " if screen_status == ScreenStatus.FLAG else "both regulated and non-"
-                s = "" if len(reg_taxids) == 1 else "'s"
-                ss = "" if len(non_reg_taxids) == 1 else "'s"
-                log_message = (
-                    f"\t --> {screen_status} at bases ({match_ranges_text}) found in {alt_text}regulated {domains_text}.\n"
-                    f"\t   (Regulated Species: {reg_species_text}.\n\t    Regulated TaxID{s}: {reg_taxids_text}\n"
-                    f"\t   Non-Regulated TaxID{ss}: {non_reg_taxids_text})"
-                )
-                logger.debug(log_message)
-                log_container[query].append(log_message)
-
-                # Append our hit information to Screen data.
-                new_hit = HitResult(
-                    HitScreenStatus(
-                        screen_status,
-                        step
-                    ),
-                    hit,
-                    hit_description,
-                    match_ranges,
-                    {"domain" : [domain],"regulated_taxonomy":[regulation_dict]},
+                # Filter for regulated and non-regulated entries
+                regulated = shared_site[shared_site["regulated"] == True]
+                non_regulated = (
+                    shared_site[shared_site["regulated"] == False]
+                    .sort_values(by="evalue", ascending=True)
+                    .head(10) # we only care for max 10 non-regulated.
                 )
 
-                logger.debug("Hit information summary: %s", new_hit)
+                # Optimise for conciseness by unique TaxID
+                regulated = regulated.drop_duplicates(subset=["subject tax ids"], keep="first")
+                non_regulated = non_regulated.drop_duplicates(subset=["subject tax ids"], keep="first")
 
-                if query_write.add_new_hit_information(new_hit):
-                    write_hit = query_write.get_hit(hit)
-                    if write_hit:
-                        write_hit.ranges.extend(match_ranges)
-                        write_hit.annotations["domain"] = domains
-                        write_hit.annotations["regulated_taxonomy"].append(regulation_dict)
-                        write_hit.recommendation.status = compare(write_hit.recommendation.status, screen_status)
-                        write_hit.description += ","+hit_description
+                # Count domain information.
+                domain = region['superkingdom']
+                if domain == "Viruses":
+                    n_regulated_virus += 1
+                    logger.debug("\t\t\tAdded Virus.")
+                if domain == "Bacteria":
+                    n_regulated_bacteria +=1
+                    logger.debug("\t\t\tAdded Bacteria.")
+                if domain == "Eukaryota":
+                    n_regulated_eukaryote+=1
+                    logger.debug("\t\t\tAdded Eukaryote.")
+                domains.append(domain)
+
+                # Collect unique species from both regulated and non-regulated
+                reg_species.extend(regulated["species"])
+
+                # JSON serialization requires int, not np.int64, hence the map()
+                reg_taxids.extend(map(str, regulated["subject tax ids"]))
+                non_reg_taxids.extend(map(str, non_regulated["subject tax ids"]))
+
+
+                regulated_taxa = regulated_taxa | unique_taxa_set(regulated)
+                non_regulated_taxa = non_regulated_taxa | unique_taxa_set(non_regulated)
+
+            regulated_taxa_list = [asdict(t) for t in regulated_taxa]
+            non_regulated_taxa_list = [asdict(t) for t in non_regulated_taxa]
+            regulated_taxa_list = sorted(
+                regulated_taxa_list,
+                key=lambda d: d["taxid"]
+            )
+            non_regulated_taxa_list = sorted(
+                non_regulated_taxa_list,
+                key=lambda d: d["taxid"]
+            )
+            # Uniquefy.
+            reg_species = list(set(reg_species))
+            reg_taxids = list(set(reg_taxids))
+            non_reg_taxids = list(set(non_reg_taxids))
+            match_ranges = list(set(match_ranges))
+
+            reg_species_text = ", ".join(reg_species)
+            reg_taxids_text = ", ".join(reg_taxids)
+            non_reg_taxids_text = ", ".join(non_reg_taxids)
+            match_ranges_text = ", ".join(map(str,match_ranges))
+            domains_text = ", ".join(set(domains))
+
+            reg_species.sort()
+            reg_taxids.sort()
+            non_reg_taxids.sort()
+
+            logger.debug("\t\tRegulated Species: %s", reg_species)
+            logger.debug("\t\tRegulated Taxids: %s", regulated_taxa_list)
+            logger.debug("\t\tNon Regulated Taxids: %s", non_regulated_taxa_list)
+            logger.debug("\t\tRanges: %s", match_ranges)
+
+            screen_status : ScreenStatus = ScreenStatus.FLAG
+
+            # TODO: Currently, we recapitulate old behaviour,
+            # # " no top hit exclusive to a regulated pathogen: PASS"
+            #  however in the future:
+            # if all hits are in the same genus n_reg > 0, and n_total > n_reg, WARN, or other logic.
+            # the point is, this is where you do it.
+
+            logger.debug("Checking number of non regulated taxids: %i", len(non_reg_taxids))
+            if len(non_reg_taxids) > 0:
+                logger.debug("Non-regulated taxids present, treating as MIXED result.")
+                screen_status = ScreenStatus.PASS
+
+            # Update the query level recommendation of this step.
+            query_write.status.update_step_status(step, screen_status)
+
+            regulation_dict = {"number_of_regulated_taxids" : str(len(reg_taxids)),
+                                "number_of_unregulated_taxids" : str(len(non_reg_taxids)),
+                                "regulated_eukaryotes": str(n_regulated_eukaryote),
+                                "regulated_bacteria": str(n_regulated_bacteria),
+                                "regulated_viruses": str(n_regulated_virus),
+                                "regulated_taxa": regulated_taxa_list,
+                                "non_regulated_taxa" : non_regulated_taxa_list}
+
+            # Logging logic.
+            alt_text = "only " if screen_status == ScreenStatus.FLAG else "both regulated and non-"
+            s = "" if len(reg_taxids) == 1 else "'s"
+            ss = "" if len(non_reg_taxids) == 1 else "'s"
+            log_message = (
+                f"\t --> {screen_status} at bases ({match_ranges_text}) found in {alt_text}regulated {domains_text}.\n"
+                f"\t   (Regulated Species: {reg_species_text}.\n\t    Regulated TaxID{s}: {reg_taxids_text}\n"
+                f"\t   Non-Regulated TaxID{ss}: {non_reg_taxids_text})"
+            )
+            logger.debug(log_message)
+            log_container[query].append(log_message)
+
+            # Append our hit information to Screen data.
+            new_hit = HitResult(
+                HitScreenStatus(
+                    screen_status,
+                    step
+                ),
+                hit,
+                hit_description,
+                match_ranges,
+                {"domain" : [domain],"regulated_taxonomy":[regulation_dict]},
+            )
+
+            logger.debug("Hit information summary: %s", new_hit)
+
+            if query_write.add_new_hit_information(new_hit):
+                write_hit = query_write.get_hit(hit)
+                if write_hit:
+                    write_hit.ranges.extend(match_ranges)
+                    write_hit.annotations["domain"] = domains
+                    write_hit.annotations["regulated_taxonomy"].append(regulation_dict)
+                    write_hit.recommendation.status = compare(write_hit.recommendation.status, screen_status)
+                    write_hit.description += ","+hit_description
 
     # Do all non-verbose logging in order of query:
     for query_name, log_list in log_container.items():
