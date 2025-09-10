@@ -154,7 +154,6 @@ def parse_taxonomy_hits(
             regulated_hit_data : pd.DataFrame = regulated_only_data[regulated_only_data["subject acc."] == hit]
             logger.debug("%s Regulated Hit Data: shape: %s preview:\n%s",
                          step, regulated_hit_data.shape, regulated_hit_data.head())
-            hit_description = regulated_hit_data['subject title'].values[0]
 
             n_regulated_bacteria = 0
             n_regulated_virus = 0
@@ -271,6 +270,9 @@ def parse_taxonomy_hits(
 
             screen_status : ScreenStatus = ScreenStatus.FLAG
 
+            # Default hit description, is changed if result is mixed etc.
+            hit_description = f"Regulated {domains_text} - {regulated_hit_data['subject title'].values[0]}"
+
             # TODO: Currently, we recapitulate old behaviour,
             # # " no top hit exclusive to a regulated pathogen: PASS"
             #  however in the future:
@@ -281,6 +283,8 @@ def parse_taxonomy_hits(
             if len(non_reg_taxids) > 0:
                 logger.debug("Non-regulated taxids present, treating as MIXED result.")
                 screen_status = ScreenStatus.PASS
+                hit_description = (f"Mix of {len(reg_taxids)} regulated {domains_text}"
+                f" and {len(non_reg_taxids)} non-regulated {domains_text}")
 
             # Update the query level recommendation of this step.
             query_write.status.update_step_status(step, screen_status)

@@ -2,8 +2,8 @@
   "commec_info": {
     "commec_version": "1.0.1",
     "json_output_version": "0.3",
-    "time_taken": "00:00:01",
-    "date_run": "2025-09-10 12:23:00",
+    "time_taken": "00:00:06",
+    "date_run": "2025-09-10 13:07:46",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -32,7 +32,7 @@
     }
   },
   "query_info": {
-    "file": "/tmp/pytest-of-root/pytest-28/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-root/pytest-34/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -55,7 +55,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "NT_HIT_MIXED",
-          "description": "Main",
+          "description": "Mix of 1 regulated Viruses and 1 non-regulated Viruses",
           "ranges": [
             {
               "e_value": 0.16,
@@ -106,7 +106,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "NT_HIT_FLAG3",
-          "description": "SUBJECT",
+          "description": "Regulated Viruses - SUBJECT",
           "ranges": [
             {
               "e_value": 0.15,
@@ -156,7 +156,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "NT_HIT_FLAG2",
-          "description": "SUBJECT",
+          "description": "Regulated Viruses - SUBJECT",
           "ranges": [
             {
               "e_value": 0.14,
@@ -206,7 +206,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "NT_HIT_FLAG1",
-          "description": "SUBJECT",
+          "description": "Regulated Viruses - SUBJECT",
           "ranges": [
             {
               "e_value": 0.13,
@@ -248,7 +248,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_MIXED1",
-          "description": "ShouldMixedReg",
+          "description": "Mix of 1 regulated Viruses and 2 non-regulated Viruses",
           "ranges": [
             {
               "e_value": 0.1,
@@ -307,7 +307,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_FLAG4",
-          "description": "ShouldClear",
+          "description": "Regulated Viruses - ShouldClear",
           "ranges": [
             {
               "e_value": 0.09,
@@ -349,7 +349,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_FLAG3",
-          "description": "ShouldntClear",
+          "description": "Regulated Viruses - ShouldntClear",
           "ranges": [
             {
               "e_value": 0.08,
@@ -391,7 +391,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_FLAG2",
-          "description": "ShouldClearBySynBio",
+          "description": "Regulated Viruses - ShouldClearBySynBio",
           "ranges": [
             {
               "e_value": 0.07,
@@ -433,7 +433,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_FLAG1",
-          "description": "ShouldntClear",
+          "description": "Regulated Viruses - ShouldntClear",
           "ranges": [
             {
               "e_value": 0.06,
