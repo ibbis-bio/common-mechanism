@@ -3,7 +3,7 @@
     "commec_version": "1.0.1",
     "json_output_version": "0.3",
     "time_taken": "00:00:01",
-    "date_run": "",
+    "date_run": "2025-09-10 12:23:00",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -32,7 +32,7 @@
     }
   },
   "query_info": {
-    "file": "/tmp/pytest-of-root/pytest-19/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-root/pytest-28/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -376,14 +376,6 @@
                     "species": "regulaticus",
                     "genus": "unclassified",
                     "superkingdom": "Viruses",
-                    "target_hit": "NR_HIT_FLAG3",
-                    "target_description": "ShouldntClear"
-                  },
-                  {
-                    "taxid": 12345,
-                    "species": "regulaticus",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
                     "target_hit": "NR_HIT_FLAG2",
                     "target_description": "ShouldClearBySynBio"
                   }
@@ -421,14 +413,6 @@
                 "regulated_bacteria": "0",
                 "regulated_viruses": "1",
                 "regulated_taxa": [
-                  {
-                    "taxid": 12345,
-                    "species": "regulaticus",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
-                    "target_hit": "NR_HIT_FLAG3",
-                    "target_description": "ShouldntClear"
-                  },
                   {
                     "taxid": 12345,
                     "species": "regulaticus",

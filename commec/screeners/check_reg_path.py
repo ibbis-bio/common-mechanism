@@ -214,6 +214,10 @@ def parse_taxonomy_hits(
                         .head(10) # we only care for max 10 non-regulated.
                     )
 
+                    # Optimise for conciseness by unique TaxID
+                    regulated = regulated.drop_duplicates(subset=["subject tax ids"], keep="first")
+                    non_regulated = non_regulated.drop_duplicates(subset=["subject tax ids"], keep="first")
+
                     # Count domain information.
                     domain = region['superkingdom']
                     if domain == "Viruses":
