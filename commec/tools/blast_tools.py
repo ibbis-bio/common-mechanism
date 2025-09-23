@@ -15,6 +15,7 @@ import pandas as pd
 import numpy as np
 from commec.tools.search_handler import SearchHandler, DatabaseValidationError
 from commec.regulation.regulation import get_regulation
+from commec.regulation.containers import AccessionFormat
 
 TAXID_SYNTHETIC_CONSTRUCTS = 32630
 TAXID_VECTORS = 29278
@@ -166,7 +167,7 @@ def get_taxonomic_labels(
     logger.debug("Checking %s unique taxids", len(unique_taxids))
     # Build a mapping {taxid: truthiness}
     taxid_to_regulated = {
-        taxid: bool(get_regulation(int(taxid)))
+        taxid: bool(get_regulation(int(taxid), AccessionFormat.TAXID))
         for taxid in unique_taxids
     }
     # Map back to the dataframe
