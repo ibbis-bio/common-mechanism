@@ -25,7 +25,7 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-class AccesionFormat(StrEnum):
+class AccessionFormat(StrEnum):
     """
     Supported hashable accesion formats.
     """
@@ -46,20 +46,20 @@ class Accession:
     from a pandas DataFrame.
     """
     code: str
-    type: AccesionFormat   # one of: "taxid", "genbank", "uniprot"
+    type: AccessionFormat   # one of: "taxid", "genbank", "uniprot"
 
     def __init__(self, taxid: Optional[int]=None,
                        uniprot: Optional[str]=None,
                        genbank: Optional[str]=None):
         
         # ensure only one is set
-        values = [(taxid, AccesionFormat.TAXID),
-                  (uniprot, AccesionFormat.UNIPROT),
-                  (genbank, AccesionFormat.GENBANK)]
+        values = [(taxid, AccessionFormat.TAXID),
+                  (uniprot, AccessionFormat.UNIPROT),
+                  (genbank, AccessionFormat.GENBANK)]
         non_empty = [(v, t) for v, t in values if not pd.isna(v)]
         if len(non_empty) != 1:
             #raise ValueError(f"Accession must have exactly one non-empty value, got {non_empty} from {values}")
-            non_empty = [("0", AccesionFormat.TAXID)]
+            non_empty = [("0", AccessionFormat.TAXID)]
 
 
         object.__setattr__(self, "code", str(non_empty[0][0]))
