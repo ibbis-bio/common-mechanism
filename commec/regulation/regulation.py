@@ -134,7 +134,7 @@ def get_regulation_list():
     """
     Simple retrieval for the 'list of lists' information.
     """
-    return data.REGULATION_LISTS.values()
+    return [value for value in data.REGULATION_LISTS.values()]
 
 def run(arguments: argparse.Namespace):
     """

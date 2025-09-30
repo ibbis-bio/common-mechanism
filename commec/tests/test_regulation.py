@@ -32,8 +32,8 @@ def test_multiple_entrys():
     """
     crc.clear()
     setup_console_logging(logging.DEBUG)
-    assert crc.add_regulated_list(crc.RegulationList("List01","L1","www.list1.com",["NZ"],0))
-    assert crc.add_regulated_list(crc.RegulationList("List02","L2","www.list2.com",["AU"],0))
+    assert crc.add_regulated_list(crc.RegulationList("List01","L1","www.list1.com",["NZ"],crc.ListMode.COMPLIANCE))
+    assert crc.add_regulated_list(crc.RegulationList("List02","L2","www.list2.com",["AU"],crc.ListMode.COMPLIANCE))
 
     input_list1_data = pd.DataFrame([
         {

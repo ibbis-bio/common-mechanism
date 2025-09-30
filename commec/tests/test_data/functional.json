@@ -1,35 +1,26 @@
 {
   "commec_info": {
-    "commec_version": "1.0.2",
-    "json_output_version": "0.3",
-    "time_taken": "00:00:05",
-    "date_run": "2025-10-03 01:17:02",
-    "search_tool_info": {
-      "biorisk_search_info": {
-        "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
-        "database_info": "HMMER3/f [3.4 | Aug 2023]"
-      },
-      "protein_search_info": {
-        "tool_info": "blastx: 2.17.0+\n Package: blast 2.17.0, build Aug 11 2025 09:46:06",
-        "database_info": "BLASTDB Version: 5Date: Sep 3, 2024  12:32 AM\tLongest sequence: 2,882 residues"
-      },
-      "nucleotide_search_info": {
-        "tool_info": "blastn: 2.17.0+\n Package: blast 2.17.0, build Aug 11 2025 09:46:06",
-        "database_info": "BLASTDB Version: 5Date: May 21, 2025  8:12 AM\tLongest sequence: 8,669 bases"
-      },
-      "low_concern_protein_search_info": {
-        "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
-        "database_info": "HMMER3/f [3.4 | Aug 2023]"
-      },
-      "low_concern_rna_search_info": {
-        "tool_info": "INFERNAL 1.1.5 (Sep 2023)",
-        "database_info": "INFERNAL1/a [1.1.5 | Sep 2023]"
-      },
-      "low_concern_dna_search_info": {
-        "tool_info": "x.x.x",
-        "database_info": "x.x.x"
-      }
-    }
+      "commec_version": "1.0.1",
+      "json_output_version": "0.4",
+      "time_taken": null,
+      "date_run": null,
+      "search_tool_info": null,
+      "regulation_list_info": [
+          {
+              "name": "List01",
+              "acronym": "L1",
+              "url": "www.list1.com",
+              "regions": [],
+              "status": "Compliance"
+          },
+          {
+              "name": "List02",
+              "acronym": "L2",
+              "url": "www.list2.com",
+              "regions": [],
+              "status": "Compliance"
+          }
+      ]
   },
   "query_info": {
     "file": "/tmp/pytest-of-root/pytest-54/test_functional_screen0/functional.fasta",

@@ -323,7 +323,9 @@ class Screen:
         region_context = self.params.config["databases"]["regulated_lists"]["regions"]
         load_regulation_data(regulation_path, region_context)
         logger.info(regulation_list_information())
-        self.screen_data.commec_info.regulation_list_info = get_regulation_list()
+        reg_lists = get_regulation_list()
+        print(reg_lists)
+        self.screen_data.commec_info.regulation_list_info = reg_lists
 
         # Initialize the queries
         try:
