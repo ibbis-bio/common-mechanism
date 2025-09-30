@@ -4,6 +4,11 @@
 Responsible for the ingestion of annotated data from region based regulated
 lists. 
 
+API:
+derive_accession_type : Given a string for Taxid, Genbank, or Uniprot accession,
+will return the correct AccessionFormat object, or None.
+
+
 """
 import os
 import re
@@ -11,14 +16,25 @@ import logging
 import argparse
 import pandas as pd
 from commec.utils.logger import setup_console_logging
-from commec.regulation.containers import TaxidRegulation, RegulationList
+from commec.regulation.containers import (
+    TaxidRegulation,
+    RegulationList,
+    derive_accession_type
+)
 import commec.regulation.containers as data
-from commec.regulation.initialisation import import_regulations
-from commec.regulation.region import load_region_list_data, get_regions_set
+from commec.regulation.initialisation import (
+    import_regulations,
+    post_process_regulation_data,
+)
+from commec.regulation.region import (
+    load_region_list_data,
+    get_regions_set
+)
 from commec.regulation.cli import (
     add_args,
     regulation_list_information,
-    regulation_taxid_information
+    regulation_taxid_information,
+    generate_output_summary_csv,
 )
 
 DESCRIPTION = """Tool for displaying information on
@@ -42,19 +58,7 @@ def load_regulation_data(import_path : str | os.PathLike,
 
     # Recursively load the actual data.
     _load_regulation_data(import_path, cleaned_context)
-
-    # These dataframes are always access via taxid, genbank, or uniprot,
-    # so it is much faster to index them based off this for querying.
-    data.REGULATED_TAXID_ANNOTATIONS["accession"] = data.REGULATED_TAXID_ANNOTATIONS.apply(
-        lambda row: data.Accession(
-            taxid=row["tax_id"],
-            genbank=row["genbank_protein"],
-            uniprot=row["uniprot"]),
-        axis=1
-    )
-    data.REGULATED_TAXID_ANNOTATIONS.set_index("accession", inplace=True)
-
-    logger.debug("Loaded the following dataset: Top 100:\n%s", data.REGULATED_TAXID_ANNOTATIONS.head(100).to_string())
+    post_process_regulation_data()
 
 def _load_regulation_data(import_path : str | os.PathLike,
                           regional_context : list[str]):
@@ -63,6 +67,9 @@ def _load_regulation_data(import_path : str | os.PathLike,
     One found, the list folder is loaded into the modules state, and will
     """
     logger.debug("Checking path for list annotations: %s", import_path)
+    if not os.path.isdir(import_path):
+        logger.warning("Provided path invalid %s", import_path)
+        return
 
     if import_regulations(import_path, regional_context):
         return
@@ -75,43 +82,16 @@ def _load_regulation_data(import_path : str | os.PathLike,
             _load_regulation_data(entry, regional_context)
     return
 
-
-def derive_accession_type(identifier : str) -> data.AccessionFormat | None:
-    """
-    Uses regex to determine whether the input
-    string is a TaxID, Uniprot, or Genbank accesion.
-    Returns None if it cannot be determined.
-    """
-    patterns = {
-        data.AccessionFormat.UNIPROT: re.compile(
-            r"^(?:[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9](?:[A-Z][A-Z0-9]{2}[0-9]){1,2})$"
-        ),
-        data.AccessionFormat.TAXID: re.compile(
-            r"^[0-9]+$"
-        ),
-        data.AccessionFormat.GENBANK: re.compile(
-            r"^(?:[A-Z][0-9]{5}|[A-Z]{2}[0-9]{6,8})(?:\.\d+)?$"
-        ),
-    }
-
-    for fmt, pattern in patterns.items():
-        if pattern.fullmatch(identifier):
-            return fmt
-
-    return None
-
-
 def get_regulation(accession : str, accession_fmt : data.AccessionFormat) -> list[tuple[RegulationList, TaxidRegulation]]:
     """
-    Check the given TaxID against all imported regulated lists.
-    The input taxid is 
-    Any parent TaxIDS will also be recursively checked across 
-    all regulated lists. The output is a list of every regulation 
-    attributed to the original taxid and its parents, in the form of 
-    a tuple containing the list, as well as the 
+    Check the given Accession against all imported regulated lists.
+    The input Accession can be a TaxID, GenBank protein, or Uniprot ID.
+    If the input was a TaxID, any parent TaxIDS will also be recursively checked across 
+    all regulated lists. 
+    The output is a list of every regulation
+    attributed to the original accession, in the form of 
+    a tuple containing the list info, as well as the 
     taxid specific regulation information.
-
-    TODO: Update to accept Uniprot and genbank accessions, not just taxid.
     """
     output_data : list[tuple[RegulationList, TaxidRegulation]] = []
 
@@ -131,7 +111,7 @@ def get_regulation(accession : str, accession_fmt : data.AccessionFormat) -> lis
         case data.AccessionFormat.UNIPROT:
             accession_to_check = [data.Accession(uniprot = accession)]
 
-    logger.debug("accesions to check: %s", accession_to_check)
+    logger.debug("Accesions to check: %s", accession_to_check)
 
     # Get Accessions of regulated interest:
     filtered_regulated_taxid_annotations = data.REGULATED_TAXID_ANNOTATIONS[
@@ -145,30 +125,11 @@ def get_regulation(accession : str, accession_fmt : data.AccessionFormat) -> lis
         output_data.append((list_data, taxid_regulation_info))
 
     if len(output_data) > 0:
-        logger.debug("Checking %s [%s] for regulation resulted in %i annotations", accession_fmt, accession, len(output_data))
+        logger.debug("Checking %s [%s] for regulation resulted in %i annotations",
+                     accession_fmt, accession, len(output_data))
 
     return output_data
 
-def testing_environment(output_prefix):
-    print(data.REGULATED_TAXID_ANNOTATIONS.columns)
-    extra_cols = data.REGULATED_TAXID_ANNOTATIONS[["tax_id","name"]].drop_duplicates()
-    result = pd.crosstab(data.REGULATED_TAXID_ANNOTATIONS["tax_id"],
-                         data.REGULATED_TAXID_ANNOTATIONS["list_acronym"]).astype(bool).astype(int)
-    
-    result = pd.merge(result, extra_cols, on="tax_id", how="left")
-
-    output_filename = output_prefix + ".csv"
-    # Write result to CSV
-
-    pathogens = pd.read_csv("../IGSC/Pathogens.csv")
-    toxins = pd.read_csv("../IGSC/Toxins.csv")
-
-    result = pd.merge(result, pathogens, on="tax_id", how="outer")
-
-    result.to_csv(output_filename, index=False, encoding="utf-8")
-
-    print(pathogens.head(10))
-    print(toxins.head(10))
 
 def run(arguments: argparse.Namespace):
     """
@@ -198,21 +159,20 @@ def run(arguments: argparse.Namespace):
         logger.info(" *----------* REGULATED TAXIDS *----------* ")
         logger.info("Regulation Annotations "
                     "for supplied taxids (#%i):\n", len(arguments.showtaxids))
-        for taxid in arguments.showtaxids:
-            outcome = get_regulation(int(taxid), data.AccessionFormat.TAXID)
+        for accession in arguments.showtaxids:
+            accession_format = derive_accession_type(accession)
+            if not accession_format:
+                logger.error("Could not determine the accession format for input: %s", accession)
+                continue
+            outcome = get_regulation(accession, accession_format)
+            logger.info("   > Taxid %s: %s",accession, regulation_taxid_information(outcome))
 
-            logger.info("Taxid %s: %s",taxid,regulation_taxid_information(outcome))        
+    if arguments.output_prefix:
+        logger.info("Writing output list summary to \"%s.csv\" ...", arguments.output_prefix)
+        generate_output_summary_csv(arguments.output_prefix)
 
     logger.info("", extra={"no_prefix": True, "box_up" : True})
 
-    # Early exit if no outputs requested.
-    if not arguments.output_prefix:
-        return
-    
-    testing_environment(arguments.output_prefix)
-
-    unique_accession = data.REGULATED_TAXID_ANNOTATIONS.index.unique()
-    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=DESCRIPTION)

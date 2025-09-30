@@ -1,13 +1,20 @@
+"""
+Command-line-interface (cli) functionality for the Regulation module.
+Argument declarations and 
+"""
+import os
 import argparse
+import pandas as pd
 from commec.utils.file_utils import directory_arg
-from commec.regulation.containers import TaxidRegulation, RegulationList
+from commec.regulation.containers import (
+    TaxidRegulation,
+    RegulationList,
+)
 import commec.regulation.containers as data
 
-
-### Exact CLI arguments to be decided.
 def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
-    Add module arguments to an ArgumentParser object.
+    Add Regulation module arguments to an ArgumentParser object.
     """
     parser_obj.add_argument(
         "-d",
@@ -16,13 +23,6 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         type=directory_arg,
         default=None,
         help="Path to directory containing reference databases (e.g. taxonomy, protein, HMM)",
-    )
-    parser_obj.add_argument(
-        "-y",
-        "--config",
-        dest="config_yaml",
-        help="Configuration for screen run in YAML format, including custom database paths",
-        default="",
     )
     parser_obj.add_argument(
         "-v",
@@ -41,12 +41,12 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="Display annotation list information",
     )
     parser_obj.add_argument(
-        "-t",
-        "--taxids",
+        "-a",
+        "--accessions",
         dest="showtaxids",
         nargs="+",
         default=[],
-        help="Display any available list information for the supplied taxids.",
+        help="Display any available list information for the supplied taxids, genbank accessions, or uniprot ids.",
     )
     parser_obj.add_argument(
         "-r",
@@ -89,6 +89,36 @@ def regulation_taxid_information(input_data : list[tuple[RegulationList, TaxidRe
     offset = "   > " if plural else ""
     for reglist, annotations in input_data:
         output += (offset + annotations.category + " "
-                    + annotations.preferred_taxonomy_name
+                    + annotations.name
                     + " regulated by " + reglist.name + f" [{reglist.acronym}]" + "\n")
     return output
+
+def generate_output_summary_csv(output_filepath : str | os.PathLike):
+    """
+    Generates an output csv of the current Regulated Annotations data
+    imported into commec.
+    Doesn't include invalid imported data with no Accession method.
+    """
+
+    output_data = data.REGULATED_TAXID_ANNOTATIONS.copy(deep = True)
+    output_data["name"] = (
+        output_data["preferred_taxonomy_name"]
+        .combine_first(output_data["name"])
+        .combine_first(output_data["other_taxonomy_name"])
+    )
+    output_data.drop(columns = ["preferred_taxonomy_name"], inplace=True)
+    # Step 1: create dummy columns for list_acronym
+    dummies = pd.get_dummies(output_data["list_acronym"], dtype = int)
+
+    # Step 2: aggregate by index (since there may be multiple rows per index)
+    indicators = dummies.groupby(output_data.index, sort=False).max()
+
+    # Step 3: merge back with the *deduplicated* original dataframe
+    # (dropping 'list_acronym' because it's now encoded)
+    base = output_data.drop(columns="list_acronym").groupby(output_data.index, sort=False).first()
+    result = base.join(indicators, how="outer")
+
+    # Export
+    result.to_csv(output_filepath)
+
+

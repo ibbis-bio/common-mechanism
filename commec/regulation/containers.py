@@ -18,6 +18,7 @@ Also defines the storage data for
     * and child to parent taxid mapping.
 """
 import logging
+import re
 from dataclasses import dataclass, field, fields
 from typing import Optional
 from enum import StrEnum
@@ -29,12 +30,36 @@ class AccessionFormat(StrEnum):
     """
     Supported hashable accesion formats.
     """
-    TAXID = "Taxonomy ID"
-    GENBANK = "Genbank Protein Accession"
-    UNIPROT = "Uniprot ID"
+    TAXID = "TaxonomyID"
+    GENBANK = "GenbankProtein"
+    UNIPROT = "UniprotID"
 
     def __repr__(self):
         return f"<Fmt:{self}>"
+    
+def derive_accession_type(identifier : str) -> AccessionFormat | None:
+    """
+    Utilises regex to determine whether the input
+    string is a TaxID, Uniprot, or Genbank accesion.
+    Returns None if it cannot be determined.
+    """
+    patterns = {
+        AccessionFormat.UNIPROT: re.compile(
+            r"^(?:[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9](?:[A-Z][A-Z0-9]{2}[0-9]){1,2})$"
+        ),
+        AccessionFormat.TAXID: re.compile(
+            r"^[0-9]+$"
+        ),
+        AccessionFormat.GENBANK: re.compile(
+            r"^(?:[A-Z][0-9]{5}|[A-Z]{2}[0-9]{6,8}|[A-Z]{3}[0-9]{5,7})(?:\.\d+)?$"
+        ),
+    }
+
+    for fmt, pattern in patterns.items():
+        if pattern.fullmatch(identifier):
+            return fmt
+
+    return None
 
 @dataclass(frozen=True)
 class Accession:
@@ -48,19 +73,30 @@ class Accession:
     code: str
     type: AccessionFormat   # one of: "taxid", "genbank", "uniprot"
 
-    def __init__(self, taxid: Optional[int]=None,
+    def __init__(self, accession: Optional[str]=None,
+                       taxid: Optional[int]=None,
                        uniprot: Optional[str]=None,
-                       genbank: Optional[str]=None):
-        
+                       genbank: Optional[str]=None,
+                       row : pd.Series = None):
+        # Best guess if unknown input.
+        if accession:
+            acc_fmt = derive_accession_type(accession)
+            if acc_fmt:
+                object.__setattr__(self, "code", accession)
+                object.__setattr__(self, "type", acc_fmt)
+                return
+
         # ensure only one is set
         values = [(taxid, AccessionFormat.TAXID),
                   (uniprot, AccessionFormat.UNIPROT),
                   (genbank, AccessionFormat.GENBANK)]
         non_empty = [(v, t) for v, t in values if not pd.isna(v)]
-        if len(non_empty) != 1:
-            #raise ValueError(f"Accession must have exactly one non-empty value, got {non_empty} from {values}")
+        if len(non_empty) == 0:
+            error_id = row.to_string() if not row is None else "[Unknown row info]"
+            logger.error("Accession [\n%s\n] must have at least one non-empty"
+                         " value for tax_id, genbank, or uniprot.\n"
+                         "It has been assigned to TaxID 0.", error_id)
             non_empty = [("0", AccessionFormat.TAXID)]
-
 
         object.__setattr__(self, "code", str(non_empty[0][0]))
         object.__setattr__(self, "type", non_empty[0][1])
@@ -69,12 +105,11 @@ class Accession:
         """Return (code, type)."""
         return self.code, self.type
 
-    #def __hash__(self):
-    #    # frozen dataclasses already hash on all fields, but explicit is nice
-    #    return hash((self.code, self.type))
+    def __str__(self):
+        return f"{self.code}"
 
     def __repr__(self):
-        return f"<Accession {self.type}:{self.code}>"
+        return f"{self.type}:{self.code}"
 
 @dataclass
 class Region:
@@ -175,7 +210,7 @@ class TaxidRegulation:
 
         return cls(**kwargs)
 
-class RegulationType(StrEnum):
+class CategoryType(StrEnum):
     """
     At what level a regulation is for i.e. "regulated at the species level."
     ??? These delineations require further thought before being practical.
@@ -183,11 +218,18 @@ class RegulationType(StrEnum):
     we are dealing with, which may derive some information about what it might have:
     taxid, uniprot, genbank accession. Whether or not it is pathogenic or if it targets
     something like Brazilian mushrooms.
+    This will be used to parse the category column of the input csvs.
     """
-    INVASIVE = "invasive" # Non-pathogenic risk factors
-    ORGANISM = "organism" # All species of this organism are regulated.
-    SPECIES = "species" # This specific species is regulated.
-    PEPTIDE = "peptide" # This toxin/protein/peptide is regulated, regardless of organism.
+    BACTERIA = "Bacteria"
+    VIRUSES = "Viruses"
+    EUKARYOTA = "Eukaryota"
+    PROTEIN = "Proteins"
+    TOXIN = "Toxins"
+    OTHER_EUKARYOTA = "Other Eukaryota"
+    OTHER_EUKAYROTA_ANIMAL = "Other Eukaryota (Animal)"
+    NON_PROTEIN_TOXIN = "Non-Protein Toxin"
+    TOXIN_SYNTHESIS_ENZYME = "Toxin Synthesis Enzyme"
+    PRIONS_AND_TSE = "Prions & TSEs"
 
 @dataclass
 class RegulationOutput:
@@ -239,15 +281,31 @@ def clear(target : str | None = None) -> bool:
     returns whether operation was successful.
     """
     global REGULATION_LISTS
+    global REGULATED_TAXID_ANNOTATIONS
 
     if target and target in REGULATION_LISTS:
         # implement targetted removal logic.
         del REGULATION_LISTS[target]
+        REGULATED_TAXID_ANNOTATIONS = REGULATED_TAXID_ANNOTATIONS[REGULATED_TAXID_ANNOTATIONS["list_acronym"] != target]
         # Consider updating the REG_TAXID_LISTS too.
         return True
 
     if not target:
-        REGULATION_LISTS = None
+        REGULATION_LISTS = {}
+        REGULATED_TAXID_ANNOTATIONS = pd.DataFrame({
+    "category": pd.Series(dtype="str"),
+    "name": pd.Series(dtype="str"),
+    "notes": pd.Series(dtype="str"),
+    "derived_from": pd.Series(dtype="str"),
+    "preferred_taxonomy_name": pd.Series(dtype="str"),
+    "other_taxonomy_name": pd.Series(dtype="str"),
+    "tax_id": pd.Series(dtype="Int64"),
+    "genbank_protein": pd.Series(dtype="str"),
+    "uniprot": pd.Series(dtype="str"),
+    "list_acronym": pd.Series(dtype="str"),
+    "target": pd.Series(dtype="str"),
+    "hazard_group": pd.Series(dtype="str")
+    })
         return True
 
     return False
@@ -259,7 +317,7 @@ def add_regulated_taxid_data(input_data : pd.DataFrame):
     global REGULATED_TAXID_ANNOTATIONS
     expected_cols = set(REGULATED_TAXID_ANNOTATIONS.columns)
     essential_cols = {"list_acronym", "tax_id"}
-    input_cols = set(input_data.columns)
+
     # Check for missing columns
     if not essential_cols.issubset(input_data.columns):
     #if not (essential_cols in input_cols):
