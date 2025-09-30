@@ -226,10 +226,9 @@ def post_process_regulation_data():
     # Report errors for bad entries (These are labelled as Taxid = 0)
     bad_entries = rc.REGULATED_TAXID_ANNOTATIONS[
         rc.REGULATED_TAXID_ANNOTATIONS["accession"] == rc.Accession(taxid=0)]
-    bad_entries["name"] = [
-        (name[:57].strip() + "...") if len(name) >= 57 else name
-        for name in bad_entries["name"]
-    ]
+    bad_entries.loc[bad_entries["name"].str.len() >= 57, "name"] = (
+        bad_entries["name"].str[:57].str.strip() + "..."
+    )
     if not bad_entries.empty:
         logger.error("%i imported regulated annotations"
                        " were bad entries with no TaxID, Genbank, or Uniprot Accession:\n%s"

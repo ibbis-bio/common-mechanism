@@ -130,6 +130,11 @@ def get_regulation(accession : str, accession_fmt : data.AccessionFormat) -> lis
 
     return output_data
 
+def get_regulation_list():
+    """
+    Simple retrieval for the 'list of lists' information.
+    """
+    return data.REGULATION_LISTS.values()
 
 def run(arguments: argparse.Namespace):
     """
