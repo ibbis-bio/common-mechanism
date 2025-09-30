@@ -93,7 +93,7 @@ class Accession:
         non_empty = [(v, t) for v, t in values if not pd.isna(v)]
         if len(non_empty) == 0:
             error_id = row.to_string() if not row is None else "[Unknown row info]"
-            logger.error("Accession [\n%s\n] must have at least one non-empty"
+            logger.debug("Accession [\n%s\n] must have at least one non-empty"
                          " value for tax_id, genbank, or uniprot.\n"
                          "It has been assigned to TaxID 0.", error_id)
             non_empty = [("0", AccessionFormat.TAXID)]
