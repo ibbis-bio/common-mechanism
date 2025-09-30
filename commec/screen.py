@@ -83,7 +83,8 @@ from commec.config.json_io import encode_screen_data_to_json
 from commec.config.constants import MINIMUM_QUERY_LENGTH
 from commec.regulation.regulation import (
     load_regulation_data,
-    regulation_list_information
+    regulation_list_information,
+    get_regulation_list,
 )
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
@@ -322,6 +323,7 @@ class Screen:
         region_context = self.params.config["databases"]["regulated_lists"]["regions"]
         load_regulation_data(regulation_path, region_context)
         logger.info(regulation_list_information())
+        self.screen_data.commec_info.regulation_list_info = get_regulation_list()
 
         # Initialize the queries
         try:

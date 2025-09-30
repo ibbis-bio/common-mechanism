@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 # Seperate versioning for the output JSON.
-JSON_COMMEC_FORMAT_VERSION = "0.3"
+JSON_COMMEC_FORMAT_VERSION = "0.4"
 
 
 class ScreenStatus(StrEnum):
@@ -748,12 +748,14 @@ class ScreenRunInfo:
     search_tool_info: SearchToolInfo = field(default_factory=SearchToolInfo)
     regulation_list_info : list[RegulationList] = field(default_factory=list)
 
+
 @dataclass
 class ScreenQueryInfo:
     """ Container for summarising the query input data """
     file: str = ""
     number_of_queries: int = 0
     total_query_length: int = 0
+
 
 @dataclass
 class ScreenResult:
