@@ -31,6 +31,12 @@ def load_region_list_data(input_filepath : str | os.PathLike):
     Input filepath contains a json list containing mapping of 
     two letter codes and names, to a list of affected regions.
     """
+
+    if not os.path.isfile(input_filepath):
+        logger.warning("No additional region definitions found at expected location: %s",
+        input_filepath)
+        return
+
     region_array = []
     global REGION_DATA_LUT
 
@@ -47,7 +53,6 @@ def load_region_list_data(input_filepath : str | os.PathLike):
                 "name" : name,
                 "regions" : region_codes
             }
-
 
 def get_regions_set(region_info : str | list[str] | list[Region]) -> set[str]:
     """
@@ -87,7 +92,7 @@ def _return_country_set_from_unknown(region_info : str | Region = "") -> set[str
 
     search_string = region_info
 
-    if region_info == "all":
+    if region_info == "all" or region_info is None:
         return set(["all"])
 
     # Handle Region object

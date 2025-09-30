@@ -24,6 +24,9 @@ regulated-lists/  		# This is the level at which pass to yaml / cli
 │   └── ...
 └── ...
 ```
+
+Import goes by the following workflow:
+
 """
 import os
 import logging
@@ -197,3 +200,58 @@ def _import_child_to_regulated_taxid_relationship(input_path : str | os.PathLike
     """
     child_lut = pd.read_csv(input_path)
     rc.add_child_lut_data(child_lut)
+
+
+def post_process_regulation_data():
+    """
+    These dataframes are always access via taxid, genbank, or uniprot,
+    so it is much faster to index them based off this for querying.
+
+    We also perform some data cleanup here, as well as take the opportunity to
+    report to the user any tidying issues - such as duplicates with differing
+    metadata.
+    """
+    rc.CHILD_TAXID_MAP.drop_duplicates()
+
+    # Reindex the data based on the accession type column.
+    rc.REGULATED_TAXID_ANNOTATIONS["accession"] = rc.REGULATED_TAXID_ANNOTATIONS.apply(
+        lambda row: rc.Accession(
+            taxid=row["tax_id"],
+            genbank=row["genbank_protein"],
+            uniprot=row["uniprot"], row = row),
+        axis=1
+    )
+
+    # Duplicate annotatons may occur, but we only truely care about differences in the list acronym.
+    # i.e. where a taxid is regulated from multiple sources.
+    # We will still warn the user on differently formated duplicates.
+    
+    # Drop duplicates before indexing, using strict and non-strict strategy.
+    bad_duplicates = rc.REGULATED_TAXID_ANNOTATIONS.drop_duplicates()
+    rc.REGULATED_TAXID_ANNOTATIONS.drop_duplicates(
+        subset=["list_acronym", "accession"], inplace=True)
+
+    # Index and drop bad entries.
+    rc.REGULATED_TAXID_ANNOTATIONS = rc.REGULATED_TAXID_ANNOTATIONS[
+        rc.REGULATED_TAXID_ANNOTATIONS["accession"] != rc.Accession(taxid=0)]
+    rc.REGULATED_TAXID_ANNOTATIONS.set_index("accession", inplace=True, drop = True)
+    if rc.Accession(taxid=0) in rc.REGULATED_TAXID_ANNOTATIONS.index:
+        rc.REGULATED_TAXID_ANNOTATIONS.drop(rc.Accession(taxid=0), inplace=True)
+    
+    # Remove bad entries, index for comparison.
+    bad_duplicates = bad_duplicates[bad_duplicates["accession"] != rc.Accession(taxid=0)]
+    bad_duplicates.set_index("accession", inplace=True, drop = False)
+
+    # Merge comparison
+    diff = pd.merge(bad_duplicates,
+                    rc.REGULATED_TAXID_ANNOTATIONS,
+                    how="left", indicator=True).query(
+                        '_merge == "left_only"').drop(
+                            columns="_merge")
+    if not diff.empty:
+        logger.warning("The following imported regulated annotations"
+                       " were duplicates with differing metadata:\n%s",
+                       diff[["accession", "name","category","list_acronym"]].to_string(index = False))
+
+    logger.debug("Loaded the following regulation list dataset: Top 20:\n%s",
+                 rc.REGULATED_TAXID_ANNOTATIONS.head(20).to_string())
