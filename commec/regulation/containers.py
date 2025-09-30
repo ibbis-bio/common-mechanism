@@ -43,6 +43,9 @@ def derive_accession_type(identifier : str) -> AccessionFormat | None:
     string is a TaxID, Uniprot, or Genbank accesion.
     Returns None if it cannot be determined.
     """
+    if isinstance(identifier, int):
+        return AccessionFormat.TAXID
+
     patterns = {
         AccessionFormat.UNIPROT: re.compile(
             r"^(?:[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9](?:[A-Z][A-Z0-9]{2}[0-9]){1,2})$"

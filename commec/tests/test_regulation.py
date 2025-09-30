@@ -115,3 +115,21 @@ def test_multiple_entrys():
 
     output = get_regulation(11320, crc.AccessionFormat.TAXID)
     assert len(output) == 2, "Incorrect number of returned Regulations."
+
+@pytest.mark.parametrize("accessions,expected_outcome", [
+    pytest.param(*case) for case in [
+        (["111","4","11084", 444], crc.AccessionFormat.TAXID),
+        (["HG992755.1","CAG2243592.1", "CP001814.1", "DI192294.1"], crc.AccessionFormat.GENBANK),
+        (["Q5VW38", "Q7L1I2", "V5XZS6", "B1P1E1"], crc.AccessionFormat.UNIPROT),
+    ]
+])
+def test_accession_identification_format(accessions, expected_outcome):
+    """
+    Tests some TaxIDs, Genbank records, and Uniprot accessions to ensure
+    that they are correctly identified as such.
+    Troublesome records should be added to the above list for continuous testing.
+    """
+    setup_console_logging(logging.DEBUG)
+    for accession in accessions:
+        outcome = crc.derive_accession_type(accession)
+        assert expected_outcome == outcome, f"{accession} failed to be identified. Expected {expected_outcome}, got {outcome}"
