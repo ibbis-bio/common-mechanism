@@ -234,6 +234,14 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         action="store_true",
         help="Re-use any pre-existing output for this Screen run (cannot be used with --force)",
     )
+    screen_logic_group.add_argument(
+        "-r",
+        "--regions",
+        dest="regions",
+        nargs="+",
+        default=[],
+        help="A list of countries or regions to add context to list compliance i.e. NZ US CH",
+    )
     return parser
 
 class Screen:
@@ -319,7 +327,7 @@ class Screen:
 
         # Initialize the regulation list data
         regulation_path = self.params.config["databases"]["regulated_lists"]["path"]
-        region_context = self.params.config["databases"]["regulated_lists"]["regions"]
+        region_context = args.regions or self.params.config["databases"]["regulated_lists"]["regions"]
         load_regulation_data(regulation_path, region_context)
         logger.info(regulation_list_information())
         reg_lists = get_regulation_list()
