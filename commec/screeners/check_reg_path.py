@@ -113,7 +113,7 @@ def parse_taxonomy_hits(
         query_obj = queries.get(query_acc)
         if query_obj:
             logger.debug("Confirming hits for query %s.", query_acc)
-            query_obj.confirm_has_hits()
+            query_obj.mark_as_hit()
         else:
             logger.error("Could not mark query %s for confirmation of hit, "
                             "query not found in input queries.", query_acc)

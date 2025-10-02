@@ -287,7 +287,7 @@ def _update_low_concern_data_for_query(query : Query,
         for region in hit.ranges:
 
             if not low_concern_protein_for_query.empty:
-                query.confirm_has_hits()
+                query.mark_as_hit()
                 low_concern_proteins = _filter_low_concern_proteins(query, hit, region,
                                             low_concern_protein_for_query,
                                             low_concern_descriptions)
@@ -296,7 +296,7 @@ def _update_low_concern_data_for_query(query : Query,
                     new_low_concern_protein_hits.extend(low_concern_proteins)
             
             if not low_concern_rna_for_query.empty:
-                query.confirm_has_hits()
+                query.mark_as_hit()
                 low_concern_rna = _filter_low_concern_rna(query, hit, region,
                                        low_concern_rna_for_query)
                 if low_concern_rna:
@@ -304,7 +304,7 @@ def _update_low_concern_data_for_query(query : Query,
                     new_low_concern_rna_hits.extend(low_concern_rna)
                 
             if not low_concern_dna_for_query.empty:
-                query.confirm_has_hits()
+                query.mark_as_hit()
                 low_concern_dna = _filter_low_concern_dna(query, hit, region,
                                           low_concern_dna_for_query)
                 if low_concern_dna:
