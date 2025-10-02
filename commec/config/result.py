@@ -433,16 +433,6 @@ class QueryResult:
         existing_hit = self.hits.get(new_hit.name)
         hits_is_updated: bool = False
 
-        # Nothing matches in Name, try a matched region.
-        #if not existing_hit:
-        #    for region in new_hit.ranges:
-        #        existing_hit = self.check_hit_range(region)
-        #        if existing_hit:
-        #            logger.debug("Using existing hit from shared region: %s", existing_hit)
-        #            hits_is_updated = True # We want to append info if new hit is differently named.
-        #            break
-
-        # Nothing matches in Name or region... new hit!
         if not existing_hit:
             self.hits[new_hit.name] = new_hit
             return False
