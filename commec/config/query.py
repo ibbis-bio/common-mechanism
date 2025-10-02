@@ -183,7 +183,7 @@ class Query:
             f"which is out-of-bounds for any known NC start-end tuple: {self.non_coding_regions}"
             )
     
-    def confirm_has_hits(self):
+    def mark_as_hit(self):
         """
         Confirm that this query has had a valid hit, and therefore, has some
         sort of homology to something. 
