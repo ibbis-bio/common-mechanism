@@ -2,8 +2,8 @@
   "commec_info": {
     "commec_version": "1.0.1",
     "json_output_version": "0.3",
-    "time_taken": "00:00:06",
-    "date_run": "2025-09-10 13:07:46",
+    "time_taken": "00:00:05",
+    "date_run": "2025-10-03 01:17:02",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -32,7 +32,7 @@
     }
   },
   "query_info": {
-    "file": "/tmp/pytest-of-root/pytest-34/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-root/pytest-54/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -78,6 +78,7 @@
                 "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
+                    "evalue": 0.16,
                     "taxid": 12345,
                     "species": "unclassified",
                     "genus": "unclassified",
@@ -88,6 +89,7 @@
                 ],
                 "non_regulated_taxa": [
                   {
+                    "evalue": 0.17,
                     "taxid": 12346,
                     "species": "unclassified",
                     "genus": "unclassified",
@@ -129,6 +131,7 @@
                 "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
+                    "evalue": 0.14,
                     "taxid": 12345,
                     "species": "unclassified",
                     "genus": "unclassified",
@@ -137,6 +140,7 @@
                     "target_description": "SUBJECT"
                   },
                   {
+                    "evalue": 0.15,
                     "taxid": 12350,
                     "species": "unclassified",
                     "genus": "unclassified",
@@ -179,6 +183,7 @@
                 "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
+                    "evalue": 0.14,
                     "taxid": 12345,
                     "species": "unclassified",
                     "genus": "unclassified",
@@ -187,6 +192,7 @@
                     "target_description": "SUBJECT"
                   },
                   {
+                    "evalue": 0.15,
                     "taxid": 12350,
                     "species": "unclassified",
                     "genus": "unclassified",
@@ -229,6 +235,7 @@
                 "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
+                    "evalue": 0.13,
                     "taxid": 12345,
                     "species": "unclassified",
                     "genus": "unclassified",
@@ -271,6 +278,7 @@
                 "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
+                    "evalue": 0.1,
                     "taxid": 12347,
                     "species": "danger-poop",
                     "genus": "unclassified",
@@ -281,6 +289,7 @@
                 ],
                 "non_regulated_taxa": [
                   {
+                    "evalue": 0.11,
                     "taxid": 12348,
                     "species": "cute-happy-bacter",
                     "genus": "unclassified",
@@ -289,6 +298,7 @@
                     "target_description": "ShouldMixednonReg"
                   },
                   {
+                    "evalue": 0.12,
                     "taxid": 12349,
                     "species": "poopicus",
                     "genus": "unclassified",
@@ -330,6 +340,7 @@
                 "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
+                    "evalue": 0.09,
                     "taxid": 12346,
                     "species": "fine-icus",
                     "genus": "unclassified",
@@ -372,6 +383,7 @@
                 "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
+                    "evalue": 0.07,
                     "taxid": 12345,
                     "species": "regulaticus",
                     "genus": "unclassified",
@@ -414,6 +426,7 @@
                 "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
+                    "evalue": 0.07,
                     "taxid": 12345,
                     "species": "regulaticus",
                     "genus": "unclassified",
@@ -456,6 +469,7 @@
                 "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
+                    "evalue": 0.06,
                     "taxid": 12345,
                     "species": "regulaticus",
                     "genus": "unclassified",
