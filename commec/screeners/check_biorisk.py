@@ -55,8 +55,11 @@ def _guess_domain(search_string : str) -> str:
     logger.debug("Could not guess domain from \"%s\"", search_string)
     return "not assigned"
 
-def read_biorisk_annotations(hmm_folder_csv):
-    # Read in annotations.
+def read_biorisk_annotations(hmm_folder_csv) -> pd.DataFrame:
+    """
+    Import the biorisk annotations csv file, 
+    returns the file imported as a pandas DataFrame.
+    """
     lookup : pd.DataFrame = pd.read_csv(hmm_folder_csv)
     lookup.fillna(False, inplace=True)
     return lookup

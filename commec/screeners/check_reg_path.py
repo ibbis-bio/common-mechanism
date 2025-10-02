@@ -21,7 +21,7 @@ from commec.tools.blast_tools import (
 )
 from commec.config.result import (
     ScreenResult,
-    TaxonomyContainer,
+    TaxonomyAnnotation,
     HitResult,
     ScreenStep,
     ScreenStatus,
@@ -168,16 +168,17 @@ def parse_taxonomy_hits(
             regulated_taxa = set()
             non_regulated_taxa = set()
 
-            def unique_taxa_set(df) -> set[TaxonomyContainer]:
+            def unique_taxa_set(df) -> set[TaxonomyAnnotation]:
                 return {
-                    TaxonomyContainer(*row)
+                    TaxonomyAnnotation(*row)
                     for row in df[[
+                        "evalue",
                         "subject tax ids",
                         "species",
                         "genus",
                         "superkingdom",
                         "subject acc.",
-                        "subject title"
+                        "subject title",
                     ]].itertuples(index=False, name=None)
                 }
 
