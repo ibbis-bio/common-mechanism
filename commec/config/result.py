@@ -210,11 +210,12 @@ class MatchRange:
         return f"{self.query_start}-{self.query_end}"
 
 @dataclass(frozen=True)
-class TaxonomyContainer:
+class TaxonomyAnnotation:
     """
     Contains basic taxonomy information for the annotations
     dict of a HitResult when determined by a taxonomy step.
     """
+    evalue : float = 0.0
     taxid : str = ""
     species: str = ""
     genus : str = ""
@@ -674,7 +675,7 @@ class QueryResult:
             annotations = hit.annotations.get("regulated_taxonomy")
             if annotations:
                 for entry in hit.annotations["regulated_taxonomy"]:
-                    entry["regulated_taxa"].sort(key=lambda x: x["taxid"])
+                    entry["regulated_taxa"].sort(key=lambda x: x["evalue"])
 
         self.hits = dict(sorted_items_desc)
         self._update_step_flags(query_data)

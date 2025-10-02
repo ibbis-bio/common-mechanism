@@ -270,14 +270,14 @@ def _update_low_concern_data_for_query(query : Query,
     # Check every region, of every hit that is a FLAG or WARN, against the Benign screen outcomes.
     for hit in query.result.hits.values():
         # Ignore regions that don't require clearing...
-        if ((hit.recommendation.status not in {
+        if (hit.recommendation.status not in {
             ScreenStatus.FLAG,
             ScreenStatus.WARN
-            })
-            or
-            (hit.recommendation.from_step == ScreenStep.BIORISK)
-            ):
-            logger.debug("\t\t\tIgnoring %s [%s], cannot clear step 1.", hit.name, hit.recommendation.status)
+            }):
+            logger.debug("\t\t\tIgnoring %s [%s], nothing to clear.", hit.name, hit.recommendation.status)
+            continue
+        if (hit.recommendation.from_step == ScreenStep.BIORISK):
+            logger.debug("\t\t\tIgnoring %s [%s], cannot clear from Biorisk step.", hit.name, hit.recommendation.status)
             continue
 
         cleared_regions = 0
