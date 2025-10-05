@@ -133,9 +133,12 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         if mixed_nt_taxonomy and nucleotide_status == ScreenStatus.PASS:
             nucleotide_status = "Mixed"
 
+        # Overrides for no hits logic:
         overall_flag = query.status.screen_status
         if query.status.rationale == Rationale.NO_HITS:
             overall_flag = "No Hits"
+        if query.status.rationale == Rationale.NO_HITS_SKIP_NOTE:
+            overall_flag = "No Hits(Skips)"
 
         results.append({
         "name": name,
