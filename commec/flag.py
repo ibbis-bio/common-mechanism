@@ -135,10 +135,14 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         # into commec flag outputs when rationale is not present - for backwards tidyness.
         output_rationale = query.status.rationale if query.status.rationale != Rationale.NULL else ""
 
+        overall_flag = query.status.screen_status
+        if query.status.rationale == Rationale.NO_HITS:
+            overall_flag = "No Hits"
+
         results.append({
         "name": name,
         "filepath": file_path,
-        "flag": query.status.screen_status,
+        "flag": overall_flag,
         "biorisk": query.status.biorisk,
         "protein": protein_status,
         "nucleotide": nucleotide_status,
