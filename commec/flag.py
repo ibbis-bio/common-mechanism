@@ -134,7 +134,7 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
             nucleotide_status = "Mixed"
 
         overall_flag = query.status.screen_status
-        if query.status.rationale == Rationale.NOTHING:
+        if query.status.rationale == Rationale.NO_HITS:
             overall_flag = "No Hits"
 
         results.append({

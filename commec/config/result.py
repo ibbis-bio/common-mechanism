@@ -239,8 +239,8 @@ class Rationale(StrEnum):
     Container for rationale texts in Commec outputs in one place.
 
     When reporting rationale, the primary (see ScreenStatus.importance attribute)
-    status is always reported first. After this, secondary less important statuses are
-    reported (usually warnings) in the rationale.
+    status is always reported first. After this, secondary less important statuses
+    (usually warnings) are added to the rationale.
     """
     NULL = "-"
     ERROR = "There was an error during "
@@ -264,10 +264,10 @@ class Rationale(StrEnum):
     TAX_FLAG = " regulated organisms"
     TAX_WARN = " equally-good matches to regulated and non-regulated organisms"
 
-
     # Outcomes:
-    NOTHING = ("No matches found during any stage of analysis. "
+    NO_HITS = ("No matches found during any stage of analysis. "
                 "Sequence risk is unknown, possibly generated in silico. ")
+    NO_HITS_SKIP_NOTE = "Matches may be found if re-run without skipping steps."
     TOO_SHORT = "Query is too short, and was skipped."
 
     FLAG = " flags"
@@ -337,7 +337,6 @@ class QueryScreenStatus:
             self.nucleotide_taxonomy,
             self.low_concern
         )
-
         # If everything is happy, but we haven't hit anything, time to be suspicious...
         if (self.screen_status == ScreenStatus.PASS and query_data.no_hits_warning):
             self.screen_status = ScreenStatus.WARN
@@ -515,9 +514,9 @@ class QueryResult:
         allows for more depth in rationale texts.
         """
 
-        logger.debug("Biorisk set: %s", biorisks)
-        logger.debug("TAX AA set: %s", tax_aa)
-        logger.debug("TAX NT set: %s", tax_nt)
+        logger.debug("Biorisk set (%d items): %s", len(biorisks), biorisks)
+        logger.debug("TAX AA set (%d items): %s", len(tax_aa), tax_aa)
+        logger.debug("TAX NT set (%d items): %s",  len(tax_nt), tax_nt)
 
         state = self.status # Shorthand, accessor to be updated
         tax_all = tax_aa | tax_nt # Check both Taxonomy steps at once
@@ -538,39 +537,46 @@ class QueryResult:
             state.rationale = Rationale.TOO_SHORT
             return
 
-        # Unique circumstance, where there are no hits at all.
+        # Handle no hits warnings
+        # --------------------------------------------------------------------
         if (state.screen_status == ScreenStatus.WARN and
             state.biorisk == ScreenStatus.PASS and
-            state.protein_taxonomy == ScreenStatus.PASS and
-            state.nucleotide_taxonomy == ScreenStatus.PASS and
-            state.low_concern == ScreenStatus.PASS):
-            state.rationale = Rationale.NOTHING
+            state.protein_taxonomy in [ScreenStatus.PASS, ScreenStatus.SKIP]  and
+            state.nucleotide_taxonomy in [ScreenStatus.PASS, ScreenStatus.SKIP] and
+            state.low_concern in [ScreenStatus.PASS, ScreenStatus.SKIP]):
+            # Add an extra caveat if the taxonomy search was skipped
+            if ScreenStatus.SKIP in [state.protein_taxonomy, state.nucleotide_taxonomy]:
+                state.rationale = Rationale.NO_HITS + Rationale.NO_HITS_SKIP_NOTE
+            else:
+                state.rationale = Rationale.NO_HITS
             return
 
         # Handle simple passes
+        # --------------------------------------------------------------------
         if state.screen_status == ScreenStatus.PASS:
             state.rationale = Rationale.START_PASS + "."
             return
 
+        # Handle ONLY cleared outputs
+        # --------------------------------------------------------------------
         # Calculate any cleared outputs:
-        tokens = ""
-        if ScreenStatus.CLEARED_FLAG in tax_all:
-            tokens = Rationale.FLAG
-        if ScreenStatus.CLEARED_WARN in tax_all:
-            tokens = Rationale.WARN
+        rationales_cleared = ""
         if (ScreenStatus.CLEARED_FLAG in tax_all and
             ScreenStatus.CLEARED_WARN in tax_all):
-            tokens = Rationale.FLAGWARN
-        cleared_sentence = tokens + Rationale.CLEARED
+            rationales_cleared = Rationale.FLAGWARN
+        elif ScreenStatus.CLEARED_FLAG in tax_all:
+            rationales_cleared = Rationale.FLAG
+        elif ScreenStatus.CLEARED_WARN in tax_all:
+            rationales_cleared = Rationale.WARN
+        cleared_sentence = rationales_cleared + Rationale.CLEARED
 
-        # Handle ONLY cleared outputs
         if state.screen_status in [ScreenStatus.CLEARED_FLAG,
                                    ScreenStatus.CLEARED_WARN]:
             state.rationale = Rationale.START_PASS + cleared_sentence
             return
         
         # Handle complex outputs:
-
+        # --------------------------------------------------------------------
         # Start creating rationale message:
         output = Rationale.START_PRIMARY
     
