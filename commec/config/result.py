@@ -545,7 +545,8 @@ class QueryResult:
             state.nucleotide_taxonomy in [ScreenStatus.PASS, ScreenStatus.SKIP] and
             state.low_concern in [ScreenStatus.PASS, ScreenStatus.SKIP]):
             # Add an extra caveat if the taxonomy search was skipped
-            if ScreenStatus.SKIP in [state.protein_taxonomy, state.nucleotide_taxonomy]:
+            if (ScreenStatus.SKIP in [state.protein_taxonomy, state.nucleotide_taxonomy] or
+                ScreenStatus.NULL in [state.protein_taxonomy, state.nucleotide_taxonomy]):
                 state.rationale = Rationale.NO_HITS + Rationale.NO_HITS_SKIP_NOTE
             else:
                 state.rationale = Rationale.NO_HITS

@@ -137,8 +137,8 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         overall_flag = query.status.screen_status
         if query.status.rationale == Rationale.NO_HITS:
             overall_flag = "No Hits"
-        if query.status.rationale == Rationale.NO_HITS_SKIP_NOTE:
-            overall_flag = "No Hits(Skips)"
+        if query.status.rationale == (Rationale.NO_HITS + Rationale.NO_HITS_SKIP_NOTE):
+            overall_flag = "No Hits"
 
         results.append({
         "name": name,
@@ -156,8 +156,6 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         "low_concern_dna": low_concern_synbio,
         "rationale" : query.status.rationale
         })
-
-
 
     return results
 
