@@ -189,22 +189,6 @@ def update_layout(fig, query_to_draw : QueryResult, stacks):
         'bargap': 0.01,
     })
 
-def generate_accession_link(accession : str, entry_type : str = "protein") -> str:
-    """
-    Given an accession, check nuccore, or the protein database for a 
-    link to that accessions GenBank entry
-    """
-    database_str = None
-    if entry_type == "protein":
-        database_str = "protein"
-    if entry_type == "nucleotide":
-        database_str = "nuccore"
-    
-    if database_str:
-        # Potentially ping this? To check its valid?
-        return "https://www.ncbi.nlm.nih.gov/" + database_str + "/" + accession
-
-    return "" # Invalid.
 
 def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
     """
