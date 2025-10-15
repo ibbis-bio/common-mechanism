@@ -168,7 +168,7 @@ class MatchRange:
     Container for coordinate information of where hits match to a query.
     """
 
-    e_value: float = 0.0
+    e_value: float = float('nan')
     # percent identity?
     match_start: int = 0
     match_end: int = 0
