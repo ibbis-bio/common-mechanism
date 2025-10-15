@@ -169,6 +169,10 @@ def parse_taxonomy_hits(
             non_regulated_taxa = set()
 
             def unique_taxa_set(df) -> set[TaxonomyAnnotation]:
+                """
+                Convenience function to extract taxonomy annotations into a 
+                common structure, from BLAST results with the appropriate column headings.
+                """
                 return {
                     TaxonomyAnnotation(*row)
                     for row in df[[
