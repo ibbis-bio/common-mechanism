@@ -19,14 +19,14 @@ def test_flag(tmp_path):
 
     expected_status = textwrap.dedent(
         f"""\
-        name,filepath,flag,biorisk,protein,nucleotide,low_concern,virus_flag,bacteria_flag,eukaryote_flag,low_concern_protein,low_concern_rna,low_concern_dna
-        FLAG_TEST_01,{SCREEN_DIR}/flag_tests.json,Flag,Flag,Pass,Pass,Flag,False,False,False,False,False,False
-        FLAG_TEST_02,{SCREEN_DIR}/flag_tests.json,Flag,Pass,Flag,Pass,Flag,True,False,False,False,False,False
-        FLAG_TEST_03,{SCREEN_DIR}/flag_tests.json,Flag,Pass,Flag,Pass,Flag,False,True,False,False,False,False
-        FLAG_TEST_04,{SCREEN_DIR}/flag_tests.json,Flag,Pass,Flag,Pass,Flag,False,False,True,False,False,False
-        FLAG_TEST_05,{SCREEN_DIR}/flag_tests.json,Flag,Pass,Pass,Flag,Flag,True,True,True,False,False,False
-        FLAG_TEST_06,{SCREEN_DIR}/flag_tests.json,Pass,Pass,Mixed,Pass,Pass,True,False,False,False,False,False
-        FCTEST1,{SCREEN_DIR}/functional.json,Flag,Flag,Flag,Flag,Flag,True,False,False,True,True,True
+        name,filepath,flag,biorisk,protein,nucleotide,low_concern,virus_flag,bacteria_flag,eukaryote_flag,low_concern_protein,low_concern_rna,low_concern_dna,rationale
+        FLAG_TEST_01,{SCREEN_DIR}/flag_tests.json,Flag,Flag,Pass,Pass,Flag,False,False,False,False,False,False,-
+        FLAG_TEST_02,{SCREEN_DIR}/flag_tests.json,Flag,Pass,Flag,Pass,Flag,True,False,False,False,False,False,-
+        FLAG_TEST_03,{SCREEN_DIR}/flag_tests.json,Flag,Pass,Flag,Pass,Flag,False,True,False,False,False,False,-
+        FLAG_TEST_04,{SCREEN_DIR}/flag_tests.json,Flag,Pass,Flag,Pass,Flag,False,False,True,False,False,False,-
+        FLAG_TEST_05,{SCREEN_DIR}/flag_tests.json,Flag,Pass,Pass,Flag,Flag,True,True,True,False,False,False,-
+        FLAG_TEST_06,{SCREEN_DIR}/flag_tests.json,Pass,Pass,Mixed,Pass,Pass,True,False,False,False,False,False,-
+        FCTEST1,{SCREEN_DIR}/functional.json,Flag,Flag,Flag,Flag,Flag,True,False,False,True,True,True,"Matches sequence with pathogenic or toxin function, and protein and nucleotide sequence with regulated organisms; as well as virulence factor; as well as flags cleared as common or non-hazardous."
         """
     )
     actual_status = status_output.read_text()
