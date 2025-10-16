@@ -60,7 +60,7 @@ class ScreenIO:
         # Check whether a .screen output file already exists.
         if os.path.exists(self.output_screen_file) and not (
             self.config["force"] or self.config["resume"]):
-            logger.warning(
+            logger.error(
                 f"""Screen output {self.output_screen_file} already exists.
                 Either use a different output location, or use --force or --resume to override.
                 Aborting Screen."""
