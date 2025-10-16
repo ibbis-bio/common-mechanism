@@ -144,7 +144,8 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         "eukaryote_flag": eukaryote_flag,
         "low_concern_protein": low_concern_protein,
         "low_concern_rna": low_concern_rna,
-        "low_concern_dna": low_concern_synbio
+        "low_concern_dna": low_concern_synbio,
+        "rationale": query.status.rationale,
         })
 
     return results
