@@ -85,6 +85,25 @@ def parse_taxonomy_hits(
         step : Which taxonomic step this is (Nucleotide, Protein, etc)
         n_threads : maximum number of available threads for allocation.
     """
+
+    def unique_annotation_set(df) -> set[TaxonomyAnnotation]:
+        """
+        Convenience function to extract taxonomy annotations into a 
+        common structure, from BLAST results with the appropriate column headings.
+        """
+        return {
+            TaxonomyAnnotation(*row)
+            for row in df[[
+                "evalue",
+                "subject tax ids",
+                "species",
+                "genus",
+                "superkingdom",
+                "subject acc.",
+                "subject title",
+            ]].itertuples(index=False, name=None)
+        }
+    
     logger.debug("Acquiring Taxonomic Data for JSON output:")
 
     if not _check_inputs(search_handler, low_concern_taxid_path,
@@ -170,24 +189,6 @@ def parse_taxonomy_hits(
             regulated_annotations = set()
             non_regulated_annotations = set()
 
-            def unique_annotation_set(df) -> set[TaxonomyAnnotation]:
-                """
-                Convenience function to extract taxonomy annotations into a 
-                common structure, from BLAST results with the appropriate column headings.
-                """
-                return {
-                    TaxonomyAnnotation(*row)
-                    for row in df[[
-                        "evalue",
-                        "subject tax ids",
-                        "species",
-                        "genus",
-                        "superkingdom",
-                        "subject acc.",
-                        "subject title",
-                    ]].itertuples(index=False, name=None)
-                }
-
             for _, region in regulated_hit_data.iterrows():
                 # Record region information:
                 match_range = MatchRange(
@@ -216,34 +217,35 @@ def parse_taxonomy_hits(
                     logger.debug("\t\t\tAdded Eukaryote.")
                 domains.append(domain)
 
-                # Filter shared_site based on 'q. start' or 'q. end' (Previously only shared starts were used)
+                # Filter shared_site based on 'q. start' or 'q. end'
+                # (Previously only shared starts were used)
                 shared_site = unique_query_data[
                     (unique_query_data['q. start'] == region['q. start']) |
                     (unique_query_data['q. end'] == region['q. end'])
                     ]
 
                 # Filter for regulated and non-regulated entries
-                regulated = shared_site[shared_site["regulated"] == True]
-                non_regulated = (
+                regulated_for_region = shared_site[shared_site["regulated"] == True]
+                non_regulated_for_region = (
                     shared_site[shared_site["regulated"] == False]
                     .sort_values(by="evalue", ascending=True)
                     .head(10) # we only care for max 10 non-regulated.
                 )
 
                 # Optimise for conciseness by unique TaxID
-                regulated = regulated.drop_duplicates(subset=["subject tax ids"], keep="first")
-                non_regulated = non_regulated.drop_duplicates(subset=["subject tax ids"], keep="first")
+                regulated_for_region = regulated_for_region.drop_duplicates(subset=["subject tax ids"], keep="first")
+                non_regulated_for_region = non_regulated_for_region.drop_duplicates(subset=["subject tax ids"], keep="first")
 
                 # Collect unique species from both regulated and non-regulated - legacy logg
-                reg_species.extend(regulated["species"])
+                reg_species.extend(regulated_for_region["species"])
 
                 # JSON serialization requires int, not np.int64, hence the map()
-                reg_taxids.extend(map(str, regulated["subject tax ids"]))
-                non_reg_taxids.extend(map(str, non_regulated["subject tax ids"]))
+                reg_taxids.extend(map(str, regulated_for_region["subject tax ids"]))
+                non_reg_taxids.extend(map(str, non_regulated_for_region["subject tax ids"]))
 
 
-                regulated_annotations = regulated_annotations | unique_annotation_set(regulated)
-                non_regulated_annotations = non_regulated_annotations | unique_annotation_set(non_regulated)
+                regulated_annotations = regulated_annotations | unique_annotation_set(regulated_for_region)
+                non_regulated_annotations = non_regulated_annotations | unique_annotation_set(non_regulated_for_region)
 
             # Convert our structures to a dictionary for JSON export, sorted by taxid.
             regulated_annotation_list = [asdict(t) for t in regulated_annotations]
