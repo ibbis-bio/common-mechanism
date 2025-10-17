@@ -167,10 +167,10 @@ def parse_taxonomy_hits(
             domains = [] # List of domains.
             match_ranges = [] # Ranges where hit matches query.
 
-            regulated_taxa = set()
-            non_regulated_taxa = set()
+            regulated_annotations = set()
+            non_regulated_annotations = set()
 
-            def unique_taxa_set(df) -> set[TaxonomyAnnotation]:
+            def unique_annotation_set(df) -> set[TaxonomyAnnotation]:
                 """
                 Convenience function to extract taxonomy annotations into a 
                 common structure, from BLAST results with the appropriate column headings.
@@ -242,28 +242,23 @@ def parse_taxonomy_hits(
                 non_reg_taxids.extend(map(str, non_regulated["subject tax ids"]))
 
 
-                regulated_taxa = regulated_taxa | unique_taxa_set(regulated)
-                non_regulated_taxa = non_regulated_taxa | unique_taxa_set(non_regulated)
+                regulated_annotations = regulated_annotations | unique_annotation_set(regulated)
+                non_regulated_annotations = non_regulated_annotations | unique_annotation_set(non_regulated)
 
-            # 
-            regulated_taxa_list = [asdict(t) for t in regulated_taxa]
-            non_regulated_taxa_list = [asdict(t) for t in non_regulated_taxa]
-            regulated_taxa_list = sorted(
-                regulated_taxa_list,
+            # Convert our structures to a dictionary for JSON export, sorted by taxid.
+            regulated_annotation_list = [asdict(t) for t in regulated_annotations]
+            non_regulated_annotation_list = [asdict(t) for t in non_regulated_annotations]
+            regulated_annotation_list = sorted(
+                regulated_annotation_list,
                 key=lambda d: d["taxid"]
             )
-            non_regulated_taxa_list = sorted(
-                non_regulated_taxa_list,
+            non_regulated_annotation_list = sorted(
+                non_regulated_annotation_list,
                 key=lambda d: d["taxid"]
             )
-            # Uniquefy.
  
-            match_ranges = list(set(match_ranges))
-
-            screen_status : ScreenStatus = ScreenStatus.FLAG
-            domains_text = ", ".join(set(domains))
-
             # Set the default hit description, this is changed if result is mixed etc.
+            domains_text = ", ".join(set(domains))
             hit_description = f"Regulated {domains_text} - {regulated_hit_data['subject title'].values[0]}"
 
             # TODO: Currently, we recapitulate old behaviour,
@@ -272,24 +267,29 @@ def parse_taxonomy_hits(
             # if all hits are in the same genus n_reg > 0, and n_total > n_reg, WARN, or other logic.
             # the point is, this is where you do it.
 
-            logger.debug("Checking number of non regulated taxids: %i", len(non_regulated_taxa_list))
-            if len(non_regulated_taxa_list) > 0:
+            screen_status : ScreenStatus = ScreenStatus.FLAG # Default is to flag.
+
+            logger.debug("Checking number of non regulated taxids: %i", len(non_regulated_annotation_list))
+            if len(non_regulated_annotation_list) > 0:
                 logger.debug("Non-regulated taxids present, treating as MIXED result.")
                 screen_status = ScreenStatus.PASS
-                hit_description = (f"Mix of {len(regulated_taxa_list)} regulated {domains_text}"
-                f" and {len(non_regulated_taxa_list)} non-regulated {domains_text}")
+                hit_description = (f"Mix of {len(regulated_annotation_list)} regulated {domains_text}"
+                f" and {len(non_regulated_annotation_list)} non-regulated {domains_text}")
 
             # Update the query level recommendation of this step.
             query_write.status.update_step_status(step, screen_status)
 
-            regulation_dict = {"number_of_regulated_taxids" : str(len(regulated_taxa_list)),
-                                "number_of_unregulated_taxids" : str(len(non_regulated_taxa_list)),
+            regulation_dict = {"number_of_regulated_taxids" : str(len(regulated_annotation_list)),
+                                "number_of_unregulated_taxids" : str(len(non_regulated_annotation_list)),
                                 "regulated_eukaryotes": str(n_regulated_eukaryote),
                                 "regulated_bacteria": str(n_regulated_bacteria),
                                 "regulated_viruses": str(n_regulated_virus),
-                                "regulated_taxa": regulated_taxa_list,
-                                "non_regulated_taxa" : non_regulated_taxa_list}
+                                "regulated_taxa": regulated_annotation_list,
+                                "non_regulated_taxa" : non_regulated_annotation_list}
             
+            # Ensure each match range is unique.
+            match_ranges = list(set(match_ranges))
+
             # Append our hit information to Screen data.
             new_hit = HitResult(
                 HitScreenStatus(
@@ -338,8 +338,8 @@ def parse_taxonomy_hits(
             )
             logger.debug(log_message)
             logger.debug("\t\tRegulated Species: %s", reg_species)
-            logger.debug("\t\tRegulated Taxids: %s", regulated_taxa_list)
-            logger.debug("\t\tNon Regulated Taxids: %s", non_regulated_taxa_list)
+            logger.debug("\t\tRegulated Taxids: %s", regulated_annotation_list)
+            logger.debug("\t\tNon Regulated Taxids: %s", non_regulated_annotation_list)
             logger.debug("\t\tRanges: %s", match_ranges)
 
             log_container[query].append(log_message)
