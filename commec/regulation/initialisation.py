@@ -140,10 +140,10 @@ def _import_regulation_list_info(input_path : str | os.PathLike):
     Ensures that existing regulation lists are not overwritten, and 
     warns the user if overwritting unique data (i.e. acroynym clash) has occured.
     """
-    list_info = pd.read_csv(input_path)
+    list_info = pd.read_csv(input_path, sep=",", quotechar='"')
     for _, row in list_info.iterrows():
         new_list = RegulationList(
-            row["full_list_name"],
+            row["list_name"],
             row["list_acronym"],
             row["list_url"],
             [Region(name = row["region_name"],
@@ -177,6 +177,18 @@ def _import_regulation_taxid_data(input_path : str | os.PathLike):
     """
     taxid_info = pd.read_csv(input_path)
 
+    # We detect multiple list acroynms in the format "ABC, DEF, GHI"
+    # Result: cells become lists like ['ABC', 'DEF', 'GHI']
+    taxid_info["list_acronym"] = (
+        taxid_info["list_acronym"]
+        .astype(str)  # Ensure strings
+        .str.split(",")  # Split on commas
+        .apply(lambda x: [s.strip() for s in x])  # Strip whitespace
+    )
+
+    # "Explode" the lists into separate rows
+    taxid_info = taxid_info.explode("list_acronym", ignore_index=True)
+
     # Only include data whose list acronym exists.
     mask = taxid_info["list_acronym"].apply(
         lambda list_key: rc.REGULATION_LISTS.get(list_key) is not None)
@@ -186,7 +198,7 @@ def _import_regulation_taxid_data(input_path : str | os.PathLike):
     dropped = taxid_info[~mask]
     if not dropped.empty:
         logger.warning("The following list acronyms were not valid from %s", input_path)
-        logger.warning(dropped["list_acronym"].tolist())
+        logger.warning(dropped[["name","tax_id", "list_acronym"]].to_string())
 
     # Append the new list data:
     rc.add_regulated_taxid_data(valid_list_taxid_info)
