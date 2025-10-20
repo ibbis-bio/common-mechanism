@@ -171,6 +171,7 @@ def get_taxonomic_labels(
             }
         )
         full_lineage.set_index("Rank", inplace=True)
+
         full_lineage_taxids = list(map(str, full_lineage["TaxID"]))
 
         # If any organism in the lineage is synthetic, drop the row
@@ -180,6 +181,14 @@ def get_taxonomic_labels(
         ):
             rows_to_drop.append(index)
             continue
+
+        # If any organism in the lineage contains "no rank" this would indicate it is unclassified.
+        # apart from the Cellular Organism category - which is either "cellular root", or "no rank"
+        if "no rank" in full_lineage.index:
+            non_ranks = full_lineage.loc["no rank", "Lineage"]
+            if str(non_ranks) != "cellular organisms":
+                rows_to_drop.append(index)
+                continue
 
         # If any organism in the lineage is regulated, set this hit as regulated
         if any(taxid in regulated_taxids for taxid in full_lineage_taxids):
@@ -194,7 +203,7 @@ def get_taxonomic_labels(
             if rank in full_lineage.index:
                 blast.at[index, rank] = full_lineage.loc[rank, "Lineage"]
             else:
-                blast.at[index, rank] = ""
+                blast.at[index, rank] = ""            
 
     blast = blast.drop(rows_to_drop)
     blast = blast.sort_values(by=["% identity"], ascending=False)
