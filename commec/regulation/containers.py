@@ -130,6 +130,9 @@ class Region:
 
     def __repr__(self):
         return self.name + " ["+self.acronym+"]"
+    
+    def __hash__(self):
+        return hash(self.acronym)
 
 class ListMode(StrEnum):
     """

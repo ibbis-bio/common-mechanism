@@ -142,6 +142,7 @@ def _import_regulation_list_info(input_path : str | os.PathLike):
     """
     list_info = pd.read_csv(input_path, sep=",", quotechar='"')
     for _, row in list_info.iterrows():
+        logger.debug(f"Parsing list information: {row}")
         new_list = RegulationList(
             row["list_name"],
             row["list_acronym"],
@@ -159,8 +160,8 @@ def _import_regulation_list_info(input_path : str | os.PathLike):
                 continue
 
             # Check that these are different lists by comparing the names.
-            logger.error("Error when importing list, shared acronym"
-                         " between regulated list A and B, List B will be skipped.")
+            logger.error(f"Error when importing lists from {input_path}, shared acronym"
+                         f" between existing list {existing_list} and {new_list}, New list will be skipped.")
             continue
 
         # Add list.
