@@ -77,12 +77,22 @@ class ScreenTesterFactory:
         TAXONOMY = pd.DataFrame(columns=["subject acc.","regulated", "superkingdom", "phylum", "genus", "species"])
         BIORISK_ANNOTATIONS_DATA = pd.DataFrame(columns=["ID", "Description", "Must flag"])
 
-    def run(self):
+    def run(self, *args):
         """
         Run the Factory commec screen. Return the ScreenResult Object.
         """
 
         self._create_temporary_files()
+
+        arguments = [
+                "test.py", str(self.input_fasta_path), 
+                "-d", str(DATABASE_DIRECTORY), 
+                "-o", str(self.tmp_path), 
+                "--resume",
+                "--verbose"
+            ]
+        
+        arguments.extend(args)
 
         print("Using the following Taxonomy Information:\n", TAXONOMY.to_string())
         # We patch taxonomic labels to avoid having to make a mini-taxonomy database.
@@ -90,13 +100,7 @@ class ScreenTesterFactory:
         with (patch("commec.screeners.check_reg_path.get_taxonomic_labels", new=skip_taxonomy_info), patch(
                 "commec.screeners.check_biorisk.read_biorisk_annotations", new=skip_biorisk_annotations), patch(
             "sys.argv",
-            [
-                "test.py", str(self.input_fasta_path), 
-                "-d", str(DATABASE_DIRECTORY), 
-                "-o", str(self.tmp_path), 
-                "--resume",
-                "--verbose"
-            ],
+            arguments,
         )):
             parser = ScreenArgumentParser()
             add_args(parser)
