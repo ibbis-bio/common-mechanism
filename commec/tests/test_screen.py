@@ -84,7 +84,7 @@ def test_functional_screen(tmp_path, request):
 
     # Convert both original and retrieved data to dictionaries and compare
     assert asdict(expected_screen_result) == asdict(actual_screen_result), (
-        f"Functional test does not match predicted output, fix code,"
+        "Functional test does not match predicted output, fix code,"
         " or if new output is expected, run with --gen-examples\n"
     )
 
@@ -121,7 +121,7 @@ def test_different_regions(tmp_path):
     screen_test.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "query1", 400, 750, "ClearProtein", "RR55CLEAR", 500)
     result = screen_test.run()
 
-    encode_screen_data_to_json(result, "../test_output.json")
+    #encode_screen_data_to_json(result, "../test_output.json")
 
     num_hits = len(result.queries["query1"].hits)
     num_regions = len(result.queries["query1"].hits["RR55"].ranges)
