@@ -9,14 +9,15 @@ Import is handled recursively.
 A valid list folder has the following layout:
 ```
 regulated-lists/  		# This is the level at which pass to yaml / cli
+├── region_definitions.json # Additional regional mapping information, i.e. EU
 ├── uk-coshh/			# Arbitrary filename, contains 1x list.  
 ├── austgroup/          # The valid list folder layout:
 │   ├── regulated_taxids.csv	# Taxid List annotations.
-│   ├── regulated_taxids_and_children.csv
+│   ├── children_of_regulated_taxids.csv
 |   |		“
-|   |		TaxID, ParentTaxID
+|   |		child_taxid, regulated_taxid
 |   |		”
-│   ├── info.csv		# List of regions this list affects.
+│   ├── lift_info.csv		# List of regions this list affects.
 │   │   └── “
 |   |		full_list_name,list_acronym,list_url,region_name, region_acronym
 |   |		Special list, SL, www.sl.com, European Union, EU
@@ -187,8 +188,16 @@ def _import_regulation_taxid_data(input_path : str | os.PathLike):
         .apply(lambda x: [s.strip() for s in x])  # Strip whitespace
     )
 
+    taxid_info["tax_id"] = (
+        taxid_info["tax_id"]
+        .astype(str)  # Ensure strings
+        .str.split(",")  # Split on commas
+        .apply(lambda x: [s.strip() for s in x])  # Strip whitespace
+    )
+
     # "Explode" the lists into separate rows
     taxid_info = taxid_info.explode("list_acronym", ignore_index=True)
+    taxid_info = taxid_info.explode("tax_id", ignore_index=True)
 
     # Only include data whose list acronym exists.
     mask = taxid_info["list_acronym"].apply(
