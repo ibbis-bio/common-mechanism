@@ -253,7 +253,7 @@ def post_process_regulation_data():
     )
     if not bad_entries.empty:
         logger.error("%i imported regulated annotations"
-                       " were bad entries with no TaxID, Genbank, or Uniprot Accession:\n%s"
+                       " were bad entries with no TaxID Accession:\n%s"
                        "\n Run in --verbose mode for raw row input details.",
                        len(bad_entries.index),
                        bad_entries[["name","category","list_acronym"]].to_string(index = False))
@@ -281,9 +281,9 @@ def post_process_regulation_data():
                         '_merge == "left_only"').drop(
                             columns="_merge")
     if not diff.empty:
-        logger.warning("The following imported regulated annotations"
+        logger.debug("The following imported regulated annotations"
                        " were duplicates with differing metadata:\n%s",
-                       diff[["accession", "name","category","list_acronym"]].to_string(index = False))
+                       diff[["accession","name","category","list_acronym"]].to_string(index = False))
 
     logger.debug("Loaded the following regulation list dataset: Top 20:\n%s",
                  rc.REGULATED_TAXID_ANNOTATIONS.head(20).to_string())
