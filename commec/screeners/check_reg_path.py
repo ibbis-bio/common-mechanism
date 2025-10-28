@@ -32,6 +32,13 @@ from commec.config.result import (
     compare
 )
 
+from commec.control_list import (
+    get_regulation,
+    ListMode,
+    ControlList,
+    ControlListInfo
+)
+
 pd.set_option("display.max_colwidth", 10000)
 
 logger = logging.getLogger(__name__)
@@ -236,13 +243,17 @@ def parse_taxonomy_hits(
                 regulated_for_region = regulated_for_region.drop_duplicates(subset=["subject tax ids"], keep="first")
                 non_regulated_for_region = non_regulated_for_region.drop_duplicates(subset=["subject tax ids"], keep="first")
 
-                # Collect unique species from both regulated and non-regulated - legacy logg
+                # Update what is a regulated region based on imported control lists.
+                regulated_for_region, non_regulated_for_region = update_using_control_lists(
+                    regulated_for_region, non_regulated_for_region
+                )
+
+                # Collect unique species from both regulated and non-regulated - legacy logging
                 reg_species.extend(regulated_for_region["species"])
 
                 # JSON serialization requires int, not np.int64, hence the map()
                 reg_taxids.extend(map(str, regulated_for_region["subject tax ids"]))
                 non_reg_taxids.extend(map(str, non_regulated_for_region["subject tax ids"]))
-
 
                 regulated_annotations = regulated_annotations | unique_annotation_set(regulated_for_region)
                 non_regulated_annotations = non_regulated_annotations | unique_annotation_set(non_regulated_for_region)
@@ -258,6 +269,10 @@ def parse_taxonomy_hits(
                 non_regulated_annotation_list,
                 key=lambda d: d["taxid"]
             )
+
+            for reg_anno in regulated_annotation_list:
+                control_info, simple_info = get_regulation(reg_anno["taxid"])
+                reg_anno["control_list"] = simple_info
  
             # Set the default hit description, this is changed if result is mixed etc.
             domains_text = ", ".join(set(domains))
@@ -360,3 +375,44 @@ def parse_taxonomy_hits(
             logger.info(log_text)
 
     return 0
+
+
+def update_using_control_lists(regulated : pd.DataFrame, non_regulated : pd.DataFrame):
+    """
+    Takes dataframes for both of regulated, and non_regulated candidates.
+    For each regulated candidate - check its list compliance, and only keep it
+    if it matches full compliance, or conditional compliance.
+
+    If not, push it to the non-regulated lists.
+
+    If a single CONDITIONAL is found, it is moved to non-regulated.
+
+    """
+
+    CONDITIONAL_NUMBER_TO_ALLOW = 1 # i.e. if something appears in 2 or more control lists.
+    indexes_to_move = []
+
+    for index, row in regulated.iterrows():
+        control_data, _simple_data = get_regulation(row["subject tax ids"])
+        for clist, _info in control_data:
+            regulated.at[index, "list_acronym"] = clist.acronym
+            regulated.at[index, "category"] = _info.category
+            if clist.status == ListMode.COMPLIANCE:
+                continue
+            if clist.status == ListMode.COMPLIANCE_WARN:
+                continue
+            if clist.status == ListMode.CONDITIONAL_NUM:
+                indexes_to_move.append(index)
+
+    # If more than 1 index is removed, then treat as flag.
+    if len(indexes_to_move) > CONDITIONAL_NUMBER_TO_ALLOW:
+        indexes_to_move = []
+
+    # Move the out of context rows to the non-regulated DataFrame
+    if indexes_to_move:
+        rows_to_move = regulated.loc[indexes_to_move]
+        non_regulated = pd.concat([non_regulated, rows_to_move], ignore_index=True)
+        regulated = regulated.drop(index=indexes_to_move)
+
+    return regulated, non_regulated
+

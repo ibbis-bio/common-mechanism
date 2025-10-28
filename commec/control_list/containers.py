@@ -217,12 +217,9 @@ class ControlListInfo:
 
 class CategoryType(StrEnum):
     """
-    At what level a regulation is for i.e. "regulated at the species level."
-    ??? These delineations require further thought before being practical.
-    Specifically, the idea is to capture with an enum the type of regulation
-    we are dealing with, which may derive some information about what it might have:
-    taxid, uniprot, genbank accession. Whether or not it is pathogenic or if it targets
-    something like Brazilian mushrooms.
+    The type of regulation we are dealing with, which may derive some 
+    information about what it might have: taxid, uniprot, genbank accession. 
+    Whether or not it is pathogenic or if it targets something like Brazilian mushrooms.
     This will be used to parse the category column of the input csvs.
     """
     BACTERIA = "Bacteria"
@@ -247,7 +244,5 @@ class RegulationOutput:
 
     See results.py for other examples.
     """
-    name : str = ""
+    list : str = ""
     category : str = ""
-    # regulation_level : RegulationLevel = field(default_factory=RegulationLevel) # At what level this list is regulated.
-    # toxicity : str = "no data" - TBD
