@@ -36,10 +36,11 @@ import pandas as pd
 from .containers import (
     RegulationList,
     ListMode,
-    Region
+    Region,
+    Accession
     )
 
-from . import containers as rc
+from . import list_data as ld
 from .region import get_regions_set
 
 logger = logging.getLogger(__name__)
@@ -112,7 +113,7 @@ def update_regional_context(
     if force_all_regions:
         logger.debug("Regulation list compliance set to affect all regions.")
 
-    for reg_list in rc.REGULATION_LISTS.values():
+    for reg_list in ld.REGULATION_LISTS.values():
         # Skip if forcing all regions.
         if force_all_regions:
             reg_list.status = ListMode.COMPLIANCE
@@ -154,8 +155,8 @@ def _import_regulation_list_info(input_path : str | os.PathLike):
 
         # Check list doesn't already exist, or is not overwritting another.
         list_key = row["list_acronym"]
-        if rc.REGULATION_LISTS.get(list_key):
-            existing_list = rc.REGULATION_LISTS[list_key]
+        if ld.REGULATION_LISTS.get(list_key):
+            existing_list = ld.REGULATION_LISTS[list_key]
             if new_list == existing_list:
                 logger.debug("List already exists, no need to add.")
                 continue
@@ -166,7 +167,7 @@ def _import_regulation_list_info(input_path : str | os.PathLike):
             continue
 
         # Add list.
-        rc.REGULATION_LISTS[list_key] = new_list
+        ld.REGULATION_LISTS[list_key] = new_list
 
 
 def _import_regulation_taxid_data(input_path : str | os.PathLike):
@@ -201,7 +202,7 @@ def _import_regulation_taxid_data(input_path : str | os.PathLike):
 
     # Only include data whose list acronym exists.
     mask = taxid_info["list_acronym"].apply(
-        lambda list_key: rc.REGULATION_LISTS.get(list_key) is not None)
+        lambda list_key: ld.REGULATION_LISTS.get(list_key) is not None)
     valid_list_taxid_info = taxid_info[mask]
 
     # Warn about dropped rows
@@ -211,7 +212,7 @@ def _import_regulation_taxid_data(input_path : str | os.PathLike):
         logger.warning(dropped[["name","tax_id", "list_acronym"]].to_string())
 
     # Append the new list data:
-    rc.add_regulated_taxid_data(valid_list_taxid_info)
+    ld.add_regulated_taxid_data(valid_list_taxid_info)
 
 
 def _import_child_to_regulated_taxid_relationship(input_path : str | os.PathLike):
@@ -221,7 +222,7 @@ def _import_child_to_regulated_taxid_relationship(input_path : str | os.PathLike
     Concatenates the child LUT info into the global dataframe.
     """
     child_lut = pd.read_csv(input_path)
-    rc.add_child_lut_data(child_lut)
+    ld.add_child_lut_data(child_lut)
 
 
 def post_process_regulation_data():
@@ -234,11 +235,11 @@ def post_process_regulation_data():
     metadata. In the ideal case, commec provided regulation annotations should not
     log any errors here.
     """
-    rc.CHILD_TAXID_MAP.drop_duplicates()
+    ld.CHILD_TAXID_MAP.drop_duplicates()
 
     # Reindex the data based on the accession type column.
-    rc.REGULATED_TAXID_ANNOTATIONS["accession"] = rc.REGULATED_TAXID_ANNOTATIONS.apply(
-        lambda row: rc.Accession(
+    ld.REGULATED_TAXID_ANNOTATIONS["accession"] = ld.REGULATED_TAXID_ANNOTATIONS.apply(
+        lambda row: Accession(
             taxid=row["tax_id"],
             genbank=row["genbank_protein"],
             uniprot=row["uniprot"], row = row),
@@ -246,8 +247,8 @@ def post_process_regulation_data():
     )
 
     # Report errors for bad entries (These are labelled as Taxid = 0)
-    bad_entries = rc.REGULATED_TAXID_ANNOTATIONS[
-        rc.REGULATED_TAXID_ANNOTATIONS["accession"] == rc.Accession(taxid=0)]
+    bad_entries = ld.REGULATED_TAXID_ANNOTATIONS[
+        ld.REGULATED_TAXID_ANNOTATIONS["accession"] == Accession(taxid=0)]
     bad_entries.loc[bad_entries["name"].str.len() >= 57, "name"] = (
         bad_entries["name"].str[:57].str.strip() + "..."
     )
@@ -259,24 +260,24 @@ def post_process_regulation_data():
                        bad_entries[["name","category","list_acronym"]].to_string(index = False))
 
     # Drop duplicates before indexing, using strict and non-strict strategy.
-    bad_duplicates = rc.REGULATED_TAXID_ANNOTATIONS.drop_duplicates()
-    rc.REGULATED_TAXID_ANNOTATIONS.drop_duplicates(
+    bad_duplicates = ld.REGULATED_TAXID_ANNOTATIONS.drop_duplicates()
+    ld.REGULATED_TAXID_ANNOTATIONS.drop_duplicates(
         subset=["list_acronym", "accession"], inplace=True)
 
     # Index and drop bad entries.
-    rc.REGULATED_TAXID_ANNOTATIONS = rc.REGULATED_TAXID_ANNOTATIONS[
-        rc.REGULATED_TAXID_ANNOTATIONS["accession"] != rc.Accession(taxid=0)]
-    rc.REGULATED_TAXID_ANNOTATIONS.set_index("accession", inplace=True, drop = True)
-    if rc.Accession(taxid=0) in rc.REGULATED_TAXID_ANNOTATIONS.index:
-        rc.REGULATED_TAXID_ANNOTATIONS.drop(rc.Accession(taxid=0), inplace=True)
+    ld.REGULATED_TAXID_ANNOTATIONS = ld.REGULATED_TAXID_ANNOTATIONS[
+        ld.REGULATED_TAXID_ANNOTATIONS["accession"] != Accession(taxid=0)]
+    ld.REGULATED_TAXID_ANNOTATIONS.set_index("accession", inplace=True, drop = True)
+    if Accession(taxid=0) in ld.REGULATED_TAXID_ANNOTATIONS.index:
+        ld.REGULATED_TAXID_ANNOTATIONS.drop(Accession(taxid=0), inplace=True)
 
     # Remove bad entries, index for comparison.
-    bad_duplicates = bad_duplicates[bad_duplicates["accession"] != rc.Accession(taxid=0)]
+    bad_duplicates = bad_duplicates[bad_duplicates["accession"] != Accession(taxid=0)]
     bad_duplicates.set_index("accession", inplace=True, drop = False)
 
     # Merge comparison
     diff = pd.merge(bad_duplicates,
-                    rc.REGULATED_TAXID_ANNOTATIONS,
+                    ld.REGULATED_TAXID_ANNOTATIONS,
                     how="left", indicator=True).query(
                         '_merge == "left_only"').drop(
                             columns="_merge")
@@ -286,5 +287,5 @@ def post_process_regulation_data():
                        diff[["accession","name","category","list_acronym"]].to_string(index = False))
 
     logger.debug("Loaded the following regulation list dataset: Top 20:\n%s",
-                 rc.REGULATED_TAXID_ANNOTATIONS.head(20).to_string())
+                 ld.REGULATED_TAXID_ANNOTATIONS.head(20).to_string())
 

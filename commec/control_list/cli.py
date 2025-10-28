@@ -10,7 +10,7 @@ from .containers import (
     TaxidRegulation,
     RegulationList,
 )
-from . import containers as data
+from . import list_data as data
 
 def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """

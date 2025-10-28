@@ -17,9 +17,11 @@ from commec.utils.logger import setup_console_logging
 from .containers import (
     TaxidRegulation,
     RegulationList,
+    AccessionFormat,
+    Accession,
     derive_accession_type
 )
-from . import containers as data
+from . import list_data as data
 from .initialisation import (
     import_regulations,
     post_process_regulation_data,
@@ -80,7 +82,7 @@ def _load_regulation_data(import_path : str | os.PathLike,
             _load_regulation_data(entry, regional_context)
     return
 
-def get_regulation(accession : str, accession_fmt : data.AccessionFormat) -> list[tuple[RegulationList, TaxidRegulation]]:
+def get_regulation(accession : str, accession_fmt : AccessionFormat) -> list[tuple[RegulationList, TaxidRegulation]]:
     """
     Check the given Accession against all imported regulated lists.
     The input Accession can be a TaxID, GenBank protein, or Uniprot ID.
@@ -96,18 +98,18 @@ def get_regulation(accession : str, accession_fmt : data.AccessionFormat) -> lis
     # Modify based on input accession format:
     accession_to_check = []
     match(accession_fmt):
-        case data.AccessionFormat.TAXID:
-            accession_to_check = [data.Accession(taxid = accession)]
+        case AccessionFormat.TAXID:
+            accession_to_check = [Accession(taxid = accession)]
             taxid_parents_to_check = data.CHILD_TAXID_MAP[
                 data.CHILD_TAXID_MAP["child_taxid"] == accession]["regulated_taxid"].to_list()
-            taxid_parents_to_check = [data.Accession(taxid=tid) for tid in taxid_parents_to_check]
+            taxid_parents_to_check = [Accession(taxid=tid) for tid in taxid_parents_to_check]
             accession_to_check.extend(taxid_parents_to_check)
 
-        case data.AccessionFormat.GENBANK:
-            accession_to_check = [data.Accession(genbank = accession)]
+        case AccessionFormat.GENBANK:
+            accession_to_check = [Accession(genbank = accession)]
 
-        case data.AccessionFormat.UNIPROT:
-            accession_to_check = [data.Accession(uniprot = accession)]
+        case AccessionFormat.UNIPROT:
+            accession_to_check = [Accession(uniprot = accession)]
 
     logger.debug("Accesions to check: %s", accession_to_check)
 
