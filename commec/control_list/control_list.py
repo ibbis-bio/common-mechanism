@@ -15,7 +15,8 @@ from .containers import (
     ControlList,
     ControlListInfo,
     Accession,
-    derive_accession_format
+    derive_accession_format,
+    RegulationOutput,
 )
 from . import list_data as __data
 from . import initialisation as __init
@@ -103,6 +104,7 @@ def get_regulation(accession : str) -> list[tuple[ControlList, ControlListInfo]]
     taxid specific regulation information.
     """
     output_data : list[tuple[ControlList, ControlListInfo]] = []
+    simple_output_data : list[RegulationOutput] = []
 
     # Modify based on input accession format:
     accession_hash = Accession(accession)
@@ -124,12 +126,13 @@ def get_regulation(accession : str) -> list[tuple[ControlList, ControlListInfo]]
         taxid_regulation_info = ControlListInfo.from_row(row, hash_taxid)
         list_data = __data.CONTROL_LISTS[taxid_regulation_info.list_acronym]
         output_data.append((list_data, taxid_regulation_info))
+        simple_output_data.append(RegulationOutput(taxid_regulation_info.list_acronym, taxid_regulation_info.category))
 
     if len(output_data) > 0:
         logger.debug("Checking %s [%s] for regulation resulted in %i annotations",
                      accession_hash.get_format(), accession, len(output_data))
 
-    return output_data
+    return output_data, simple_output_data
 
 def get_control_lists():
     """
