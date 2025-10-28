@@ -74,6 +74,9 @@ class ScreenTesterFactory:
         self.input_fasta_path = ""
 
         # We reset the globals when a new test is made - its just safer.
+        global TAXONOMY
+        global BIORISK_ANNOTATIONS_DATA
+        
         TAXONOMY = pd.DataFrame(columns=["subject acc.","regulated", "superkingdom", "phylum", "genus", "species"])
         BIORISK_ANNOTATIONS_DATA = pd.DataFrame(columns=["ID", "Description", "Must flag"])
 

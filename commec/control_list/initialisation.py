@@ -33,14 +33,14 @@ import os
 import logging
 import pandas as pd
 
-from commec.regulation.containers import (
+from .containers import (
     RegulationList,
     ListMode,
     Region
     )
 
-import commec.regulation.containers as rc
-from commec.regulation.region import get_regions_set
+from . import containers as rc
+from .region import get_regions_set
 
 logger = logging.getLogger(__name__)
 

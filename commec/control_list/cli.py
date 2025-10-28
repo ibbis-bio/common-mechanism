@@ -6,11 +6,11 @@ import os
 import argparse
 import pandas as pd
 from commec.utils.file_utils import directory_arg
-from commec.regulation.containers import (
+from .containers import (
     TaxidRegulation,
     RegulationList,
 )
-import commec.regulation.containers as data
+from . import containers as data
 
 def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """

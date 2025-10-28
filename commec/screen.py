@@ -81,7 +81,7 @@ from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.tools.search_handler import DatabaseValidationError
 from commec.config.json_io import encode_screen_data_to_json
 from commec.config.constants import MINIMUM_QUERY_LENGTH
-from commec.regulation.regulation import (
+from commec.control_list.control_list import (
     load_regulation_data,
     regulation_list_information,
     get_regulation_list,

@@ -36,7 +36,7 @@ class AccessionFormat(StrEnum):
 
     def __repr__(self):
         return f"<Fmt:{self}>"
-    
+
 def derive_accession_type(identifier : str) -> AccessionFormat | None:
     """
     Utilises regex to determine whether the input
@@ -167,7 +167,7 @@ class RegulationList:
             regions_text += str(r) + ", "
         regions_text = regions_text[:-2]
         return f"[{self.acronym}] {self.name} - {regions_text}\n({self.url})"
-    
+
     def __eq__(self, value):
         if (self.name != value.name or
             self.url != value.url or 

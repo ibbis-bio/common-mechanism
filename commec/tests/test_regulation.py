@@ -2,8 +2,8 @@ import logging
 import pytest
 import pandas as pd
 
-import commec.regulation.containers as crc
-from commec.regulation.regulation import get_regulation, post_process_regulation_data
+import commec.control_list.containers as crc
+from commec.control_list.control_list import get_regulation, post_process_regulation_data
 
 from commec.utils.logger import setup_console_logging
 
