@@ -14,8 +14,7 @@ import pytaxonkit
 import pandas as pd
 import numpy as np
 from commec.tools.search_handler import SearchHandler, DatabaseValidationError
-from commec.control_list.control_list import get_regulation
-from commec.control_list.containers import AccessionFormat
+from commec.control_list import is_regulated
 
 TAXID_SYNTHETIC_CONSTRUCTS = 32630
 TAXID_VECTORS = 29278
@@ -166,10 +165,7 @@ def get_taxonomic_labels(
     unique_taxids = blast[TAXIDS_COL].dropna().unique()
     logger.debug("Checking %s unique taxids", len(unique_taxids))
     # Build a mapping {taxid: truthiness}
-    taxid_to_regulated = {
-        taxid: bool(get_regulation(int(taxid), AccessionFormat.TAXID))
-        for taxid in unique_taxids
-    }
+    taxid_to_regulated = {taxid: is_regulated(taxid) for taxid in unique_taxids}
     # Map back to the dataframe
     blast["regulated"] = blast[TAXIDS_COL].map(taxid_to_regulated)
 

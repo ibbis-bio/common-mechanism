@@ -9,7 +9,7 @@ What is the shape of the regulation data, and where to store it.
         Contains list, region, and level information.
     RegulationLevel :
         Determines valid level information strings.
-    TaxidRegulationContainer :
+    ControlListInfoContainer :
         Storage of all regulation data for a given taxid from a given list.
 
 Also defines the storage data for 
@@ -17,92 +17,86 @@ Also defines the storage data for
     * per taxid regulation information per list, 
     * and child to parent taxid mapping.
 """
-import logging
 import re
 from dataclasses import dataclass, field, fields
 from typing import Optional
 from enum import StrEnum
 import pandas as pd
 
-logger = logging.getLogger(__name__)
-
 class AccessionFormat(StrEnum):
     """
     Supported hashable accesion formats.
     """
     TAXID = "TaxonomyID"
-    GENBANK = "GenbankProtein"
-    UNIPROT = "UniprotID"
+    NOT_SET = "-"
+    UNKNOWN = "Unknown"
 
     def __repr__(self):
         return f"<Fmt:{self}>"
 
-def derive_accession_type(identifier : str) -> AccessionFormat | None:
+
+TAXID_PATTERN = re.compile(r"^[0-9]+$")
+
+def derive_accession_format(accession: str) -> AccessionFormat:
     """
-    Utilises regex to determine whether the input
-    string is a TaxID, Uniprot, or Genbank accesion.
-    Returns None if it cannot be determined.
+    Determine supported accession formats using regex-based matching.
+
+    Returns:
+        AccessionFormat.TAXID if numeric (ASCII digits only),
+        AccessionFormat.UNKNOWN otherwise.
     """
-    if isinstance(identifier, int):
-        return AccessionFormat.TAXID
+    if not accession:
+        return AccessionFormat.UNKNOWN
+
+    accession_str = str(accession)
 
     patterns = {
-        AccessionFormat.UNIPROT: re.compile(
-            r"^(?:[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9](?:[A-Z][A-Z0-9]{2}[0-9]){1,2})$"
-        ),
-        AccessionFormat.TAXID: re.compile(
-            r"^[0-9]+$"
-        ),
-        AccessionFormat.GENBANK: re.compile(
-            r"^(?:[A-Z][0-9]{5}|[A-Z]{2}[0-9]{6,8}|[A-Z]{3}[0-9]{5,7})(?:\.\d+)?$"
-        ),
+        AccessionFormat.TAXID: TAXID_PATTERN,
     }
 
-    for fmt, pattern in patterns.items():
-        if pattern.fullmatch(identifier):
-            return fmt
+    # Find and return the first matching format, or UNKNOWN if none match
+    return next(
+        (fmt for fmt, pattern in patterns.items() if pattern.fullmatch(accession_str)),
+        AccessionFormat.UNKNOWN
+    )
 
-    return None
 
 @dataclass(frozen=True)
 class Accession:
     """
-    A unified hashable identifier for 
-    taxonomy IDs, GenBank, or UniProt accessions.
+    A unified hashable wrapper for arbitrary accession types. e.g. TaxID
 
     Used for hashed index accession for rapid annotations retrieval
-    from a pandas DataFrame.
+    from a pandas DataFrame. 
+    
+    Includes helper functions to pre-calculate
+    what type of accession this is for user reporting.
     """
-    code: str
-    type: AccessionFormat   # one of: "taxid", "genbank", "uniprot"
+    code : str
+    type : AccessionFormat
 
-    def __init__(self, accession: Optional[str]=None,
-                       taxid: Optional[int]=None,
-                       uniprot: Optional[str]=None,
-                       genbank: Optional[str]=None,
-                       row : pd.Series = None):
-        # Best guess if unknown input.
+    def __init__(self, accession: Optional[str]=None):
+        """
+        An Accession is created from an arbitrary str-like with truthiness.
+        Invalid accessions will instantiated as None.
+        """
         if accession:
-            acc_fmt = derive_accession_type(accession)
-            if acc_fmt:
-                object.__setattr__(self, "code", accession)
-                object.__setattr__(self, "type", acc_fmt)
-                return
+            object.__setattr__(self, "code", str(accession))
+            object.__setattr__(self, "type", derive_accession_format(accession))
+            return
 
-        # ensure only one is set
-        values = [(taxid, AccessionFormat.TAXID),
-                  (uniprot, AccessionFormat.UNIPROT),
-                  (genbank, AccessionFormat.GENBANK)]
-        non_empty = [(v, t) for v, t in values if not pd.isna(v)]
-        if len(non_empty) == 0:
-            error_id = row.to_string() if not row is None else "[Unknown row info]"
-            logger.debug("Accession [\n%s\n] must have at least one non-empty"
-                         " value for tax_id, genbank, or uniprot.\n"
-                         "It has been assigned to TaxID 0.", error_id)
-            non_empty = [("0", AccessionFormat.TAXID)]
+        object.__setattr__(self, "code", None)
+        object.__setattr__(self, "type", AccessionFormat.UNKNOWN)
 
-        object.__setattr__(self, "code", str(non_empty[0][0]))
-        object.__setattr__(self, "type", non_empty[0][1])
+    def get_format(self) -> AccessionFormat:
+        """
+        Returns the likely format of this accession,
+        calculates it if it hasn't been calculated yet.
+        """
+        return self.type
+
+    def __hash__(self):
+        return hash(self.code)
 
     def get(self) -> tuple[str, str]:
         """Return (code, type)."""
@@ -136,14 +130,19 @@ class Region:
 
 class ListMode(StrEnum):
     """
-    Describes how a list is interpreted, based on regional context.
-    When a Taxonomy ID is identified as part of a list, whether or not we treat
-    that taxid as regulated or not will depend on the following mode.
+    Describes how a list is interpreted.
+    When an Accession is identified as part of a list, whether or not we treat
+    that taxid as regulated or not will depend on the following modes:
     
     * COMPLIANCE - All taxids from this list are regulated.
-    * CONDITIONAL_NUM - Only mark taxid as regulated if it appears in more than 1 list.
+    * CONDITIONAL_NUM - Only mark taxid as regulated if it also appears in another list.
     * COMPLIANCE_WARN - Mark Taxid as only a WARNING.
     * IGNORE - Ignore this list entirely.
+
+    Future settings can be used to apply these to the lists under various
+    conditions, however for now, we simply set any list that is not
+    part of the regional context, to CONDITIONAL_NUM, as default Commec
+    behaviour.
     """
     COMPLIANCE = "Compliance"
     CONDITIONAL_NUM = "Conditional Compliance"
@@ -151,9 +150,9 @@ class ListMode(StrEnum):
     IGNORE = "Ignored"
 
 @dataclass
-class RegulationList:
+class ControlList:
     """
-    Contains the name, acronym, url, and affected regions for a regulated list.
+    Contains the name, acronym, url, and affected regions for a Control List.
     """
     name : str = ""
     acronym : str = ""
@@ -170,7 +169,7 @@ class RegulationList:
 
     def __eq__(self, value):
         if (self.name != value.name or
-            self.url != value.url or 
+            self.url != value.url or
             set(self.regions) != set(value.regions) or
             self.acronym != value.acronym):
             return False
@@ -178,9 +177,9 @@ class RegulationList:
             return True
 
 @dataclass
-class TaxidRegulation:
+class ControlListInfo:
     """
-    Container for regulatory information of a given taxid from
+    Container for regulatory information of a given accession from
     a specific list. Structure data that is an expected output from
     the regulations module.
     """
@@ -200,7 +199,7 @@ class TaxidRegulation:
     @classmethod
     def from_row(cls, row: pd.Series, index_val=None):
         """
-        Construct a TaxidRegulation from a pandas row returned by .iterrows().
+        Construct a ControlListInfo from a pandas row returned by .iterrows().
         The optional index_val can be passed in if the DataFrame index should
         map to the `taxid` field.
         """
@@ -236,19 +235,19 @@ class CategoryType(StrEnum):
     NON_PROTEIN_TOXIN = "Non-Protein Toxin"
     TOXIN_SYNTHESIS_ENZYME = "Toxin Synthesis Enzyme"
     PRIONS_AND_TSE = "Prions & TSEs"
+    NONE = "None"
 
 @dataclass
 class RegulationOutput:
     """
     Container for regulation list information. Formatted for use in output JSON.
 
-    * `name` ( str ) : Common name identification for this regulation list.
-    * `region` ( str ) : 2 Letter Country codes for which this regulation applies
-    * `regulation_level` ( str ) : At what level does this regulation apply to the hit (e.g. organism, species, protein)
+    * `list` ( str ) : Common acroynm for control list.
+    * `category` ( str ) : What category does this control list apply to the hit (e.g. organism, species, protein)
 
     See results.py for other examples.
     """
-    name_str : str = ""
-    region_str : list[str] = field(default_factory=list[str])
+    name : str = ""
+    category : str = ""
     # regulation_level : RegulationLevel = field(default_factory=RegulationLevel) # At what level this list is regulated.
     # toxicity : str = "no data" - TBD

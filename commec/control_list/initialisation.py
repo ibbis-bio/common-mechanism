@@ -4,20 +4,20 @@
 Scripts that control the initialisation of the regulations
 module state and imports regulation lists.
 
-Import is handled recursively.
-
-A valid list folder has the following layout:
+Import is handled recursively across arbitrarily nested folders.
+The top level folder must contain a region_definitions.json.
+A valid list folder may have the following layout:
 ```
-regulated-lists/  		# This is the level at which pass to yaml / cli
-├── region_definitions.json # Additional regional mapping information, i.e. EU
-├── uk-coshh/			# Arbitrary filename, contains 1x list.  
-├── austgroup/          # The valid list folder layout:
-│   ├── regulated_taxids.csv	# Taxid List annotations.
+regulated-lists/  		     # This is the level at which pass to yaml / cli
+├── region_definitions.json  # Additional regional mapping information, i.e. EU
+├── uk-coshh/			     # Arbitrary filename, contains 1x list.  
+├── austgroup/               # The valid list folder layout:
+│   ├── regulated_taxids.csv                          # Taxid List annotations.
 │   ├── children_of_regulated_taxids.csv
 |   |		“
 |   |		child_taxid, regulated_taxid
 |   |		”
-│   ├── lift_info.csv		# List of regions this list affects.
+│   ├── lift_info.csv		               # List of regions this list affects.
 │   │   └── “
 |   |		full_list_name,list_acronym,list_url,region_name, region_acronym
 |   |		Special list, SL, www.sl.com, European Union, EU
@@ -25,16 +25,13 @@ regulated-lists/  		# This is the level at which pass to yaml / cli
 │   └── ...
 └── ...
 ```
-
-Import goes by the following workflow:
-
 """
 import os
 import logging
 import pandas as pd
 
 from .containers import (
-    RegulationList,
+    ControlList,
     ListMode,
     Region,
     Accession
@@ -45,7 +42,7 @@ from .region import get_regions_set
 
 logger = logging.getLogger(__name__)
 
-def import_regulations(input_path : str | os.PathLike, regions_of_interest : set[str] = None) -> bool:
+def import_control_lists(input_path : str | os.PathLike, regions_of_interest : set[str] = None) -> bool:
     """
     Given a directory, checks that the directory is valid,
     If the directory is valid, it will load the regulation data.
@@ -72,9 +69,9 @@ def import_regulations(input_path : str | os.PathLike, regions_of_interest : set
         if not os.path.isfile(file): return False
 
     logger.debug("Importing regulation list from %s", input_path)
-    _import_regulation_list_info(info_filename) # Always load first.
-    _import_regulation_taxid_data(data_filename)
-    _import_child_to_regulated_taxid_relationship(child_lut_filename)
+    _import_control_list_info(info_filename) # Always load first.
+    _import_control_list_annotations(data_filename)
+    _import_accession_mappings(child_lut_filename)
     update_regional_context(regions_of_interest)
     return True
 
@@ -113,7 +110,7 @@ def update_regional_context(
     if force_all_regions:
         logger.debug("Regulation list compliance set to affect all regions.")
 
-    for reg_list in ld.REGULATION_LISTS.values():
+    for reg_list in ld.CONTROL_LISTS.values():
         # Skip if forcing all regions.
         if force_all_regions:
             reg_list.status = ListMode.COMPLIANCE
@@ -134,7 +131,7 @@ def update_regional_context(
             reg_list.status = alternative_mode
 
 
-def _import_regulation_list_info(input_path : str | os.PathLike):
+def _import_control_list_info(input_path : str | os.PathLike):
     """
     Imports the info.csv file from a regulation list folder.
     Ensures that each regulation list information is appropriate keyed by
@@ -145,7 +142,7 @@ def _import_regulation_list_info(input_path : str | os.PathLike):
     list_info = pd.read_csv(input_path, sep=",", quotechar='"')
     for _, row in list_info.iterrows():
         logger.debug(f"Parsing list information: {row}")
-        new_list = RegulationList(
+        new_list = ControlList(
             row["list_name"],
             row["list_acronym"],
             row["list_url"],
@@ -153,24 +150,17 @@ def _import_regulation_list_info(input_path : str | os.PathLike):
                     acronym = row["region_code"])],
             ListMode.COMPLIANCE)
 
-        # Check list doesn't already exist, or is not overwritting another.
-        list_key = row["list_acronym"]
-        if ld.REGULATION_LISTS.get(list_key):
-            existing_list = ld.REGULATION_LISTS[list_key]
-            if new_list == existing_list:
-                logger.debug("List already exists, no need to add.")
-                continue
-
-            # Check that these are different lists by comparing the names.
-            logger.error(f"Error when importing lists from {input_path}, shared acronym"
-                         f" between existing list {existing_list} and {new_list}, New list will be skipped.")
+        if ld.add_control_list(new_list):
             continue
 
-        # Add list.
-        ld.REGULATION_LISTS[list_key] = new_list
+        # Error adding list, likely a bad duplicate, report to user.
+        list_key = row["list_acronym"]
+        existing_list = ld.CONTROL_LISTS.get(list_key)
+        logger.error("Error when importing lists from %s, shared acronym"
+                    " between existing list %s and %s, New list will be skipped.",
+                    input_path, existing_list, new_list)
 
-
-def _import_regulation_taxid_data(input_path : str | os.PathLike):
+def _import_control_list_annotations(input_path : str | os.PathLike):
     """
     Imports annotated regulated taxid information from the regulated_taxids.csv file
     within a regulated list provided to commec.
@@ -202,7 +192,7 @@ def _import_regulation_taxid_data(input_path : str | os.PathLike):
 
     # Only include data whose list acronym exists.
     mask = taxid_info["list_acronym"].apply(
-        lambda list_key: ld.REGULATION_LISTS.get(list_key) is not None)
+        lambda list_key: ld.CONTROL_LISTS.get(list_key) is not None)
     valid_list_taxid_info = taxid_info[mask]
 
     # Warn about dropped rows
@@ -212,10 +202,10 @@ def _import_regulation_taxid_data(input_path : str | os.PathLike):
         logger.warning(dropped[["name","tax_id", "list_acronym"]].to_string())
 
     # Append the new list data:
-    ld.add_regulated_taxid_data(valid_list_taxid_info)
+    ld.add_control_list_annotations(valid_list_taxid_info)
 
 
-def _import_child_to_regulated_taxid_relationship(input_path : str | os.PathLike):
+def _import_accession_mappings(input_path : str | os.PathLike):
     """
     Imports child to regulated taxid look up data data from the 
     children_of_regulated_taxids.csv file within a regulated list provided to commec.
@@ -225,30 +215,29 @@ def _import_child_to_regulated_taxid_relationship(input_path : str | os.PathLike
     ld.add_child_lut_data(child_lut)
 
 
-def post_process_regulation_data():
+def tidy_control_list_data():
     """
-    These dataframes are always access via taxid, genbank, or uniprot,
-    so it is much faster, and cleaner, to index them based off this for querying.
+    These dataframes are always access via taxid
+    so it is much faster to index them based off this for querying.
 
     We also perform data cleanup here, as well as take the opportunity to
     report to the user any tidying issues - such as duplicates with differing
     metadata. In the ideal case, commec provided regulation annotations should not
     log any errors here.
     """
-    ld.CHILD_TAXID_MAP.drop_duplicates()
+    ld.ACCESSION_MAP.drop_duplicates()
 
     # Reindex the data based on the accession type column.
-    ld.REGULATED_TAXID_ANNOTATIONS["accession"] = ld.REGULATED_TAXID_ANNOTATIONS.apply(
-        lambda row: Accession(
-            taxid=row["tax_id"],
-            genbank=row["genbank_protein"],
-            uniprot=row["uniprot"], row = row),
+    # Currently taxid is used as the only accession format.
+    # Future versions will index based on accession more generally here.
+    ld.CONTROL_LIST_ANNOTATIONS["accession"] = ld.CONTROL_LIST_ANNOTATIONS.apply(
+        lambda row: Accession(accession=row["tax_id"]),
         axis=1
     )
 
-    # Report errors for bad entries (These are labelled as Taxid = 0)
-    bad_entries = ld.REGULATED_TAXID_ANNOTATIONS[
-        ld.REGULATED_TAXID_ANNOTATIONS["accession"] == Accession(taxid=0)]
+    # Report errors for bad entries
+    bad_entries = ld.CONTROL_LIST_ANNOTATIONS[
+        ld.CONTROL_LIST_ANNOTATIONS["accession"] == Accession(None)]
     bad_entries.loc[bad_entries["name"].str.len() >= 57, "name"] = (
         bad_entries["name"].str[:57].str.strip() + "..."
     )
@@ -260,24 +249,24 @@ def post_process_regulation_data():
                        bad_entries[["name","category","list_acronym"]].to_string(index = False))
 
     # Drop duplicates before indexing, using strict and non-strict strategy.
-    bad_duplicates = ld.REGULATED_TAXID_ANNOTATIONS.drop_duplicates()
-    ld.REGULATED_TAXID_ANNOTATIONS.drop_duplicates(
+    bad_duplicates = ld.CONTROL_LIST_ANNOTATIONS.drop_duplicates()
+    ld.CONTROL_LIST_ANNOTATIONS.drop_duplicates(
         subset=["list_acronym", "accession"], inplace=True)
 
     # Index and drop bad entries.
-    ld.REGULATED_TAXID_ANNOTATIONS = ld.REGULATED_TAXID_ANNOTATIONS[
-        ld.REGULATED_TAXID_ANNOTATIONS["accession"] != Accession(taxid=0)]
-    ld.REGULATED_TAXID_ANNOTATIONS.set_index("accession", inplace=True, drop = True)
-    if Accession(taxid=0) in ld.REGULATED_TAXID_ANNOTATIONS.index:
-        ld.REGULATED_TAXID_ANNOTATIONS.drop(Accession(taxid=0), inplace=True)
+    ld.CONTROL_LIST_ANNOTATIONS = ld.CONTROL_LIST_ANNOTATIONS[
+        ld.CONTROL_LIST_ANNOTATIONS["accession"] != Accession(None)]
+    ld.CONTROL_LIST_ANNOTATIONS.set_index("accession", inplace=True, drop = True)
+    if Accession(None) in ld.CONTROL_LIST_ANNOTATIONS.index:
+        ld.CONTROL_LIST_ANNOTATIONS.drop(Accession(None), inplace=True)
 
     # Remove bad entries, index for comparison.
-    bad_duplicates = bad_duplicates[bad_duplicates["accession"] != Accession(taxid=0)]
+    bad_duplicates = bad_duplicates[bad_duplicates["accession"] != Accession(None)]
     bad_duplicates.set_index("accession", inplace=True, drop = False)
 
     # Merge comparison
     diff = pd.merge(bad_duplicates,
-                    ld.REGULATED_TAXID_ANNOTATIONS,
+                    ld.CONTROL_LIST_ANNOTATIONS,
                     how="left", indicator=True).query(
                         '_merge == "left_only"').drop(
                             columns="_merge")
@@ -287,5 +276,5 @@ def post_process_regulation_data():
                        diff[["accession","name","category","list_acronym"]].to_string(index = False))
 
     logger.debug("Loaded the following regulation list dataset: Top 20:\n%s",
-                 ld.REGULATED_TAXID_ANNOTATIONS.head(20).to_string())
+                 ld.CONTROL_LIST_ANNOTATIONS.head(20).to_string())
 
