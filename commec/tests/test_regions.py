@@ -2,7 +2,7 @@ import json
 import logging
 import pytest
 
-from commec.regulation.region import (
+from commec.control_list.region import (
     Region,
     get_regions_set,
     load_region_list_data,

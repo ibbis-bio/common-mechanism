@@ -36,7 +36,7 @@ from commec.setup import (
     add_args as setup_add_args,
     run as setup_run,
 )
-from commec.regulation.regulation import (
+from commec.control_list.control_list import (
     DESCRIPTION as list_DESCRIPTION,
     add_args as list_add_args,
     run as list_run,

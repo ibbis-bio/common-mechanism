@@ -11,26 +11,24 @@ will return the correct AccessionFormat object, or None.
 
 """
 import os
-import re
 import logging
 import argparse
-import pandas as pd
 from commec.utils.logger import setup_console_logging
-from commec.regulation.containers import (
+from .containers import (
     TaxidRegulation,
     RegulationList,
     derive_accession_type
 )
-import commec.regulation.containers as data
-from commec.regulation.initialisation import (
+from . import containers as data
+from .initialisation import (
     import_regulations,
     post_process_regulation_data,
 )
-from commec.regulation.region import (
+from .region import (
     load_region_list_data,
     get_regions_set
 )
-from commec.regulation.cli import (
+from .cli import (
     add_args,
     regulation_list_information,
     regulation_taxid_information,
@@ -45,7 +43,7 @@ logger = logging.getLogger(__name__)
 def load_regulation_data(import_path : str | os.PathLike,
                          regional_context : list[str] = None):
     """
-    Entry point to load regulation data.
+    Entry point to load Control List data.
     Loads region definitions, then recursively loads data.
     """
     # This needs to occur before we interpret regional context.
@@ -157,7 +155,7 @@ def run(arguments: argparse.Namespace):
         load_regulation_data(arguments.database_dir, regions)
 
     if arguments.showlists:
-        logger.info(" *----------* REGULATION LISTS *----------* ")
+        logger.info(" *----------* CONTROL LISTS *----------* ")
         logger.info(regulation_list_information())
 
     if arguments.showtaxids:

@@ -19,7 +19,7 @@ import json
 import logging
 import pycountry as pc
 
-from commec.regulation.containers import Region
+from .containers import Region
 
 logger = logging.getLogger(__name__)
 

@@ -14,8 +14,8 @@ import pytaxonkit
 import pandas as pd
 import numpy as np
 from commec.tools.search_handler import SearchHandler, DatabaseValidationError
-from commec.regulation.regulation import get_regulation
-from commec.regulation.containers import AccessionFormat
+from commec.control_list.control_list import get_regulation
+from commec.control_list.containers import AccessionFormat
 
 TAXID_SYNTHETIC_CONSTRUCTS = 32630
 TAXID_VECTORS = 29278
