@@ -34,7 +34,7 @@ from enum import StrEnum
 from importlib.metadata import version, PackageNotFoundError
 import pandas as pd
 from commec.tools.search_handler import SearchToolVersion
-from commec.control_list.containers import RegulationList, RegulationOutput
+from commec.control_list.containers import ControlList, RegulationOutput
 from commec import __version__ as COMMEC_VERSION
 
 logger = logging.getLogger(__name__)
@@ -746,7 +746,7 @@ class ScreenRunInfo:
     time_taken: str = ""
     date_run: str = ""
     search_tool_info: SearchToolInfo = field(default_factory=SearchToolInfo)
-    regulation_list_info : list[RegulationList] = field(default_factory=list)
+    regulation_list_info : list[ControlList] = field(default_factory=list)
 
 
 @dataclass

@@ -7,14 +7,14 @@ import argparse
 import pandas as pd
 from commec.utils.file_utils import directory_arg
 from .containers import (
-    TaxidRegulation,
-    RegulationList,
+    ControlListInfo,
+    ControlList,
 )
 from . import list_data as data
 
 def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
-    Add Regulation module arguments to an ArgumentParser object.
+    Add Control List module arguments to an ArgumentParser object.
     """
     parser_obj.add_argument(
         "-d",
@@ -22,13 +22,14 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         dest="database_dir",
         type=directory_arg,
         default=None,
-        help="Path to directory containing reference databases (e.g. taxonomy, protein, HMM)",
+        help="Path to parent directory containing Control List databases,"
+        " the head of which should contain a region_definitions.json file",
     )
     parser_obj.add_argument(
         "-v",
         "--verbose",
         dest="verbose",
-        help="Output debug logs.",
+        help="Output additional debug logs.",
         default=False,
         action="store_true"
     )
@@ -38,7 +39,7 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         dest="showlists",
         default=False,
         action="store_true",
-        help="Display annotation list information",
+        help="Print a summary of all imported Control Lists",
     )
     parser_obj.add_argument(
         "-a",
@@ -46,7 +47,7 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         dest="showtaxids",
         nargs="+",
         default=[],
-        help="Display any available list information for the supplied taxids, genbank accessions, or uniprot ids.",
+        help="Display any available list information for the supplied Accessions.",
     )
     parser_obj.add_argument(
         "-r",
@@ -54,13 +55,13 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         dest="regions",
         nargs="+",
         default=[],
-        help="A list of countries or regions to add context to list compliance",
+        help="A list of countries or regions to add context to control list compliance",
     )
     parser_obj.add_argument(
         "-o",
         "--output_prefix",
         dest="output_prefix",
-        help="Save all pertinant information to an output fileset, with provided prefix",
+        help="Save a summary of all ingested information to an output fileset, with provided prefix",
         default="",
     )
     # --pretty?
@@ -68,19 +69,19 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
     return parser_obj
 
-def regulation_list_information():
+def format_control_lists():
     """
     Summarises all loaded regulation list information,
     as well as their compliance under regional context.
     """
-    output = "The following Regulation Lists have been identified: "
-    for _, value in data.REGULATION_LISTS.items():
-        number_of_regulated_taxids = (data.REGULATED_TAXID_ANNOTATIONS["list_acronym"] == value.acronym).sum()
+    output = "The following Control Lists apply: "
+    for _, value in data.CONTROL_LISTS.items():
+        number_of_regulated_taxids = (data.CONTROL_LIST_ANNOTATIONS["list_acronym"] == value.acronym).sum()
         output += f"\n{value}\nRegulated Taxid Entries: {number_of_regulated_taxids}, Status : {value.status}"
-    output += f"\n    [Total number of Taxid Relationships:{data.CHILD_TAXID_MAP.shape[0]}]"
+    output += f"\n    [Total number of Taxid Relationships:{data.ACCESSION_MAP.shape[0]}]"
     return output + "\n"
 
-def regulation_taxid_information(input_data : list[tuple[RegulationList, TaxidRegulation]]):
+def format_control_list_annotation(input_data : list[tuple[ControlList, ControlListInfo]]):
     """
     Returns a formatted string of the regulated taxid information for logging purposes.
     """
@@ -100,7 +101,7 @@ def generate_output_summary_csv(output_filepath : str | os.PathLike):
     Doesn't include invalid imported data with no Accession method.
     """
 
-    output_data = data.REGULATED_TAXID_ANNOTATIONS.copy(deep = True)
+    output_data = data.CONTROL_LIST_ANNOTATIONS.copy(deep = True)
     output_data["name"] = (
         output_data["preferred_taxonomy_name"]
         .combine_first(output_data["name"])

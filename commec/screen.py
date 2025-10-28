@@ -81,11 +81,7 @@ from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.tools.search_handler import DatabaseValidationError
 from commec.config.json_io import encode_screen_data_to_json
 from commec.config.constants import MINIMUM_QUERY_LENGTH
-from commec.control_list.control_list import (
-    load_regulation_data,
-    regulation_list_information,
-    get_regulation_list,
-)
+import commec.control_list as control_list
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -329,9 +325,9 @@ class Screen:
         # Initialize the regulation list data
         regulation_path = self.params.config["databases"]["regulated_lists"]["path"]
         region_context = args.regions or self.params.config["databases"]["regulated_lists"]["regions"]
-        load_regulation_data(regulation_path, region_context)
-        logger.info(regulation_list_information())
-        reg_lists = get_regulation_list()
+        control_list.import_data(regulation_path, region_context)
+        logger.info(control_list.format_control_lists())
+        reg_lists = control_list.get_control_lists()
         self.screen_data.commec_info.regulation_list_info = reg_lists
 
         # Initialize the queries

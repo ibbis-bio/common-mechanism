@@ -5,9 +5,6 @@ Responsible for the ingestion of annotated data from region based regulated
 lists. 
 
 API:
-derive_accession_type : Given a string for Taxid, Genbank, or Uniprot accession,
-will return the correct AccessionFormat object, or None.
-
 
 """
 import os
@@ -15,25 +12,18 @@ import logging
 import argparse
 from commec.utils.logger import setup_console_logging
 from .containers import (
-    TaxidRegulation,
-    RegulationList,
-    AccessionFormat,
+    ControlList,
+    ControlListInfo,
     Accession,
-    derive_accession_type
+    derive_accession_format
 )
-from . import list_data as data
-from .initialisation import (
-    import_regulations,
-    post_process_regulation_data,
-)
-from .region import (
-    load_region_list_data,
-    get_regions_set
-)
+from . import list_data as __data
+from . import initialisation as __init
+from . import region as __region
 from .cli import (
     add_args,
-    regulation_list_information,
-    regulation_taxid_information,
+    format_control_lists,
+    format_control_list_annotation,
     generate_output_summary_csv,
 )
 
@@ -42,25 +32,25 @@ annotated regulated lists used during commec screen"""
 
 logger = logging.getLogger(__name__)
 
-def load_regulation_data(import_path : str | os.PathLike,
+def import_data(import_path : str | os.PathLike,
                          regional_context : list[str] = None):
     """
     Entry point to load Control List data.
     Loads region definitions, then recursively loads data.
     """
     # This needs to occur before we interpret regional context.
-    load_region_list_data(os.path.join(import_path, "region_definitions.json"))
+    __region.load_region_list_data(os.path.join(import_path, "region_definitions.json"))
 
     # If the user puts in EU for example, we need to expand the set.
-    cleaned_context = get_regions_set(regional_context)
+    cleaned_context = __region.get_regions_set(regional_context)
     logger.debug("Using the following regional context: \n")
     logger.debug(cleaned_context)
 
     # Recursively load the actual data.
-    _load_regulation_data(import_path, cleaned_context)
-    post_process_regulation_data()
+    _import_data(import_path, cleaned_context)
+    __init.tidy_control_list_data()
 
-def _load_regulation_data(import_path : str | os.PathLike,
+def _import_data(import_path : str | os.PathLike,
                           regional_context : list[str]):
     """
     Load a filepath recursively. Searches for valid "list folders"
@@ -71,7 +61,7 @@ def _load_regulation_data(import_path : str | os.PathLike,
         logger.warning("Provided path invalid %s", import_path)
         return
 
-    if import_regulations(import_path, regional_context):
+    if __init.import_control_lists(import_path, regional_context):
         return
 
     logger.debug("Invalid path: %s ... searching for more sub-directories...", import_path)
@@ -79,10 +69,29 @@ def _load_regulation_data(import_path : str | os.PathLike,
     # check for existance of sub folders and recurse on any present.
     for entry in os.scandir(import_path):
         if os.path.isdir(entry):
-            _load_regulation_data(entry, regional_context)
+            _import_data(entry, regional_context)
     return
 
-def get_regulation(accession : str, accession_fmt : AccessionFormat) -> list[tuple[RegulationList, TaxidRegulation]]:
+def is_regulated(accession : str) -> bool:
+    """
+    Same as get_regulation, but optimised for speed — returns True/False
+    for whether there is any control list data for the given accession.
+    """
+    accession_hash = Accession(accession)
+    accession_to_check = {accession_hash}
+
+    # Collect parent TaxIDs, if any
+    taxid_parents = __data.ACCESSION_MAP.loc[
+        __data.ACCESSION_MAP["child_taxid"] == accession, "regulated_taxid"
+    ]
+    accession_to_check.update(Accession(taxid) for taxid in taxid_parents)
+
+    # Check for intersection between sets of indexes vs accessions to check.
+    index_values = __data.CONTROL_LIST_ANNOTATIONS.index
+    return not accession_to_check.isdisjoint(index_values)
+
+
+def get_regulation(accession : str) -> list[tuple[ControlList, ControlListInfo]]:
     """
     Check the given Accession against all imported regulated lists.
     The input Accession can be a TaxID, GenBank protein, or Uniprot ID.
@@ -93,48 +102,41 @@ def get_regulation(accession : str, accession_fmt : AccessionFormat) -> list[tup
     a tuple containing the list info, as well as the 
     taxid specific regulation information.
     """
-    output_data : list[tuple[RegulationList, TaxidRegulation]] = []
+    output_data : list[tuple[ControlList, ControlListInfo]] = []
 
     # Modify based on input accession format:
-    accession_to_check = []
-    match(accession_fmt):
-        case AccessionFormat.TAXID:
-            accession_to_check = [Accession(taxid = accession)]
-            taxid_parents_to_check = data.CHILD_TAXID_MAP[
-                data.CHILD_TAXID_MAP["child_taxid"] == accession]["regulated_taxid"].to_list()
-            taxid_parents_to_check = [Accession(taxid=tid) for tid in taxid_parents_to_check]
-            accession_to_check.extend(taxid_parents_to_check)
-
-        case AccessionFormat.GENBANK:
-            accession_to_check = [Accession(genbank = accession)]
-
-        case AccessionFormat.UNIPROT:
-            accession_to_check = [Accession(uniprot = accession)]
+    accession_hash = Accession(accession)
+    accession_to_check = [accession_hash]
+    taxid_parents_to_check = __data.ACCESSION_MAP[
+        __data.ACCESSION_MAP["child_taxid"] == accession]["regulated_taxid"].to_list()
+    taxid_parents_to_check = [Accession(taxid) for taxid in taxid_parents_to_check]
+    accession_to_check.extend(taxid_parents_to_check)
 
     logger.debug("Accesions to check: %s", accession_to_check)
 
     # Get Accessions of regulated interest:
-    filtered_regulated_taxid_annotations = data.REGULATED_TAXID_ANNOTATIONS[
-        data.REGULATED_TAXID_ANNOTATIONS.index.isin(accession_to_check)]
+    filtered_regulated_taxid_annotations = __data.CONTROL_LIST_ANNOTATIONS[
+        __data.CONTROL_LIST_ANNOTATIONS.index.isin(accession_to_check)]
     
     logger.debug("Filtered Output DBS: %s", filtered_regulated_taxid_annotations.to_string())
 
     for hash_taxid, row in filtered_regulated_taxid_annotations.iterrows():
-        taxid_regulation_info = TaxidRegulation.from_row(row, hash_taxid)
-        list_data = data.REGULATION_LISTS[taxid_regulation_info.list_acronym]
+        taxid_regulation_info = ControlListInfo.from_row(row, hash_taxid)
+        list_data = __data.CONTROL_LISTS[taxid_regulation_info.list_acronym]
         output_data.append((list_data, taxid_regulation_info))
 
     if len(output_data) > 0:
         logger.debug("Checking %s [%s] for regulation resulted in %i annotations",
-                     accession_fmt, accession, len(output_data))
+                     accession_hash.get_format(), accession, len(output_data))
 
     return output_data
 
-def get_regulation_list():
+def get_control_lists():
     """
     Simple retrieval for the 'list of lists' information.
     """
-    return [value for value in data.REGULATION_LISTS.values()]
+    output = list(__data.CONTROL_LISTS.values())
+    return output
 
 def run(arguments: argparse.Namespace):
     """
@@ -154,23 +156,23 @@ def run(arguments: argparse.Namespace):
     regions = arguments.regions or None
 
     if arguments.database_dir:
-        load_regulation_data(arguments.database_dir, regions)
+        import_data(arguments.database_dir, regions)
 
     if arguments.showlists:
         logger.info(" *----------* CONTROL LISTS *----------* ")
-        logger.info(regulation_list_information())
+        logger.info(format_control_lists())
 
     if arguments.showtaxids:
         logger.info(" *----------* REGULATED TAXIDS *----------* ")
         logger.info("Regulation Annotations "
                     "for supplied taxids (#%i):\n", len(arguments.showtaxids))
         for accession in arguments.showtaxids:
-            accession_format = derive_accession_type(accession)
+            accession_format = derive_accession_format(accession)
             if not accession_format:
                 logger.error("Could not determine the accession format for input: %s", accession)
                 continue
-            outcome = get_regulation(accession, accession_format)
-            logger.info("   > Taxid %s: %s",accession, regulation_taxid_information(outcome))
+            outcome = get_regulation(accession)
+            logger.info("   > Taxid %s: %s",accession, format_control_list_annotation(outcome))
 
     if arguments.output_prefix:
         logger.info("Writing output list summary to \"%s.csv\" ...", arguments.output_prefix)
