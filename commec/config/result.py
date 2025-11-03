@@ -746,7 +746,7 @@ class ScreenRunInfo:
     time_taken: str = ""
     date_run: str = ""
     search_tool_info: SearchToolInfo = field(default_factory=SearchToolInfo)
-    regulation_list_info : list[ControlList] = field(default_factory=list)
+    control_list_info : list[ControlList] = field(default_factory=list)
 
 
 @dataclass

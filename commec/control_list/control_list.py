@@ -1,10 +1,12 @@
 # Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
 
 """
-Responsible for the ingestion of annotated data from region based regulated
-lists. 
+Entry point for Control List, handles major API calls.
 
-API:
+get_control_lists
+get_regulation
+is_regulated
+
 
 """
 import os
@@ -136,7 +138,7 @@ def get_regulation(accession : str) -> list[tuple[ControlList, ControlListInfo]]
 
 def get_control_lists():
     """
-    Simple retrieval for the 'list of lists' information.
+    Simple retrieval for the 'list of Control lists' information.
     """
     output = list(__data.CONTROL_LISTS.values())
     return output
