@@ -21,6 +21,13 @@ from commec.screen import run, ScreenArgumentParser, add_args
 from commec.config.result import ScreenResult, ScreenStep
 from commec.config.json_io import get_screen_data_from_json
 
+from commec.control_list.containers import (
+    ControlList,
+    ListMode
+)
+import commec.control_list.list_data as ld
+from commec.control_list.initialisation import tidy_control_list_data
+
 def skip_taxonomy_info(
     blast: pd.DataFrame,
     _regulated_taxids: list[str],
@@ -79,6 +86,7 @@ class ScreenTesterFactory:
         
         TAXONOMY = pd.DataFrame(columns=["subject acc.","regulated", "superkingdom", "phylum", "genus", "species"])
         BIORISK_ANNOTATIONS_DATA = pd.DataFrame(columns=["ID", "Description", "Must flag"])
+        ld.clear()
 
     def run(self, *args):
         """
@@ -86,6 +94,7 @@ class ScreenTesterFactory:
         """
 
         self._create_temporary_files()
+        tidy_control_list_data()
 
         arguments = [
                 "test.py", str(self.input_fasta_path), 
@@ -143,6 +152,16 @@ class ScreenTesterFactory:
 
         assert start > 0
         assert stop > 0
+
+        if regulated:
+            ld.add_control_list(ControlList("default_test_list","DTL","www.nourl.com",["NZ"],ListMode.COMPLIANCE))
+            ld.add_control_list_annotations(pd.DataFrame([
+                {
+                    "name": title,
+                    "tax_id": taxid,
+                    "list_acronym": "DTL",
+                },
+            ]))
 
         # Ensure that the taxonomy LUT entry for this hit exists.
         if to_step in [ScreenStep.TAXONOMY_AA, ScreenStep.TAXONOMY_NT]:
