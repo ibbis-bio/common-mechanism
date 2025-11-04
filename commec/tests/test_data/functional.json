@@ -3,7 +3,7 @@
     "commec_version": "1.0.1",
     "json_output_version": "0.4",
     "time_taken": "00:00:02",
-    "date_run": "2025-11-04 12:44:50",
+    "date_run": "2025-11-04 18:01:48",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -33,7 +33,7 @@
     "control_list_info": []
   },
   "query_info": {
-    "file": "/tmp/pytest-of-root/pytest-7/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-root/pytest-16/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -88,8 +88,9 @@
                     "target_description": "Main",
                     "control_list": [
                       {
-                        "list": "DTL",
-                        "category": NaN
+                        "name": "ShouldntClear",
+                        "category": "None",
+                        "list": "DTL"
                       }
                     ]
                   }
@@ -147,8 +148,9 @@
                     "target_description": "SUBJECT",
                     "control_list": [
                       {
-                        "list": "DTL",
-                        "category": NaN
+                        "name": "ShouldntClear",
+                        "category": "None",
+                        "list": "DTL"
                       }
                     ]
                   },
@@ -162,8 +164,9 @@
                     "target_description": "SUBJECT",
                     "control_list": [
                       {
-                        "list": "DTL",
-                        "category": NaN
+                        "name": "SUBJECT",
+                        "category": "None",
+                        "list": "DTL"
                       }
                     ]
                   }
@@ -211,8 +214,9 @@
                     "target_description": "SUBJECT",
                     "control_list": [
                       {
-                        "list": "DTL",
-                        "category": NaN
+                        "name": "ShouldntClear",
+                        "category": "None",
+                        "list": "DTL"
                       }
                     ]
                   },
@@ -226,8 +230,9 @@
                     "target_description": "SUBJECT",
                     "control_list": [
                       {
-                        "list": "DTL",
-                        "category": NaN
+                        "name": "SUBJECT",
+                        "category": "None",
+                        "list": "DTL"
                       }
                     ]
                   }
@@ -275,8 +280,9 @@
                     "target_description": "SUBJECT",
                     "control_list": [
                       {
-                        "list": "DTL",
-                        "category": NaN
+                        "name": "ShouldntClear",
+                        "category": "None",
+                        "list": "DTL"
                       }
                     ]
                   }
@@ -324,8 +330,9 @@
                     "target_description": "ShouldMixedReg",
                     "control_list": [
                       {
-                        "list": "DTL",
-                        "category": NaN
+                        "name": "ShouldMixedReg",
+                        "category": "None",
+                        "list": "DTL"
                       }
                     ]
                   }
@@ -392,8 +399,9 @@
                     "target_description": "ShouldClear",
                     "control_list": [
                       {
-                        "list": "DTL",
-                        "category": NaN
+                        "name": "ShouldClear",
+                        "category": "None",
+                        "list": "DTL"
                       }
                     ]
                   }
@@ -441,8 +449,9 @@
                     "target_description": "ShouldClearBySynBio",
                     "control_list": [
                       {
-                        "list": "DTL",
-                        "category": NaN
+                        "name": "ShouldntClear",
+                        "category": "None",
+                        "list": "DTL"
                       }
                     ]
                   }
@@ -490,8 +499,9 @@
                     "target_description": "ShouldClearBySynBio",
                     "control_list": [
                       {
-                        "list": "DTL",
-                        "category": NaN
+                        "name": "ShouldntClear",
+                        "category": "None",
+                        "list": "DTL"
                       }
                     ]
                   }
@@ -539,8 +549,9 @@
                     "target_description": "ShouldntClear",
                     "control_list": [
                       {
-                        "list": "DTL",
-                        "category": NaN
+                        "name": "ShouldntClear",
+                        "category": "None",
+                        "list": "DTL"
                       }
                     ]
                   }

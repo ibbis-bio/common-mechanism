@@ -33,6 +33,7 @@ from commec.config.result import (
 )
 
 from commec.control_list import (
+    get_control_lists,
     get_regulation,
     ListMode,
     ControlList,
@@ -270,9 +271,9 @@ def parse_taxonomy_hits(
                 key=lambda d: d["taxid"]
             )
 
-            for reg_anno in regulated_annotation_list:
-                control_info, simple_info = get_regulation(reg_anno["taxid"])
-                reg_anno["control_list"] = simple_info
+            for reg_annotation in regulated_annotation_list:
+                control_info, _context_info = get_regulation(reg_annotation["taxid"])
+                reg_annotation["control_list"] = control_info
  
             # Set the default hit description, this is changed if result is mixed etc.
             domains_text = ", ".join(set(domains))
@@ -393,10 +394,11 @@ def update_using_control_lists(regulated : pd.DataFrame, non_regulated : pd.Data
     indexes_to_move = []
 
     for index, row in regulated.iterrows():
-        control_data, _simple_data = get_regulation(row["subject tax ids"])
-        for clist, _info in control_data:
+        control_data, _context_data = get_regulation(row["subject tax ids"])
+        for info in control_data:
+            clist : ControlListInfo = get_control_lists(info.list)
             regulated.at[index, "list_acronym"] = clist.acronym
-            regulated.at[index, "category"] = _info.category
+            regulated.at[index, "category"] = info.category
             if clist.status == ListMode.COMPLIANCE:
                 continue
             if clist.status == ListMode.COMPLIANCE_WARN:

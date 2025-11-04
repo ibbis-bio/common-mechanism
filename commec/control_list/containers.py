@@ -176,6 +176,23 @@ class ControlList:
         else:
             return True
 
+class CategoryType(StrEnum):
+    """
+    Valid options for values under the 'category' column in regulated_taxids.csv
+    inputs. Communicates the type of entity being references by the control list.
+    """
+    BACTERIA = "Bacteria"
+    VIRUSES = "Viruses"
+    EUKARYOTA = "Eukaryota"
+    PROTEIN = "Proteins"
+    TOXIN = "Toxins"
+    OTHER_EUKARYOTA = "Other Eukaryota"
+    OTHER_EUKAYROTA_ANIMAL = "Other Eukaryota (Animal)"
+    NON_PROTEIN_TOXIN = "Non-Protein Toxin"
+    TOXIN_SYNTHESIS_ENZYME = "Toxin Synthesis Enzyme"
+    PRIONS_AND_TSE = "Prions & TSEs"
+    NONE = "None" # Default value.
+
 @dataclass
 class ControlListInfo:
     """
@@ -215,34 +232,30 @@ class ControlListInfo:
 
         return cls(**kwargs)
 
-class CategoryType(StrEnum):
+@dataclass
+class ControlListContext:
     """
-    The type of regulation we are dealing with, which may derive some 
-    information about what it might have: taxid, uniprot, genbank accession. 
-    Whether or not it is pathogenic or if it targets something like Brazilian mushrooms.
-    This will be used to parse the category column of the input csvs.
+    Provides additional context for how the results of querying a control list
+    applies to the queried accession.
+
+    *`derived_from` (str) : The name of the entity referenced by the Control List, if different from the taxonomy name.
+    *`is_child` (bool) : Whether or not the taxid 
     """
-    BACTERIA = "Bacteria"
-    VIRUSES = "Viruses"
-    EUKARYOTA = "Eukaryota"
-    PROTEIN = "Proteins"
-    TOXIN = "Toxins"
-    OTHER_EUKARYOTA = "Other Eukaryota"
-    OTHER_EUKAYROTA_ANIMAL = "Other Eukaryota (Animal)"
-    NON_PROTEIN_TOXIN = "Non-Protein Toxin"
-    TOXIN_SYNTHESIS_ENZYME = "Toxin Synthesis Enzyme"
-    PRIONS_AND_TSE = "Prions & TSEs"
-    NONE = "None"
+    derived_from : str = None
+    is_child : bool = False
+    #should_ignore : bool = False
 
 @dataclass
-class RegulationOutput:
+class ControListOutput:
     """
-    Container for regulation list information. Formatted for use in output JSON.
+    Container for Control List information. Formatted for use in output JSON.
 
     * `list` ( str ) : Common acroynm for control list.
+    * `name` ( str ) : High level name used for this annotation.
     * `category` ( str ) : What category does this control list apply to the hit (e.g. organism, species, protein)
 
     See results.py for other examples.
     """
-    list : str = ""
+    name : str = ""
     category : str = ""
+    list : str = ""

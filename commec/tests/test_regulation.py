@@ -44,7 +44,7 @@ def test_multiple_entrys():
 
     input_list1_data = pd.DataFrame([
         {
-            "category": "Virus",
+            "category": "Viruses",
             "name": "Influenza A virus",
             "notes": "Seasonal pathogen",
             "derived_from": "",
@@ -56,7 +56,7 @@ def test_multiple_entrys():
             "hazard_group": "HG2",
         },
         {
-            "category": "Virus",
+            "category": "Viruses",
             "name": "Influenza B virus",
             "notes": "Seasonal pathogen",
             "derived_from": "",
@@ -71,7 +71,7 @@ def test_multiple_entrys():
 
     input_list2_data = pd.DataFrame([
         {
-            "category": "Virus",
+            "category": "Viruses",
             "name": "Influenza A virus",
             "notes": "Seasonal pathogen",
             "derived_from": "",
@@ -88,7 +88,7 @@ def test_multiple_entrys():
             "list_acronym": "L1",
         },
         {   # Fully Duplicate entry
-            "category": "Virus",
+            "category": "Viruses",
             "name": "Influenza B virus",
             "notes": "Seasonal pathogen",
             "derived_from": "",
