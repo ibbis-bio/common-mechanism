@@ -21,6 +21,7 @@ from commec.screen import run, ScreenArgumentParser, add_args
 from commec.config.result import ScreenResult, ScreenStep
 from commec.config.json_io import get_screen_data_from_json
 
+from commec.control_list.region import Region
 from commec.control_list.containers import (
     ControlList,
     ListMode
@@ -154,7 +155,10 @@ class ScreenTesterFactory:
         assert stop > 0
 
         if regulated:
-            ld.add_control_list(ControlList("default_test_list","DTL","www.nourl.com",["NZ"],ListMode.COMPLIANCE))
+            ld.add_control_list(ControlList("default_test_list",
+                                            "DTL","www.nourl.com",
+                                            [Region("New Zealand","NZ")],
+                                            ListMode.COMPLIANCE))
             ld.add_control_list_annotations(pd.DataFrame([
                 {
                     "name": title,
