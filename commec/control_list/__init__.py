@@ -32,3 +32,7 @@ from .containers import (
     AccessionFormat,
     derive_accession_format
 )
+
+from .region import (
+    get_regions_set
+)

@@ -99,6 +99,8 @@ def _return_country_set_from_unknown(region_info : str | Region = "") -> set[str
     if isinstance(region_info, Region):
         search_string = region_info.acronym
 
+    search_string = str(search_string).strip()
+
     # Handle Custom region acronyms
     if REGION_DATA_LUT.get(search_string):
         data = REGION_DATA_LUT[search_string]["regions"]

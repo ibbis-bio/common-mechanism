@@ -70,7 +70,7 @@ def import_control_lists(
 
     # Check required files.
     if not os.path.isdir(input_path): return False
-    for file in [info_filename, data_filename, child_lut_filename, ignored_filename]:
+    for file in [info_filename, data_filename, child_lut_filename]:
         if not os.path.isfile(file): return False
 
     logger.debug("Importing regulation list from %s", input_path)
@@ -149,11 +149,11 @@ def _import_control_list_info(input_path : str | os.PathLike):
     for _, row in list_info.iterrows():
         logger.debug(f"Parsing list information: {row}")
         new_list = ControlList(
-            row["list_name"],
-            row["list_acronym"],
-            row["list_url"],
-            [Region(name = row["region_name"],
-                    acronym = row["region_code"])],
+            row["list_name"].strip(),
+            row["list_acronym"].strip(),
+            row["list_url"].strip(),
+            [Region(name = row["region_name"].strip(),
+                    acronym = row["region_code"].strip())],
             ListMode.COMPLIANCE)
 
         if ld.add_control_list(new_list):
@@ -226,8 +226,9 @@ def _import_ignored_accessions(input_path : str | os.PathLike):
     ignored_taxids.csv file within a regulated list provided to commec.
     Concatenates the ignored info into the global dataframe.
     """
-    ignored_data = pd.read_csv(input_path)
-    ld.add_ignored_accession_data(ignored_data)
+    if os.path.isfile(input_path):
+        ignored_data = pd.read_csv(input_path)
+        ld.add_ignored_accession_data(ignored_data)
 
 
 def tidy_control_list_data():

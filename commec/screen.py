@@ -71,6 +71,7 @@ from commec.config.result import (
     ScreenStep,
     QueryResult,
     ScreenStatus,
+    ControlListResult,
 )
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
@@ -327,8 +328,14 @@ class Screen:
         region_context = args.regions or self.params.config["databases"]["regulated_lists"]["regions"]
         control_list.import_data(regulation_path, region_context)
         logger.info(control_list.format_control_lists())
-        reg_lists = control_list.get_control_lists()
-        self.screen_data.commec_info.regulation_list_info = reg_lists
+        control_lists = control_list.get_control_lists()
+        control_lists = [ControlListResult(
+                cl.name,
+                cl.regions[0].name,
+                ",".join(control_list.get_regions_set(cl.regions[0])),
+                cl.status,
+                cl.url) for cl in control_lists]
+        self.screen_data.commec_info.control_list_info = control_lists
 
         # Initialize the queries
         try:

@@ -34,7 +34,7 @@ from enum import StrEnum
 from importlib.metadata import version, PackageNotFoundError
 import pandas as pd
 from commec.tools.search_handler import SearchToolVersion
-from commec.control_list.containers import ControlList, ControListOutput
+from commec.control_list.containers import ListMode
 from commec import __version__ as COMMEC_VERSION
 
 logger = logging.getLogger(__name__)
@@ -737,6 +737,18 @@ class SearchToolInfo:
     low_concern_rna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
     low_concern_dna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
 
+@dataclass
+class ControlListResult():
+    """ 
+    Modified ControList container for JSON output, includes the additional
+    information for what is in a group in the case of a broader region definition.
+    """
+    name : str = ""
+    region : str = ""
+    includes: str = ""
+    status : ListMode = field(default_factory=ListMode)
+    url : str = ""
+
 
 @dataclass
 class ScreenRunInfo:
@@ -746,7 +758,7 @@ class ScreenRunInfo:
     time_taken: str = ""
     date_run: str = ""
     search_tool_info: SearchToolInfo = field(default_factory=SearchToolInfo)
-    control_list_info : list[ControlList] = field(default_factory=list)
+    control_list_info : list[ControlListResult] = field(default_factory=list)
 
 
 @dataclass
