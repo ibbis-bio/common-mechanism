@@ -60,7 +60,7 @@ def test_functional_screen(tmp_path, request):
     functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 190, "SUBJECT", "NT_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses", evalue = 0.14)
     functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 200, "SUBJECT", "NT_HIT_FLAG3", "12350", regulated = True, superkingdom = "Viruses", evalue = 0.15)
     functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 310, 390, "Main", "NT_HIT_MIXED", "12345", regulated = True, superkingdom = "Viruses", evalue = 0.16)
-    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 310, 390, "NonRegMixedWithMain", "NT_HIT_MIXED2", "12346", regulated = False, superkingdom = "Bacteria", evalue = 0.17)
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 310, 390, "NonRegMixedWithMain", "NT_HIT_MIXED2", "12348", regulated = False, superkingdom = "Bacteria", evalue = 0.17)
     # Low Concern
     functional_test.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "FCTEST1", 202, 370, "Benign1", "Benign1", description = "BenignHMMClear", evalue = 1e-26)
     functional_test.add_hit(ScreenStep.LOW_CONCERN_RNA, "FCTEST1", 50, 150, "BENIGNRNA", "12346", description = "BenignCMTestOutput", evalue = 1e-27)

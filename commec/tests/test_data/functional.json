@@ -3,7 +3,7 @@
     "commec_version": "1.0.1",
     "json_output_version": "0.4",
     "time_taken": "00:00:02",
-    "date_run": "2025-11-04 18:01:48",
+    "date_run": "2025-11-05 09:50:03",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -30,10 +30,18 @@
         "database_info": "x.x.x"
       }
     },
-    "control_list_info": []
+    "control_list_info": [
+      {
+        "name": "default_test_list",
+        "region": "New Zealand",
+        "includes": "NZ",
+        "status": "Compliance",
+        "url": "www.nourl.com"
+      }
+    ]
   },
   "query_info": {
-    "file": "/tmp/pytest-of-root/pytest-16/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-root/pytest-21/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -98,7 +106,7 @@
                 "non_regulated_taxa": [
                   {
                     "evalue": 0.17,
-                    "taxid": 12346,
+                    "taxid": 12348,
                     "species": "unclassified",
                     "genus": "unclassified",
                     "superkingdom": "Bacteria",
