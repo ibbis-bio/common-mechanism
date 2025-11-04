@@ -2,6 +2,8 @@
 Storage for the module globals, containing both the
  * Control Lists
  * Control list annotations
+ * Accession Map
+ * Ignored Accessions
 As well as methods for interacting safely with these globals:
  * clear()
  * 
@@ -10,10 +12,10 @@ import pandas as pd
 
 from .containers import ControlList
 
-# The information of a Control Lists, Indexed on the list acronym.
+# The information of the Control Lists, Indexed on the list acronym.
 CONTROL_LISTS : dict[str, ControlList] = {}
 
-# Information for every Accession within a list, 
+# Information for every Accession within a list,
 # unique for list acronym, and taxid.
 # Indexed on Accession
 CONTROL_LIST_ANNOTATIONS : pd.DataFrame = pd.DataFrame({
@@ -31,11 +33,19 @@ CONTROL_LIST_ANNOTATIONS : pd.DataFrame = pd.DataFrame({
     "hazard_group": pd.Series(dtype="str")
     })
 
-# Precalculated and imported map of child 
+# Precalculated and imported map of child
 # accessions to control list Accessions.
 ACCESSION_MAP = pd.DataFrame({
     "child_taxid": pd.Series(dtype="str"),
     "regulated_taxid": pd.Series(dtype="str")
+    })
+
+# Precalculated and imported set of accessions
+# Typically unclassified cousins of regulated
+# taxids.
+IGNORED_ACCESSION = pd.DataFrame({
+    "child_taxid": pd.Series(dtype="str"),
+    "ignored_taxid": pd.Series(dtype="str")
     })
 
 def add_control_list(new_list : ControlList) -> bool:
@@ -109,6 +119,27 @@ def add_child_lut_data(input_data: pd.DataFrame):
         [ACCESSION_MAP, input_data], ignore_index=True
         ).drop_duplicates().reset_index(drop=True)
 
+def add_ignored_accession_data(input_data: pd.DataFrame):
+    """
+    Append pre-calculated ignored accessions to IGNORED_ACCESSION.
+    """
+    global IGNORED_ACCESSION
+    expected_cols = set(IGNORED_ACCESSION.columns)
+
+    # Check for missing columns
+    if not expected_cols.issubset(input_data.columns):
+        raise ValueError(f"Input data must contain columns {expected_cols}, "
+                         f"got {list(input_data.columns)}")
+
+    # Restrict to only the expected columns
+    input_data = input_data.reindex(columns=expected_cols)
+    input_data["ignored_taxid"] = pd.to_numeric(input_data["ignored_taxid"], 
+                                              errors="coerce").astype("Int64")
+    input_data = input_data.astype(IGNORED_ACCESSION.dtypes.to_dict())
+    IGNORED_ACCESSION = pd.concat(
+        [IGNORED_ACCESSION, input_data], ignore_index=True
+        ).drop_duplicates().reset_index(drop=True)
+
 def clear(target : str | None = None) -> bool:
     """
     Removes the targeted list from the module state, or
@@ -117,6 +148,8 @@ def clear(target : str | None = None) -> bool:
     """
     global CONTROL_LISTS
     global CONTROL_LIST_ANNOTATIONS
+    global ACCESSION_MAP
+    global IGNORED_ACCESSION
 
     if target and target in CONTROL_LISTS:
         # implement targetted removal logic.
@@ -128,6 +161,14 @@ def clear(target : str | None = None) -> bool:
 
     if not target:
         CONTROL_LISTS = {}
+        ACCESSION_MAP = pd.DataFrame({
+    "child_taxid": pd.Series(dtype="str"),
+    "regulated_taxid": pd.Series(dtype="str")
+    })
+        IGNORED_ACCESSION = pd.DataFrame({
+    "child_taxid": pd.Series(dtype="str"),
+    "ignored_taxid": pd.Series(dtype="str")
+    })
         CONTROL_LIST_ANNOTATIONS = pd.DataFrame({
     "category": pd.Series(dtype="str"),
     "name": pd.Series(dtype="str"),

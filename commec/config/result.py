@@ -34,7 +34,7 @@ from enum import StrEnum
 from importlib.metadata import version, PackageNotFoundError
 import pandas as pd
 from commec.tools.search_handler import SearchToolVersion
-from commec.control_list.containers import ControlList, RegulationOutput
+from commec.control_list.containers import ControlList, ControListOutput
 from commec import __version__ as COMMEC_VERSION
 
 logger = logging.getLogger(__name__)

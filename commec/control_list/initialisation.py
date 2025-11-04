@@ -31,6 +31,7 @@ import logging
 import pandas as pd
 
 from .containers import (
+    CategoryType,
     ControlList,
     ListMode,
     Region,
@@ -42,7 +43,10 @@ from .region import get_regions_set
 
 logger = logging.getLogger(__name__)
 
-def import_control_lists(input_path : str | os.PathLike, regions_of_interest : set[str] = None) -> bool:
+def import_control_lists(
+    input_path : str | os.PathLike,
+    regions_of_interest : set[str] = None
+    ) -> bool:
     """
     Given a directory, checks that the directory is valid,
     If the directory is valid, it will load the regulation data.
@@ -62,16 +66,18 @@ def import_control_lists(input_path : str | os.PathLike, regions_of_interest : s
     info_filename = os.path.join(input_path, "list_info.csv")
     data_filename = os.path.join(input_path, "regulated_taxids.csv")
     child_lut_filename = os.path.join(input_path, "children_of_regulated_taxids.csv")
+    ignored_filename = os.path.join(input_path, "ignored_accessions.csv")
 
     # Check required files.
     if not os.path.isdir(input_path): return False
-    for file in [info_filename, data_filename, child_lut_filename]:
+    for file in [info_filename, data_filename, child_lut_filename, ignored_filename]:
         if not os.path.isfile(file): return False
 
     logger.debug("Importing regulation list from %s", input_path)
     _import_control_list_info(info_filename) # Always load first.
     _import_control_list_annotations(data_filename)
     _import_accession_mappings(child_lut_filename)
+    _import_ignored_accessions(ignored_filename)
     update_regional_context(regions_of_interest)
     return True
 
@@ -214,6 +220,15 @@ def _import_accession_mappings(input_path : str | os.PathLike):
     child_lut = pd.read_csv(input_path)
     ld.add_child_lut_data(child_lut)
 
+def _import_ignored_accessions(input_path : str | os.PathLike):
+    """
+    Imports child to regulated taxid look up data data from the 
+    ignored_taxids.csv file within a regulated list provided to commec.
+    Concatenates the ignored info into the global dataframe.
+    """
+    ignored_data = pd.read_csv(input_path)
+    ld.add_ignored_accession_data(ignored_data)
+
 
 def tidy_control_list_data():
     """
@@ -226,6 +241,7 @@ def tidy_control_list_data():
     log any errors here.
     """
     ld.ACCESSION_MAP.drop_duplicates()
+    ld.IGNORED_ACCESSION.drop_duplicates()
 
     # Reindex the data based on the accession type column.
     # Currently taxid is used as the only accession format.
@@ -234,6 +250,15 @@ def tidy_control_list_data():
         lambda row: Accession(accession=row["tax_id"]),
         axis=1
     )
+
+    # Standardize the Category field.
+    def safe_category(value):
+        try:
+            return CategoryType.NONE if pd.isna(value) else CategoryType(value)
+        except ValueError:
+            return CategoryType.NONE
+
+    ld.CONTROL_LIST_ANNOTATIONS["category"] = ld.CONTROL_LIST_ANNOTATIONS["category"].map(safe_category)
 
     # Report errors for bad entries
     bad_entries = ld.CONTROL_LIST_ANNOTATIONS[

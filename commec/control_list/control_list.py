@@ -18,7 +18,8 @@ from .containers import (
     ControlListInfo,
     Accession,
     derive_accession_format,
-    RegulationOutput,
+    ControListOutput,
+    ControlListContext,
 )
 from . import list_data as __data
 from . import initialisation as __init
@@ -75,11 +76,15 @@ def _import_data(import_path : str | os.PathLike,
             _import_data(entry, regional_context)
     return
 
+def should_ignore(accession : str) -> bool:
+    return (accession in __data.IGNORED_ACCESSION.to_numpy())
+
 def is_regulated(accession : str) -> bool:
     """
     Same as get_regulation, but optimised for speed — returns True/False
     for whether there is any control list data for the given accession.
     """
+
     accession_hash = Accession(accession)
     accession_to_check = {accession_hash}
 
@@ -93,8 +98,7 @@ def is_regulated(accession : str) -> bool:
     index_values = __data.CONTROL_LIST_ANNOTATIONS.index
     return not accession_to_check.isdisjoint(index_values)
 
-
-def get_regulation(accession : str) -> list[tuple[ControlList, ControlListInfo]]:
+def get_regulation(accession : str) -> tuple[list[ControListOutput], list[ControlListContext]]:
     """
     Check the given Accession against all imported regulated lists.
     The input Accession can be a TaxID, GenBank protein, or Uniprot ID.
@@ -105,8 +109,8 @@ def get_regulation(accession : str) -> list[tuple[ControlList, ControlListInfo]]
     a tuple containing the list info, as well as the 
     taxid specific regulation information.
     """
-    output_data : list[tuple[ControlList, ControlListInfo]] = []
-    simple_output_data : list[RegulationOutput] = []
+    output_data : list[ControListOutput] = []
+    output_context : list[ControlListContext] = []
 
     # Modify based on input accession format:
     accession_hash = Accession(accession)
@@ -125,21 +129,31 @@ def get_regulation(accession : str) -> list[tuple[ControlList, ControlListInfo]]
     logger.debug("Filtered Output DBS: %s", filtered_regulated_taxid_annotations.to_string())
 
     for hash_taxid, row in filtered_regulated_taxid_annotations.iterrows():
-        taxid_regulation_info = ControlListInfo.from_row(row, hash_taxid)
-        list_data = __data.CONTROL_LISTS[taxid_regulation_info.list_acronym]
-        output_data.append((list_data, taxid_regulation_info))
-        simple_output_data.append(RegulationOutput(taxid_regulation_info.list_acronym, taxid_regulation_info.category))
+        control_info = ControlListInfo.from_row(row, hash_taxid)
+        output_data.append(ControListOutput(control_info.name,
+                                            control_info.category,
+                                            control_info.list_acronym))
+        output_context.append(ControlListContext(control_info.derived_from,
+                                                 (accession != hash_taxid)))
 
     if len(output_data) > 0:
         logger.debug("Checking %s [%s] for regulation resulted in %i annotations",
                      accession_hash.get_format(), accession, len(output_data))
 
-    return output_data, simple_output_data
+    return output_data, output_context
 
-def get_control_lists():
+def get_control_lists(list_acronym = None):
     """
     Simple retrieval for the 'list of Control lists' information.
+    Optionally, pass a list acroynm, and retreive the information of that
+    specific list.
+
+    Returns None, or the ControlList, if list_acroynm was provided.
+    Returns the list of all ControlLists if no input provided.
     """
+    if list_acronym:
+        return __data.CONTROL_LISTS.get(list_acronym)
+
     output = list(__data.CONTROL_LISTS.values())
     return output
 
