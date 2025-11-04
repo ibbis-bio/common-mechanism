@@ -14,7 +14,6 @@ import logging
 import argparse
 from commec.utils.logger import setup_console_logging
 from .containers import (
-    ControlList,
     ControlListInfo,
     Accession,
     derive_accession_format,
@@ -77,6 +76,9 @@ def _import_data(import_path : str | os.PathLike,
     return
 
 def should_ignore(accession : str) -> bool:
+    """
+    Check whether this accession should simple be ignored by commec screen.
+    """
     return (accession in __data.IGNORED_ACCESSION.to_numpy())
 
 def is_regulated(accession : str) -> bool:
