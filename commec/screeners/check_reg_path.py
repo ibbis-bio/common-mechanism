@@ -191,6 +191,7 @@ def parse_taxonomy_hits(
             reg_taxids = [] # Regulated Taxonomy IDS
             non_reg_taxids = [] # Non-regulated Taxonomy IDS.
             reg_species = [] # List of species
+            non_reg_species = [] # List of species
             domains = [] # List of domains.
             match_ranges = [] # Ranges where hit matches query.
 
@@ -251,6 +252,7 @@ def parse_taxonomy_hits(
 
                 # Collect unique species from both regulated and non-regulated - legacy logging
                 reg_species.extend(regulated_for_region["species"])
+                non_reg_species.extend(non_regulated_for_region["species"])
 
                 # JSON serialization requires int, not np.int64, hence the map()
                 reg_taxids.extend(map(str, regulated_for_region["subject tax ids"]))
@@ -304,7 +306,7 @@ def parse_taxonomy_hits(
             if len(regulated_annotation_list) == 0:
                 screen_status = ScreenStatus.PASS
                 logger.debug("Only non-controlled entities due to control list compliance regional context")
-                hit_description = (f"Externally controlled {domains_text}")
+                hit_description = (f"Externally controlled{" " + domains_text if domains_text else ""}")
             
             # Update the query level recommendation of this step.
             query_write.status.update_step_status(step, screen_status)
@@ -354,16 +356,18 @@ def parse_taxonomy_hits(
             non_reg_taxids.sort()
             
             reg_species_text = ", ".join(reg_species)
+            non_reg_species_text = ", ".join(non_reg_species)
             reg_taxids_text = ", ".join(reg_taxids)
             non_reg_taxids_text = ", ".join(non_reg_taxids)
             match_ranges_text = ", ".join(map(str,match_ranges))
 
-            alt_text = "only " if screen_status == ScreenStatus.FLAG else "both regulated and non-"
+            alt_text = "only " if screen_status == ScreenStatus.FLAG else "both regulated and non-" if len(reg_taxids) > 0 else "externally "
             s = "" if len(reg_taxids) == 1 else "'s"
             ss = "" if len(non_reg_taxids) == 1 else "'s"
             log_message = (
                 f"\t --> {screen_status} at bases ({match_ranges_text}) found in {alt_text}regulated {domains_text}.\n"
-                f"\t   (Regulated Species: {reg_species_text}.\n\t    Regulated TaxID{s}: {reg_taxids_text}"
+                f"\t   (Regulated Species: {reg_species_text or non_reg_species_text}.\n\t    Regulated TaxID{s}: {reg_taxids_text}\n"
+                f"\t   Non-Regulated TaxID{ss}: {non_reg_taxids_text})"
             )
             if len(non_reg_taxids) > 0:
                 log_message += f"\n\t    Non-Regulated TaxID{ss}: {non_reg_taxids_text}"
