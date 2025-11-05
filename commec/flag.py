@@ -22,7 +22,7 @@ import os
 from json import JSONDecodeError
 import pandas as pd
 from commec.utils.file_utils import directory_arg
-from commec.config.result import ScreenStatus, ScreenResult, ScreenStep
+from commec.config.result import ScreenStatus, ScreenResult, ScreenStep, Rationale
 from commec.config.json_io import get_screen_data_from_json, IoVersionError
 
 DESCRIPTION = "Parse all .screen, or .json files in a directory and create CSVs of flags raised"
@@ -131,6 +131,10 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         if mixed_nt_taxonomy and nucleotide_status == ScreenStatus.PASS:
             nucleotide_status = "Mixed"
 
+        # We don't like "-" characters (typically representing an error or unset value) being dragged
+        # into commec flag outputs when rationale is not present - for backwards tidyness.
+        output_rationale = query.status.rationale if query.status.rationale != Rationale.NULL else ""
+
         results.append({
         "name": name,
         "filepath": file_path,
@@ -145,7 +149,7 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         "low_concern_protein": low_concern_protein,
         "low_concern_rna": low_concern_rna,
         "low_concern_dna": low_concern_synbio,
-        "rationale": query.status.rationale,
+        "rationale": output_rationale,
         })
 
     return results
