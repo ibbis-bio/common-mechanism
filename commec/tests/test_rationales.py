@@ -20,4 +20,4 @@ def test_hmmer(tmp_path):
     screen_test.add_hit(ScreenStep.BIORISK, "query1", 100, 200, "HighEvalueHit", "HEH", 500, regulated=True, evalue = 100.0)
     result = screen_test.run("--skip-tx")
     assert result.queries["query1"].status.screen_status == ScreenStatus.WARN
-    assert result.queries["query1"].status.rationale == str(Rationale.NOTHING)
+    assert result.queries["query1"].status.rationale == str(Rationale.NO_HITS_SKIP_NOTE)

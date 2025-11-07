@@ -139,6 +139,10 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         if query.status.rationale == Rationale.NO_HITS:
             overall_flag = "No Hits"
 
+        overall_flag = query.status.screen_status
+        if query.status.rationale == Rationale.NO_HITS_SKIP_NOTE:
+            overall_flag = "No Hits (skipped steps)"
+
         results.append({
         "name": name,
         "filepath": file_path,

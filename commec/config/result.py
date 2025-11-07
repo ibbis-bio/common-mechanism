@@ -288,7 +288,7 @@ class Rationale(StrEnum):
     # Outcomes:
     NO_HITS = ("No matches found during any stage of analysis. "
                 "Sequence risk is unknown, possibly generated in silico. ")
-    NO_HITS_SKIP_NOTE = "Matches may be found if re-run without skipping steps."
+    NO_HITS_SKIP_NOTE = NO_HITS + "Matches may be found if re-run without skipping steps."
     TOO_SHORT = "Query is too short, and was skipped."
 
     FLAG = " flags"
@@ -559,7 +559,7 @@ class QueryResult:
             state.low_concern in [ScreenStatus.PASS, ScreenStatus.SKIP]):
             # Add an extra caveat if the taxonomy search was skipped
             if ScreenStatus.SKIP in [state.protein_taxonomy, state.nucleotide_taxonomy]:
-                state.rationale = Rationale.NO_HITS + Rationale.NO_HITS_SKIP_NOTE
+                state.rationale = Rationale.NO_HITS_SKIP_NOTE
             else:
                 state.rationale = Rationale.NO_HITS
             return
