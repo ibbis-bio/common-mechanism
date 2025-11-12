@@ -206,7 +206,7 @@ class ControlListInfo:
     derived_from : str = ""
     preferred_taxonomy_name : str = ""
     other_taxonomy_name : str = ""
-    tax_id : int = 0
+    tax_id : str = ""
     list_acronym : str = ""
     target : str = ""
     hazard_group : str = ""
@@ -228,7 +228,7 @@ class ControlListInfo:
 
         # if the dataframe index is intended to represent `taxid`, override here
         if index_val is not None and "tax_id" in dataclass_fields:
-            kwargs["tax_id"] = index_val
+            kwargs["tax_id"] = str(index_val)
 
         return cls(**kwargs)
 
@@ -239,14 +239,14 @@ class ControlListContext:
     applies to the queried accession.
 
     *`derived_from` (str) : The name of the entity referenced by the Control List, if different from the taxonomy name.
-    *`is_child` (bool) : Whether or not the taxid 
+    *`is_child` (bool) : Whether or not the queried taxid was a child of the controlled taxid.
     """
     derived_from : str = None
     is_child : bool = False
     #should_ignore : bool = False
 
 @dataclass
-class ControListOutput:
+class ControlListOutput:
     """
     Container for Control List information. Formatted for use in output JSON.
 

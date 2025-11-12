@@ -90,7 +90,8 @@ def add_control_list_annotations(input_data : pd.DataFrame):
     #)
 
     # The input data requires dtypes to be specified for any missing info.
-    input_data = input_data.astype(CONTROL_LIST_ANNOTATIONS.dtypes.to_dict())
+    input_data = input_data.astype(CONTROL_LIST_ANNOTATIONS.dtypes.to_dict()).fillna("")
+
     CONTROL_LIST_ANNOTATIONS = pd.concat(
         [CONTROL_LIST_ANNOTATIONS, input_data],
         ignore_index=True)

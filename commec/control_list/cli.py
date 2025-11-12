@@ -7,8 +7,8 @@ import argparse
 import pandas as pd
 from commec.utils.file_utils import directory_arg
 from .containers import (
-    ControlListInfo,
-    ControlList,
+    ControlListOutput,
+    ControlListContext,
 )
 from . import list_data as data
 
@@ -21,7 +21,7 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--databases",
         dest="database_dir",
         type=directory_arg,
-        default=None,
+        required = True,
         help="Path to parent directory containing Control List databases,"
         " the head of which should contain a region_definitions.json file",
     )
@@ -37,7 +37,6 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "-l",
         "--list",
         dest="showlists",
-        default=False,
         action="store_true",
         help="Print a summary of all imported Control Lists",
     )
@@ -46,7 +45,6 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--accessions",
         dest="showtaxids",
         nargs="+",
-        default=[],
         help="Display any available list information for the supplied Accessions.",
     )
     parser_obj.add_argument(
@@ -69,29 +67,47 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
     return parser_obj
 
-def format_control_lists():
+def format_control_lists(verbosity = False):
     """
     Summarises all loaded regulation list information,
     as well as their compliance under regional context.
     """
-    output = "The following Control Lists apply: "
-    for _, value in data.CONTROL_LISTS.items():
-        number_of_regulated_taxids = (data.CONTROL_LIST_ANNOTATIONS["list_acronym"] == value.acronym).sum()
-        output += f"\n{value}\nRegulated Taxid Entries: {number_of_regulated_taxids}, Status : {value.status}"
-    output += f"\n    [Total number of Taxid Relationships:{data.ACCESSION_MAP.shape[0]}]"
-    return output + "\n"
+    output = ""
+    if verbosity:
+        output = "The following Control Lists apply: "
+        for _, value in data.CONTROL_LISTS.items():
+            number_of_regulated_taxids = (data.CONTROL_LIST_ANNOTATIONS["list_acronym"] == value.acronym).sum()
+            output += f"\n{value}\nRegulated Taxid Entries: {number_of_regulated_taxids}, Status : {value.status}"
+        output += f"\n    [Total number of Taxid Relationships:{data.ACCESSION_MAP.shape[0]}]"
+        return output + "\n"
 
-def format_control_list_annotation(input_data : list[tuple[ControlList, ControlListInfo]]):
+    # Table based output for reduced verbosity.
+    rows = []
+    for _, value in data.CONTROL_LISTS.items():
+        rows.append({
+            "Control List": value.name if len(value.name) < 20 else value.name[:50]+"...",
+            "Acronym": value.acronym,
+            "Region": value.regions[0].acronym,
+            "# Entries": (data.CONTROL_LIST_ANNOTATIONS["list_acronym"] == value.acronym).sum(),
+            "Status": value.status
+        })
+    output = pd.DataFrame(rows, columns=["Control List", "Acronym", "# Entries", "Status"]).to_string(index = False)
+    return output
+
+def format_control_list_annotation(input_data : list[ControlListOutput], input_context : list[ControlListContext]):
     """
     Returns a formatted string of the regulated taxid information for logging purposes.
     """
     plural = (len(input_data) > 1)
     output = "Regulated by the following lists:\n" if plural else ""
-    offset = "   > " if plural else ""
-    for reglist, annotations in input_data:
-        output += (offset + annotations.category + " "
-                    + annotations.name
-                    + " regulated by " + reglist.name + f" [{reglist.acronym}]" + "\n")
+    offset = "       > " if plural else ""
+    for i, output_info in enumerate(input_data):
+        derived_string = input_context[i].derived_from or ""
+        if derived_string:
+            derived_string = derived_string + " "
+        output += (offset + output_info.category + " "
+                    + output_info.name
+                    + f" regulated {derived_string}by {output_info.list}" + "\n")
     return output
 
 def generate_output_summary_csv(output_filepath : str | os.PathLike):
