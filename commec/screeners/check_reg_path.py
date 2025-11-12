@@ -335,9 +335,11 @@ def parse_taxonomy_hits(
             ss = "" if len(non_reg_taxids) == 1 else "'s"
             log_message = (
                 f"\t --> {screen_status} at bases ({match_ranges_text}) found in {alt_text}regulated {domains_text}.\n"
-                f"\t   (Regulated Species: {reg_species_text}.\n\t    Regulated TaxID{s}: {reg_taxids_text}\n"
-                f"\t   Non-Regulated TaxID{ss}: {non_reg_taxids_text})"
+                f"\t   (Regulated Species: {reg_species_text}.\n\t    Regulated TaxID{s}: {reg_taxids_text}"
             )
+            if len(non_reg_taxids) > 0:
+                log_message += f"\n\t    Non-Regulated TaxID{ss}: {non_reg_taxids_text}"
+            log_message += ")"
             logger.debug(log_message)
             logger.debug("\t\tRegulated Species: %s", reg_species)
             logger.debug("\t\tRegulated Taxids: %s", regulated_annotation_list)

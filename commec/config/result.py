@@ -57,6 +57,7 @@ class ScreenStatus(StrEnum):
     CLEARED_FLAG = "Flag (Cleared)"
     WARN = "Warning"
     FLAG = "Flag"
+    STOP = "Incomplete"
     ERROR = "Error"
 
     @property
@@ -83,6 +84,7 @@ class ScreenStatus(StrEnum):
                 "(e.g. virulence factors or proteins shared among regulated and non-regulated organisms)"
             ),
             ScreenStatus.FLAG: "Query contains sequence of concern and requires additional biosecurity review",
+            ScreenStatus.STOP: "This step was not completed",
             ScreenStatus.ERROR: "An error occured and this step failed to run",
         }
         return descriptions[self]
@@ -296,6 +298,7 @@ class Rationale(StrEnum):
     FLAGWARN = " flags and warnings"
     CLEARED = " cleared as common or non-hazardous"
 
+    INCOMPLETE = "Screening was not run to completion."
 
 @dataclass
 class QueryScreenStatus:
@@ -352,12 +355,27 @@ class QueryScreenStatus:
         Inputs:
         query_data : Query - The input Query as loaded by Screen, see Query.py
         """
+
+        # Never override an Error.
+        if self.screen_status == ScreenStatus.ERROR:
+            return
+
+        # Derive from the most important step statuses.
         self.screen_status = max(
             self.biorisk,
             self.protein_taxonomy,
             self.nucleotide_taxonomy,
             self.low_concern
         )
+
+        # If a step wasn't completed, then mark screen status as Null.
+        if (ScreenStatus.NULL in {self.biorisk,
+                                  self.protein_taxonomy,
+                                  self.nucleotide_taxonomy,
+                                  self.low_concern}):
+            self.screen_status = ScreenStatus.STOP
+            return
+
         # If everything is happy, but we haven't hit anything, time to be suspicious...
         if (self.screen_status == ScreenStatus.PASS and query_data.no_hits_warning):
             self.screen_status = ScreenStatus.WARN
@@ -501,13 +519,19 @@ class QueryResult:
             if step in status_sets:
                 status_sets[step].add(hit_status)
 
-        # Update Benign outcome based on the worst step.
-        self.status.low_concern = max(
-            self.status.low_concern,
+        # Update Benign outcome based on the worst step, or NULL if unfinished.
+        if ScreenStatus.NULL in {self.status.low_concern,
             self.status.biorisk,
             self.status.protein_taxonomy,
-            self.status.nucleotide_taxonomy
-        )
+            self.status.nucleotide_taxonomy}:
+            self.status.low_concern = ScreenStatus.NULL
+        else:
+            self.status.low_concern = max(
+                self.status.low_concern,
+                self.status.biorisk,
+                self.status.protein_taxonomy,
+                self.status.nucleotide_taxonomy
+            )
 
         self.status.update(query_data)
         self._update_rationale(status_sets[ScreenStep.BIORISK],
@@ -542,12 +566,16 @@ class QueryResult:
         logger.debug("%s has flags [%s], and has warnings [%s], and has clears [%s]",
                      self.query, has_flags, has_warns, has_clears)
 
-        if state.screen_status == ScreenStatus.ERROR:
+        if state.screen_status in {ScreenStatus.ERROR, ScreenStatus.NULL}:
             state.rationale = Rationale.ERROR + state.get_error_stepname()
             return
 
         if state.screen_status == ScreenStatus.SKIP:
             state.rationale = Rationale.TOO_SHORT
+            return
+
+        if state.screen_status == ScreenStatus.STOP:
+            state.rationale = Rationale.INCOMPLETE
             return
 
         # Handle no hits warnings
@@ -687,6 +715,16 @@ class QueryResult:
         self.status.low_concern = ScreenStatus.SKIP
         logger.debug("Query %s has all statuses assigned to SKIP.", self.query)
 
+    def error(self):
+        """
+        Called to error this query, sets the screen status to Error.
+        """
+        self.status.screen_status = ScreenStatus.ERROR
+        self.status.biorisk = ScreenStatus.NULL
+        self.status.protein_taxonomy = ScreenStatus.NULL
+        self.status.nucleotide_taxonomy = ScreenStatus.NULL
+        self.status.low_concern = ScreenStatus.NULL
+        logger.debug("Query %s has screen status assigned to ERROR.", self.query)
 
 @dataclass
 class SearchToolInfo:

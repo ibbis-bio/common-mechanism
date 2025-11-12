@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # Copyright (c) 2021-2025 International Biosecurity and Biosafety Initiative for Science
 
-import subprocess
 import os
+from dataclasses import dataclass
 from Bio import Seq
 from Bio.SeqRecord import SeqRecord
-from dataclasses import dataclass
 from commec.config.result import QueryResult
 
 class Query:
