@@ -145,7 +145,7 @@ def _import_control_list_info(input_path : str | os.PathLike):
     Ensures that existing regulation lists are not overwritten, and 
     warns the user if overwritting unique data (i.e. acroynym clash) has occured.
     """
-    list_info = pd.read_csv(input_path, sep=",", quotechar='"')
+    list_info = pd.read_csv(input_path, sep=",", quotechar='"', dtype = str)
     for _, row in list_info.iterrows():
         logger.debug(f"Parsing list information: {row}")
         new_list = ControlList(
@@ -174,8 +174,7 @@ def _import_control_list_annotations(input_path : str | os.PathLike):
     inclusion.
     Concatenates the regulated taxid info into the global dataframe.
     """
-    taxid_info = pd.read_csv(input_path)
-
+    taxid_info = pd.read_csv(input_path, dtype = str)
     # We detect multiple list acroynms in the format "ABC, DEF, GHI"
     # Result: cells become lists like ['ABC', 'DEF', 'GHI']
     taxid_info["list_acronym"] = (
@@ -217,8 +216,9 @@ def _import_accession_mappings(input_path : str | os.PathLike):
     children_of_regulated_taxids.csv file within a regulated list provided to commec.
     Concatenates the child LUT info into the global dataframe.
     """
-    child_lut = pd.read_csv(input_path)
+    child_lut = pd.read_csv(input_path, dtype = str)
     ld.add_child_lut_data(child_lut)
+
 
 def _import_ignored_accessions(input_path : str | os.PathLike):
     """
@@ -227,7 +227,7 @@ def _import_ignored_accessions(input_path : str | os.PathLike):
     Concatenates the ignored info into the global dataframe.
     """
     if os.path.isfile(input_path):
-        ignored_data = pd.read_csv(input_path)
+        ignored_data = pd.read_csv(input_path, dtype = str)
         ld.add_ignored_accession_data(ignored_data)
 
 

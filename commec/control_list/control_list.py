@@ -17,7 +17,7 @@ from .containers import (
     ControlListInfo,
     Accession,
     derive_accession_format,
-    ControListOutput,
+    ControlListOutput,
     ControlListContext,
 )
 from . import list_data as __data
@@ -100,7 +100,7 @@ def is_regulated(accession : str) -> bool:
     index_values = __data.CONTROL_LIST_ANNOTATIONS.index
     return not accession_to_check.isdisjoint(index_values)
 
-def get_regulation(accession : str) -> tuple[list[ControListOutput], list[ControlListContext]]:
+def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[ControlListContext]]:
     """
     Check the given Accession against all imported regulated lists.
     The input Accession can be a TaxID, GenBank protein, or Uniprot ID.
@@ -111,7 +111,7 @@ def get_regulation(accession : str) -> tuple[list[ControListOutput], list[Contro
     a tuple containing the list info, as well as the 
     taxid specific regulation information.
     """
-    output_data : list[ControListOutput] = []
+    output_data : list[ControlListOutput] = []
     output_context : list[ControlListContext] = []
 
     # Modify based on input accession format:
@@ -131,11 +131,10 @@ def get_regulation(accession : str) -> tuple[list[ControListOutput], list[Contro
     logger.debug("Filtered Output DBS: %s", filtered_regulated_taxid_annotations.to_string())
 
     for hash_taxid, row in filtered_regulated_taxid_annotations.iterrows():
-        control_info = ControlListInfo.from_row(row, hash_taxid)
-        output_data.append(ControListOutput(control_info.name,
-                                            control_info.category,
-                                            control_info.list_acronym))
-        output_context.append(ControlListContext(control_info.derived_from,
+        output_data.append(ControlListOutput(row["name"],
+                                            row["category"],
+                                            row["list_acronym"]))
+        output_context.append(ControlListContext(str(row["derived_from"]),
                                                  (accession != hash_taxid)))
 
     if len(output_data) > 0:
@@ -176,12 +175,16 @@ def run(arguments: argparse.Namespace):
 
     regions = arguments.regions or None
 
+    if not (arguments.showlists or arguments.showtaxids):
+        logger.error("commec list requires --lists/-l or --accessions/-a as input.")
+        return 1
+
     if arguments.database_dir:
         import_data(arguments.database_dir, regions)
-
+        
     if arguments.showlists:
         logger.info(" *----------* CONTROL LISTS *----------* ")
-        logger.info(format_control_lists())
+        logger.info(format_control_lists(True))
 
     if arguments.showtaxids:
         logger.info(" *----------* REGULATED TAXIDS *----------* ")
@@ -192,8 +195,9 @@ def run(arguments: argparse.Namespace):
             if not accession_format:
                 logger.error("Could not determine the accession format for input: %s", accession)
                 continue
-            outcome = get_regulation(accession)
-            logger.info("   > Taxid %s: %s",accession, format_control_list_annotation(outcome))
+            outcome, outcome_context = get_regulation(accession)
+            logger.info("   > Taxid %s: %s",accession,
+                        format_control_list_annotation(outcome, outcome_context))
 
     if arguments.output_prefix:
         logger.info("Writing output list summary to \"%s.csv\" ...", arguments.output_prefix)
