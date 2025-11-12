@@ -100,7 +100,8 @@ class ScreenStatus(StrEnum):
             ScreenStatus.CLEARED_FLAG: 4,
             ScreenStatus.WARN: 5,
             ScreenStatus.FLAG: 6,
-            ScreenStatus.ERROR: 7,
+            ScreenStatus.STOP: 7,
+            ScreenStatus.ERROR: 8,
         }
         return order[self]
 
@@ -520,10 +521,9 @@ class QueryResult:
                 status_sets[step].add(hit_status)
 
         # Update Benign outcome based on the worst step, or NULL if unfinished.
-        if ScreenStatus.NULL in {self.status.low_concern,
-            self.status.biorisk,
-            self.status.protein_taxonomy,
-            self.status.nucleotide_taxonomy}:
+        if ScreenStatus.NULL in {self.status.biorisk,
+                                self.status.protein_taxonomy,
+                                self.status.nucleotide_taxonomy}:
             self.status.low_concern = ScreenStatus.NULL
         else:
             self.status.low_concern = max(
