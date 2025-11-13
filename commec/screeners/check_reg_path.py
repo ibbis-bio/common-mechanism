@@ -19,6 +19,7 @@ from commec.config.query import Query
 from commec.tools.blast_tools import (
     read_blast,
     get_taxonomic_labels,
+    get_controlled_labels,
     get_top_hits
 )
 from commec.config.result import (
@@ -104,9 +105,9 @@ def parse_taxonomy_hits(
             for row in df[[
                 "evalue",
                 "subject tax ids",
-                "species",
-                "genus",
-                "superkingdom",
+                #"species",
+                #"genus",
+                #"superkingdom",
                 "subject acc.",
                 "subject title",
             ]].itertuples(index=False, name=None)
@@ -148,11 +149,13 @@ def parse_taxonomy_hits(
                             "query not found in input queries.", query_acc)
 
     # Add taxonomic labels, and filter synthetic constructs
-    blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)
-    logger.debug("%s TaxLabels: shape: %s preview:\n%s", step, blast.shape, blast.head())
+    #blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)
+    #logger.debug("%s TaxLabels: shape: %s preview:\n%s", step, blast.shape, blast.head())
 
-    blast = blast[blast["species"] != ""]  # ignore submissions made above the species level
-    logger.debug("%s RemoveSpecies: shape: %s preview:\n%s", step, blast.shape, blast.head())
+    #blast = blast[blast["species"] != ""]  # ignore submissions made above the species level
+    #logger.debug("%s RemoveSpecies: shape: %s preview:\n%s", step, blast.shape, blast.head())
+
+    blast = get_controlled_labels(blast)
 
     # label each base with the top matching hit, but include different taxids attributed to same hit
     top_hits = get_top_hits(blast)
@@ -172,7 +175,7 @@ def parse_taxonomy_hits(
             continue
 
         unique_query_data : pd.DataFrame = top_hits[top_hits['query acc.'] == query]
-        unique_query_data.dropna(subset = ['species'])
+        #unique_query_data.dropna(subset = ['species'])
         regulated_only_data = unique_query_data[unique_query_data["regulated"] == True]
         regulated_hits = regulated_only_data['subject acc.'].unique()
         logger.debug("\t%s Regulated hits: shape: %s preview:\n%s",
@@ -213,19 +216,6 @@ def parse_taxonomy_hits(
                 match_ranges.append(match_range)
                 logger.debug("Processing region from hit: %s", region)
 
-                # Record domain information.
-                domain = region['superkingdom']
-                if domain == "Viruses":
-                    n_regulated_virus += 1
-                    logger.debug("\t\t\tAdded Virus.")
-                if domain == "Bacteria":
-                    n_regulated_bacteria +=1
-                    logger.debug("\t\t\tAdded Bacteria.")
-                if domain == "Eukaryota":
-                    n_regulated_eukaryote+=1
-                    logger.debug("\t\t\tAdded Eukaryote.")
-                domains.append(domain)
-
                 # Filter shared_site based on 'q. start' or 'q. end'
                 # (Previously only shared starts were used)
                 shared_site = unique_query_data[
@@ -251,8 +241,8 @@ def parse_taxonomy_hits(
                 )
 
                 # Collect unique species from both regulated and non-regulated - legacy logging
-                reg_species.extend(regulated_for_region["species"])
-                non_reg_species.extend(non_regulated_for_region["species"])
+                #reg_species.extend(regulated_for_region["species"])
+                #non_reg_species.extend(non_regulated_for_region["species"])
 
                 # JSON serialization requires int, not np.int64, hence the map()
                 reg_taxids.extend(map(str, regulated_for_region["subject tax ids"]))
@@ -276,12 +266,29 @@ def parse_taxonomy_hits(
             for reg_annotation in regulated_annotation_list:
                 control_info, _context_info = get_regulation(reg_annotation["taxid"])
                 reg_annotation["control_list"] = control_info
- 
+
             # Useful for when a single conditional control list compliance occured.
             for nonreg_annotation in non_regulated_annotation_list:
                 control_info, _context_info = get_regulation(nonreg_annotation["taxid"])
                 if len(control_info) > 0:
                     nonreg_annotation["control_list"] = control_info
+
+            for control_info in reg_annotation["control_list"]:
+                # Record domain information.
+                domain = control_info.category
+                if domain == "Viruses":
+                    n_regulated_virus += 1
+                    logger.debug("\t\t\tAdded Virus.")
+                    break
+                if domain == "Bacteria":
+                    n_regulated_bacteria +=1
+                    logger.debug("\t\t\tAdded Bacteria.")
+                    break
+                if domain == "Eukaryota":
+                    n_regulated_eukaryote+=1
+                    logger.debug("\t\t\tAdded Eukaryote.")
+                    break
+                domains.append(domain)
 
             # Set the default hit description, this is changed if result is mixed etc.
             domains_text = ", ".join(set(domains))

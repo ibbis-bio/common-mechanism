@@ -221,9 +221,9 @@ class TaxonomyAnnotation:
     """
     evalue : float = 0.0
     taxid : str = ""
-    species: str = ""
-    genus : str = ""
-    superkingdom: str = ""
+    #species: str = ""
+    #genus : str = ""
+    #superkingdom: str = ""
     target_hit : str = ""
     target_description : str = ""
 

@@ -2,8 +2,8 @@
   "commec_info": {
     "commec_version": "1.0.1",
     "json_output_version": "0.4",
-    "time_taken": "00:00:02",
-    "date_run": "2025-11-05 09:50:03",
+    "time_taken": "00:00:05",
+    "date_run": "2025-11-13 19:54:00",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -41,7 +41,7 @@
     ]
   },
   "query_info": {
-    "file": "/tmp/pytest-of-root/pytest-21/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-root/pytest-55/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -64,7 +64,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "NT_HIT_MIXED",
-          "description": "Mix of 1 regulated Viruses and 1 non-regulated Viruses",
+          "description": "Mix of 1 regulated None and 1 non-regulated None",
           "ranges": [
             {
               "e_value": 0.16,
@@ -76,7 +76,7 @@
           ],
           "annotations": {
             "domain": [
-              "Viruses"
+              "None"
             ],
             "regulated_taxonomy": [
               {
@@ -84,14 +84,11 @@
                 "number_of_unregulated_taxids": "1",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "1",
+                "regulated_viruses": "0",
                 "regulated_taxa": [
                   {
                     "evalue": 0.16,
                     "taxid": 12345,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
                     "target_hit": "NT_HIT_MIXED",
                     "target_description": "Main",
                     "control_list": [
@@ -107,9 +104,6 @@
                   {
                     "evalue": 0.17,
                     "taxid": 12348,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Bacteria",
                     "target_hit": "NT_HIT_MIXED2",
                     "target_description": "NonRegMixedWithMain"
                   }
@@ -124,7 +118,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "NT_HIT_FLAG3",
-          "description": "Regulated Viruses - SUBJECT",
+          "description": "Regulated None - SUBJECT",
           "ranges": [
             {
               "e_value": 0.15,
@@ -136,7 +130,7 @@
           ],
           "annotations": {
             "domain": [
-              "Viruses"
+              "None"
             ],
             "regulated_taxonomy": [
               {
@@ -144,14 +138,11 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "1",
+                "regulated_viruses": "0",
                 "regulated_taxa": [
                   {
                     "evalue": 0.14,
                     "taxid": 12345,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
                     "target_hit": "NT_HIT_FLAG2",
                     "target_description": "SUBJECT",
                     "control_list": [
@@ -165,9 +156,6 @@
                   {
                     "evalue": 0.15,
                     "taxid": 12350,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
                     "target_hit": "NT_HIT_FLAG3",
                     "target_description": "SUBJECT",
                     "control_list": [
@@ -190,7 +178,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "NT_HIT_FLAG2",
-          "description": "Regulated Viruses - SUBJECT",
+          "description": "Regulated None - SUBJECT",
           "ranges": [
             {
               "e_value": 0.14,
@@ -202,7 +190,7 @@
           ],
           "annotations": {
             "domain": [
-              "Viruses"
+              "None"
             ],
             "regulated_taxonomy": [
               {
@@ -210,14 +198,11 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "1",
+                "regulated_viruses": "0",
                 "regulated_taxa": [
                   {
                     "evalue": 0.14,
                     "taxid": 12345,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
                     "target_hit": "NT_HIT_FLAG2",
                     "target_description": "SUBJECT",
                     "control_list": [
@@ -231,9 +216,6 @@
                   {
                     "evalue": 0.15,
                     "taxid": 12350,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
                     "target_hit": "NT_HIT_FLAG3",
                     "target_description": "SUBJECT",
                     "control_list": [
@@ -256,7 +238,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "NT_HIT_FLAG1",
-          "description": "Regulated Viruses - SUBJECT",
+          "description": "Regulated None - SUBJECT",
           "ranges": [
             {
               "e_value": 0.13,
@@ -268,7 +250,7 @@
           ],
           "annotations": {
             "domain": [
-              "Viruses"
+              "None"
             ],
             "regulated_taxonomy": [
               {
@@ -276,14 +258,11 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "1",
+                "regulated_viruses": "0",
                 "regulated_taxa": [
                   {
                     "evalue": 0.13,
                     "taxid": 12345,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
                     "target_hit": "NT_HIT_FLAG1",
                     "target_description": "SUBJECT",
                     "control_list": [
@@ -306,7 +285,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_MIXED1",
-          "description": "Mix of 1 regulated Viruses and 2 non-regulated Viruses",
+          "description": "Mix of 1 regulated None and 2 non-regulated None",
           "ranges": [
             {
               "e_value": 0.1,
@@ -318,7 +297,7 @@
           ],
           "annotations": {
             "domain": [
-              "Viruses"
+              "None"
             ],
             "regulated_taxonomy": [
               {
@@ -326,14 +305,11 @@
                 "number_of_unregulated_taxids": "2",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "1",
+                "regulated_viruses": "0",
                 "regulated_taxa": [
                   {
                     "evalue": 0.1,
                     "taxid": 12347,
-                    "species": "danger-poop",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
                     "target_hit": "NR_HIT_MIXED1",
                     "target_description": "ShouldMixedReg",
                     "control_list": [
@@ -349,18 +325,12 @@
                   {
                     "evalue": 0.11,
                     "taxid": 12348,
-                    "species": "cute-happy-bacter",
-                    "genus": "unclassified",
-                    "superkingdom": "Bacteria",
                     "target_hit": "NR_HIT_MIXED2",
                     "target_description": "ShouldMixednonReg"
                   },
                   {
                     "evalue": 0.12,
                     "taxid": 12349,
-                    "species": "poopicus",
-                    "genus": "unclassified",
-                    "superkingdom": "Bacteria",
                     "target_hit": "NR_HIT_MIXED3",
                     "target_description": "ShouldMixedNonReg"
                   }
@@ -375,7 +345,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_FLAG4",
-          "description": "Regulated Viruses - ShouldClear",
+          "description": "Regulated None - ShouldClear",
           "ranges": [
             {
               "e_value": 0.09,
@@ -387,7 +357,7 @@
           ],
           "annotations": {
             "domain": [
-              "Viruses"
+              "None"
             ],
             "regulated_taxonomy": [
               {
@@ -395,14 +365,11 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "1",
+                "regulated_viruses": "0",
                 "regulated_taxa": [
                   {
                     "evalue": 0.09,
                     "taxid": 12346,
-                    "species": "fine-icus",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
                     "target_hit": "NR_HIT_FLAG4",
                     "target_description": "ShouldClear",
                     "control_list": [
@@ -425,7 +392,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_FLAG3",
-          "description": "Regulated Viruses - ShouldntClear",
+          "description": "Regulated None - ShouldntClear",
           "ranges": [
             {
               "e_value": 0.08,
@@ -437,7 +404,7 @@
           ],
           "annotations": {
             "domain": [
-              "Viruses"
+              "None"
             ],
             "regulated_taxonomy": [
               {
@@ -445,14 +412,11 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "1",
+                "regulated_viruses": "0",
                 "regulated_taxa": [
                   {
                     "evalue": 0.07,
                     "taxid": 12345,
-                    "species": "regulaticus",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
                     "target_hit": "NR_HIT_FLAG2",
                     "target_description": "ShouldClearBySynBio",
                     "control_list": [
@@ -475,7 +439,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_FLAG2",
-          "description": "Regulated Viruses - ShouldClearBySynBio",
+          "description": "Regulated None - ShouldClearBySynBio",
           "ranges": [
             {
               "e_value": 0.07,
@@ -487,7 +451,7 @@
           ],
           "annotations": {
             "domain": [
-              "Viruses"
+              "None"
             ],
             "regulated_taxonomy": [
               {
@@ -495,14 +459,11 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "1",
+                "regulated_viruses": "0",
                 "regulated_taxa": [
                   {
                     "evalue": 0.07,
                     "taxid": 12345,
-                    "species": "regulaticus",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
                     "target_hit": "NR_HIT_FLAG2",
                     "target_description": "ShouldClearBySynBio",
                     "control_list": [
@@ -525,7 +486,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_FLAG1",
-          "description": "Regulated Viruses - ShouldntClear",
+          "description": "Regulated None - ShouldntClear",
           "ranges": [
             {
               "e_value": 0.06,
@@ -537,7 +498,7 @@
           ],
           "annotations": {
             "domain": [
-              "Viruses"
+              "None"
             ],
             "regulated_taxonomy": [
               {
@@ -545,14 +506,11 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "1",
+                "regulated_viruses": "0",
                 "regulated_taxa": [
                   {
                     "evalue": 0.06,
                     "taxid": 12345,
-                    "species": "regulaticus",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
                     "target_hit": "NR_HIT_FLAG1",
                     "target_description": "ShouldntClear",
                     "control_list": [
