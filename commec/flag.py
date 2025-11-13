@@ -22,7 +22,7 @@ import os
 from json import JSONDecodeError
 import pandas as pd
 from commec.utils.file_utils import directory_arg
-from commec.config.result import ScreenStatus, ScreenResult, ScreenStep
+from commec.config.result import ScreenStatus, ScreenResult, ScreenStep, Rationale
 from commec.config.json_io import get_screen_data_from_json, IoVersionError
 
 DESCRIPTION = "Parse all .screen, or .json files in a directory and create CSVs of flags raised"
@@ -110,14 +110,14 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
                     if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN, ScreenStatus.PASS]:
                         reg_dicts = hit.annotations["regulated_taxonomy"]
                         for r in reg_dicts:
-                            if len(r["non_regulated_taxids"]) > 0:
+                            if len(r["non_regulated_taxa"]) > 0:
                                 mixed_aa_taxonomy = True
 
                 case ScreenStep.TAXONOMY_NT:
                     if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN]:
                         reg_dicts = hit.annotations["regulated_taxonomy"]
                         for r in reg_dicts:
-                            if len(r["non_regulated_taxids"]) > 0:
+                            if len(r["non_regulated_taxa"]) > 0:
                                 mixed_nt_taxonomy = True
                 case _:
                     continue
@@ -131,10 +131,22 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         if mixed_nt_taxonomy and nucleotide_status == ScreenStatus.PASS:
             nucleotide_status = "Mixed"
 
+        # We don't like "-" characters (typically representing an error or unset value) being dragged
+        # into commec flag outputs when rationale is not present - for backwards tidyness.
+        output_rationale = query.status.rationale if query.status.rationale != Rationale.NULL else ""
+
+        overall_flag = query.status.screen_status
+        if query.status.rationale == Rationale.NO_HITS:
+            overall_flag = "No Hits"
+
+        overall_flag = query.status.screen_status
+        if query.status.rationale == Rationale.NO_HITS_SKIP_NOTE:
+            overall_flag = "No Hits (skipped steps)"
+
         results.append({
         "name": name,
         "filepath": file_path,
-        "flag": query.status.screen_status,
+        "flag": overall_flag,
         "biorisk": query.status.biorisk,
         "protein": protein_status,
         "nucleotide": nucleotide_status,
@@ -144,7 +156,8 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         "eukaryote_flag": eukaryote_flag,
         "low_concern_protein": low_concern_protein,
         "low_concern_rna": low_concern_rna,
-        "low_concern_dna": low_concern_synbio
+        "low_concern_dna": low_concern_synbio,
+        "rationale": output_rationale,
         })
 
     return results

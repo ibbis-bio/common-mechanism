@@ -34,6 +34,7 @@ from enum import StrEnum
 from importlib.metadata import version, PackageNotFoundError
 import pandas as pd
 from commec.tools.search_handler import SearchToolVersion
+from commec.control_list.containers import ListMode
 from commec import __version__ as COMMEC_VERSION
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 # Seperate versioning for the output JSON.
-JSON_COMMEC_FORMAT_VERSION = "0.3"
+JSON_COMMEC_FORMAT_VERSION = "0.4"
 
 
 class ScreenStatus(StrEnum):
@@ -109,6 +110,14 @@ class ScreenStatus(StrEnum):
         if self == ScreenStatus.FLAG:
             return ScreenStatus.CLEARED_FLAG
         return self
+
+    def revert_clear(self):
+        """Convert a WARN CLEARED or FLAG CLEARED into its uncleared counterpart"""
+        if self == ScreenStatus.CLEARED_WARN:
+            return ScreenStatus.WARN
+        if self == ScreenStatus.CLEARED_FLAG:
+            return ScreenStatus.FLAG
+        return self
     
     def __gt__(self, value):
         return self.importance > value.importance
@@ -160,7 +169,7 @@ class MatchRange:
     Container for coordinate information of where hits match to a query.
     """
 
-    e_value: float = 0.0
+    e_value: float = float('nan')
     # percent identity?
     match_start: int = 0
     match_end: int = 0
@@ -201,6 +210,19 @@ class MatchRange:
     def __str__(self):
         return f"{self.query_start}-{self.query_end}"
 
+@dataclass(frozen=True)
+class TaxonomyAnnotation:
+    """
+    Contains basic taxonomy information for the annotations
+    dict of a HitResult when determined by a taxonomy step.
+    """
+    evalue : float = 0.0
+    taxid : str = ""
+    #species: str = ""
+    #genus : str = ""
+    #superkingdom: str = ""
+    target_hit : str = ""
+    target_description : str = ""
 
 @dataclass
 class HitResult:
@@ -239,8 +261,8 @@ class Rationale(StrEnum):
     Container for rationale texts in Commec outputs in one place.
 
     When reporting rationale, the primary (see ScreenStatus.importance attribute)
-    status is always reported first. After this, secondary less important statuses are
-    reported (usually warnings) in the rationale.
+    status is always reported first. After this, secondary less important statuses
+    (usually warnings) are added to the rationale.
     """
     NULL = "-"
     ERROR = "There was an error during "
@@ -264,10 +286,10 @@ class Rationale(StrEnum):
     TAX_FLAG = " regulated organisms"
     TAX_WARN = " equally-good matches to regulated and non-regulated organisms"
 
-
     # Outcomes:
-    NOTHING = ("No matches found during any stage of analysis. "
+    NO_HITS = ("No matches found during any stage of analysis. "
                 "Sequence risk is unknown, possibly generated in silico. ")
+    NO_HITS_SKIP_NOTE = NO_HITS + "Matches may be found if re-run without skipping steps."
     TOO_SHORT = "Query is too short, and was skipped."
 
     FLAG = " flags"
@@ -337,7 +359,6 @@ class QueryScreenStatus:
             self.nucleotide_taxonomy,
             self.low_concern
         )
-
         # If everything is happy, but we haven't hit anything, time to be suspicious...
         if (self.screen_status == ScreenStatus.PASS and query_data.no_hits_warning):
             self.screen_status = ScreenStatus.WARN
@@ -412,16 +433,6 @@ class QueryResult:
         existing_hit = self.hits.get(new_hit.name)
         hits_is_updated: bool = False
 
-        # Nothing matches in Name, try a matched region.
-        if not existing_hit:
-            for region in new_hit.ranges:
-                existing_hit = self.check_hit_range(region)
-                if existing_hit:
-                    logger.debug("Using existing hit from shared region: %s", existing_hit)
-                    hits_is_updated = True # We want to append info if new hit is differently named.
-                    break
-
-        # Nothing matches in Name or region... new hit!
         if not existing_hit:
             self.hits[new_hit.name] = new_hit
             return False
@@ -433,7 +444,9 @@ class QueryResult:
                     new_region.query_start == existing_region.query_start
                     and new_region.query_end == existing_region.query_end
                 ):
+                    logger.debug(f"[{new_region.query_start}-{new_region.query_end}] Region already exists...")
                     is_unique_region = False
+
             if is_unique_region:
                 hits_is_updated = True
                 existing_hit.ranges.append(new_region)
@@ -475,7 +488,7 @@ class QueryResult:
         # Track status sets for rationale (only for specific steps that need it)
         status_sets = {
             ScreenStep.BIORISK: set(),
-            ScreenStep.TAXONOMY_AA: set(), 
+            ScreenStep.TAXONOMY_AA: set(),
             ScreenStep.TAXONOMY_NT: set(),
         }
 
@@ -515,9 +528,9 @@ class QueryResult:
         allows for more depth in rationale texts.
         """
 
-        logger.debug("Biorisk set: %s", biorisks)
-        logger.debug("TAX AA set: %s", tax_aa)
-        logger.debug("TAX NT set: %s", tax_nt)
+        logger.debug("Biorisk set (%d items): %s", len(biorisks), biorisks)
+        logger.debug("TAX AA set (%d items): %s", len(tax_aa), tax_aa)
+        logger.debug("TAX NT set (%d items): %s",  len(tax_nt), tax_nt)
 
         state = self.status # Shorthand, accessor to be updated
         tax_all = tax_aa | tax_nt # Check both Taxonomy steps at once
@@ -538,39 +551,46 @@ class QueryResult:
             state.rationale = Rationale.TOO_SHORT
             return
 
-        # Unique circumstance, where there are no hits at all.
+        # Handle no hits warnings
+        # --------------------------------------------------------------------
         if (state.screen_status == ScreenStatus.WARN and
             state.biorisk == ScreenStatus.PASS and
-            state.protein_taxonomy == ScreenStatus.PASS and
-            state.nucleotide_taxonomy == ScreenStatus.PASS and
-            state.low_concern == ScreenStatus.PASS):
-            state.rationale = Rationale.NOTHING
+            state.protein_taxonomy in [ScreenStatus.PASS, ScreenStatus.SKIP]  and
+            state.nucleotide_taxonomy in [ScreenStatus.PASS, ScreenStatus.SKIP] and
+            state.low_concern in [ScreenStatus.PASS, ScreenStatus.SKIP]):
+            # Add an extra caveat if the taxonomy search was skipped
+            if ScreenStatus.SKIP in [state.protein_taxonomy, state.nucleotide_taxonomy]:
+                state.rationale = Rationale.NO_HITS_SKIP_NOTE
+            else:
+                state.rationale = Rationale.NO_HITS
             return
 
         # Handle simple passes
+        # --------------------------------------------------------------------
         if state.screen_status == ScreenStatus.PASS:
             state.rationale = Rationale.START_PASS + "."
             return
 
+        # Handle ONLY cleared outputs
+        # --------------------------------------------------------------------
         # Calculate any cleared outputs:
-        tokens = ""
-        if ScreenStatus.CLEARED_FLAG in tax_all:
-            tokens = Rationale.FLAG
-        if ScreenStatus.CLEARED_WARN in tax_all:
-            tokens = Rationale.WARN
+        rationales_cleared = ""
         if (ScreenStatus.CLEARED_FLAG in tax_all and
             ScreenStatus.CLEARED_WARN in tax_all):
-            tokens = Rationale.FLAGWARN
-        cleared_sentence = tokens + Rationale.CLEARED
+            rationales_cleared = Rationale.FLAGWARN
+        elif ScreenStatus.CLEARED_FLAG in tax_all:
+            rationales_cleared = Rationale.FLAG
+        elif ScreenStatus.CLEARED_WARN in tax_all:
+            rationales_cleared = Rationale.WARN
+        cleared_sentence = rationales_cleared + Rationale.CLEARED
 
-        # Handle ONLY cleared outputs
         if state.screen_status in [ScreenStatus.CLEARED_FLAG,
                                    ScreenStatus.CLEARED_WARN]:
             state.rationale = Rationale.START_PASS + cleared_sentence
             return
         
         # Handle complex outputs:
-
+        # --------------------------------------------------------------------
         # Start creating rationale message:
         output = Rationale.START_PRIMARY
     
@@ -646,6 +666,14 @@ class QueryResult:
         sorted_items_desc = sorted(
             self.hits.items(), key=lambda item: item[1].get_e_value(), reverse=True
         )
+
+        # Sort the annotations for each hit based on taxid
+        for _, hit in self.hits.items():
+            annotations = hit.annotations.get("regulated_taxonomy")
+            if annotations:
+                for entry in hit.annotations["regulated_taxonomy"]:
+                    entry["regulated_taxa"].sort(key=lambda x: x["evalue"])
+
         self.hits = dict(sorted_items_desc)
         self._update_step_flags(query_data)
 
@@ -671,6 +699,18 @@ class SearchToolInfo:
     low_concern_rna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
     low_concern_dna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
 
+@dataclass
+class ControlListResult():
+    """ 
+    Modified ControList container for JSON output, includes the additional
+    information for what is in a group in the case of a broader region definition.
+    """
+    name : str = ""
+    region : str = ""
+    includes: str = ""
+    status : ListMode = field(default_factory=ListMode)
+    url : str = ""
+
 
 @dataclass
 class ScreenRunInfo:
@@ -680,6 +720,8 @@ class ScreenRunInfo:
     time_taken: str = ""
     date_run: str = ""
     search_tool_info: SearchToolInfo = field(default_factory=SearchToolInfo)
+    control_list_info : list[ControlListResult] = field(default_factory=list)
+
 
 @dataclass
 class ScreenQueryInfo:
@@ -687,6 +729,7 @@ class ScreenQueryInfo:
     file: str = ""
     number_of_queries: int = 0
     total_query_length: int = 0
+
 
 @dataclass
 class ScreenResult:

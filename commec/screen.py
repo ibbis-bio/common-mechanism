@@ -53,8 +53,6 @@ import argparse
 import datetime
 import time
 import logging
-import shutil
-import os
 import sys
 import traceback
 import pandas as pd
@@ -72,6 +70,7 @@ from commec.config.result import (
     ScreenStep,
     QueryResult,
     ScreenStatus,
+    ControlListResult,
 )
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
@@ -82,6 +81,7 @@ from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.tools.search_handler import DatabaseValidationError
 from commec.config.json_io import encode_screen_data_to_json
 from commec.config.constants import MINIMUM_QUERY_LENGTH
+import commec.control_list as control_list
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -231,6 +231,14 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         action="store_true",
         help="Re-use any pre-existing output for this Screen run (cannot be used with --force)",
     )
+    screen_logic_group.add_argument(
+        "-r",
+        "--regions",
+        dest="regions",
+        nargs="+",
+        default=[],
+        help="A list of countries or regions to add context to list compliance i.e. NZ US CH",
+    )
     return parser
 
 class Screen:
@@ -304,7 +312,7 @@ class Screen:
         # Needed to initialize parameters before logging to files
         setup_file_logging(self.params.output_screen_file, log_level)
 
-        logger.info("Validating input query and databases...")
+        logger.info("Validating input query, regulations, and databases...")
         try:
             self.database_tools: ScreenTools = ScreenTools(self.params)
         except(DatabaseValidationError) as e:
@@ -313,6 +321,23 @@ class Screen:
 
         logger.info("Input query file: ")
         logger.info(self.params.input_fasta_path, extra={"no_prefix":True,"cap":True})
+
+        # Initialize the regulation list data
+        regulation_path = self.params.config["databases"]["regulated_lists"]["path"]
+        region_context = args.regions or self.params.config["databases"]["regulated_lists"]["regions"]
+        control_list.import_data(regulation_path, region_context)
+        logger.info("Using Control Lists:")
+        logger.info(control_list.format_control_lists(), extra = {"no_prefix" : True, "cap" : True})
+        
+        # Custom output format for Control Lists info, for JSON:
+        control_lists = control_list.get_control_lists()
+        control_lists = [ControlListResult(
+                cl.name,
+                cl.regions[0].name,
+                ",".join(control_list.get_regions_set(cl.regions[0])),
+                cl.status,
+                cl.url) for cl in control_lists]
+        self.screen_data.commec_info.control_list_info = control_lists
 
         # Initialize the queries
         try:
@@ -366,7 +391,7 @@ class Screen:
             _info.low_concern_dna_search_info = _tools.low_concern_blastn.get_version_information()
 
         # Store start time.
-        _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.screen_data.commec_info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def run(self, args : argparse.Namespace):
         """

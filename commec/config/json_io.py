@@ -39,7 +39,7 @@ def encode_screen_data_to_json(input_result: ScreenResult,
     ''' Converts a ScreenResult class object into a JSON file at the given filepath.'''
     try:
         with open(output_json_filepath, "w", encoding="utf-8") as json_file:
-            json.dump(asdict(input_result), json_file, indent=4)
+            json.dump(asdict(input_result), json_file, indent=2)
     except TypeError as e:
         print("Error outputting JSON:", e)
         print(input_result)
