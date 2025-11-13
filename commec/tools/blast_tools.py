@@ -115,6 +115,34 @@ def _get_lineages(taxids, db_path: str | os.PathLike, threads: int):
     # Remove non-success codes from the list
     return lin[(lin["Code"] != -1) & (lin["Code"] != 0)]
 
+def get_controlled_labels(
+        blast : pd.DataFrame,
+        taxids_column_name = "subject tax ids"
+        ) -> pd.DataFrame:
+    """
+    Uses the Control Lists to label each taxid/accession supplied from imported
+    blast outputs to label as regulated True/False, depending on its existance
+    in the regulated lists.
+    Ignores synthetic constructs.
+    """
+    blast = _split_by_tax_id(blast, taxids_column_name)
+    # Get unique taxids
+    unique_taxids = blast[taxids_column_name].dropna().unique()
+    logger.debug("Checking %s unique taxids", len(unique_taxids))
+    # Build a mapping {taxid: truthiness}
+    taxid_to_regulated = {taxid: is_regulated(taxid) for taxid in unique_taxids}
+    # Map back to the dataframe
+    blast["regulated"] = blast[taxids_column_name].map(taxid_to_regulated)
+    # filter out synthetic taxids.
+    # TODO: Update to filter out ignored_taxids.csv from control lists in future.
+    blast = blast[
+        (blast[taxids_column_name] != TAXID_SYNTHETIC_CONSTRUCTS)
+        & (blast[taxids_column_name] != TAXID_VECTORS)
+    ]
+    # Sort and Clean up
+    blast = blast.sort_values(by=["% identity"], ascending=False)
+    blast = blast.reset_index(drop=True)
+    return blast
 
 def get_taxonomic_labels(
     blast: pd.DataFrame,
@@ -159,7 +187,6 @@ def get_taxonomic_labels(
         )
     # Filter to only those rows which have a matching taxonomic lineage
     blast = blast[blast[TAXIDS_COL].isin(lin["TaxID"])]
-
 
     # Get unique taxids
     unique_taxids = blast[TAXIDS_COL].dropna().unique()
