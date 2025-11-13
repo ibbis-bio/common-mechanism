@@ -406,7 +406,7 @@ def update_using_control_lists(regulated : pd.DataFrame, non_regulated : pd.Data
 
     """
 
-    CONDITIONAL_NUMBER_TO_ALLOW = 1 # i.e. if something appears in 2 or more control lists.
+    CONDITIONAL_NUMBER_TO_ALLOW = 2 # i.e. if something appears in 2 or more control lists.
     indexes_to_move = []
 
     for index, row in regulated.iterrows():
@@ -423,7 +423,7 @@ def update_using_control_lists(regulated : pd.DataFrame, non_regulated : pd.Data
                 indexes_to_move.append(index)
 
     # If more than 1 index is removed, then treat as flag.
-    if len(indexes_to_move) > CONDITIONAL_NUMBER_TO_ALLOW:
+    if len(indexes_to_move) >= CONDITIONAL_NUMBER_TO_ALLOW:
         indexes_to_move = []
 
     # Move the out of context rows to the non-regulated DataFrame
