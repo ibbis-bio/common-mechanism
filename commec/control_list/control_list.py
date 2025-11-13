@@ -184,7 +184,7 @@ def run(arguments: argparse.Namespace):
         
     if arguments.showlists:
         logger.info(" *----------* CONTROL LISTS *----------* ")
-        logger.info(format_control_lists(True))
+        logger.info(format_control_lists(True), extra={"no_prefix": True, "cap" : True})
 
     if arguments.showtaxids:
         logger.info(" *----------* REGULATED TAXIDS *----------* ")

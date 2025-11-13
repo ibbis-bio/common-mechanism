@@ -78,20 +78,20 @@ def format_control_lists(verbosity = False):
         for _, value in data.CONTROL_LISTS.items():
             number_of_regulated_taxids = (data.CONTROL_LIST_ANNOTATIONS["list_acronym"] == value.acronym).sum()
             output += f"\n{value}\nRegulated Taxid Entries: {number_of_regulated_taxids}, Status : {value.status}"
-        output += f"\n    [Total number of Taxid Relationships:{data.ACCESSION_MAP.shape[0]}]"
+        output += f"\n\n[Total number of Taxid Relationships:{data.ACCESSION_MAP.shape[0]}]"
         return output + "\n"
 
     # Table based output for reduced verbosity.
     rows = []
     for _, value in data.CONTROL_LISTS.items():
         rows.append({
-            "Control List": value.name if len(value.name) < 20 else value.name[:50]+"...",
+            "Control List": value.name,# if len(value.name) < 50 else value.name[:50]+"...",
             "Acronym": value.acronym,
             "Region": value.regions[0].acronym,
             "# Entries": (data.CONTROL_LIST_ANNOTATIONS["list_acronym"] == value.acronym).sum(),
             "Status": value.status
         })
-    output = pd.DataFrame(rows, columns=["Control List", "Acronym", "# Entries", "Status"]).to_string(index = False)
+    output = pd.DataFrame(rows, columns=["Control List", "Acronym", "# Entries","Region", "Status"]).to_string(index = False)
     return output
 
 def format_control_list_annotation(input_data : list[ControlListOutput], input_context : list[ControlListContext]):

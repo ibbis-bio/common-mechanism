@@ -327,7 +327,8 @@ class Screen:
         regulation_path = self.params.config["databases"]["regulated_lists"]["path"]
         region_context = args.regions or self.params.config["databases"]["regulated_lists"]["regions"]
         control_list.import_data(regulation_path, region_context)
-        logger.info("Using Control Lists:\n%s", control_list.format_control_lists())
+        logger.info("Using Control Lists:")
+        logger.info(control_list.format_control_lists(), extra = {"no_prefix" : True, "cap" : True})
         
         # Custom output format for Control Lists info, for JSON:
         control_lists = control_list.get_control_lists()
