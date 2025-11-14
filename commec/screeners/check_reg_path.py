@@ -267,31 +267,34 @@ def parse_taxonomy_hits(
                 control_info, _context_info = get_regulation(reg_annotation["taxid"])
                 reg_annotation["control_list"] = control_info
 
+                for control_output_info in control_info:
+                    # Record domain information.
+                    domain = control_output_info.category
+                    if domain == "Viruses":
+                        n_regulated_virus += 1
+                        logger.debug("\t\t\tAdded Virus.")
+                        break
+                    if domain == "Bacteria":
+                        n_regulated_bacteria +=1
+                        logger.debug("\t\t\tAdded Bacteria.")
+                        break
+                    if domain == "Eukaryota":
+                        n_regulated_eukaryote+=1
+                        logger.debug("\t\t\tAdded Eukaryote.")
+                        break
+                    domains.append(domain)
+
             # Useful for when a single conditional control list compliance occured.
             for nonreg_annotation in non_regulated_annotation_list:
                 control_info, _context_info = get_regulation(nonreg_annotation["taxid"])
                 if len(control_info) > 0:
                     nonreg_annotation["control_list"] = control_info
 
-            for control_info in reg_annotation["control_list"]:
-                # Record domain information.
-                domain = control_info.category
-                if domain == "Viruses":
-                    n_regulated_virus += 1
-                    logger.debug("\t\t\tAdded Virus.")
-                    break
-                if domain == "Bacteria":
-                    n_regulated_bacteria +=1
-                    logger.debug("\t\t\tAdded Bacteria.")
-                    break
-                if domain == "Eukaryota":
-                    n_regulated_eukaryote+=1
-                    logger.debug("\t\t\tAdded Eukaryote.")
-                    break
-                domains.append(domain)
 
+
+            # If the category in the control list isn't set, we default to the non-descript, "sequences".
+            domains_text = ", ".join(set(domains)) or "sequence"
             # Set the default hit description, this is changed if result is mixed etc.
-            domains_text = ", ".join(set(domains))
             hit_description = f"Regulated {domains_text} - {regulated_hit_data['subject title'].values[0]}"
 
             # TODO: Currently, we recapitulate old behaviour,
@@ -306,14 +309,14 @@ def parse_taxonomy_hits(
             if len(non_regulated_annotation_list) > 0:
                 logger.debug("Non-regulated taxids present, treating as MIXED result.")
                 screen_status = ScreenStatus.PASS
-                hit_description = (f"Mix of {len(regulated_annotation_list)} regulated {domains_text}"
+                hit_description = (f"Mix of {len(regulated_annotation_list)} controlled {domains_text}"
                 f" and {len(non_regulated_annotation_list)} non-regulated {domains_text}")
 
             # We might have 0 regulated annotations, due to removal based on regional context:
             if len(regulated_annotation_list) == 0:
                 screen_status = ScreenStatus.PASS
                 logger.debug("Only non-controlled entities due to control list compliance regional context")
-                hit_description = (f"Externally controlled{" " + domains_text if domains_text else ""}")
+                hit_description = (f"Externally controlled {domains_text}")
             
             # Update the query level recommendation of this step.
             query_write.status.update_step_status(step, screen_status)
