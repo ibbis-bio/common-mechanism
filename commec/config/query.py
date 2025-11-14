@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # Copyright (c) 2021-2025 International Biosecurity and Biosafety Initiative for Science
 
-import subprocess
 import os
+from dataclasses import dataclass
 from Bio import Seq
 from Bio.SeqRecord import SeqRecord
-from dataclasses import dataclass
 from commec.config.result import QueryResult
 
 class Query:
@@ -183,7 +182,7 @@ class Query:
             f"which is out-of-bounds for any known NC start-end tuple: {self.non_coding_regions}"
             )
     
-    def confirm_has_hits(self):
+    def mark_as_hit(self):
         """
         Confirm that this query has had a valid hit, and therefore, has some
         sort of homology to something. 

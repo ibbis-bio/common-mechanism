@@ -20,7 +20,11 @@ from yaml.parser import ParserError
 from Bio import SeqIO
 
 from commec.config.query import Query
-from commec.config.constants import DEFAULT_CONFIG_YAML_PATH, MINIMUM_QUERY_LENGTH
+from commec.config.constants import (
+    DEFAULT_CONFIG_YAML_PATH,
+    MINIMUM_QUERY_LENGTH,
+    MAXIMUM_FILENAME_SIZE,
+)
 from commec.utils.file_utils import expand_and_normalize
 from commec.utils.dict_utils import deep_update
 
@@ -56,7 +60,7 @@ class ScreenIO:
         # Check whether a .screen output file already exists.
         if os.path.exists(self.output_screen_file) and not (
             self.config["force"] or self.config["resume"]):
-            logger.warning(
+            logger.error(
                 f"""Screen output {self.output_screen_file} already exists.
                 Either use a different output location, or use --force or --resume to override.
                 Aborting Screen."""
@@ -292,7 +296,7 @@ class ScreenIO:
             as file prefix within that directory.
         """
         name = os.path.splitext(os.path.basename(input_file))[0]
-        name = name[:64]
+        name = name[:MAXIMUM_FILENAME_SIZE]
 
         directory = prefix_arg or os.path.dirname(input_file)
 

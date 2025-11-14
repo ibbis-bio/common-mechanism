@@ -65,6 +65,7 @@ class SearchHandler(ABC):
         self.threads = kwargs.get('threads', 1)
         self.force = kwargs.get('force', False)
         self.arguments_dictionary = {}
+        self.successful = True
 
         # Only validate database files if we actually intend on using them
         if not self.should_use_existing_output:
@@ -179,6 +180,8 @@ class SearchHandler(ABC):
         """
         Run a command using subprocess.run, piping stdout and stderr to `out_file`.
         """
+        self.successful = False
+
         logger.debug("SUBPROCESS: %s", " ".join(command))
         logger.debug(" ".join(command), extra = {"no_prefix":True,"cap":True})
 
@@ -198,7 +201,9 @@ class SearchHandler(ABC):
                     f"subprocess.run of command '{command_str}' encountered error."
                     f" Check {out_file} for logs."
                 )
+            
+        self.successful = True
 
     def __del__(self):
-        if os.path.exists(self.temp_log_file):
+        if os.path.exists(self.temp_log_file) and self.successful:
             os.remove(self.temp_log_file)

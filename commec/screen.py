@@ -53,11 +53,10 @@ import argparse
 import datetime
 import time
 import logging
-import shutil
-import os
 import sys
 import traceback
 import pandas as pd
+from Bio.Data.CodonTable import TranslationError
 
 from commec.config.screen_io import ScreenIO, IoValidationError
 from commec.config.query import Query
@@ -341,7 +340,13 @@ class Screen:
                     continue
 
                 # Only translate if valid.
-                query.translate(self.params.aa_path)
+                try:
+                    query.translate(self.params.aa_path)
+                except TranslationError as e:
+                    logger.error("An error occured when translating %s:\n %s",
+                                 query.original_name, e)
+                    qr.error()
+                    self.early_exit()
                 total_query_length += query.length
 
         except RuntimeError as e:
@@ -366,7 +371,7 @@ class Screen:
             _info.low_concern_dna_search_info = _tools.low_concern_blastn.get_version_information()
 
         # Store start time.
-        _info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.screen_data.commec_info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def run(self, args : argparse.Namespace):
         """
