@@ -96,10 +96,10 @@ def format_control_lists(verbosity = False):
 
 def format_control_list_annotation(input_data : list[ControlListOutput], input_context : list[ControlListContext]):
     """
-    Returns a formatted string of the regulated taxid information for logging purposes.
+    Returns a formatted string of the controlled taxid information for logging purposes.
     """
     plural = (len(input_data) > 1)
-    output = "Regulated by the following lists:\n" if plural else ""
+    output = "Controlled by the following lists:\n" if plural else ""
     offset = "       > " if plural else ""
     for i, output_info in enumerate(input_data):
         derived_string = input_context[i].derived_from or ""
@@ -107,12 +107,12 @@ def format_control_list_annotation(input_data : list[ControlListOutput], input_c
             derived_string = derived_string + " "
         output += (offset + output_info.category + " "
                     + output_info.name
-                    + f" regulated {derived_string}by {output_info.list}" + "\n")
+                    + f" controlled {derived_string}by {output_info.list}" + "\n")
     return output
 
 def generate_output_summary_csv(output_filepath : str | os.PathLike):
     """
-    Generates an output csv of the current Regulated Annotations data
+    Generates an output csv of the current controlled Annotations data
     imported into commec.
     Doesn't include invalid imported data with no Accession method.
     """

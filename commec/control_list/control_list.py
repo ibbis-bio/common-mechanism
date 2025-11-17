@@ -30,7 +30,7 @@ from .cli import (
 )
 
 DESCRIPTION = """Tool for displaying information on
-annotated regulated lists used during commec screen"""
+annotated control lists used during commec screen"""
 
 logger = logging.getLogger(__name__)
 
@@ -101,10 +101,10 @@ def is_regulated(accession : str) -> bool:
 
 def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[ControlListContext]]:
     """
-    Check the given Accession against all imported regulated lists.
+    Check the given Accession against all imported control lists.
     The input Accession can be a TaxID, GenBank protein, or Uniprot ID.
     If the input was a TaxID, any parent TaxIDS will also be recursively checked across 
-    all regulated lists. 
+    all control lists. 
     The output is a list of every regulation
     attributed to the original accession, in the form of 
     a tuple containing the list info, as well as the 
@@ -123,7 +123,7 @@ def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[Contr
 
     logger.debug("Accesions to check: %s", accession_to_check)
 
-    # Get Accessions of regulated interest:
+    # Get Accessions of controlled interest:
     filtered_regulated_taxid_annotations = __data.CONTROL_LIST_ANNOTATIONS[
         __data.CONTROL_LIST_ANNOTATIONS.index.isin(accession_to_check)]
     
@@ -186,7 +186,7 @@ def run(arguments: argparse.Namespace):
         logger.info(format_control_lists(True), extra={"no_prefix": True, "cap" : True})
 
     if arguments.showtaxids:
-        logger.info(" *----------* REGULATED TAXIDS *----------* ")
+        logger.info(" *----------* CONTROLLED TAXIDS *----------* ")
         logger.info("Regulation Annotations "
                     "for supplied taxids (#%i):\n", len(arguments.showtaxids))
         for accession in arguments.showtaxids:
@@ -210,4 +210,3 @@ if __name__ == "__main__":
     add_args(parser)
     args = parser.parse_args()
     run(args)
-

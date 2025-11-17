@@ -288,7 +288,6 @@ def parse_taxonomy_hits(
             for nonreg_annotation in non_regulated_annotation_list:
                 control_info, _context_info = get_regulation(nonreg_annotation["taxid"])
                 for control_output_info in control_info:
-                    # Record domain information.
                     control_output_info.list = str(get_control_lists(control_output_info.list))
                 if len(control_info) > 0:
                     nonreg_annotation["control_list"] = control_info
@@ -298,7 +297,7 @@ def parse_taxonomy_hits(
             # If the category in the control list isn't set, we default to the non-descript, "sequences".
             domains_text = ", ".join(set(domains)) or "sequence"
             # Set the default hit description, this is changed if result is mixed etc.
-            hit_description = f"Regulated {domains_text} - {regulated_hit_data['subject title'].values[0]}"
+            hit_description = f"Controlled {domains_text} - {regulated_hit_data['subject title'].values[0]}"
 
             # TODO: Currently, we recapitulate old behaviour,
             # # " no top hit exclusive to a regulated pathogen: PASS"
@@ -308,18 +307,18 @@ def parse_taxonomy_hits(
 
             screen_status : ScreenStatus = ScreenStatus.FLAG # Default is to flag.
 
-            logger.debug("Checking number of non regulated taxids: %i", len(non_regulated_annotation_list))
+            logger.debug("Checking number of non controlled taxids: %i", len(non_regulated_annotation_list))
             if len(non_regulated_annotation_list) > 0:
-                logger.debug("Non-regulated taxids present, treating as MIXED result.")
+                logger.debug("Non-controlled taxids present, treating as MIXED result.")
                 screen_status = ScreenStatus.PASS
                 hit_description = (f"Mix of {len(regulated_annotation_list)} controlled {domains_text}"
-                f" and {len(non_regulated_annotation_list)} non-regulated {domains_text}")
+                f" and {len(non_regulated_annotation_list)} non-controlled {domains_text}")
 
             # We might have 0 regulated annotations, due to removal based on regional context:
             if len(regulated_annotation_list) == 0:
                 screen_status = ScreenStatus.PASS
-                logger.debug("Only non-controlled entities due to control list compliance regional context")
-                hit_description = (f"Externally controlled {domains_text}")
+                logger.debug("Only non-controlled entities, due to control list compliance based on regional context")
+                hit_description = (f"Regionally controlled {domains_text}")
             
             # Update the query level recommendation of this step.
             query_write.status.update_step_status(step, screen_status)

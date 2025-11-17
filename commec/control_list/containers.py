@@ -18,10 +18,9 @@ Also defines the storage data for
     * and child to parent taxid mapping.
 """
 import re
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 from typing import Optional
 from enum import StrEnum
-import pandas as pd
 
 class AccessionFormat(StrEnum):
     """
@@ -132,11 +131,11 @@ class ListMode(StrEnum):
     """
     Describes how a list is interpreted.
     When an Accession is identified as part of a list, whether or not we treat
-    that taxid as regulated or not will depend on the following modes:
+    that accession as controlled or not will depend on the following modes:
     
-    * COMPLIANCE - All taxids from this list are regulated.
-    * CONDITIONAL_NUM - Only mark taxid as regulated if it also appears in another list.
-    * COMPLIANCE_WARN - Mark Taxid as only a WARNING.
+    * COMPLIANCE - All accession from this list are controlled.
+    * CONDITIONAL_NUM - Only mark accession as controlled if it also appears in another list.
+    * COMPLIANCE_WARN - Mark accession as only a WARNING.
     * IGNORE - Ignore this list entirely.
 
     Future settings can be used to apply these to the lists under various

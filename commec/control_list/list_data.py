@@ -41,8 +41,7 @@ ACCESSION_MAP = pd.DataFrame({
     })
 
 # Precalculated and imported set of accessions
-# Typically unclassified cousins of regulated
-# taxids.
+# Typically unclassified cousins of controlled accession
 IGNORED_ACCESSION = pd.DataFrame({
     "child_taxid": pd.Series(dtype="str"),
     "ignored_taxid": pd.Series(dtype="str")

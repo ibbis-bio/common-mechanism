@@ -2,13 +2,13 @@
 
 """
 Scripts that control the initialisation of the regulations
-module state and imports regulation lists.
+module state and imports control lists.
 
 Import is handled recursively across arbitrarily nested folders.
 The top level folder must contain a region_definitions.json.
 A valid list folder may have the following layout:
 ```
-regulated-lists/  		     # This is the level at which pass to yaml / cli
+control-lists/  		     # This is the level at which pass to yaml / cli
 ├── region_definitions.json  # Additional regional mapping information, i.e. EU
 ├── uk-coshh/			     # Arbitrary filename, contains 1x list.  
 ├── austgroup/               # The valid list folder layout:
@@ -50,19 +50,19 @@ def import_control_lists(
     ) -> bool:
     """
     Given a directory, checks that the directory is valid,
-    If the directory is valid, it will load the regulation data.
+    If the directory is valid, it will load the control list data.
     If the directory is invalid, it will return false.
 
     ### Inputs:
     *input_path* : **PathLike | str**, Input directory to be searched.
     *regions_of_interest* : **set[str]**, 
         A set of alpha_2 country codes representing regions of interest. 
-        Regulation lists which share at least one of these codes will be 
+        Control lists which share at least one of these codes will be 
         marked for full compliance.
     
     ### outputs:
         **Boolean**: Returns True if the correct list files were detected, and
-            a Regulated List and annotatations were imported.
+            a Controlled List and annotatations were imported.
     """
     info_filename = os.path.join(input_path, "list_info.csv")
     data_filename = os.path.join(input_path, "regulated_taxids.csv")
@@ -70,11 +70,13 @@ def import_control_lists(
     ignored_filename = os.path.join(input_path, "ignored_accessions.csv")
 
     # Check required files.
-    if not os.path.isdir(input_path): return False
+    if not os.path.isdir(input_path):
+        return False
     for file in [info_filename, data_filename, child_lut_filename]:
-        if not os.path.isfile(file): return False
+        if not os.path.isfile(file):
+            return False
 
-    logger.debug("Importing regulation list from %s", input_path)
+    logger.debug("Importing Control List from %s", input_path)
     _import_control_list_info(info_filename) # Always load first.
     _import_control_list_annotations(data_filename)
     _import_accession_mappings(child_lut_filename)
@@ -88,8 +90,8 @@ def update_regional_context(
     alternative_mode = ListMode.CONDITIONAL_NUM
     ):
     """
-    Updates all loaded regulation lists based on a regional context.
-    Regulation lists which affect the same regions as the context are
+    Updates all loaded Control lists based on a regional context.
+    Control lists which affect the same regions as the context are
     marked as requiring full compliance.
     Regions that do not affect regions of interest are labelled
     with the alternative mode, by default conditional based on number.
@@ -98,10 +100,10 @@ def update_regional_context(
     
     *regions_of_interest* : **set[str]**, 
         A set of alpha_2 country codes representing regions of interest. 
-        Regulation lists which share at least one of these codes will be 
+        Control lists which share at least one of these codes will be 
         marked for full compliance.
     *alternative_mode* : **ListMode**, 
-        What mode the regulation lists will be marked in the absence of 
+        What mode the Control lists will be marked in the absence of 
         affecting any region of interest. Defaults to conditional based on 
         number of other lists also hit.
     
@@ -115,7 +117,7 @@ def update_regional_context(
     force_all_regions = ("all" in regions_of_interest)
 
     if force_all_regions:
-        logger.debug("Regulation list compliance set to affect all regions.")
+        logger.debug("Control list compliance set to affect all regions.")
 
     for reg_list in ld.CONTROL_LISTS.values():
         # Skip if forcing all regions.
@@ -123,7 +125,7 @@ def update_regional_context(
             reg_list.status = ListMode.COMPLIANCE
             continue
 
-        # Update regulation list mode based on region.
+        # Update control list mode based on region.
         list_affected_regions = get_regions_set(reg_list.regions)
 
         common_regions = set(list_affected_regions) & set(regions_of_interest)
@@ -140,10 +142,10 @@ def update_regional_context(
 
 def _import_control_list_info(input_path : str | os.PathLike):
     """
-    Imports the info.csv file from a regulation list folder.
-    Ensures that each regulation list information is appropriate keyed by
+    Imports the info.csv file from a control list folder.
+    Ensures that each control list information is appropriate keyed by
     acronym into the REG_LISTS data container.
-    Ensures that existing regulation lists are not overwritten, and 
+    Ensures that existing control lists are not overwritten, and 
     warns the user if overwritting unique data (i.e. acroynym clash) has occured.
     """
     list_info = pd.read_csv(input_path, sep=",", quotechar='"', dtype = str)
@@ -186,11 +188,11 @@ def _import_control_list_info(input_path : str | os.PathLike):
 
 def _import_control_list_annotations(input_path : str | os.PathLike):
     """
-    Imports annotated regulated taxid information from the regulated_taxids.csv file
-    within a regulated list provided to commec.
-    Each regulated taxid is checked to ensure the regulated list is valid before
+    Imports annotated controlled accession information from the regulated_taxids.csv file
+    within a control list provided to commec.
+    Each controlled accession is checked to ensure the control list is valid before
     inclusion.
-    Concatenates the regulated taxid info into the global dataframe.
+    Concatenates the control taxid info into the global dataframe.
     """
     taxid_info = pd.read_csv(input_path, dtype = str)
     # We detect multiple list acroynms in the format "ABC, DEF, GHI"
@@ -230,8 +232,8 @@ def _import_control_list_annotations(input_path : str | os.PathLike):
 
 def _import_accession_mappings(input_path : str | os.PathLike):
     """
-    Imports child to regulated taxid look up data data from the 
-    children_of_regulated_taxids.csv file within a regulated list provided to commec.
+    Imports child to controlled accession look up data data from the 
+    children_of_regulated_taxids.csv file within a control list provided to commec.
     Concatenates the child LUT info into the global dataframe.
     """
     child_lut = pd.read_csv(input_path, dtype = str)
@@ -240,8 +242,8 @@ def _import_accession_mappings(input_path : str | os.PathLike):
 
 def _import_ignored_accessions(input_path : str | os.PathLike):
     """
-    Imports child to regulated taxid look up data data from the 
-    ignored_taxids.csv file within a regulated list provided to commec.
+    Imports child to controlled accession look up data data from the 
+    ignored_taxids.csv file within a control list provided to commec.
     Concatenates the ignored info into the global dataframe.
     """
     if os.path.isfile(input_path):
@@ -256,7 +258,7 @@ def tidy_control_list_data():
 
     We also perform data cleanup here, as well as take the opportunity to
     report to the user any tidying issues - such as duplicates with differing
-    metadata. In the ideal case, commec provided regulation annotations should not
+    metadata. In the ideal case, commec provided control annotations should not
     log any errors here.
     """
     ld.ACCESSION_MAP.drop_duplicates()
@@ -286,7 +288,7 @@ def tidy_control_list_data():
         bad_entries["name"].str[:57].str.strip() + "..."
     )
     if not bad_entries.empty:
-        logger.error("%i imported regulated annotations"
+        logger.error("%i imported control list annotations"
                        " were bad entries with no TaxID Accession:\n%s"
                        "\n Run in --verbose mode for raw row input details.",
                        len(bad_entries.index),
@@ -315,10 +317,10 @@ def tidy_control_list_data():
                         '_merge == "left_only"').drop(
                             columns="_merge")
     if not diff.empty:
-        logger.debug("The following imported regulated annotations"
+        logger.debug("The following imported control list annotations"
                        " were duplicates with differing metadata:\n%s",
                        diff[["accession","name","category","list_acronym"]].to_string(index = False))
 
-    logger.debug("Loaded the following regulation list dataset: Top 20:\n%s",
+    logger.debug("Loaded the following control list dataset: Top 20:\n%s",
                  ld.CONTROL_LIST_ANNOTATIONS.head(20).to_string())
 
