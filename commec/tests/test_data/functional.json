@@ -3,7 +3,7 @@
     "commec_version": "1.0.1",
     "json_output_version": "0.4",
     "time_taken": "00:00:05",
-    "date_run": "2025-11-13 19:54:00",
+    "date_run": "2025-11-17 18:06:57",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -41,7 +41,7 @@
     ]
   },
   "query_info": {
-    "file": "/tmp/pytest-of-root/pytest-55/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-root/pytest-62/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -64,7 +64,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "NT_HIT_MIXED",
-          "description": "Mix of 1 regulated None and 1 non-regulated None",
+          "description": "Mix of 1 controlled sequence and 1 non-regulated sequence",
           "ranges": [
             {
               "e_value": 0.16,
@@ -76,7 +76,7 @@
           ],
           "annotations": {
             "domain": [
-              "None"
+              "Viruses"
             ],
             "regulated_taxonomy": [
               {
@@ -84,7 +84,7 @@
                 "number_of_unregulated_taxids": "1",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "0",
+                "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
                     "evalue": 0.16,
@@ -94,7 +94,7 @@
                     "control_list": [
                       {
                         "name": "ShouldntClear",
-                        "category": "None",
+                        "category": "Viruses",
                         "list": "DTL"
                       }
                     ]
@@ -118,7 +118,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "NT_HIT_FLAG3",
-          "description": "Regulated None - SUBJECT",
+          "description": "Regulated sequence - SUBJECT",
           "ranges": [
             {
               "e_value": 0.15,
@@ -130,7 +130,7 @@
           ],
           "annotations": {
             "domain": [
-              "None"
+              "Viruses"
             ],
             "regulated_taxonomy": [
               {
@@ -138,7 +138,7 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "0",
+                "regulated_viruses": "2",
                 "regulated_taxa": [
                   {
                     "evalue": 0.14,
@@ -148,7 +148,7 @@
                     "control_list": [
                       {
                         "name": "ShouldntClear",
-                        "category": "None",
+                        "category": "Viruses",
                         "list": "DTL"
                       }
                     ]
@@ -161,7 +161,7 @@
                     "control_list": [
                       {
                         "name": "SUBJECT",
-                        "category": "None",
+                        "category": "Viruses",
                         "list": "DTL"
                       }
                     ]
@@ -178,7 +178,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "NT_HIT_FLAG2",
-          "description": "Regulated None - SUBJECT",
+          "description": "Regulated sequence - SUBJECT",
           "ranges": [
             {
               "e_value": 0.14,
@@ -190,7 +190,7 @@
           ],
           "annotations": {
             "domain": [
-              "None"
+              "Viruses"
             ],
             "regulated_taxonomy": [
               {
@@ -198,7 +198,7 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "0",
+                "regulated_viruses": "2",
                 "regulated_taxa": [
                   {
                     "evalue": 0.14,
@@ -208,7 +208,7 @@
                     "control_list": [
                       {
                         "name": "ShouldntClear",
-                        "category": "None",
+                        "category": "Viruses",
                         "list": "DTL"
                       }
                     ]
@@ -221,7 +221,7 @@
                     "control_list": [
                       {
                         "name": "SUBJECT",
-                        "category": "None",
+                        "category": "Viruses",
                         "list": "DTL"
                       }
                     ]
@@ -238,7 +238,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "NT_HIT_FLAG1",
-          "description": "Regulated None - SUBJECT",
+          "description": "Regulated sequence - SUBJECT",
           "ranges": [
             {
               "e_value": 0.13,
@@ -250,7 +250,7 @@
           ],
           "annotations": {
             "domain": [
-              "None"
+              "Viruses"
             ],
             "regulated_taxonomy": [
               {
@@ -258,7 +258,7 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "0",
+                "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
                     "evalue": 0.13,
@@ -268,7 +268,7 @@
                     "control_list": [
                       {
                         "name": "ShouldntClear",
-                        "category": "None",
+                        "category": "Viruses",
                         "list": "DTL"
                       }
                     ]
@@ -285,7 +285,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_MIXED1",
-          "description": "Mix of 1 regulated None and 2 non-regulated None",
+          "description": "Mix of 1 controlled sequence and 2 non-regulated sequence",
           "ranges": [
             {
               "e_value": 0.1,
@@ -297,7 +297,7 @@
           ],
           "annotations": {
             "domain": [
-              "None"
+              "Viruses"
             ],
             "regulated_taxonomy": [
               {
@@ -305,7 +305,7 @@
                 "number_of_unregulated_taxids": "2",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "0",
+                "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
                     "evalue": 0.1,
@@ -315,7 +315,7 @@
                     "control_list": [
                       {
                         "name": "ShouldMixedReg",
-                        "category": "None",
+                        "category": "Viruses",
                         "list": "DTL"
                       }
                     ]
@@ -345,7 +345,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_FLAG4",
-          "description": "Regulated None - ShouldClear",
+          "description": "Regulated sequence - ShouldClear",
           "ranges": [
             {
               "e_value": 0.09,
@@ -357,7 +357,7 @@
           ],
           "annotations": {
             "domain": [
-              "None"
+              "Viruses"
             ],
             "regulated_taxonomy": [
               {
@@ -365,7 +365,7 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "0",
+                "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
                     "evalue": 0.09,
@@ -375,7 +375,7 @@
                     "control_list": [
                       {
                         "name": "ShouldClear",
-                        "category": "None",
+                        "category": "Viruses",
                         "list": "DTL"
                       }
                     ]
@@ -392,7 +392,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_FLAG3",
-          "description": "Regulated None - ShouldntClear",
+          "description": "Regulated sequence - ShouldntClear",
           "ranges": [
             {
               "e_value": 0.08,
@@ -404,7 +404,7 @@
           ],
           "annotations": {
             "domain": [
-              "None"
+              "Viruses"
             ],
             "regulated_taxonomy": [
               {
@@ -412,7 +412,7 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "0",
+                "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
                     "evalue": 0.07,
@@ -422,7 +422,7 @@
                     "control_list": [
                       {
                         "name": "ShouldntClear",
-                        "category": "None",
+                        "category": "Viruses",
                         "list": "DTL"
                       }
                     ]
@@ -439,7 +439,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_FLAG2",
-          "description": "Regulated None - ShouldClearBySynBio",
+          "description": "Regulated sequence - ShouldClearBySynBio",
           "ranges": [
             {
               "e_value": 0.07,
@@ -451,7 +451,7 @@
           ],
           "annotations": {
             "domain": [
-              "None"
+              "Viruses"
             ],
             "regulated_taxonomy": [
               {
@@ -459,7 +459,7 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "0",
+                "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
                     "evalue": 0.07,
@@ -469,7 +469,7 @@
                     "control_list": [
                       {
                         "name": "ShouldntClear",
-                        "category": "None",
+                        "category": "Viruses",
                         "list": "DTL"
                       }
                     ]
@@ -486,7 +486,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_FLAG1",
-          "description": "Regulated None - ShouldntClear",
+          "description": "Regulated sequence - ShouldntClear",
           "ranges": [
             {
               "e_value": 0.06,
@@ -498,7 +498,7 @@
           ],
           "annotations": {
             "domain": [
-              "None"
+              "Viruses"
             ],
             "regulated_taxonomy": [
               {
@@ -506,7 +506,7 @@
                 "number_of_unregulated_taxids": "0",
                 "regulated_eukaryotes": "0",
                 "regulated_bacteria": "0",
-                "regulated_viruses": "0",
+                "regulated_viruses": "1",
                 "regulated_taxa": [
                   {
                     "evalue": 0.06,
@@ -516,7 +516,7 @@
                     "control_list": [
                       {
                         "name": "ShouldntClear",
-                        "category": "None",
+                        "category": "Viruses",
                         "list": "DTL"
                       }
                     ]

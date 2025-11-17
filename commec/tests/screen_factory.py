@@ -164,6 +164,7 @@ class ScreenTesterFactory:
                     "name": title,
                     "tax_id": taxid,
                     "list_acronym": "DTL",
+                    "category" : superkingdom,
                 },
             ]))
 
