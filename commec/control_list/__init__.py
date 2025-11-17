@@ -26,7 +26,6 @@ from .cli import (
 from .containers import (
     ListMode,
     ControlList,
-    ControlListInfo,
     ControlListOutput,
     ControlListContext,
     Region,

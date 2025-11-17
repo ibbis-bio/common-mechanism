@@ -149,6 +149,17 @@ class ListMode(StrEnum):
     COMPLIANCE_WARN = "Comply with Warning"
     IGNORE = "Ignored"
 
+class ListUseAcronym(StrEnum):
+    """
+    Storage for the acroynms of the various formats of ControlList types.
+    """
+    EXPORTCONTROLS	= "EXPORT"
+    FRAMEWORK	  	= "FRMWK"
+    DUALUSE	    	= "DURC"
+    GMO			    = "GMO"
+    OTHERPATHOGEN	= "PATHGN"
+    BENIGN  		= "BENIGN"
+
 @dataclass
 class ControlList:
     """
@@ -157,20 +168,29 @@ class ControlList:
     name : str = ""
     acronym : str = ""
     url : str = ""
-    regions : list[Region] = field(default_factory=list[Region])
+    region : Region = field(default_factory=Region)
     status : ListMode = field(default_factory=ListMode)
+    use : ListUseAcronym = field(default_factory=ListUseAcronym)
 
     def __str__(self):
-        regions_text = ""
-        for r in self.regions:
-            regions_text += str(r) + ", "
-        regions_text = regions_text[:-2]
-        return f"[{self.acronym}] {self.name} - {regions_text}\n({self.url})"
-
+        """
+        Shorthand acroynms for list comprehension. e.g:
+        AG_CCL_EXPORT, or IN_SCOMET_EXPORT.
+        Describes the region affect, the acronym, and the use in a single line.
+        For JSON and logging reporting purposes.
+        """
+        return f"{self.region.acronym}_{self.acronym}_{self.use}"
+    
+    def description(self) -> str:
+        """
+        Human readable text based description of this control list.
+        """
+        return f"[{self.acronym}] {self.name} - {self.region.name}\n({self.url})"
+    
     def __eq__(self, value):
         if (self.name != value.name or
             self.url != value.url or
-            set(self.regions) != set(value.regions) or
+            self.region != value.region or
             self.acronym != value.acronym):
             return False
         else:
@@ -192,45 +212,6 @@ class CategoryType(StrEnum):
     TOXIN_SYNTHESIS_ENZYME = "Toxin Synthesis Enzyme"
     PRIONS_AND_TSE = "Prions & TSEs"
     NONE = "None" # Default value.
-
-@dataclass
-class ControlListInfo:
-    """
-    Container for regulatory information of a given accession from
-    a specific list. Structure data that is an expected output from
-    the regulations module.
-    """
-    category : str = ""
-    name : str = ""
-    notes : str = ""
-    derived_from : str = ""
-    preferred_taxonomy_name : str = ""
-    other_taxonomy_name : str = ""
-    tax_id : str = ""
-    list_acronym : str = ""
-    target : str = ""
-    hazard_group : str = ""
-    uniprot : str = ""
-    genbank_protein : str = ""
-
-    @classmethod
-    def from_row(cls, row: pd.Series, index_val=None):
-        """
-        Construct a ControlListInfo from a pandas row returned by .iterrows().
-        The optional index_val can be passed in if the DataFrame index should
-        map to the `taxid` field.
-        """
-        # dataclass field names
-        dataclass_fields = {f.name for f in fields(cls)}
-
-        # build kwargs by selecting overlapping keys
-        kwargs = {col: row[col] for col in row.index if col in dataclass_fields}
-
-        # if the dataframe index is intended to represent `taxid`, override here
-        if index_val is not None and "tax_id" in dataclass_fields:
-            kwargs["tax_id"] = str(index_val)
-
-        return cls(**kwargs)
 
 @dataclass
 class ControlListContext:

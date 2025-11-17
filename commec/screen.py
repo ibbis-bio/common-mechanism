@@ -334,8 +334,9 @@ class Screen:
         control_lists = control_list.get_control_lists()
         control_lists = [ControlListResult(
                 cl.name,
-                cl.regions[0].name,
-                ",".join(control_list.get_regions_set(cl.regions[0])),
+                cl.acronym,
+                cl.region.name,
+                ",".join(control_list.get_regions_set(cl.region)),
                 cl.status,
                 cl.url) for cl in control_lists]
         self.screen_data.commec_info.control_list_info = control_lists

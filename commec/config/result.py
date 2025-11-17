@@ -744,6 +744,7 @@ class ControlListResult():
     information for what is in a group in the case of a broader region definition.
     """
     name : str = ""
+    acronym : str = ""
     region : str = ""
     includes: str = ""
     status : ListMode = field(default_factory=ListMode)

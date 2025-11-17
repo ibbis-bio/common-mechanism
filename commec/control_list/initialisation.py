@@ -34,6 +34,7 @@ from .containers import (
     CategoryType,
     ControlList,
     ListMode,
+    ListUseAcronym,
     Region,
     Accession
     )
@@ -147,14 +148,31 @@ def _import_control_list_info(input_path : str | os.PathLike):
     """
     list_info = pd.read_csv(input_path, sep=",", quotechar='"', dtype = str)
     for _, row in list_info.iterrows():
-        logger.debug(f"Parsing list information: {row}")
+        logger.debug("Parsing list information: %s", row)
+
+        try:
+            listuseacronym = ListUseAcronym(row["use"].strip())
+        except ValueError as e:
+            logger.error("Invalid value used for control list \"use\" column from file %s, error: %s ",
+                         input_path, e)
+            return
+
+        try:
+            new_region = Region(name = row["region_name"].strip(),
+                    acronym = row["region_code"].strip())
+        except ValueError as e:
+            logger.error("Invalid values used for region definitions from file %s, error: %s ",
+                         input_path, e)
+            return
+
         new_list = ControlList(
             row["list_name"].strip(),
             row["list_acronym"].strip(),
             row["list_url"].strip(),
-            [Region(name = row["region_name"].strip(),
-                    acronym = row["region_code"].strip())],
-            ListMode.COMPLIANCE)
+            new_region,
+            ListMode.COMPLIANCE,
+            listuseacronym
+            )
 
         if ld.add_control_list(new_list):
             continue

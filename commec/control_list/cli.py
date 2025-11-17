@@ -87,7 +87,7 @@ def format_control_lists(verbosity = False):
         rows.append({
             "Control List": value.name,# if len(value.name) < 50 else value.name[:50]+"...",
             "Acronym": value.acronym,
-            "Region": value.regions[0].acronym,
+            "Region": value.region.acronym,
             "# Entries": (data.CONTROL_LIST_ANNOTATIONS["list_acronym"] == value.acronym).sum(),
             "Status": value.status
         })

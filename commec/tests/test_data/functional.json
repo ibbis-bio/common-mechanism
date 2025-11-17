@@ -2,8 +2,8 @@
   "commec_info": {
     "commec_version": "1.1.0",
     "json_output_version": "0.4",
-    "time_taken": "00:00:05",
-    "date_run": "2025-11-17 18:06:57",
+    "time_taken": "00:00:02",
+    "date_run": "2025-11-18 10:06:04",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -33,6 +33,7 @@
     "control_list_info": [
       {
         "name": "default_test_list",
+        "acronym": "DTL",
         "region": "New Zealand",
         "includes": "NZ",
         "status": "Compliance",
@@ -41,7 +42,7 @@
     ]
   },
   "query_info": {
-    "file": "/tmp/pytest-of-root/pytest-62/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-root/pytest-70/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -95,7 +96,7 @@
                       {
                         "name": "ShouldntClear",
                         "category": "Viruses",
-                        "list": "DTL"
+                        "list": "NZ_DTL_EXPORT"
                       }
                     ]
                   }
@@ -149,7 +150,7 @@
                       {
                         "name": "ShouldntClear",
                         "category": "Viruses",
-                        "list": "DTL"
+                        "list": "NZ_DTL_EXPORT"
                       }
                     ]
                   },
@@ -162,7 +163,7 @@
                       {
                         "name": "SUBJECT",
                         "category": "Viruses",
-                        "list": "DTL"
+                        "list": "NZ_DTL_EXPORT"
                       }
                     ]
                   }
@@ -209,7 +210,7 @@
                       {
                         "name": "ShouldntClear",
                         "category": "Viruses",
-                        "list": "DTL"
+                        "list": "NZ_DTL_EXPORT"
                       }
                     ]
                   },
@@ -222,7 +223,7 @@
                       {
                         "name": "SUBJECT",
                         "category": "Viruses",
-                        "list": "DTL"
+                        "list": "NZ_DTL_EXPORT"
                       }
                     ]
                   }
@@ -269,7 +270,7 @@
                       {
                         "name": "ShouldntClear",
                         "category": "Viruses",
-                        "list": "DTL"
+                        "list": "NZ_DTL_EXPORT"
                       }
                     ]
                   }
@@ -316,7 +317,7 @@
                       {
                         "name": "ShouldMixedReg",
                         "category": "Viruses",
-                        "list": "DTL"
+                        "list": "NZ_DTL_EXPORT"
                       }
                     ]
                   }
@@ -376,7 +377,7 @@
                       {
                         "name": "ShouldClear",
                         "category": "Viruses",
-                        "list": "DTL"
+                        "list": "NZ_DTL_EXPORT"
                       }
                     ]
                   }
@@ -423,7 +424,7 @@
                       {
                         "name": "ShouldntClear",
                         "category": "Viruses",
-                        "list": "DTL"
+                        "list": "NZ_DTL_EXPORT"
                       }
                     ]
                   }
@@ -470,7 +471,7 @@
                       {
                         "name": "ShouldntClear",
                         "category": "Viruses",
-                        "list": "DTL"
+                        "list": "NZ_DTL_EXPORT"
                       }
                     ]
                   }
@@ -517,7 +518,7 @@
                       {
                         "name": "ShouldntClear",
                         "category": "Viruses",
-                        "list": "DTL"
+                        "list": "NZ_DTL_EXPORT"
                       }
                     ]
                   }

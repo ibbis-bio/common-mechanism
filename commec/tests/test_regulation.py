@@ -16,12 +16,11 @@ from commec.utils.logger import setup_console_logging
 
 @pytest.mark.parametrize("new_list,expected_outcome", [
     pytest.param(*case) for case in [
-        (ControlList("list01","L1","www.l1.com",["NZ"],1), True), # Duplicate
-        (ControlList("list01","L2","www.l1.com",["NZ"],0), True), # Non-Duplicate
-        (ControlList("list01","L1","www.l2.com",["NZ"],0), False), # Wrong URL
-        (ControlList("list01","L1","www.l1.com",["NZ", "AU"],0), False), # Wrong Regions
-        (ControlList("list01","L1","www.l1.com",["AU"],0), False), # Wrong Region
-        (ControlList("list02","L1","www.l1.com",["NZ"],0), False), # Wrong Name
+        (ControlList("list01","L1","www.l1.com","NZ",1,"EXPORT"), True), # Duplicate
+        (ControlList("list01","L2","www.l1.com","NZ",0,"EXPORT"), True), # Non-Duplicate
+        (ControlList("list01","L1","www.l2.com","NZ",0,"EXPORT"), False), # Wrong URL
+        (ControlList("list01","L1","www.l1.com","AU",0,"EXPORT"), False), # Wrong Region
+        (ControlList("list02","L1","www.l1.com","NZ",0,"EXPORT"), False), # Wrong Name
     ]
 ])
 def test_list_overwrite_protections(new_list, expected_outcome):
@@ -29,7 +28,7 @@ def test_list_overwrite_protections(new_list, expected_outcome):
     Tests what occurs when two lists share an acronym that should not be concatenated.
     """
     setup_console_logging(logging.DEBUG)
-    existing_list = ControlList("list01","L1","www.l1.com",["NZ"],0)
+    existing_list = ControlList("list01","L1","www.l1.com","NZ",0,"EXPORT")
     ld.add_control_list(existing_list)
     assert expected_outcome == ld.add_control_list(new_list)
 
@@ -39,8 +38,8 @@ def test_multiple_entrys():
     """
     ld.clear()
     setup_console_logging(logging.DEBUG)
-    assert ld.add_control_list(ControlList("List01","L1","www.list1.com",["NZ"],ListMode.COMPLIANCE))
-    assert ld.add_control_list(ControlList("List02","L2","www.list2.com",["AU"],ListMode.COMPLIANCE))
+    assert ld.add_control_list(ControlList("List01","L1","www.list1.com","NZ",ListMode.COMPLIANCE,"EXPORT"))
+    assert ld.add_control_list(ControlList("List02","L2","www.list2.com","AU",ListMode.COMPLIANCE,"EXPORT"))
 
     input_list1_data = pd.DataFrame([
         {

@@ -38,7 +38,6 @@ from commec.control_list import (
     get_regulation,
     ListMode,
     ControlList,
-    ControlListInfo
 )
 
 pd.set_option("display.max_colwidth", 10000)
@@ -269,6 +268,7 @@ def parse_taxonomy_hits(
 
                 for control_output_info in control_info:
                     # Record domain information.
+                    control_output_info.list = str(get_control_lists(control_output_info.list))
                     domain = control_output_info.category
                     if domain == "Viruses":
                         n_regulated_virus += 1
@@ -287,6 +287,9 @@ def parse_taxonomy_hits(
             # Useful for when a single conditional control list compliance occured.
             for nonreg_annotation in non_regulated_annotation_list:
                 control_info, _context_info = get_regulation(nonreg_annotation["taxid"])
+                for control_output_info in control_info:
+                    # Record domain information.
+                    control_output_info.list = str(get_control_lists(control_output_info.list))
                 if len(control_info) > 0:
                     nonreg_annotation["control_list"] = control_info
 
@@ -422,7 +425,7 @@ def update_using_control_lists(regulated : pd.DataFrame, non_regulated : pd.Data
     for index, row in regulated.iterrows():
         control_data, _context_data = get_regulation(row["subject tax ids"])
         for info in control_data:
-            clist : ControlListInfo = get_control_lists(info.list)
+            clist : ControlList = get_control_lists(info.list)
             regulated.at[index, "list_acronym"] = clist.acronym
             regulated.at[index, "category"] = info.category
             if clist.status == ListMode.COMPLIANCE:

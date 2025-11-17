@@ -157,8 +157,9 @@ class ScreenTesterFactory:
         if regulated:
             ld.add_control_list(ControlList("default_test_list",
                                             "DTL","www.nourl.com",
-                                            [Region("New Zealand","NZ")],
-                                            ListMode.COMPLIANCE))
+                                            Region("New Zealand","NZ"),
+                                            ListMode.COMPLIANCE,
+                                            "EXPORT"))
             ld.add_control_list_annotations(pd.DataFrame([
                 {
                     "name": title,

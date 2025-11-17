@@ -14,7 +14,6 @@ import logging
 import argparse
 from commec.utils.logger import setup_console_logging
 from .containers import (
-    ControlListInfo,
     Accession,
     derive_accession_format,
     ControlListOutput,
