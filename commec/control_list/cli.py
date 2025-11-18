@@ -77,7 +77,7 @@ def format_control_lists(verbosity = False):
         output = "The following Control Lists apply: "
         for _, value in data.CONTROL_LISTS.items():
             number_of_regulated_taxids = (data.CONTROL_LIST_ANNOTATIONS["list_acronym"] == value.acronym).sum()
-            output += f"\n{value}\nRegulated Taxid Entries: {number_of_regulated_taxids}, Status : {value.status}"
+            output += f"\n{value.description()}\nRegulated Taxid Entries: {number_of_regulated_taxids}, Status : {value.status}"
         output += f"\n\n[Total number of Taxid Relationships:{data.ACCESSION_MAP.shape[0]}]"
         return output + "\n"
 

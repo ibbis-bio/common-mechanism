@@ -184,7 +184,7 @@ class ControlList:
         """
         Human readable text based description of this control list.
         """
-        return f"[{self.acronym}] {self.name} - {self.region.name}\n({self.url})"
+        return f"[{self}] {self.name} - {self.region.name}\n({self.url})"
     
     def __eq__(self, value):
         if (self.name != value.name or
