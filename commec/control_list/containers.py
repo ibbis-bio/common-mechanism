@@ -153,11 +153,8 @@ class ListUseAcronym(StrEnum):
     Storage for the acroynms of the various formats of ControlList types.
     """
     EXPORTCONTROLS	= "EXPORT"
-    FRAMEWORK	  	= "FRMWK"
-    DUALUSE	    	= "DURC"
-    GMO			    = "GMO"
+    LICENCED	  	= "LICENCE"
     OTHERPATHOGEN	= "PATHGN"
-    BENIGN  		= "BENIGN"
 
 @dataclass
 class ControlList:
