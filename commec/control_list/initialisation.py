@@ -126,7 +126,7 @@ def update_regional_context(
             continue
 
         # Update control list mode based on region.
-        list_affected_regions = get_regions_set(reg_list.regions)
+        list_affected_regions = get_regions_set(reg_list.region)
 
         common_regions = set(list_affected_regions) & set(regions_of_interest)
 
