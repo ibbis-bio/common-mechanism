@@ -119,14 +119,15 @@ class ScreenIO:
             try:
                 query = Query(record)
                 if query.name in queries:
-                    raise ValueError(f"Duplicate sequence identifier found: {query.name}")
+                    raise ValueError(f"Duplicate sequence identifier generated: \"{query.name}\" from record: {record}\n"
+                                     "Ensure that the first 25 characters for each fasta record are unique.")
                 queries[query.name] = query
                 # Override the original cleaned fasta, with updated names.
                 record.id = query.name
                 record.name = ""
                 record.description = ""
             except Exception as e:
-                raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}") from e
+                raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}, {e}") from e
             
         # Don't write a cleaned fasta for queries below a given length.
         records = [record for record in records if len(record.seq) > MINIMUM_QUERY_LENGTH]
