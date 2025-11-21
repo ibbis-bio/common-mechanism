@@ -138,7 +138,11 @@ class Query:
             return name
         
         tokens = name.split("_")
-        output = ""
+
+        if len(tokens) == 1:
+            return name[:25]
+
+        output = None
         for i in range(len(tokens)):
             testname = "_".join(tokens[:i])
             if len(testname) > 25:
