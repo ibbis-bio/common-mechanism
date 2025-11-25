@@ -173,8 +173,8 @@ def test_ambigious():
     "input, expected_output",
     [
         ("short_query_name","short_query_name"),
-        ("longquerynamewithnotokenstospliton","longquerynamewithnotokens"),
-        ("long_query_name_with_common_tokens_to_split_on", "long_query_name_with")
+        ("longquerynamewithnotokenstosplitonwowlookhowlongitistruelysomethingtobehold","longquerynamewithnotokenstosplitonwowlookhowlongitistruelysometh"),
+        ("long_query_name_with_common_tokens_to_split_on_wow_look_how_long_it_is_truly_something_to_behold", "long_query_name_with_common_tokens_to_split_on_wow_look_how_long")
     ],
 )
 def test_query_id_creation(input, expected_output):

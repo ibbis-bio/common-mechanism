@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from Bio import Seq
 from Bio.SeqRecord import SeqRecord
 from commec.config.result import QueryResult
+from commec.config.constants import MAXIMUM_QUERY_NAME_LENGTH
 
 class Query:
     """
@@ -134,18 +135,18 @@ class Query:
         if name.endswith("_"):
             name = name[:-1]
 
-        if len(name) < 26:
+        if len(name) <= MAXIMUM_QUERY_NAME_LENGTH:
             return name
         
         tokens = name.split("_")
 
         if len(tokens) == 1:
-            return name[:25]
+            return name[:MAXIMUM_QUERY_NAME_LENGTH]
 
         output = None
         for i in range(len(tokens)):
             testname = "_".join(tokens[:i])
-            if len(testname) > 25:
+            if len(testname) > MAXIMUM_QUERY_NAME_LENGTH:
                 break
             output = testname
 
