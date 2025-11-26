@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from Bio import Seq
 from Bio.SeqRecord import SeqRecord
 from commec.config.result import QueryResult
+from commec.config.constants import MAXIMUM_QUERY_NAME_LENGTH
 
 class Query:
     """
@@ -123,7 +124,7 @@ class Query:
     def create_id(input_name : str) -> str:
         """
         Parse the Fasta SeqRecord string ID into 
-        a 25 digit maximum Unique Identification.
+        a constant digit maximum Unique Identification.
         For internal Commec Screen Use only.
         Original Fasta name IDs are used during JSON output.
         """
@@ -134,14 +135,18 @@ class Query:
         if name.endswith("_"):
             name = name[:-1]
 
-        if len(name) < 26:
+        if len(name) <= MAXIMUM_QUERY_NAME_LENGTH:
             return name
         
         tokens = name.split("_")
-        output = ""
+
+        if len(tokens) == 1:
+            return name[:MAXIMUM_QUERY_NAME_LENGTH]
+
+        output = None
         for i in range(len(tokens)):
             testname = "_".join(tokens[:i])
-            if len(testname) > 25:
+            if len(testname) > MAXIMUM_QUERY_NAME_LENGTH:
                 break
             output = testname
 
