@@ -19,6 +19,7 @@ from commec.config.result import (
     ScreenStep,
     ScreenStatus,
 )
+import commec.control_list as cl
 
 class CommecPalette():
     """ 
@@ -213,6 +214,7 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
         regulated_taxids = []
         non_regulated_taxids = []
         regulated_species = []
+        controlled_lists = []
 
         if "regulated_taxonomy" in hit.annotations:
             reg = hit.annotations["regulated_taxonomy"]
@@ -223,8 +225,19 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
                 regulated_taxids.extend(r["regulated_taxa"])
                 non_regulated_taxids.extend(r["non_regulated_taxa"])
             
-            for entry in regulated_taxids:
-                regulated_species.append(entry["species"])
+            for anno_data in regulated_taxids:
+                for controllist in anno_data["control_list"]:
+                    if isinstance(controllist, cl.ControlListOutput):
+                        name  = controllist.name
+                        list_acronym = controllist.list
+                    else:
+                        name = controllist["name"]
+                        list_acronym = controllist["list"]
+                    regulated_species.append(name)
+                    controlled_lists.append(list_acronym)
+
+            controlled_lists = set(controlled_lists)
+            regulated_species = set(regulated_species)
             
             domain_string = " across multiple domains."
             if n_regulated_bacteria > 0 and n_regulated_viruses == 0 and n_regulated_eukaryotes == 0:
@@ -243,7 +256,7 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
                 output_string += "Best match to regulated" + domain_string + ".<br>"
 
             output_string += str(total_hits) + " Best match hits to " if total_hits > 1 else "Best hit to "
-            output_string += peptide_type + " found in " + str(len(regulated_species)) + " species, with regulated pathogen taxId in "
+            output_string += peptide_type + " found for " + str(len(regulated_species)) + " controlled entries and " + str(len(controlled_lists)) + " control lists, with regulated pathogen taxId in "
             output_string += "lineage " if len(regulated_species) == 1 else "lineages "
 
             species_list = textwrap.fill(

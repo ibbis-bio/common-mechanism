@@ -34,6 +34,7 @@ from enum import StrEnum
 from importlib.metadata import version, PackageNotFoundError
 import pandas as pd
 from commec.tools.search_handler import SearchToolVersion
+from commec.control_list.containers import ListMode
 from commec import __version__ as COMMEC_VERSION
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 # Seperate versioning for the output JSON.
-JSON_COMMEC_FORMAT_VERSION = "0.3"
+JSON_COMMEC_FORMAT_VERSION = "0.4"
 
 
 class ScreenStatus(StrEnum):
@@ -220,9 +221,9 @@ class TaxonomyAnnotation:
     """
     evalue : float = 0.0
     taxid : str = ""
-    species: str = ""
-    genus : str = ""
-    superkingdom: str = ""
+    #species: str = ""
+    #genus : str = ""
+    #superkingdom: str = ""
     target_hit : str = ""
     target_description : str = ""
 
@@ -736,6 +737,19 @@ class SearchToolInfo:
     low_concern_rna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
     low_concern_dna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
 
+@dataclass
+class ControlListResult():
+    """ 
+    Modified ControList container for JSON output, includes the additional
+    information for what is in a group in the case of a broader region definition.
+    """
+    name : str = ""
+    acronym : str = ""
+    region : str = ""
+    includes: str = ""
+    status : ListMode = field(default_factory=ListMode)
+    url : str = ""
+
 
 @dataclass
 class ScreenRunInfo:
@@ -745,6 +759,8 @@ class ScreenRunInfo:
     time_taken: str = ""
     date_run: str = ""
     search_tool_info: SearchToolInfo = field(default_factory=SearchToolInfo)
+    control_list_info : list[ControlListResult] = field(default_factory=list)
+
 
 @dataclass
 class ScreenQueryInfo:
@@ -752,6 +768,7 @@ class ScreenQueryInfo:
     file: str = ""
     number_of_queries: int = 0
     total_query_length: int = 0
+
 
 @dataclass
 class ScreenResult:

@@ -36,6 +36,11 @@ from commec.setup import (
     add_args as setup_add_args,
     run as setup_run,
 )
+from commec.control_list import (
+    DESCRIPTION as list_DESCRIPTION,
+    add_args as list_add_args,
+    run as list_run,
+)
 
 from commec import __version__ as COMMEC_VERSION
 
@@ -75,6 +80,10 @@ def main():
     setup_parser = subparsers.add_parser("setup", description=setup_DESCRIPTION)
     setup_add_args(setup_parser)
 
+    # Sub-command for "list"
+    list_parser = subparsers.add_parser("list", description=list_DESCRIPTION)
+    list_add_args(list_parser)
+
     args = parser.parse_args()
 
     if args.command == "screen":
@@ -85,6 +94,8 @@ def main():
         split_run(args)
     elif args.command == "setup":
         setup_run(args)
+    elif args.command == "list":
+        list_run(args)
     elif args.version:
         print( "Commec  : The Common Mechanism\n"
               f"Version : {COMMEC_VERSION}\n"
