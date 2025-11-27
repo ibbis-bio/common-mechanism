@@ -30,14 +30,14 @@ CONTROL_LIST_ANNOTATIONS : pd.DataFrame = pd.DataFrame({
     "uniprot": pd.Series(dtype="str"),
     "list_acronym": pd.Series(dtype="str"),
     "target": pd.Series(dtype="str"),
-    "hazard_group": pd.Series(dtype="str")
+    "hazard_group": pd.Series(dtype="str"),
     })
 
 # Precalculated and imported map of child
 # accessions to control list Accessions.
 ACCESSION_MAP = pd.DataFrame({
     "child_taxid": pd.Series(dtype="str"),
-    "regulated_taxid": pd.Series(dtype="str")
+    "controlled_taxid": pd.Series(dtype="str")
     })
 
 # Precalculated and imported set of accessions
@@ -112,7 +112,7 @@ def add_child_lut_data(input_data: pd.DataFrame):
     input_data = input_data.reindex(columns=expected_cols)
     input_data["child_taxid"] = pd.to_numeric(input_data["child_taxid"], 
                                               errors="coerce").astype("Int64")
-    input_data["regulated_taxid"] = pd.to_numeric(input_data["regulated_taxid"], 
+    input_data["controlled_taxid"] = pd.to_numeric(input_data["controlled_taxid"], 
                                                   errors="coerce").astype("Int64")
     input_data = input_data.astype(ACCESSION_MAP.dtypes.to_dict())
     ACCESSION_MAP = pd.concat(
@@ -163,7 +163,7 @@ def clear(target : str | None = None) -> bool:
         CONTROL_LISTS = {}
         ACCESSION_MAP = pd.DataFrame({
     "child_taxid": pd.Series(dtype="str"),
-    "regulated_taxid": pd.Series(dtype="str")
+    "controlled_taxid": pd.Series(dtype="str")
     })
         IGNORED_ACCESSION = pd.DataFrame({
     "child_taxid": pd.Series(dtype="str"),

@@ -91,7 +91,7 @@ def is_regulated(accession : str) -> bool:
 
     # Collect parent TaxIDs, if any
     taxid_parents = __data.ACCESSION_MAP.loc[
-        __data.ACCESSION_MAP["child_taxid"] == accession, "regulated_taxid"
+        __data.ACCESSION_MAP["child_taxid"] == accession, "controlled_taxid"
     ]
     accession_to_check.update(Accession(taxid) for taxid in taxid_parents)
 
@@ -117,7 +117,7 @@ def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[Contr
     accession_hash = Accession(accession)
     accession_to_check = [accession_hash]
     taxid_parents_to_check = __data.ACCESSION_MAP[
-        __data.ACCESSION_MAP["child_taxid"] == accession]["regulated_taxid"].to_list()
+        __data.ACCESSION_MAP["child_taxid"] == accession]["controlled_taxid"].to_list()
     taxid_parents_to_check = [Accession(taxid) for taxid in taxid_parents_to_check]
     accession_to_check.extend(taxid_parents_to_check)
 
