@@ -65,8 +65,8 @@ def import_control_lists(
             a Controlled List and annotatations were imported.
     """
     info_filename = os.path.join(input_path, "list_info.csv")
-    data_filename = os.path.join(input_path, "regulated_taxids.csv")
-    child_lut_filename = os.path.join(input_path, "children_of_regulated_taxids.csv")
+    data_filename = os.path.join(input_path, "controlled_taxids.csv")
+    child_lut_filename = os.path.join(input_path, "children_of_controlled_taxids.csv")
     ignored_filename = os.path.join(input_path, "ignored_accessions.csv")
 
     # Check required files.
