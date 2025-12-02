@@ -31,6 +31,7 @@ CONTROL_LIST_ANNOTATIONS : pd.DataFrame = pd.DataFrame({
     "list_acronym": pd.Series(dtype="str"),
     "target": pd.Series(dtype="str"),
     "hazard_group": pd.Series(dtype="str"),
+    "lineage": pd.Series(dtype="str")
     })
 
 # Precalculated and imported map of child
@@ -181,7 +182,8 @@ def clear(target : str | None = None) -> bool:
     "uniprot": pd.Series(dtype="str"),
     "list_acronym": pd.Series(dtype="str"),
     "target": pd.Series(dtype="str"),
-    "hazard_group": pd.Series(dtype="str")
+    "hazard_group": pd.Series(dtype="str"),
+    "lineage": pd.Series(dtype="str")
     })
         return True
 
