@@ -39,6 +39,10 @@ def expected_defaults():
             },
             "taxonomy": {
                 "path": "commec-dbs/taxonomy/",
+            },
+            "regulated_lists": {
+                "path": "commec-dbs/regulated_lists",
+                "regions": "all"
             }
         },
         "threads": 1,
@@ -93,6 +97,10 @@ def expected_updated_from_custom_yaml():
             },
             "taxonomy": {
                 "path": "commec-dbs/taxonomy/",
+            },
+            "regulated_lists": {
+                "path": "commec-dbs/regulated_lists",
+                "regions": "all"
             }
         },
         "threads": 8,

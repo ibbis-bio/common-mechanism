@@ -11,6 +11,7 @@ dependencies:
   - pandas
   - pytaxonkit
   - pyyaml
+  - pycountry
   # Runtime non-Python dependencies
   - blast
   - diamond>=2.1
