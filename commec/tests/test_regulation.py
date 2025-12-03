@@ -117,7 +117,8 @@ def test_multiple_entrys():
     print(ld.CONTROL_LIST_ANNOTATIONS.shape)
 
     # Twelve headings, however should only have 3 entries from the above 5 entries.
-    assert ld.CONTROL_LIST_ANNOTATIONS.shape == (3,12), "Incorrect number of imported Regulation Annotations."
+    # There are 13 entries for a control_list/list_data/CONTROL_LIST_ANNOTATIONS
+    assert ld.CONTROL_LIST_ANNOTATIONS.shape == (3,13), "Incorrect number of imported Regulation Annotations."
 
     output = get_regulation("11320")
     assert len(output) == 2, "Incorrect number of returned Regulations."
