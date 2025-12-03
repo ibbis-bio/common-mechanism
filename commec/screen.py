@@ -509,7 +509,7 @@ class Screen:
 
         if exit_status != 0:
             raise RuntimeError(
-                f"Output of protein taxonomy search could not be processed: {self.database_tools.regulated_protein.out_file} {exit_status}"
+                f"Output of protein taxonomy search could not be processed: {self.database_tools.regulated_protein.out_file}"
             )
 
     def screen_nucleotides(self):
