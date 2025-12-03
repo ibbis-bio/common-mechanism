@@ -173,6 +173,7 @@ def parse_taxonomy_hits(
         for hit in regulated_hits:
             logger.debug("\t\tProcessing Hit: %s", hit)
             regulated_hit_data : pd.DataFrame = regulated_only_data[regulated_only_data["subject acc."] == hit]
+            hit_name = regulated_hit_data['subject title'].values[0]
             logger.debug("%s Regulated Hit Data: shape: %s preview:\n%s",
                          step, regulated_hit_data.shape, regulated_hit_data.head())
 
@@ -298,7 +299,7 @@ def parse_taxonomy_hits(
                     screen_status,
                     step
                 ),
-                hit,
+                hit_name,
                 hit_description,
                 match_ranges,
                 {"domain" : [domain],"regulated_taxonomy":[regulation_dict]},

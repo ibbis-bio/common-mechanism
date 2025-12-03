@@ -2,8 +2,8 @@
   "commec_info": {
     "commec_version": "1.0.2",
     "json_output_version": "0.3",
-    "time_taken": "00:00:05",
-    "date_run": "2025-10-03 01:17:02",
+    "time_taken": "00:00:02",
+    "date_run": "2025-12-03 16:57:20",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -32,7 +32,7 @@
     }
   },
   "query_info": {
-    "file": "/tmp/pytest-of-root/pytest-54/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-root/pytest-10/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -49,12 +49,12 @@
         "rationale": "Matches sequence with pathogenic or toxin function, and protein and nucleotide sequence with regulated organisms; as well as virulence factor; as well as flags cleared as common or non-hazardous."
       },
       "hits": {
-        "NT_HIT_MIXED": {
+        "Main": {
           "recommendation": {
             "status": "Pass",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "NT_HIT_MIXED",
+          "name": "Main",
           "description": "Mix of 1 regulated Viruses and 1 non-regulated Viruses",
           "ranges": [
             {
@@ -102,13 +102,13 @@
             ]
           }
         },
-        "NT_HIT_FLAG3": {
+        "SUBJECT_3": {
           "recommendation": {
             "status": "Flag",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "NT_HIT_FLAG3",
-          "description": "Regulated Viruses - SUBJECT",
+          "name": "SUBJECT_3",
+          "description": "Regulated Viruses - SUBJECT_3",
           "ranges": [
             {
               "e_value": 0.15,
@@ -137,7 +137,7 @@
                     "genus": "unclassified",
                     "superkingdom": "Viruses",
                     "target_hit": "NT_HIT_FLAG2",
-                    "target_description": "SUBJECT"
+                    "target_description": "SUBJECT_2"
                   },
                   {
                     "evalue": 0.15,
@@ -146,7 +146,7 @@
                     "genus": "unclassified",
                     "superkingdom": "Viruses",
                     "target_hit": "NT_HIT_FLAG3",
-                    "target_description": "SUBJECT"
+                    "target_description": "SUBJECT_3"
                   }
                 ],
                 "non_regulated_taxa": []
@@ -154,13 +154,13 @@
             ]
           }
         },
-        "NT_HIT_FLAG2": {
+        "SUBJECT_2": {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "NT_HIT_FLAG2",
-          "description": "Regulated Viruses - SUBJECT",
+          "name": "SUBJECT_2",
+          "description": "Regulated Viruses - SUBJECT_2",
           "ranges": [
             {
               "e_value": 0.14,
@@ -189,7 +189,7 @@
                     "genus": "unclassified",
                     "superkingdom": "Viruses",
                     "target_hit": "NT_HIT_FLAG2",
-                    "target_description": "SUBJECT"
+                    "target_description": "SUBJECT_2"
                   },
                   {
                     "evalue": 0.15,
@@ -198,7 +198,7 @@
                     "genus": "unclassified",
                     "superkingdom": "Viruses",
                     "target_hit": "NT_HIT_FLAG3",
-                    "target_description": "SUBJECT"
+                    "target_description": "SUBJECT_3"
                   }
                 ],
                 "non_regulated_taxa": []
@@ -206,13 +206,13 @@
             ]
           }
         },
-        "NT_HIT_FLAG1": {
+        "SUBJECT_1": {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "NT_HIT_FLAG1",
-          "description": "Regulated Viruses - SUBJECT",
+          "name": "SUBJECT_1",
+          "description": "Regulated Viruses - SUBJECT_1",
           "ranges": [
             {
               "e_value": 0.13,
@@ -241,7 +241,7 @@
                     "genus": "unclassified",
                     "superkingdom": "Viruses",
                     "target_hit": "NT_HIT_FLAG1",
-                    "target_description": "SUBJECT"
+                    "target_description": "SUBJECT_1"
                   }
                 ],
                 "non_regulated_taxa": []
@@ -249,12 +249,12 @@
             ]
           }
         },
-        "NR_HIT_MIXED1": {
+        "ShouldMixedReg1": {
           "recommendation": {
             "status": "Pass",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "NR_HIT_MIXED1",
+          "name": "ShouldMixedReg1",
           "description": "Mix of 1 regulated Viruses and 2 non-regulated Viruses",
           "ranges": [
             {
@@ -284,7 +284,7 @@
                     "genus": "unclassified",
                     "superkingdom": "Viruses",
                     "target_hit": "NR_HIT_MIXED1",
-                    "target_description": "ShouldMixedReg"
+                    "target_description": "ShouldMixedReg1"
                   }
                 ],
                 "non_regulated_taxa": [
@@ -295,7 +295,7 @@
                     "genus": "unclassified",
                     "superkingdom": "Bacteria",
                     "target_hit": "NR_HIT_MIXED2",
-                    "target_description": "ShouldMixednonReg"
+                    "target_description": "ShouldMixednonReg2"
                   },
                   {
                     "evalue": 0.12,
@@ -304,19 +304,19 @@
                     "genus": "unclassified",
                     "superkingdom": "Bacteria",
                     "target_hit": "NR_HIT_MIXED3",
-                    "target_description": "ShouldMixedNonReg"
+                    "target_description": "ShouldMixedNonReg3"
                   }
                 ]
               }
             ]
           }
         },
-        "NR_HIT_FLAG4": {
+        "ShouldClear": {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "NR_HIT_FLAG4",
+          "name": "ShouldClear",
           "description": "Regulated Viruses - ShouldClear",
           "ranges": [
             {
@@ -354,13 +354,13 @@
             ]
           }
         },
-        "NR_HIT_FLAG3": {
+        "NR_HIT2_ShouldntClear": {
           "recommendation": {
             "status": "Flag",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "NR_HIT_FLAG3",
-          "description": "Regulated Viruses - ShouldntClear",
+          "name": "NR_HIT2_ShouldntClear",
+          "description": "Regulated Viruses - NR_HIT2_ShouldntClear",
           "ranges": [
             {
               "e_value": 0.08,
@@ -397,12 +397,12 @@
             ]
           }
         },
-        "NR_HIT_FLAG2": {
+        "ShouldClearBySynBio": {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "NR_HIT_FLAG2",
+          "name": "ShouldClearBySynBio",
           "description": "Regulated Viruses - ShouldClearBySynBio",
           "ranges": [
             {
@@ -440,13 +440,13 @@
             ]
           }
         },
-        "NR_HIT_FLAG1": {
+        "NR_HIT_ShouldntClear": {
           "recommendation": {
             "status": "Flag",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "NR_HIT_FLAG1",
-          "description": "Regulated Viruses - ShouldntClear",
+          "name": "NR_HIT_ShouldntClear",
+          "description": "Regulated Viruses - NR_HIT_ShouldntClear",
           "ranges": [
             {
               "e_value": 0.06,
@@ -475,7 +475,7 @@
                     "genus": "unclassified",
                     "superkingdom": "Viruses",
                     "target_hit": "NR_HIT_FLAG1",
-                    "target_description": "ShouldntClear"
+                    "target_description": "NR_HIT_ShouldntClear"
                   }
                 ],
                 "non_regulated_taxa": []
@@ -483,12 +483,12 @@
             ]
           }
         },
-        "Toxin1": {
+        "Toxin1a": {
           "recommendation": {
             "status": "Flag",
             "from_step": "Biorisk Search"
           },
-          "name": "Toxin1",
+          "name": "Toxin1a",
           "description": "LargeAreaFlag",
           "ranges": [
             {
@@ -497,7 +497,25 @@
               "match_end": 29,
               "query_start": 4,
               "query_end": 93
-            },
+            }
+          ],
+          "annotations": {
+            "domain": [
+              "not assigned"
+            ],
+            "regulated": [
+              "Regulated Gene"
+            ]
+          }
+        },
+        "Toxin1b": {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Biorisk Search"
+          },
+          "name": "Toxin1b",
+          "description": "SmallImportantFlag",
+          "ranges": [
             {
               "e_value": 1e-22,
               "match_start": 1,
@@ -565,13 +583,13 @@
             ]
           }
         },
-        "Benign1": {
+        "BENIGNPROT": {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Benign Protein Search"
           },
-          "name": "Benign1",
-          "description": "TEST_BENIGN_DESCRIPTION",
+          "name": "BENIGNPROT",
+          "description": "",
           "ranges": [
             {
               "e_value": 9.999999999999999e-27,
