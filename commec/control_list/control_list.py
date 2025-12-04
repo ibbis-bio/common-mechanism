@@ -130,9 +130,17 @@ def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[Contr
     logger.debug("Filtered Output DBS: %s", filtered_regulated_taxid_annotations.to_string())
 
     for hash_taxid, row in filtered_regulated_taxid_annotations.iterrows():
+        lineages = row["lineage"].split(";")
+        logger.debug("Extracted lineage information: #[%i] %s", len(lineages), lineages)
+        species = lineages[7] if len(lineages) > 6 else ""
+        genus = lineages[6] if len(lineages) > 5 else ""
+        
         output_data.append(ControlListOutput(row["name"],
                                             row["category"],
-                                            row["list_acronym"]))
+                                            row["list_acronym"],
+                                            species,
+                                            genus))
+
         output_context.append(ControlListContext(str(row["derived_from"]),
                                                  (accession != hash_taxid)))
 

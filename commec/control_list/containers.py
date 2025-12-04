@@ -236,3 +236,8 @@ class ControlListOutput:
     name : str = ""
     category : str = ""
     list : str = ""
+    
+    # Taxonomy Information
+    species : str = ""
+    genus : str = ""
+    #superkingdom : str = "" Better reported by category(?)

@@ -131,7 +131,7 @@ def parse_taxonomy_hits(
 
     # Read in lists of regulated and low_concern tax ids
     vax_taxids = pd.read_csv(low_concern_taxid_path, header=None).squeeze().astype(str).tolist()
-    reg_taxids = pd.read_csv(biorisk_taxid_path, header=None).squeeze().astype(str).tolist()
+    #reg_taxids = pd.read_csv(biorisk_taxid_path, header=None).squeeze().astype(str).tolist()
 
     blast = read_blast(search_handler.out_file)
     logger.debug("%s Blast Import: shape: %s preview:\n%s", step, blast.shape, blast.head())
@@ -427,6 +427,8 @@ def update_using_control_lists(regulated : pd.DataFrame, non_regulated : pd.Data
             clist : ControlList = get_control_lists(info.list)
             regulated.at[index, "list_acronym"] = clist.acronym
             regulated.at[index, "category"] = info.category
+            regulated.at[index, "species"] = info.species
+            regulated.at[index, "genus"] = info.genus
             if clist.status == ListMode.COMPLIANCE:
                 continue
             if clist.status == ListMode.COMPLIANCE_WARN:

@@ -332,6 +332,14 @@ class Screen:
         
         # Custom output format for Control Lists info, for JSON:
         control_lists = control_list.get_control_lists()
+
+        # If we don't find control lists, but need them for taxonomy, then exit.
+        if not control_lists and not (
+            self.params.should_do_protein_screening 
+            or self.params.should_do_nucleotide_screening):
+            logger.error("No Control List information was imported")
+            self.early_exit()
+
         control_lists = [ControlListResult(
                 cl.name,
                 cl.acronym,
