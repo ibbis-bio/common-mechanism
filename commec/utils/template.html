@@ -6,36 +6,179 @@
     <style>
         body {
             margin: 0;
-            padding: 0;
+            padding: 20px;
             font-family: Arial, sans-serif;
         }
 
         .container {
-            display: flex;
-            flex-direction: column; /* Changed to column to stack figures vertically */
-            height: 100vh;
-            width: 100vw;
+            max-width: 1000px;
             margin: 0 auto;
-            overflow: auto; /* Enable scrolling for the container */
+        }
+
+        .header {
+            background-color: #232a58;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-content {
+            flex: 1;
+        }
+
+        .header .version-info {
+            font-size: 14px;
+            color: #e0e0e0;
+        }
+
+        .header-logo {
+            width: 200px;
+            height: auto;
+            margin-left: 30px;
+            flex-shrink: 0;
+        }
+
+        .header-logo svg {
+            width: 100%;
+            height: auto;
+        }
+
+        .toc {
+            padding: 20px 30px;
+            background-color: #fafafa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .toc h2 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .toc-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .toc-table th {
+            text-align: left;
+            padding: 8px;
+            background-color: #f0f0f0;
+            border-bottom: 2px solid #ddd;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .toc-table td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .toc-table a {
+            color: #429bb9;
+            text-decoration: none;
+        }
+
+        .toc-table a:hover {
+            text-decoration: underline;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-flag {
+            background-color: #cf1b51;
+            color: white;
+        }
+
+        .status-warning {
+            background-color: #f15024;
+            color: white;
+        }
+
+        .status-pass {
+            background-color: #429bb9;
+            color: white;
+        }
+
+        .figures {
+            padding: 20px 30px;
         }
 
         .figure {
-            padding: 10px;
-            margin-bottom: 20px; /* Space between figures */
+            margin-bottom: 40px;
+            scroll-margin-top: 20px;
         }
 
         .figure:nth-child(even) {
-            background-color: #f0f0f0; /* Light grey background for even figures */
+            background-color: #fafafa;
+            padding: 20px;
+            margin-left: -20px;
+            margin-right: -20px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        % for fig_html in figures_html:
-            <div class="figure">
-                ${fig_html | n}
+        <!-- Header Section -->
+        <div class="header">
+            <div class="header-content">
+                <div class="header-logo">
+                    <svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252 71.19"><defs><style>.cls-1{fill:#fff;}.cls-2{fill:#ef5126;}</style></defs><rect class="cls-2" x="103.09" y="23.95" width="23.95" height="2.46" transform="translate(40.04 115.98) rotate(-62.77)"/><path class="cls-1" d="M23.62,25.27v-.08c0-6.39,4.94-11.75,11.71-11.75,4.21,0,6.85,1.58,8.98,3.87l-3.24,3.45c-1.58-1.66-3.24-2.81-5.79-2.81-3.75,0-6.51,3.24-6.51,7.15v.08c0,4,2.77,7.19,6.73,7.19,2.43,0,4.21-1.11,5.83-2.77l3.11,3.06c-2.21,2.47-4.81,4.21-9.2,4.21-6.68,0-11.62-5.24-11.62-11.62Z"/><path class="cls-1" d="M47.29,25.27v-.08c0-6.43,5.11-11.75,12-11.75s11.96,5.24,11.96,11.67v.08c0,6.39-5.11,11.71-12.05,11.71s-11.92-5.24-11.92-11.62ZM66.1,25.27v-.08c0-3.96-2.85-7.24-6.9-7.24s-6.77,3.24-6.77,7.15v.08c0,3.92,2.85,7.19,6.85,7.19s6.81-3.24,6.81-7.11Z"/><path class="cls-1" d="M76.49,13.9h5.15v3.41c1.45-2,3.41-3.87,6.85-3.87,3.24,0,5.53,1.58,6.73,3.96,1.79-2.38,4.17-3.96,7.58-3.96,4.9,0,7.88,3.11,7.88,8.6v14.35h-5.15v-12.77c0-3.58-1.66-5.49-4.55-5.49s-4.81,1.96-4.81,5.58v12.69h-5.15v-12.81c0-3.49-1.7-5.45-4.56-5.45s-4.81,2.13-4.81,5.58v12.69h-5.15V13.9Z"/><path class="cls-2" d="M119.48,13.9h5.15v3.41c1.45-2,3.41-3.87,6.85-3.87,3.24,0,5.53,1.58,6.73,3.96,1.79-2.38,4.17-3.96,7.58-3.96,4.9,0,7.88,3.11,7.88,8.6v14.35h-5.15v-12.77c0-3.58-1.66-5.49-4.55-5.49s-4.81,1.96-4.81,5.58v12.69h-5.15v-12.81c0-3.49-1.7-5.45-4.56-5.45s-4.81,2.13-4.81,5.58v12.69h-5.15V13.9Z"/><path class="cls-2" d="M158.68,25.22v-.08c0-6.43,4.55-11.71,10.98-11.71,7.15,0,10.77,5.62,10.77,12.09,0,.47-.04.94-.08,1.45h-16.52c.55,3.66,3.15,5.7,6.47,5.7,2.51,0,4.3-.94,6.09-2.68l3.02,2.68c-2.13,2.55-5.07,4.21-9.2,4.21-6.51,0-11.54-4.73-11.54-11.67ZM175.33,23.56c-.34-3.32-2.3-5.92-5.71-5.92-3.15,0-5.36,2.43-5.83,5.92h11.54Z"/><path class="cls-2" d="M184.39,25.27v-.08c0-6.39,4.94-11.75,11.71-11.75,4.21,0,6.85,1.58,8.98,3.87l-3.24,3.45c-1.58-1.66-3.24-2.81-5.79-2.81-3.75,0-6.51,3.24-6.51,7.15v.08c0,4,2.77,7.19,6.73,7.19,2.43,0,4.21-1.11,5.83-2.77l3.11,3.06c-2.21,2.47-4.81,4.21-9.2,4.21-6.68,0-11.62-5.24-11.62-11.62Z"/><path class="cls-2" d="M221.36,48.55c-1.6-1.64-4.26-1.69-5.94-.13-.45.42-.7.94-1.16,1.35-.69.61-1.66,1.02-2.59,1.07-.39.02-.79-.05-1.18-.03-.74.02-1.49.26-2.11.66-.35.22-.64.52-1.08.59l.17-.46c1.75-.82,2.74-2.68,2.43-4.6-.14-.91-.67-1.72-.76-2.63-.18-1.74.89-3.44,2.56-3.99.06-.02.27-.1.31-.06.03.03.17.25.2.31,1.09,1.72,1.43,3.88.97,5.86-.11.47-.32.82-.09,1.31.32.67,1.2.81,1.74.31.23-.22.39-.39.66-.59.07-.05.28-.16.32-.21.04-.05.07-.18.1-.25.42-.93,1.62-1.06,2.28-.3,1.16.08,2.25.65,2.97,1.55l.17.25Z"/><path class="cls-1" d="M200.62,59.02c-1.62-.06-3.31-.62-4.29-1.96-.59-.81-.87-1.82-.85-2.83l1.57-.1c.04,1.33.67,2.54,1.91,3.12,1.63.76,5.1.55,5.01-1.88-.06-1.48-1.48-1.77-2.66-2.01-1.96-.4-4.75-.49-5.34-2.85-.4-1.61.24-3.2,1.67-4.01,1.61-.92,4.31-.86,5.88.12,1.32.82,1.94,2.26,1.91,3.79l-1.59.09c-.04-.97-.34-1.94-1.11-2.57-1.46-1.19-5.01-1.03-5.17,1.33-.08,1.21.52,1.7,1.6,2,2.37.66,6.29.42,6.47,3.77.15,2.72-2.07,3.92-4.49,4.02-.17,0-.36,0-.53,0Z"/><rect class="cls-1" x="163.98" y="46.08" width="1.76" height="12.71"/><path class="cls-1" d="M190.1,54.88c-.15-1.48-1.25-2.46-2.68-2.69,0-.03.03-.03.04-.03.11-.04.24-.05.35-.09,1.62-.54,2.25-2.05,1.8-3.67-.5-1.77-2.33-2.28-3.98-2.33h-5.51v12.71h5.51c2.43.01,4.75-1.11,4.46-3.9ZM181.84,47.51h3.59c1.49.03,2.66.61,2.55,2.28-.08,1.23-1.18,1.71-2.28,1.77h-3.87v-4.04ZM185.83,57.33h-3.99v-4.42h3.94c1.32.06,2.53.64,2.6,2.11.07,1.57-1.15,2.24-2.55,2.31Z"/><path class="cls-1" d="M178.01,53.72c-.47-.85-1.38-1.38-2.33-1.52,0-.02.02-.02.03-.03.16-.06.34-.08.5-.15,1.53-.57,2.1-2.07,1.68-3.6-.5-1.79-2.32-2.29-3.98-2.35h-5.51v12.71h5.49c1.41-.03,3.06-.33,3.92-1.55.69-.97.77-2.48.19-3.51ZM170.1,47.53l.06-.03c1.18.03,2.38-.04,3.55,0,1.43.05,2.65.57,2.55,2.21-.07,1.28-1.13,1.77-2.28,1.83h-3.88v-4.02ZM174.1,57.33h-4v-4.42h3.95c1.17.05,2.36.53,2.56,1.8.27,1.71-.96,2.54-2.51,2.61Z"/><rect class="cls-1" x="191.86" y="46.08" width="1.76" height="12.71"/></svg>
+                </div>
+                <h1>${input_filename} | ${commec_info.date_run}</h1>
+                <div class="version-info">
+                    <div>commec version: ${commec_info.commec_version}</div>
+                    <div>output version: ${commec_info.json_output_version}</div>
+                </div>
             </div>
-        % endfor
+        </div>
+
+        <!-- Table of Contents Section -->
+        <div class="toc">
+            <h2>Screened ${query_info.number_of_queries} queries from ${input_filename}</h2>
+
+            <table class="toc-table">
+                <thead>
+                    <tr>
+                        <th>Query Name</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    % for query in query_toc:
+                        <%
+                            status_class = 'status-pass'
+                            if 'Flag' in query['status']:
+                                status_class = 'status-flag'
+                            elif 'Warn' in query['status']:
+                                status_class = 'status-warning'
+                        %>
+                        <tr>
+                            <td><a href="#${query['name']}">${query['name']}</a></td>
+                            <td><span class="status-badge ${status_class}">${query['status']}</span></td>
+                        </tr>
+                    % endfor
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Figures Section -->
+        <div class="figures">
+            % for i, fig_html in enumerate(figures_html):
+                <div class="figure" id="${query_toc[i]['name']}">
+                    ${fig_html | n}
+                </div>
+            % endfor
+        </div>
     </div>
 </body>
 </html>

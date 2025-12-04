@@ -8,7 +8,7 @@ import textwrap
 import argparse
 import plotly.graph_objects as go
 import pandas as pd
-import importlib
+import importlib.resources
 from mako.template import Template
 
 from commec.config.json_io import get_screen_data_from_json
@@ -115,6 +115,7 @@ def generate_html_from_screen_data(input_data : ScreenResult, output_file : str)
     """
 
     figures_html = []
+    query_toc = []
 
     # Render each query as its own Plotly HTML visualisation:
     for i, query in enumerate(input_data.queries.values()):
@@ -124,16 +125,33 @@ def generate_html_from_screen_data(input_data : ScreenResult, output_file : str)
         file_name = output_file.strip()+"_"+str(i)+".html"
         html = fig.to_html(file_name, full_html = False, include_plotlyjs='cdn')
         figures_html.append(html)
+        
+        # Collect TOC information
+        query_toc.append({
+            'name': query.query,
+            'status': query.status.screen_status
+        })
 
     # Additional template information
     n_query = input_data.query_info.number_of_queries
     plural = "y" if n_query == 1 else "ies"
     html_title = f"Commec Screen Summary: {n_query} Quer{plural}."
+    
+    # Extract basenames for template
+    import os
+    input_filename = os.path.basename(input_data.query_info.file) if hasattr(input_data.query_info, 'file') else 'N/A'
 
     # Construct the composite HTML
     template_path = str(importlib.resources.files("commec").joinpath("utils").joinpath("template.html"))
     template = Template(filename = template_path)
-    rendered_html = template.render(figures_html=figures_html, page_title=html_title)
+    rendered_html = template.render(
+        figures_html=figures_html, 
+        page_title=html_title,
+        commec_info=input_data.commec_info,
+        query_info=input_data.query_info,
+        query_toc=query_toc,
+        input_filename=input_filename
+    )
 
     # Save the combined HTML output
     output_filename = output_file.strip()+".html"
