@@ -116,6 +116,7 @@ def generate_html_from_screen_data(input_data : ScreenResult, output_file : str)
 
     figures_html = []
     query_toc = []
+    status_counts = {'flag': 0, 'warning': 0, 'pass': 0}
 
     # Render each query as its own Plotly HTML visualisation:
     for i, query in enumerate(input_data.queries.values()):
@@ -126,11 +127,22 @@ def generate_html_from_screen_data(input_data : ScreenResult, output_file : str)
         html = fig.to_html(file_name, full_html = False, include_plotlyjs='cdn')
         figures_html.append(html)
         
-        # Collect TOC information
+        # Collect full query data for template
         query_toc.append({
             'name': query.query,
-            'status': query.status.screen_status
+            'status': query.status.screen_status,
+            'length': query.length,
+            'rationale': query.status.rationale
         })
+        
+        # Count statuses
+        status_lower = query.status.screen_status.lower()
+        if 'flag' in status_lower:
+            status_counts['flag'] += 1
+        elif 'warn' in status_lower:
+            status_counts['warning'] += 1
+        else:
+            status_counts['pass'] += 1
 
     # Additional template information
     n_query = input_data.query_info.number_of_queries
@@ -150,7 +162,8 @@ def generate_html_from_screen_data(input_data : ScreenResult, output_file : str)
         commec_info=input_data.commec_info,
         query_info=input_data.query_info,
         query_toc=query_toc,
-        input_filename=input_filename
+        input_filename=input_filename,
+        status_counts=status_counts
     )
 
     # Save the combined HTML output
@@ -176,11 +189,6 @@ def update_layout(fig, query_to_draw : QueryResult, stacks):
     fig.update_layout({
         # General layout properties
         'height': figure_base_height + (figure_stack_height * stacks),
-        'title' : (
-            f"<span style='background-color:{css_color};padding:6px 10px;"
-            f"border-radius:6px;color:{css_color};font-weight:bold;'>"
-            f"{query_to_draw.status.screen_status}</span> : {query_to_draw.query} ({query_to_draw.length} b.p.) <br>{query_to_draw.status.rationale}"
-        ),
         'barmode': 'overlay',
         'template': 'plotly_white',
         'plot_bgcolor': 'rgba(0,0,0,0)',  # Transparent plot area
