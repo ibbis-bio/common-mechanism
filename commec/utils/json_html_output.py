@@ -220,11 +220,11 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
                 n_regulated_eukaryotes += int(r["regulated_eukaryotes"])
                 n_regulated_bacteria += int(r["regulated_bacteria"])
                 n_regulated_viruses += int(r["regulated_viruses"])
-                regulated_taxids.extend(r["regulated_taxa"])
+                regulated_taxids.extend([x["species"] for x in r["regulated_taxa"]])
                 non_regulated_taxids.extend(r["non_regulated_taxa"])
             
-            for entry in regulated_taxids:
-                regulated_species.append(entry["species"])
+            for entry in set(regulated_taxids):
+                regulated_species.append(entry)
             
             domain_string = " across multiple domains."
             if n_regulated_bacteria > 0 and n_regulated_viruses == 0 and n_regulated_eukaryotes == 0:
