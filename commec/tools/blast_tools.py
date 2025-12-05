@@ -229,6 +229,7 @@ def read_blast(blast_file: str | os.PathLike | BinaryIO | TextIO) -> pd.DataFram
     blast["log evalue"] = -np.log10(pd.to_numeric(blast["evalue"]) + 1e-300)
     blast["q. coverage"] = abs(blast["q. end"] - blast["q. start"]) / blast["query length"].max()
     blast["s. coverage"] = abs(blast["s. end"] - blast["s. start"]) / blast["subject length"]
+    blast["query acc."] = blast["query acc."].astype(str)
 
     blast = blast[blast["subject tax ids"].notna()]
     blast = blast.reset_index(drop=True)
