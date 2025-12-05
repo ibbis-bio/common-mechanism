@@ -14,11 +14,11 @@ databases:
     path: '{default}nt_blast/core_nt'
   low_concern:
     rna:
-      path: '{default}low_concern/rna/benign.cm'
+      path: '{default}low_concern/rna/low_concern.cm'
     dna:
-      path: '{default}low_concern/dna/benign.fasta'
+      path: '{default}low_concern/dna/low_concern.fasta'
     protein:
-      path: '{default}low_concern/protein/benign.hmm'
+      path: '{default}low_concern/protein/low_concern.hmm'
     taxids: "{default}low_concern/vax_taxids.txt"
     annotations: '{default}low_concern/low_concern_annotations.tsv'
   taxonomy:
