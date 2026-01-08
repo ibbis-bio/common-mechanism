@@ -6,6 +6,7 @@ any other HTML document as appropriate.
 
 import textwrap
 import argparse
+import os
 import plotly.graph_objects as go
 import pandas as pd
 import importlib.resources
@@ -116,7 +117,21 @@ def generate_html_from_screen_data(input_data : ScreenResult, output_file : str)
 
     figures_html = []
     query_toc = []
-    status_counts = {'flag': 0, 'warning': 0, 'pass': 0}
+
+    status_counts = {'flag': 0, 'warning': 0, 'pass': 0, 'error' : 0}
+    
+    # Simply don't count skips or stops.
+    NORMALISE_STATUS = {
+        ScreenStatus.NULL : "error",
+        #ScreenStatus.SKIP : "error",
+        #ScreenStatus.STOP : "error",
+        ScreenStatus.PASS : "pass",
+        ScreenStatus.CLEARED_FLAG : "pass",
+        ScreenStatus.CLEARED_WARN : "pass",
+        ScreenStatus.WARN : "warning",
+        ScreenStatus.FLAG : "flag",
+        ScreenStatus.ERROR : "error",
+    }
 
     # Render each query as its own Plotly HTML visualisation:
     for i, query in enumerate(input_data.queries.values()):
@@ -136,13 +151,9 @@ def generate_html_from_screen_data(input_data : ScreenResult, output_file : str)
         })
         
         # Count statuses
-        status_lower = query.status.screen_status.lower()
-        if 'flag' in status_lower:
-            status_counts['flag'] += 1
-        elif 'warn' in status_lower:
-            status_counts['warning'] += 1
-        else:
-            status_counts['pass'] += 1
+        bucket = NORMALISE_STATUS.get(query.status.screen_status)
+        if bucket:
+            status_counts[bucket] += 1
 
     # Additional template information
     n_query = input_data.query_info.number_of_queries
@@ -150,7 +161,6 @@ def generate_html_from_screen_data(input_data : ScreenResult, output_file : str)
     html_title = f"Commec Screen Summary: {n_query} Quer{plural}."
     
     # Extract basenames for template
-    import os
     input_filename = os.path.basename(input_data.query_info.file) if hasattr(input_data.query_info, 'file') else 'N/A'
 
     # Construct the composite HTML

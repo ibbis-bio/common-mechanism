@@ -261,7 +261,18 @@
 
         <!-- Table of Contents Section -->
         <div class="toc">
-            <h2>Screened <span class="highlight-orange">${query_info.number_of_queries}</span> queries from ${input_filename} with <span class="highlight-orange">${status_counts['flag']}</span> FLAG, <span class="highlight-orange">${status_counts['warning']}</span> WARNING, and <span class="highlight-orange">${status_counts['pass']}</span> PASS</h2>
+            <h2>
+                Screened <span class="highlight-orange">${query_info.number_of_queries}</span>
+                queries from ${input_filename}
+            % if status_counts.get('error', 0) > 0:
+                with <span class="highlight-orange">${status_counts['error']}</span> ERROR,
+            % endif
+                <span class="highlight-orange">${status_counts.get('flag', 0)}</span> FLAG,
+            % if status_counts.get('warning', 0) > 0:
+                <span class="highlight-orange">${status_counts['warning']}</span> WARNING,
+            % endif
+                and <span class="highlight-orange">${status_counts.get('pass', 0)}</span> PASS
+            </h2>
             <table class="toc-table">
                 <thead>
                     <tr>
