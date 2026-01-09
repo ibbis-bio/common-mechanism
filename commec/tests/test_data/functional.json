@@ -59,7 +59,7 @@
         "rationale": "Matches sequence with pathogenic or toxin function, and protein and nucleotide sequence with regulated organisms; as well as virulence factor; as well as flags cleared as common or non-hazardous."
       },
       "hits": {
-        "NT_HIT_MIXED": {
+        "Main": {
           "recommendation": {
             "status": "Pass",
             "from_step": "Nucleotide Taxonomy Search"
@@ -113,7 +113,7 @@
             ]
           }
         },
-        "NT_HIT_FLAG3": {
+        "SUBJECT_3": {
           "recommendation": {
             "status": "Flag",
             "from_step": "Nucleotide Taxonomy Search"
@@ -173,7 +173,7 @@
             ]
           }
         },
-        "NT_HIT_FLAG2": {
+        "SUBJECT_2": {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Nucleotide Taxonomy Search"
@@ -233,7 +233,7 @@
             ]
           }
         },
-        "NT_HIT_FLAG1": {
+        "SUBJECT_1": {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Nucleotide Taxonomy Search"
@@ -280,7 +280,7 @@
             ]
           }
         },
-        "NR_HIT_MIXED1": {
+        "ShouldMixedReg1": {
           "recommendation": {
             "status": "Pass",
             "from_step": "Protein Taxonomy Search"
@@ -327,20 +327,20 @@
                     "evalue": 0.11,
                     "taxid": 12348,
                     "target_hit": "NR_HIT_MIXED2",
-                    "target_description": "ShouldMixednonReg"
+                    "target_description": "ShouldMixednonReg2"
                   },
                   {
                     "evalue": 0.12,
                     "taxid": 12349,
                     "target_hit": "NR_HIT_MIXED3",
-                    "target_description": "ShouldMixedNonReg"
+                    "target_description": "ShouldMixedNonReg3"
                   }
                 ]
               }
             ]
           }
         },
-        "NR_HIT_FLAG4": {
+        "ShouldClear": {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Protein Taxonomy Search"
@@ -387,7 +387,7 @@
             ]
           }
         },
-        "NR_HIT_FLAG3": {
+        "NR_HIT2_ShouldntClear": {
           "recommendation": {
             "status": "Flag",
             "from_step": "Protein Taxonomy Search"
@@ -434,7 +434,7 @@
             ]
           }
         },
-        "NR_HIT_FLAG2": {
+        "ShouldClearBySynBio": {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Protein Taxonomy Search"
@@ -481,7 +481,7 @@
             ]
           }
         },
-        "NR_HIT_FLAG1": {
+        "NR_HIT_ShouldntClear": {
           "recommendation": {
             "status": "Flag",
             "from_step": "Protein Taxonomy Search"
@@ -528,12 +528,12 @@
             ]
           }
         },
-        "Toxin1": {
+        "Toxin1a": {
           "recommendation": {
             "status": "Flag",
             "from_step": "Biorisk Search"
           },
-          "name": "Toxin1",
+          "name": "Toxin1a",
           "description": "LargeAreaFlag",
           "ranges": [
             {
@@ -542,7 +542,25 @@
               "match_end": 29,
               "query_start": 4,
               "query_end": 93
-            },
+            }
+          ],
+          "annotations": {
+            "domain": [
+              "not assigned"
+            ],
+            "regulated": [
+              "Regulated Gene"
+            ]
+          }
+        },
+        "Toxin1b": {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Biorisk Search"
+          },
+          "name": "Toxin1b",
+          "description": "SmallImportantFlag",
+          "ranges": [
             {
               "e_value": 1e-22,
               "match_start": 1,
@@ -610,13 +628,13 @@
             ]
           }
         },
-        "Benign1": {
+        "BENIGNPROT": {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Benign Protein Search"
           },
-          "name": "Benign1",
-          "description": "TEST_BENIGN_DESCRIPTION",
+          "name": "BENIGNPROT",
+          "description": "",
           "ranges": [
             {
               "e_value": 9.999999999999999e-27,

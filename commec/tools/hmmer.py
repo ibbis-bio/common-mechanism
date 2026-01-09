@@ -120,6 +120,7 @@ def readhmmer(fileh):
     hmmer["ali from"] = pd.to_numeric(hmmer["ali from"])
     hmmer["ali to"] = pd.to_numeric(hmmer["ali to"])
     hmmer["qlen"] = pd.to_numeric(hmmer["qlen"])
+    hmmer["query name"] = hmmer["query name"].astype(str)
     # Extract the frame information.
     hmmer["frame"] = hmmer["query name"].str.split('_').str[-1].astype(int)
     return hmmer

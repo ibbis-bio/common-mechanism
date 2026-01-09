@@ -167,3 +167,17 @@ def test_ambigious():
 
     query._translate()
     assert expected_translations == query.translations, query.translations[2:4]
+
+
+@pytest.mark.parametrize(
+    "input, expected_output",
+    [
+        ("short_query_name","short_query_name"),
+        ("longquerynamewithnotokenstosplitonwowlookhowlongitistruelysomethingtobehold","longquerynamewithnotokenstosplitonwowlookhowlongitistruelysometh"),
+        ("long_query_name_with_common_tokens_to_split_on_wow_look_how_long_it_is_truly_something_to_behold", "long_query_name_with_common_tokens_to_split_on_wow_look_how_long")
+    ],
+)
+def test_query_id_creation(input, expected_output):
+    """ Small tests to ensure the ID creation works to create IDS < 25 characters."""
+    output = Query.create_id(input)
+    assert output == expected_output

@@ -51,6 +51,13 @@ def add_args(parser: argparse.ArgumentParser):
         default=None,
         help="Output directory name (defaults to directory if not provided)",
     )
+    parser.add_argument(
+        "-e",
+        "--evalportal-format",
+        dest="evalportal_format",
+        action="store_true",
+        help="Output format compatible with the IBBIS sceening evaluation portal",
+    )
     return parser
 
 def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
@@ -162,16 +169,25 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
 
     return results
 
-def write_output_csv(output_dir : str | os.PathLike, status : dict):
+
+def write_output_csv(output_dir: str | os.PathLike, status: dict, evalportal_format: bool):
     """
     Write flag data results to an output CSV file.
     -----
     `output_dir` [str | os.PathLike] : Desired output directory to write the output csv into.
     `status`     [dict-like object]  : converted to pandas dataframe, sorted, and output to csv.
+    `evalportal_format` [bool]       : If True, convert flag values to binary and rename columns.
     """
     status_file = os.path.join(output_dir, "screen_pipeline_status.csv")
     status_df = pd.DataFrame(status)
     status_df = status_df.map(lambda x: ";".join(sorted(x)) if isinstance(x, set) else x)
+
+    if evalportal_format:
+        # Using a "strict" mode coverting Flag/Warning to 1, and everything else to 0.
+        status_df["flag"] = status_df["flag"].map(
+            lambda x: 1 if x == "Flag" or x == "Warning" else 0)
+        status_df = status_df.rename(columns={"name": "UUID", "flag": "Flag"})
+
     status_df.to_csv(status_file, index=False)
     print(f"Pipeline step status written to {status_file}")
 
@@ -186,6 +202,7 @@ def run(args: argparse.Namespace):
     search_dir = args.directory
     search_recursive = args.recursive
     output_dir = args.output or os.path.dirname(search_dir)
+    evalportal_format = args.evalportal_format
 
     search_pattern = "**/*.json" if search_recursive else "*.json"
     screen_paths = glob.glob(os.path.join(search_dir, search_pattern), recursive=search_recursive)
@@ -198,7 +215,7 @@ def run(args: argparse.Namespace):
         result = read_flags_from_json(file_path)
         screen_status.extend(result)
 
-    write_output_csv(output_dir, screen_status)
+    write_output_csv(output_dir, screen_status, evalportal_format)
 
 
 def main():
