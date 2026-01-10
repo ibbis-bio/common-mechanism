@@ -258,10 +258,10 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
                 n_regulated_eukaryotes += int(r["regulated_eukaryotes"])
                 n_regulated_bacteria += int(r["regulated_bacteria"])
                 n_regulated_viruses += int(r["regulated_viruses"])
-                regulated_taxids.extend([x["species"] for x in r["regulated_taxa"]])
+                regulated_taxids.extend(r["regulated_taxa"])
                 non_regulated_taxids.extend(r["non_regulated_taxa"])
             
-            for anno_data in set(regulated_taxids):
+            for anno_data in regulated_taxids:
                 for controllist in anno_data["control_list"]:
                     if isinstance(controllist, cl.ControlListOutput):
                         name  = controllist.name

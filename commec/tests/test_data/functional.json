@@ -3,7 +3,7 @@
     "commec_version": "1.1.0",
     "json_output_version": "0.4",
     "time_taken": "00:00:02",
-    "date_run": "2025-11-18 11:00:05",
+    "date_run": "2026-01-10 21:41:04",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -42,7 +42,7 @@
     ]
   },
   "query_info": {
-    "file": "/tmp/pytest-of-root/pytest-74/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-root/pytest-10/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -64,7 +64,7 @@
             "status": "Pass",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "NT_HIT_MIXED",
+          "name": "Main",
           "description": "Mix of 1 controlled sequence and 1 non-controlled sequence",
           "ranges": [
             {
@@ -94,9 +94,11 @@
                     "target_description": "Main",
                     "control_list": [
                       {
-                        "name": "ShouldntClear",
+                        "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
-                        "list": "NZ_DTL_EXPORT"
+                        "list": "NZ_DTL_EXPORT",
+                        "species": "",
+                        "genus": ""
                       }
                     ]
                   }
@@ -118,8 +120,8 @@
             "status": "Flag",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "NT_HIT_FLAG3",
-          "description": "Controlled sequence - SUBJECT",
+          "name": "SUBJECT_3",
+          "description": "Controlled sequence - SUBJECT_3",
           "ranges": [
             {
               "e_value": 0.15,
@@ -145,12 +147,14 @@
                     "evalue": 0.14,
                     "taxid": 12345,
                     "target_hit": "NT_HIT_FLAG2",
-                    "target_description": "SUBJECT",
+                    "target_description": "SUBJECT_2",
                     "control_list": [
                       {
-                        "name": "ShouldntClear",
+                        "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
-                        "list": "NZ_DTL_EXPORT"
+                        "list": "NZ_DTL_EXPORT",
+                        "species": "",
+                        "genus": ""
                       }
                     ]
                   },
@@ -158,12 +162,14 @@
                     "evalue": 0.15,
                     "taxid": 12350,
                     "target_hit": "NT_HIT_FLAG3",
-                    "target_description": "SUBJECT",
+                    "target_description": "SUBJECT_3",
                     "control_list": [
                       {
-                        "name": "SUBJECT",
+                        "name": "SUBJECT_3",
                         "category": "Viruses",
-                        "list": "NZ_DTL_EXPORT"
+                        "list": "NZ_DTL_EXPORT",
+                        "species": "",
+                        "genus": ""
                       }
                     ]
                   }
@@ -178,8 +184,8 @@
             "status": "Flag (Cleared)",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "NT_HIT_FLAG2",
-          "description": "Controlled sequence - SUBJECT",
+          "name": "SUBJECT_2",
+          "description": "Controlled sequence - SUBJECT_2",
           "ranges": [
             {
               "e_value": 0.14,
@@ -205,12 +211,14 @@
                     "evalue": 0.14,
                     "taxid": 12345,
                     "target_hit": "NT_HIT_FLAG2",
-                    "target_description": "SUBJECT",
+                    "target_description": "SUBJECT_2",
                     "control_list": [
                       {
-                        "name": "ShouldntClear",
+                        "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
-                        "list": "NZ_DTL_EXPORT"
+                        "list": "NZ_DTL_EXPORT",
+                        "species": "",
+                        "genus": ""
                       }
                     ]
                   },
@@ -218,12 +226,14 @@
                     "evalue": 0.15,
                     "taxid": 12350,
                     "target_hit": "NT_HIT_FLAG3",
-                    "target_description": "SUBJECT",
+                    "target_description": "SUBJECT_3",
                     "control_list": [
                       {
-                        "name": "SUBJECT",
+                        "name": "SUBJECT_3",
                         "category": "Viruses",
-                        "list": "NZ_DTL_EXPORT"
+                        "list": "NZ_DTL_EXPORT",
+                        "species": "",
+                        "genus": ""
                       }
                     ]
                   }
@@ -238,8 +248,8 @@
             "status": "Flag (Cleared)",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "NT_HIT_FLAG1",
-          "description": "Controlled sequence - SUBJECT",
+          "name": "SUBJECT_1",
+          "description": "Controlled sequence - SUBJECT_1",
           "ranges": [
             {
               "e_value": 0.13,
@@ -265,12 +275,14 @@
                     "evalue": 0.13,
                     "taxid": 12345,
                     "target_hit": "NT_HIT_FLAG1",
-                    "target_description": "SUBJECT",
+                    "target_description": "SUBJECT_1",
                     "control_list": [
                       {
-                        "name": "ShouldntClear",
+                        "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
-                        "list": "NZ_DTL_EXPORT"
+                        "list": "NZ_DTL_EXPORT",
+                        "species": "",
+                        "genus": ""
                       }
                     ]
                   }
@@ -285,7 +297,7 @@
             "status": "Pass",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "NR_HIT_MIXED1",
+          "name": "ShouldMixedReg1",
           "description": "Mix of 1 controlled sequence and 2 non-controlled sequence",
           "ranges": [
             {
@@ -312,12 +324,14 @@
                     "evalue": 0.1,
                     "taxid": 12347,
                     "target_hit": "NR_HIT_MIXED1",
-                    "target_description": "ShouldMixedReg",
+                    "target_description": "ShouldMixedReg1",
                     "control_list": [
                       {
-                        "name": "ShouldMixedReg",
+                        "name": "ShouldMixedReg1",
                         "category": "Viruses",
-                        "list": "NZ_DTL_EXPORT"
+                        "list": "NZ_DTL_EXPORT",
+                        "species": "",
+                        "genus": ""
                       }
                     ]
                   }
@@ -345,7 +359,7 @@
             "status": "Flag (Cleared)",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "NR_HIT_FLAG4",
+          "name": "ShouldClear",
           "description": "Controlled sequence - ShouldClear",
           "ranges": [
             {
@@ -377,7 +391,9 @@
                       {
                         "name": "ShouldClear",
                         "category": "Viruses",
-                        "list": "NZ_DTL_EXPORT"
+                        "list": "NZ_DTL_EXPORT",
+                        "species": "",
+                        "genus": ""
                       }
                     ]
                   }
@@ -392,8 +408,8 @@
             "status": "Flag",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "NR_HIT_FLAG3",
-          "description": "Controlled sequence - ShouldntClear",
+          "name": "NR_HIT2_ShouldntClear",
+          "description": "Controlled sequence - NR_HIT2_ShouldntClear",
           "ranges": [
             {
               "e_value": 0.08,
@@ -422,9 +438,11 @@
                     "target_description": "ShouldClearBySynBio",
                     "control_list": [
                       {
-                        "name": "ShouldntClear",
+                        "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
-                        "list": "NZ_DTL_EXPORT"
+                        "list": "NZ_DTL_EXPORT",
+                        "species": "",
+                        "genus": ""
                       }
                     ]
                   }
@@ -439,7 +457,7 @@
             "status": "Flag (Cleared)",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "NR_HIT_FLAG2",
+          "name": "ShouldClearBySynBio",
           "description": "Controlled sequence - ShouldClearBySynBio",
           "ranges": [
             {
@@ -469,9 +487,11 @@
                     "target_description": "ShouldClearBySynBio",
                     "control_list": [
                       {
-                        "name": "ShouldntClear",
+                        "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
-                        "list": "NZ_DTL_EXPORT"
+                        "list": "NZ_DTL_EXPORT",
+                        "species": "",
+                        "genus": ""
                       }
                     ]
                   }
@@ -486,8 +506,8 @@
             "status": "Flag",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "NR_HIT_FLAG1",
-          "description": "Controlled sequence - ShouldntClear",
+          "name": "NR_HIT_ShouldntClear",
+          "description": "Controlled sequence - NR_HIT_ShouldntClear",
           "ranges": [
             {
               "e_value": 0.06,
@@ -513,12 +533,14 @@
                     "evalue": 0.06,
                     "taxid": 12345,
                     "target_hit": "NR_HIT_FLAG1",
-                    "target_description": "ShouldntClear",
+                    "target_description": "NR_HIT_ShouldntClear",
                     "control_list": [
                       {
-                        "name": "ShouldntClear",
+                        "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
-                        "list": "NZ_DTL_EXPORT"
+                        "list": "NZ_DTL_EXPORT",
+                        "species": "",
+                        "genus": ""
                       }
                     ]
                   }
