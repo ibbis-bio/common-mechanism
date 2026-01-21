@@ -41,7 +41,7 @@ def expected_defaults():
                 "path": "commec-dbs/taxonomy/",
             },
             "control_lists": {
-                "path": "commec-dbs/control_lists",
+                "path": "commec-dbs/control_lists/",
                 "regions": "all"
             }
         },
@@ -99,7 +99,7 @@ def expected_updated_from_custom_yaml():
                 "path": "commec-dbs/taxonomy/",
             },
             "control_lists": {
-                "path": "commec-dbs/control_lists",
+                "path": "commec-dbs/control_lists/",
                 "regions": "all"
             }
         },

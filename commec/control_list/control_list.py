@@ -40,6 +40,10 @@ def import_data(import_path : str | os.PathLike,
     Entry point to load Control List data.
     Loads region definitions, then recursively loads data.
     """
+    if not os.path.isdir(import_path):
+        logger.warning("Provided path for control lists is invalid %s", import_path)
+        return False
+
     # This needs to occur before we interpret regional context.
     __region.load_region_list_data(os.path.join(import_path, "region_definitions.json"))
 
@@ -51,6 +55,12 @@ def import_data(import_path : str | os.PathLike,
     # Recursively load the actual data.
     _import_data(import_path, cleaned_context)
     __init.tidy_control_list_data()
+
+    if __data.CONTROL_LIST_ANNOTATIONS.size == 0:
+        logger.warning("No control list annotations were found.")
+        return False
+    
+    return True
 
 def _import_data(import_path : str | os.PathLike,
                           regional_context : list[str]):

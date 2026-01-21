@@ -24,7 +24,7 @@ databases:
   taxonomy:
       path: "{default}taxonomy/"
   control_lists:
-      path: "{default}control_lists"
+      path: "{default}control_lists/"
       regions : "all"
 threads: 1
 diamond_jobs: null

@@ -326,7 +326,11 @@ class Screen:
         # Initialize the regulation list data
         regulation_path = self.params.config["databases"]["control_lists"]["path"]
         region_context = args.regions or self.params.config["databases"]["control_lists"]["regions"]
-        control_list.import_data(regulation_path, region_context)
+        if not control_list.import_data(regulation_path, region_context):
+            logger.error("Control list import failed. Check the import path used %s,"
+                         " that the location has a valid region definitions file, as"
+                         " well as valid control lists for import.", regulation_path)
+            self.early_exit()
         logger.info("Using Control Lists:")
         logger.info(control_list.format_control_lists(), extra = {"no_prefix" : True, "cap" : True})
         
