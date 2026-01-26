@@ -5,7 +5,10 @@ Argument declarations and
 import os
 import argparse
 import pandas as pd
-from commec.utils.file_utils import directory_arg
+import importlib
+from commec.utils.file_utils import directory_arg, file_arg
+import commec.config.yaml_io as YamlIO
+from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 from .containers import (
     ControlListOutput,
     ControlListContext,
@@ -16,14 +19,24 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
     Add Control List module arguments to an ArgumentParser object.
     """
-    parser_obj.add_argument(
+    input_options = parser_obj.add_mutually_exclusive_group()
+    input_options.add_argument(
         "-d",
         "--databases",
         dest="database_dir",
         type=directory_arg,
-        required = True,
+        #required = False,
         help="Path to parent directory containing Control List databases,"
         " the head of which should contain a region_definitions.json file",
+    )
+    input_options.add_argument(
+        "-y",
+        "--config",
+        dest="yaml_file",
+        type=file_arg,
+        #required = True,
+        help="Path to config file used by commec screen, to use the control list"
+        " configuration as determined from that config yaml file.",
     )
     parser_obj.add_argument(
         "-v",
@@ -138,4 +151,31 @@ def generate_output_summary_csv(output_filepath : str | os.PathLike):
     # Export
     result.to_csv(output_filepath)
 
+def read_config_yaml_for_control_list_info(config_yaml_filepath : os.PathLike | str):
+    """
+    Reads a config yaml, updated from the defaults, and parses the output for
+    the control_list directory as per a commec screen run. Used instead of passing
+    the directory of the control list
+    
+    :param config_yaml_filepath: Description
+    :type config_yaml_filepath: os.PathLike | str
+    """
 
+    output_config = None
+
+    # Read package-level configuration defaults
+    default_yaml = importlib.resources.files("commec").joinpath(DEFAULT_CONFIG_YAML_PATH)
+    if default_yaml.exists():
+        output_config = YamlIO.load_config_from_yaml(str(default_yaml))
+    else:
+        raise FileNotFoundError(
+            f"No default yaml found. Expected at {DEFAULT_CONFIG_YAML_PATH}"
+            )
+
+    # Override configuration with any in user-provided YAML file
+    if os.path.exists(config_yaml_filepath):
+        output_config = YamlIO.update_config_from_yaml(output_config, config_yaml_filepath)
+
+    output_config = YamlIO.format_config_paths(output_config)
+
+    return output_config

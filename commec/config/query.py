@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass
 from Bio import Seq
 from Bio.SeqRecord import SeqRecord
-from commec.config.result import QueryResult
+#from commec.config.result import QueryResult
 from commec.config.constants import MAXIMUM_QUERY_NAME_LENGTH
 
 class Query:
@@ -22,7 +22,8 @@ class Query:
         self._seq_record = seq_record
         self.name = self.create_id(seq_record.id)
         self.non_coding_regions : list[tuple[int, int]] = [] # 1 based coordinates for Non-Coding Regions.
-        self.result : QueryResult = None
+        #self.result : QueryResult = None
+        self.result = None
         self.translations: list[QueryTranslation] = []
         self.no_hits_warning : bool = True # Updated to False whenever any hit is found.
 

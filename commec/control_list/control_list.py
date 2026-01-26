@@ -12,6 +12,7 @@ is_regulated
 import os
 import logging
 import argparse
+import yaml
 from commec.utils.logger import setup_console_logging
 from .containers import (
     Accession,
@@ -27,6 +28,7 @@ from .cli import (
     format_control_lists,
     format_control_list_annotation,
     generate_output_summary_csv,
+    read_config_yaml_for_control_list_info
 )
 
 DESCRIPTION = """Tool for displaying information on
@@ -188,6 +190,8 @@ def run(arguments: argparse.Namespace):
     setup_console_logging(log_level)
     logger.info(" The Common Mechanism : List", extra={"no_prefix": True, "box_down" : True})
 
+
+
     logger.debug("Parsing input parameters... %s", arguments.database_dir)
 
     regions = arguments.regions or None
@@ -196,9 +200,24 @@ def run(arguments: argparse.Namespace):
         logger.error("commec list requires --lists/-l or --accessions/-a as input.")
         return 1
 
+    database_location = None
     if arguments.database_dir:
-        import_data(arguments.database_dir, regions)
+        database_location = arguments.database_dir
+    elif arguments.yaml_file:
+        config = read_config_yaml_for_control_list_info(arguments.yaml_file)
+        try:
+            database_location = config["databases"]["control_lists"]["path"]
+        except:
+            logger.error("Provided yaml input contained invaid control list path information.")
+
+    if not database_location:
+        logger.error("Provide the location of the control list database directory (-d)"
+                     " or location of yaml configuration file (-y) for commec list to import.")
+        return 1
         
+    import_data(database_location, regions)
+        
+
     if arguments.showlists:
         logger.info(" *----------* CONTROL LISTS *----------* ")
         logger.info(format_control_lists(True), extra={"no_prefix": True, "cap" : True})

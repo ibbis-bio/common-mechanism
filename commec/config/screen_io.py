@@ -11,22 +11,17 @@ import glob
 import argparse
 import logging
 import multiprocessing
-import importlib.resources
 from pprint import pformat
-
-import yaml
-from yaml.parser import ParserError
-
 from Bio import SeqIO
+import yaml
 
+import commec.config.yaml_io as YamlIO
 from commec.config.query import Query
+from commec.utils.file_utils import expand_and_normalize
 from commec.config.constants import (
-    DEFAULT_CONFIG_YAML_PATH,
     MINIMUM_QUERY_LENGTH,
     MAXIMUM_FILENAME_SIZE,
 )
-from commec.utils.file_utils import expand_and_normalize
-from commec.utils.dict_utils import deep_update
 
 logger = logging.getLogger(__name__)
 
@@ -61,11 +56,11 @@ class ScreenIO:
         if os.path.exists(self.output_screen_file) and not (
             self.config["force"] or self.config["resume"]):
             logger.error(
-                f"""Screen output {self.output_screen_file} already exists.
+                """Screen output %s already exists.
                 Either use a different output location, or use --force or --resume to override.
-                Aborting Screen."""
-            )
+                Aborting Screen.""", self.output_screen_file)
             sys.exit(1)
+
 
     def setup(self) -> bool:
         """
@@ -137,6 +132,7 @@ class ScreenIO:
 
         return queries
 
+
     def clean(self):
         """
         Tidy up directories and temporary files after a run.
@@ -155,6 +151,7 @@ class ScreenIO:
                     if os.path.isfile(file):
                         os.remove(file)
 
+
     def _read_config(self, args: argparse.Namespace):
         """
         Get the configuration for this screen run.
@@ -166,123 +163,32 @@ class ScreenIO:
             1. Contents of a user-defined YAML file provided using the --config argument
             2. (highest-priority) Configuration provided directly as CLI arguments
         """
-        # Read package-level configuration defaults
-        default_yaml = importlib.resources.files("commec").joinpath(DEFAULT_CONFIG_YAML_PATH)
-        if default_yaml.exists():
-            self.config = self._load_config_from_yaml(str(default_yaml))
-        else:
-            raise FileNotFoundError(
-                f"No default yaml found. Expected at {DEFAULT_CONFIG_YAML_PATH}"
-                )
+        self.config = YamlIO.get_defaults()
 
-        # Override configuration with any in user-provided YAML file
+        # Import a config yaml file if provided.
         cli_config_yaml=args.config_yaml.strip()
         if os.path.exists(cli_config_yaml):
-            logger.debug(f"Overriding defaults in {default_yaml} with values from {cli_config_yaml}")
-            self._update_config_from_yaml(cli_config_yaml)
+            logger.debug("Overriding defaults in with values from %s", cli_config_yaml)
+            self.config = YamlIO.update_config_from_yaml(self.config, cli_config_yaml)
 
         # Override configuration with any user-provided CLI arguments
-        self._update_config_from_cli(args)
+        self.config = YamlIO.update_config_from_cli(self.config ,args)
+
+        # Override the default base path with database directory from cli.
+        base_paths = self.config["base_paths"]
+        if self.db_dir is not None:
+            logger.debug("Command line arguments updated base databases directory: %s", self.db_dir)
+            base_paths["default"] = self.db_dir
+        else:
+            # Otherwise update the default database path if it wasn't defined.
+            self.db_dir = base_paths["default"]
 
         # Update paths in configuration using appropriate string substitution
-        self._format_config_paths(self.db_dir)
+        self.config = YamlIO.format_config_paths(self.config)
 
         logger.debug("Running Screen with the following parameter set:")
         logger.debug(pformat(self.config))
 
-    def _load_config_from_yaml(self, config_filepath: str | os.PathLike) -> dict:
-        """
-        Loads a yaml file, ensuring it's a dictionary.
-        """
-        try:
-            with open(config_filepath, "r", encoding = "utf-8") as file:
-                config_from_yaml = yaml.safe_load(file)
-        except ParserError:
-            raise ValueError(f"Invalid yaml syntax in configuration file: {config_filepath}")
-
-        if not isinstance(config_from_yaml, dict):
-            raise TypeError(f"Loaded configuration file did not result in a dictionary: {file}")
-        return config_from_yaml
-
-    def _update_config_from_yaml(self, config_filepath: str | os.PathLike) -> None:
-        """
-        Override YAML configuration based on provided YAML file. Items in the provided file, but
-        not in the default YAML, will be ignored.
-        """
-        config_from_yaml = self._load_config_from_yaml(config_filepath)
-        self.config, rejected = deep_update(self.config, config_from_yaml)
-        for rejects in rejected:
-            logger.warning("The follow input from the user provided"
-                " configuration was not recognised: %s : %s",
-                rejects[0], rejects[1])
-
-    def _update_config_from_cli(self, args: argparse.Namespace):
-        """ 
-        Override YAML configuration based on arguments given in the command line.
-        Need to reference `user_specified_args` because CLI defaults should not override YAML.
-        """
-        if not hasattr(args, "user_specified_args"):
-            raise ValueError(
-                "Missing required 'user_specified_args' in arguments namespace. "
-            )
-
-        # Update the YAML default values in the configuration dictionary
-        logger.debug("Using the following CLI configuration arguments:")
-        logger.debug(pformat(args.user_specified_args))
-
-        for arg in args.user_specified_args:
-            if arg in self.config and hasattr(args, arg):
-                logger.debug(f"Command line arguments updated '{arg}' to: {getattr(args,arg)}")
-                self.config[arg] = getattr(args, arg)
-
-    def _format_config_paths(self,
-        db_dir_override: str | os.PathLike = None
-    ):
-        """
-        The YAML file is expected to contain a 'base_paths' key that is referenced in string
-        substitutions, so that base paths do not need to be defined more than once. For example:
-
-            base_paths:
-                default: path/to/databases/
-            databases:
-                regulated_nt:
-                    path: '{default}nt_blast/core_nt'
-
-        This script will update the dictionary to propagate these substitutions.
-        If a database directory is provided, it will override the base_path provided in the yaml.
-        """
-        if self.config.get("base_paths"):
-            try:
-                base_paths = self.config["base_paths"]
-                if db_dir_override is not None:
-                    logger.debug(f"Command line arguments updated base databases directory: {db_dir_override}")
-                    base_paths["default"] = db_dir_override
-                else:
-                    self.db_dir = base_paths["default"]
-
-                # Ensure all the base paths end with a separator
-                for key, value in base_paths.items():
-                    base_paths[key] = os.path.join(value,'')
-
-                def recursive_format(nested_yaml, base_paths):
-                    """
-                    Recursively apply string formatting to read paths from nested yaml config dicts.
-                    """
-                    if isinstance(nested_yaml, dict):
-                        return {key : recursive_format(value, base_paths) 
-                                for key, value in nested_yaml.items()}
-                    if isinstance(nested_yaml, str):
-                        try:
-                            return nested_yaml.format(**base_paths)
-                        except KeyError as e:
-                            raise ValueError(
-                                f"Unknown base path key referenced in path: {nested_yaml}"
-                            ) from e
-                    return nested_yaml
-
-                self.config = recursive_format(self.config, base_paths)
-            except TypeError:
-                pass
 
     @staticmethod
     def _get_output_prefixes(input_file: str | os.PathLike, prefix_arg=None) -> str:
@@ -325,6 +231,7 @@ class ScreenIO:
         inputs_prefix =  os.path.join(inputs,name)
 
         return base_prefix, outputs_prefix, inputs_prefix
+
 
     def output_yaml(self, output_filepath : str | os.PathLike):
         """
