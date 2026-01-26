@@ -200,6 +200,7 @@ class CategoryType(StrEnum):
     BACTERIA = "Bacteria"
     VIRUSES = "Viruses"
     EUKARYOTA = "Eukaryota"
+    FUNGI = "Fungi"
     PROTEIN = "Proteins"
     TOXIN = "Toxins"
     OTHER_EUKARYOTA = "Other Eukaryota"

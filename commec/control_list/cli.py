@@ -6,6 +6,7 @@ import os
 import argparse
 import pandas as pd
 import importlib
+from pathlib import Path
 from commec.utils.file_utils import directory_arg, file_arg
 import commec.config.yaml_io as YamlIO
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
@@ -132,9 +133,9 @@ def generate_output_summary_csv(output_filepath : str | os.PathLike):
 
     output_data = data.CONTROL_LIST_ANNOTATIONS.copy(deep = True)
     output_data["name"] = (
-        output_data["preferred_taxonomy_name"]
+        output_data["preferred_taxonomy_name"].replace("", pd.NA)
         .combine_first(output_data["name"])
-        .combine_first(output_data["other_taxonomy_name"])
+        .combine_first(output_data["other_taxonomy_name"].replace("", pd.NA))
     )
     output_data.drop(columns = ["preferred_taxonomy_name"], inplace=True)
     # Step 1: create dummy columns for list_acronym
@@ -148,8 +149,11 @@ def generate_output_summary_csv(output_filepath : str | os.PathLike):
     base = output_data.drop(columns="list_acronym").groupby(output_data.index, sort=False).first()
     result = base.join(indicators, how="outer")
 
-    # Export
-    result.to_csv(output_filepath)
+    # Export - ensure .csv suffix
+    output_path = Path(output_filepath)
+    if output_path.suffix != ".csv":
+        output_path = output_path.with_suffix(".csv")
+    result.to_csv(output_path)
 
 def read_config_yaml_for_control_list_info(config_yaml_filepath : os.PathLike | str):
     """
