@@ -323,35 +323,30 @@ class Screen:
         logger.info("Input query file: ")
         logger.info(self.params.input_fasta_path, extra={"no_prefix":True,"cap":True})
 
-        # Initialize the regulation list data
-        regulation_path = self.params.config["databases"]["control_lists"]["path"]
-        region_context = args.regions or self.params.config["databases"]["control_lists"]["regions"]
-        if not control_list.import_data(regulation_path, region_context):
-            logger.error("Control list import failed. Check the import path used %s,"
-                         " that the location has a valid region definitions file, as"
-                         " well as valid control lists for import.", regulation_path)
-            self.early_exit()
-        logger.info("Using Control Lists:")
-        logger.info(control_list.format_control_lists(), extra = {"no_prefix" : True, "cap" : True})
-        
-        # Custom output format for Control Lists info, for JSON:
-        control_lists = control_list.get_control_lists()
+        # Initialize the control list data (not needed when using --skip-tx)
+        if self.params.should_do_protein_screening or self.params.should_do_nucleotide_screening:
+            regulation_path = self.params.config["databases"]["control_lists"]["path"]
+            region_context = args.regions or self.params.config["databases"]["control_lists"]["regions"]
+            if not control_list.import_data(regulation_path, region_context):
+                logger.error("Control list import failed. Check the import path used %s,"
+                            " that the location has a valid region definitions file, as"
+                            " well as valid control lists for import. Otherwise,"
+                            " run commec screen with --skip-tx to skip taxonomy search.", regulation_path)
+                self.early_exit()
 
-        # If we don't find control lists, but need them for taxonomy, then exit.
-        if not control_lists and not (
-            self.params.should_do_protein_screening 
-            or self.params.should_do_nucleotide_screening):
-            logger.error("No Control List information was imported")
-            self.early_exit()
-
-        control_lists = [ControlListResult(
-                cl.name,
-                cl.acronym,
-                cl.region.name,
-                ",".join(control_list.get_regions_set(cl.region)),
-                cl.status,
-                cl.url) for cl in control_lists]
-        self.screen_data.commec_info.control_list_info = control_lists
+            logger.info("Using Control Lists:")
+            logger.info(control_list.format_control_lists(), extra = {"no_prefix" : True, "cap" : True})
+            
+            # Custom output format for Control Lists info, for JSON:
+            control_lists = control_list.get_control_lists()
+            control_lists = [ControlListResult(
+                    cl.name,
+                    cl.acronym,
+                    cl.region.name,
+                    ",".join(control_list.get_regions_set(cl.region)),
+                    cl.status,
+                    cl.url) for cl in control_lists]
+            self.screen_data.commec_info.control_list_info = control_lists
 
         # Initialize the queries
         try:
