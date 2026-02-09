@@ -324,3 +324,5 @@ def tidy_control_list_data():
     logger.debug("Loaded the following control list dataset: Top 20:\n%s",
                  ld.CONTROL_LIST_ANNOTATIONS.head(20).to_string())
 
+    logger.debug("Loaded the following child to parent mappings dataset: Top 20:\n%s",
+                 ld.ACCESSION_MAP.head(20).to_string())

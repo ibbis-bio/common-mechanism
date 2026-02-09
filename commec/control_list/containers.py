@@ -202,7 +202,7 @@ class CategoryType(StrEnum):
     EUKARYOTA = "Eukaryota"
     FUNGI = "Fungi"
     PROTEIN = "Proteins"
-    TOXIN = "Toxins"
+    TOXIN = "Toxin"
     OTHER_EUKARYOTA = "Other Eukaryota"
     OTHER_EUKAYROTA_ANIMAL = "Other Eukaryota (Animal)"
     NON_PROTEIN_TOXIN = "Non-Protein Toxin"

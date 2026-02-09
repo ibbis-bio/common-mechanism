@@ -128,12 +128,15 @@ def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[Contr
     # Modify based on input accession format:
     accession_hash = Accession(accession)
     accession_to_check = [accession_hash]
+    logger.debug("Fetching parents of '%s'", accession)
+    #####logger.debug("Accessing specific test child: ", __data.ACCESSION_MAP["11052"])
     taxid_parents_to_check = __data.ACCESSION_MAP[
         __data.ACCESSION_MAP["child_taxid"] == accession]["controlled_taxid"].to_list()
+    logger.debug("Found taxid parents: %s", str(taxid_parents_to_check))
     taxid_parents_to_check = [Accession(taxid) for taxid in taxid_parents_to_check]
     accession_to_check.extend(taxid_parents_to_check)
 
-    logger.debug("Accesions to check: %s", accession_to_check)
+    logger.debug("Accessions to check: %s", accession_to_check)
 
     # Get Accessions of controlled interest:
     filtered_regulated_taxid_annotations = __data.CONTROL_LIST_ANNOTATIONS[
@@ -144,8 +147,12 @@ def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[Contr
     for hash_taxid, row in filtered_regulated_taxid_annotations.iterrows():
         lineages = row["lineage"].split(";")
         logger.debug("Extracted lineage information: #[%i] %s", len(lineages), lineages)
-        species = lineages[7] if len(lineages) > 6 else ""
-        genus = lineages[6] if len(lineages) > 5 else ""
+        species = ""
+        genus = ""
+        if len(lineages) > 7:
+            species = lineages[7]
+        if len(lineages) > 6:
+            genus = lineages[6]
         
         output_data.append(ControlListOutput(row["name"],
                                             row["category"],

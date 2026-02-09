@@ -82,12 +82,6 @@ def add_control_list_annotations(input_data : pd.DataFrame):
                          f"got {set(input_data.columns)}")
 
     input_data = input_data.reindex(columns=expected_cols)
-    
-    # Coerce invalid entries ("TBD", empty, etc.) to NaN, then cast to Int64
-    #input_data["tax_id"] = (
-    #    pd.to_numeric(input_data["tax_id"], errors="coerce")
-    #    .astype("Int64")
-    #)
 
     # The input data requires dtypes to be specified for any missing info.
     input_data = input_data.astype(CONTROL_LIST_ANNOTATIONS.dtypes.to_dict()).fillna("")
@@ -111,10 +105,6 @@ def add_child_lut_data(input_data: pd.DataFrame):
 
     # Restrict to only the expected columns
     input_data = input_data.reindex(columns=expected_cols)
-    input_data["child_taxid"] = pd.to_numeric(input_data["child_taxid"], 
-                                              errors="coerce").astype("Int64")
-    input_data["controlled_taxid"] = pd.to_numeric(input_data["controlled_taxid"], 
-                                                  errors="coerce").astype("Int64")
     input_data = input_data.astype(ACCESSION_MAP.dtypes.to_dict())
     ACCESSION_MAP = pd.concat(
         [ACCESSION_MAP, input_data], ignore_index=True
