@@ -220,8 +220,8 @@ def _filter_low_concern_dna(query : Query,
     logger.debug("Processing low-concern Hit: %s", low_concern_hit_outcome)
     
     if hit.recommendation.status not in {ScreenStatus.CLEARED_FLAG, ScreenStatus.CLEARED_WARN}:
-        logger.info("\t --> Clearing %s %s region %i-%i as low-concern DNA, with synthetic biology part %s",
-                        hit.recommendation.status, hit.name, region.query_start, region.query_end, low_concern_hit_outcome.name)
+        logger.info("\t --> Clearing %s at bases (%i-%i) as low-concern DNA: \"%s\" matched synthetic biology part \"%s\"",
+                        hit.recommendation.status, region.query_start, region.query_end, hit.name, low_concern_hit_outcome.name)
         hit.recommendation.status = hit.recommendation.status.clear()
         low_concern_hit_outcome.recommendation.status = hit.recommendation.status
     return [low_concern_hit_outcome]
