@@ -63,9 +63,9 @@ def _check_inputs(
         logger.error("\t...low-concern database file %s does not exist\n", low_concern_taxid_path)
         return False
 
-    if not os.path.exists(biorisk_taxid_path):
-        logger.error("\t...biorisk database file %s does not exist\n", biorisk_taxid_path)
-        return False
+    #if not os.path.exists(biorisk_taxid_path):
+    #    logger.error("\t...biorisk database file %s does not exist\n", biorisk_taxid_path)
+    #    return False
 
     if not os.path.exists(taxonomy_directory):
         logger.error("\t...taxonomy directory %s does not exist\n", taxonomy_directory)
@@ -344,7 +344,7 @@ def parse_taxonomy_hits(
                 hit_name,
                 hit_description,
                 match_ranges,
-                {"domain" : [domain],"regulated_taxonomy":[regulation_dict]},
+                {"domain" : [domains],"regulated_taxonomy":[regulation_dict]},
             )
 
             if query_write.add_new_hit_information(new_hit):
