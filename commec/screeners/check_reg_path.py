@@ -271,6 +271,7 @@ def parse_taxonomy_hits(
                     # Record domain information.
                     control_output_info.list = str(get_control_lists(control_output_info.list))
                     domain = control_output_info.category
+                    domains.append(domain)
                     if domain == "Viruses":
                         n_regulated_virus += 1
                         logger.debug("\t\t\tAdded Virus.")
@@ -283,7 +284,6 @@ def parse_taxonomy_hits(
                         n_regulated_eukaryote+=1
                         logger.debug("\t\t\tAdded Eukaryote.")
                         break
-                    domains.append(domain)
 
             # Useful for when a single conditional control list compliance occured.
             for nonreg_annotation in non_regulated_annotation_list:
@@ -294,9 +294,9 @@ def parse_taxonomy_hits(
                     nonreg_annotation["control_list"] = control_info
 
 
-
+            domains = list(set(domains))
             # If the category in the control list isn't set, we default to the non-descript, "sequences".
-            domains_text = ", ".join(set(domains)) or "sequence"
+            domains_text = ", ".join(domains) or "sequence"
             # Set the default hit description, this is changed if result is mixed etc.
             hit_description = f"Controlled {domains_text} - {regulated_hit_data['subject title'].values[0]}"
 
@@ -344,7 +344,7 @@ def parse_taxonomy_hits(
                 hit_name,
                 hit_description,
                 match_ranges,
-                {"domain" : [domains],"regulated_taxonomy":[regulation_dict]},
+                {"domain" : domains,"regulated_taxonomy":[regulation_dict]},
             )
 
             if query_write.add_new_hit_information(new_hit):

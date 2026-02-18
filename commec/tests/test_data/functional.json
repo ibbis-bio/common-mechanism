@@ -3,7 +3,7 @@
     "commec_version": "1.1.0",
     "json_output_version": "0.4",
     "time_taken": "00:00:02",
-    "date_run": "2026-01-10 21:41:04",
+    "date_run": "2026-02-18 23:42:34",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -42,7 +42,7 @@
     ]
   },
   "query_info": {
-    "file": "/tmp/pytest-of-root/pytest-10/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-root/pytest-5/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -65,7 +65,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "Main",
-          "description": "Mix of 1 controlled sequence and 1 non-controlled sequence",
+          "description": "Mix of 1 controlled Viruses and 1 non-controlled Viruses",
           "ranges": [
             {
               "e_value": 0.16,
@@ -121,7 +121,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "SUBJECT_3",
-          "description": "Controlled sequence - SUBJECT_3",
+          "description": "Controlled Viruses - SUBJECT_3",
           "ranges": [
             {
               "e_value": 0.15,
@@ -185,7 +185,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "SUBJECT_2",
-          "description": "Controlled sequence - SUBJECT_2",
+          "description": "Controlled Viruses - SUBJECT_2",
           "ranges": [
             {
               "e_value": 0.14,
@@ -249,7 +249,7 @@
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "SUBJECT_1",
-          "description": "Controlled sequence - SUBJECT_1",
+          "description": "Controlled Viruses - SUBJECT_1",
           "ranges": [
             {
               "e_value": 0.13,
@@ -298,7 +298,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "ShouldMixedReg1",
-          "description": "Mix of 1 controlled sequence and 2 non-controlled sequence",
+          "description": "Mix of 1 controlled Viruses and 2 non-controlled Viruses",
           "ranges": [
             {
               "e_value": 0.1,
@@ -360,7 +360,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "ShouldClear",
-          "description": "Controlled sequence - ShouldClear",
+          "description": "Controlled Viruses - ShouldClear",
           "ranges": [
             {
               "e_value": 0.09,
@@ -409,7 +409,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT2_ShouldntClear",
-          "description": "Controlled sequence - NR_HIT2_ShouldntClear",
+          "description": "Controlled Viruses - NR_HIT2_ShouldntClear",
           "ranges": [
             {
               "e_value": 0.08,
@@ -458,7 +458,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "ShouldClearBySynBio",
-          "description": "Controlled sequence - ShouldClearBySynBio",
+          "description": "Controlled Viruses - ShouldClearBySynBio",
           "ranges": [
             {
               "e_value": 0.07,
@@ -507,7 +507,7 @@
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_ShouldntClear",
-          "description": "Controlled sequence - NR_HIT_ShouldntClear",
+          "description": "Controlled Viruses - NR_HIT_ShouldntClear",
           "ranges": [
             {
               "e_value": 0.06,
