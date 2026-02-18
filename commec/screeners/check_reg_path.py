@@ -241,7 +241,7 @@ def parse_taxonomy_hits(
                 )
 
                 # Collect unique species from both regulated and non-regulated - legacy logging
-                #reg_species.extend(regulated_for_region["species"])
+                reg_species.extend(regulated_for_region["species"])
                 #non_reg_species.extend(non_regulated_for_region["species"])
 
                 # JSON serialization requires int, not np.int64, hence the map()
@@ -379,8 +379,8 @@ def parse_taxonomy_hits(
             ss = "" if len(non_reg_taxids) == 1 else "'s"
             log_message = (
                 f"\t --> {screen_status} at bases ({match_ranges_text}) found in {alt_text}regulated {domains_text}.\n"
-                f"\t   (Regulated Species: {reg_species_text or non_reg_species_text}.\n\t    Regulated TaxID{s}: {reg_taxids_text}\n"
-                f"\t   Non-Regulated TaxID{ss}: {non_reg_taxids_text})"
+                f"\t   (Regulated Species: {reg_species_text or non_reg_species_text}.\n"
+                f"\t    Regulated TaxID{s}: {reg_taxids_text}"
             )
             if len(non_reg_taxids) > 0:
                 log_message += f"\n\t    Non-Regulated TaxID{ss}: {non_reg_taxids_text}"
