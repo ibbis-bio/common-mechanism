@@ -129,7 +129,6 @@ def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[Contr
     accession_hash = Accession(accession)
     accession_to_check = [accession_hash]
     logger.debug("Fetching parents of '%s'", accession)
-    #####logger.debug("Accessing specific test child: ", __data.ACCESSION_MAP["11052"])
     taxid_parents_to_check = __data.ACCESSION_MAP[
         __data.ACCESSION_MAP["child_taxid"] == accession]["controlled_taxid"].to_list()
     logger.debug("Found taxid parents: %s", str(taxid_parents_to_check))
@@ -144,6 +143,7 @@ def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[Contr
     
     logger.debug("Filtered Output DBS: %s", filtered_regulated_taxid_annotations.to_string())
 
+    # For each annotation, process its output, and context
     for hash_taxid, row in filtered_regulated_taxid_annotations.iterrows():
         lineages = row["lineage"].split(";")
         logger.debug("Extracted lineage information: #[%i] %s", len(lineages), lineages)
@@ -160,13 +160,15 @@ def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[Contr
                                             species,
                                             genus))
 
-        output_context.append(ControlListContext(str(row["derived_from"]),
-                                                 (accession != hash_taxid)))
+        derived_text = str(row["derived_from"])
+        is_child = (accession_hash != hash_taxid)
+        output_context.append(ControlListContext(derived_text,
+                                                 is_child))
 
+    # Return the list pairs of output data and contexts.
     if len(output_data) > 0:
         logger.debug("Checking %s [%s] for regulation resulted in %i annotations",
                      accession_hash.get_format(), accession, len(output_data))
-
     return output_data, output_context
 
 def get_control_lists(list_acronym = None):

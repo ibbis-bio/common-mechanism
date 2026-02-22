@@ -1,7 +1,5 @@
 """Tests for commec.control_list.list_data — module-level state management."""
 
-import os
-
 import pytest
 import pandas as pd
 
@@ -87,6 +85,7 @@ def _make_list_dir(tmp_path, dirname="testlist", list_info=None,
 def test_import_annotations_valid(tmp_path):
     """Annotations from a valid CSV are loaded into CONTROL_LIST_ANNOTATIONS."""
     d = _make_list_dir(tmp_path)
+    ld.CONTROL_LIST_ANNOTATIONS.info()
     assert import_control_lists(str(d)) is True
     assert len(ld.CONTROL_LIST_ANNOTATIONS) == 1
     assert ld.CONTROL_LIST_ANNOTATIONS.iloc[0]["tax_id"] == "12345"

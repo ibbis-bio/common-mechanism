@@ -26,6 +26,7 @@ control-lists/  		     # This is the level at which pass to yaml / cli
 └── ...
 ```
 """
+
 import os
 import logging
 import pandas as pd
@@ -148,7 +149,7 @@ def _import_control_list_info(input_path : str | os.PathLike):
     Ensures that existing control lists are not overwritten, and 
     warns the user if overwritting unique data (i.e. acroynym clash) has occured.
     """
-    list_info = pd.read_csv(input_path, sep=",", quotechar='"', dtype = str, keep_default_na=False, na_values=[])
+    list_info = pd.read_csv(input_path, dtype = str).fillna("")
     for _, row in list_info.iterrows():
         logger.debug("Parsing list information: %s", row)
 
@@ -194,7 +195,9 @@ def _import_control_list_annotations(input_path : str | os.PathLike):
     inclusion.
     Concatenates the control taxid info into the global dataframe.
     """
-    taxid_info = pd.read_csv(input_path, dtype = str, keep_default_na=False, na_values=[])
+
+    taxid_info = pd.read_csv(input_path, dtype = str).fillna("")
+    
     # We detect multiple list acroynms in the format "ABC, DEF, GHI"
     # Result: cells become lists like ['ABC', 'DEF', 'GHI']
     taxid_info["list_acronym"] = (
@@ -227,6 +230,9 @@ def _import_control_list_annotations(input_path : str | os.PathLike):
         logger.warning(dropped[["name","tax_id", "list_acronym"]].to_string())
 
     # Append the new list data:
+    print("Input dtypes:")
+    valid_list_taxid_info.info()
+
     ld.add_control_list_annotations(valid_list_taxid_info)
 
 
