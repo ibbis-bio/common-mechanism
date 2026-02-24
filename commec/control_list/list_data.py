@@ -124,8 +124,6 @@ def add_ignored_accession_data(input_data: pd.DataFrame):
 
     # Restrict to only the expected columns
     input_data = input_data.reindex(columns=expected_cols)
-    input_data["ignored_taxid"] = pd.to_numeric(input_data["ignored_taxid"], 
-                                              errors="coerce").astype("Int64")
     input_data = input_data.astype(IGNORED_ACCESSION.dtypes.to_dict())
     IGNORED_ACCESSION = pd.concat(
         [IGNORED_ACCESSION, input_data], ignore_index=True
