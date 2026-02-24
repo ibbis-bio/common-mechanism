@@ -268,18 +268,20 @@ class ScreenIO:
             return nested_yaml
             
         try:
-            # Ensure all the base paths end with a separator
-            for key, value in self.config["base_paths"].items():
-                self.config["base_paths"][key] = os.path.join(value,'')
-            self.config["base_paths"] = recursive_format(self.config["base_paths"], self.config["base_paths"])
-            self.config = recursive_format(self.config, self.config["base_paths"])
-
             # Restores legacy behaviour with -d in commec screen CLI, with no yaml.
             if db_dir_override is not None:
                 logger.debug("Command line arguments updated base databases directory: %s", db_dir_override)
                 self.config["base_paths"]["default"] = db_dir_override
             else:
                 self.db_dir = self.config["base_paths"]["default"]
+
+            # Ensure all the base paths end with a separator
+            for key, value in self.config["base_paths"].items():
+                self.config["base_paths"][key] = os.path.join(value,'')
+            
+            # Recursively format all paths
+            self.config["base_paths"] = recursive_format(self.config["base_paths"], self.config["base_paths"])
+            self.config = recursive_format(self.config, self.config["base_paths"])
 
         except TypeError as e:
             logger.error("Encountered unexpected TypeError during yaml config base path substitution: %s", e)
