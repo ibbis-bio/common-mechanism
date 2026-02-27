@@ -230,9 +230,6 @@ def _import_control_list_annotations(input_path : str | os.PathLike):
         logger.warning(dropped[["name","tax_id", "list_acronym"]].to_string())
 
     # Append the new list data:
-    print("Input dtypes:")
-    valid_list_taxid_info.info()
-
     ld.add_control_list_annotations(valid_list_taxid_info)
 
 
