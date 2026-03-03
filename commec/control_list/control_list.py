@@ -199,14 +199,12 @@ def run(arguments: argparse.Namespace):
     setup_console_logging(log_level)
     logger.info(" The Common Mechanism : List", extra={"no_prefix": True, "box_down" : True})
 
-
-
     logger.debug("Parsing input parameters... %s", arguments.database_dir)
 
     regions = arguments.regions or None
 
-    if not (arguments.showlists or arguments.showtaxids):
-        logger.error("commec list requires --lists/-l or --accessions/-a as input.")
+    if not (arguments.showlists or arguments.showtaxids or arguments.output_prefix):
+        logger.error("commec list requires --lists/-l, --accessions/-a, or --output_prefix/-o as input.")
         return 1
 
     database_location = None
@@ -242,7 +240,8 @@ def run(arguments: argparse.Namespace):
                 continue
             outcome, outcome_context = get_regulation(accession)
             logger.info("   > Taxid %s: %s",accession,
-                        format_control_list_annotation(outcome, outcome_context))
+                        (format_control_list_annotation(outcome, outcome_context)
+                        if len(outcome) > 0 else "No control list annotation found."))
 
     if arguments.output_prefix:
         logger.info("Writing output list summary to \"%s.csv\" ...", arguments.output_prefix)
