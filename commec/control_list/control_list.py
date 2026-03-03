@@ -220,7 +220,7 @@ def run(arguments: argparse.Namespace):
     if not database_location:
         logger.error("Provide the location of the control list database directory (-d)"
                      " or location of yaml configuration file (-y) for commec list to import.")
-        return 1
+        return 2
         
     import_data(database_location, regions)
         

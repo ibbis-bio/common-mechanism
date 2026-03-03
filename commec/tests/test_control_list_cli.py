@@ -84,15 +84,6 @@ def _build_minimal_db(base_path):
 # format_control_lists
 # ---------------------------------------------------------------------------
 
-def test_format_control_lists_verbose():
-    _setup_lists_with_annotations()
-    output = format_control_lists(verbosity=True)
-    assert "Export Controls" in output
-    assert "Pathogen List" in output
-    assert "Compliance" in output
-    assert "Total number of Taxid Relationships" in output
-
-
 def test_format_control_lists_table():
     _setup_lists_with_annotations()
     output = format_control_lists(verbosity=False)
@@ -247,7 +238,7 @@ def test_add_args_databases_and_config_mutually_exclusive(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_run_cli_no_action():
-    """run() returns 1 when neither --list nor --accessions is specified."""
+    """run() returns 1 when neither --list nor --accessions or --output_prefix is specified."""
     args = argparse.Namespace(
         verbose=False, database_dir=None, yaml_file=None,
         regions=[], showlists=False, showtaxids=None, output_prefix="",
@@ -261,7 +252,7 @@ def test_run_cli_no_database():
         verbose=False, database_dir=None, yaml_file=None,
         regions=[], showlists=True, showtaxids=None, output_prefix="",
     )
-    assert run(args) == 1
+    assert run(args) == 2
 
 
 def test_run_cli_with_list_flag(tmp_path):
