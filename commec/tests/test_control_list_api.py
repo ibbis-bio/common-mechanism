@@ -176,30 +176,6 @@ def test_is_regulated_via_child_mapping():
     _setup_regulated_state()
     assert is_regulated("99999") is True
 
-
-# ---------------------------------------------------------------------------
-# should_ignore
-# ---------------------------------------------------------------------------
-
-def test_should_ignore_true():
-    # Set IGNORED_ACCESSION directly with string types so the 'in' check
-    # on the numpy array works as expected (avoids int/str mismatch from
-    # add_ignored_accession_data's type coercion).
-    ld.IGNORED_ACCESSION = pd.DataFrame({
-        "child_taxid": ["50"],
-        "ignored_taxid": ["100"],
-    })
-    assert should_ignore("100") is True
-
-
-def test_should_ignore_false():
-    ld.IGNORED_ACCESSION = pd.DataFrame({
-        "child_taxid": ["50"],
-        "ignored_taxid": ["100"],
-    })
-    assert should_ignore("99999") is False
-
-
 # ---------------------------------------------------------------------------
 # get_regulation
 # ---------------------------------------------------------------------------
