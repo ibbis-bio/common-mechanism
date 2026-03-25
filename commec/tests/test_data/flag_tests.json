@@ -338,12 +338,11 @@
             "query": "FLAG_TEST_07",
             "length": 1,
             "status": {
-                "screen_status": "Warning",
+                "screen_status": "Pass",
                 "biorisk": "Pass",
                 "protein_taxonomy": "Pass",
                 "nucleotide_taxonomy": "Pass",
-                "low_concern": "Pass",
-                "rationale": "No matches found during any stage of analysis. Sequence risk is unknown, possibly generated in silico. "
+                "low_concern": "Pass"
             },
             "hits": {
             }
@@ -352,12 +351,11 @@
             "query": "FLAG_TEST_08",
             "length": 1,
             "status": {
-                "screen_status": "Warning",
+                "screen_status": "Pass",
                 "biorisk": "Pass",
                 "protein_taxonomy": "Skip",
                 "nucleotide_taxonomy": "Skip",
-                "low_concern": "Pass",
-                "rationale": "No matches found during any stage of analysis. Sequence risk is unknown, possibly generated in silico. Matches may be found if re-run without skipping steps."
+                "low_concern": "Pass"
             },
             "hits": {
             }

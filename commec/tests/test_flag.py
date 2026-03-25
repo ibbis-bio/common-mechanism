@@ -26,8 +26,8 @@ def test_flag(tmp_path):
         FLAG_TEST_04,{SCREEN_DIR}/flag_tests.json,Flag,Pass,Flag,Pass,Flag,False,False,True,False,False,False,
         FLAG_TEST_05,{SCREEN_DIR}/flag_tests.json,Flag,Pass,Pass,Flag,Flag,True,True,True,False,False,False,
         FLAG_TEST_06,{SCREEN_DIR}/flag_tests.json,Pass,Pass,Mixed,Pass,Pass,True,False,False,False,False,False,
-        FLAG_TEST_07,{SCREEN_DIR}/flag_tests.json,No Hits,Pass,Pass,Pass,Pass,False,False,False,False,False,False,"No matches found during any stage of analysis. Sequence risk is unknown, possibly generated in silico. "
-        FLAG_TEST_08,{SCREEN_DIR}/flag_tests.json,No Hits (skipped steps),Pass,Skip,Skip,Pass,False,False,False,False,False,False,"No matches found during any stage of analysis. Sequence risk is unknown, possibly generated in silico. Matches may be found if re-run without skipping steps."
+        FLAG_TEST_07,{SCREEN_DIR}/flag_tests.json,Pass,Pass,Pass,Pass,Pass,False,False,False,False,False,False,
+        FLAG_TEST_08,{SCREEN_DIR}/flag_tests.json,Pass,Pass,Skip,Skip,Pass,False,False,False,False,False,False,
         FCTEST1,{SCREEN_DIR}/functional.json,Flag,Flag,Flag,Flag,Flag,True,False,False,True,True,True,"Matches sequence with pathogenic or toxin function, and protein and nucleotide sequence with regulated organisms; as well as virulence factor; as well as flags cleared as common or non-hazardous."
         """
     )

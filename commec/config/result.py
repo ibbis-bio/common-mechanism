@@ -289,9 +289,6 @@ class Rationale(StrEnum):
     TAX_WARN = " equally-good matches to regulated and non-regulated organisms"
 
     # Outcomes:
-    NO_HITS = ("No matches found during any stage of analysis. "
-                "Sequence risk is unknown, possibly generated in silico. ")
-    NO_HITS_SKIP_NOTE = NO_HITS + "Matches may be found if re-run without skipping steps."
     TOO_SHORT = "Query is too short, and was skipped."
 
     FLAG = " flags"
@@ -375,11 +372,6 @@ class QueryScreenStatus:
                                   self.nucleotide_taxonomy,
                                   self.low_concern}):
             self.screen_status = ScreenStatus.STOP
-            return
-
-        # If everything is happy, but we haven't hit anything, time to be suspicious...
-        if (self.screen_status == ScreenStatus.PASS and query_data.no_hits_warning):
-            self.screen_status = ScreenStatus.WARN
             return
 
         # If biorisk was skipped then it is skipped overall - likely query is too short...
@@ -578,20 +570,7 @@ class QueryResult:
             state.rationale = Rationale.INCOMPLETE
             return
 
-        # Handle no hits warnings
-        # --------------------------------------------------------------------
-        if (state.screen_status == ScreenStatus.WARN and
-            state.biorisk == ScreenStatus.PASS and
-            state.protein_taxonomy in [ScreenStatus.PASS, ScreenStatus.SKIP]  and
-            state.nucleotide_taxonomy in [ScreenStatus.PASS, ScreenStatus.SKIP] and
-            state.low_concern in [ScreenStatus.PASS, ScreenStatus.SKIP]):
-            # Add an extra caveat if the taxonomy search was skipped
-            if ScreenStatus.SKIP in [state.protein_taxonomy, state.nucleotide_taxonomy]:
-                state.rationale = Rationale.NO_HITS_SKIP_NOTE
-            else:
-                state.rationale = Rationale.NO_HITS
-            return
-
+ 
         # Handle simple passes
         # --------------------------------------------------------------------
         if state.screen_status == ScreenStatus.PASS:
@@ -687,8 +666,6 @@ class QueryResult:
         Updates the commec recommendation based on all hits recommendations.
         """
         
-        assert hasattr(query_data, "no_hits_warning")
-
         # A rare instance where we want our dictionary to be sorted
         sorted_items_desc = sorted(
             self.hits.items(), key=lambda item: item[1].get_e_value(), reverse=True
