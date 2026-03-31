@@ -17,5 +17,5 @@ def test_hmmer(tmp_path):
     screen_test.add_query("query1",1200)
     screen_test.add_hit(ScreenStep.BIORISK, "query1", 100, 200, "HighEvalueHit", "HEH", 500, regulated=True, evalue = 100.0)
     result = screen_test.run("--skip-tx")
-    assert result.queries["query1"].status.screen_status == ScreenStatus.PASS
-    assert result.queries["query1"].status.rationale == str(Rationale.START_PASS + ".")
+    assert result.queries["query1"].status.screen_status == ScreenStatus.PASS_SKIP_TX
+    assert result.queries["query1"].status.rationale == str(Rationale.START_PASS + ". However, " + Rationale.SKIPPED_TX)

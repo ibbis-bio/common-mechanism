@@ -53,6 +53,7 @@ class ScreenStatus(StrEnum):
     NULL = "-"
     SKIP = "Skip"
     PASS = "Pass"
+    PASS_SKIP_TX = "Pass (Skipped Taxonomy)"
     CLEARED_WARN = "Warning (Cleared)"
     CLEARED_FLAG = "Flag (Cleared)"
     WARN = "Warning"
@@ -73,6 +74,9 @@ class ScreenStatus(StrEnum):
                 " skipping low-concern screen when there are no flags to clear)"
             ),
             ScreenStatus.PASS: "Query was not flagged in this screening step; biosecurity review may not be needed",
+            ScreenStatus.PASS_SKIP_TX: (
+                "Query was not flagged in this screening step; "
+                "biosecurity review may not be needed. However, the Taxonomy screening steps were skipped."),
             ScreenStatus.CLEARED_WARN: (
                 "Warning was cleared, since query region was identified as low-concern"
                 " (e.g. housekeeping gene, common synbio part)"),
@@ -96,12 +100,13 @@ class ScreenStatus(StrEnum):
             ScreenStatus.NULL: 0,
             ScreenStatus.SKIP: 1,
             ScreenStatus.PASS: 2,
-            ScreenStatus.CLEARED_WARN: 3,
-            ScreenStatus.CLEARED_FLAG: 4,
-            ScreenStatus.WARN: 5,
-            ScreenStatus.FLAG: 6,
-            ScreenStatus.STOP: 7,
-            ScreenStatus.ERROR: 8,
+            ScreenStatus.PASS_SKIP_TX: 3,
+            ScreenStatus.CLEARED_WARN: 4,
+            ScreenStatus.CLEARED_FLAG: 5,
+            ScreenStatus.WARN: 6,
+            ScreenStatus.FLAG: 7,
+            ScreenStatus.STOP: 8,
+            ScreenStatus.ERROR: 9,
         }
         return order[self]
 
@@ -297,6 +302,7 @@ class Rationale(StrEnum):
     CLEARED = " cleared as common or non-hazardous"
 
     INCOMPLETE = "Screening was not run to completion."
+    SKIPPED_TX = "Screening was run without Taxonomy steps."
 
 @dataclass
 class QueryScreenStatus:
@@ -377,6 +383,14 @@ class QueryScreenStatus:
         # If biorisk was skipped then it is skipped overall - likely query is too short...
         if (self.biorisk == ScreenStatus.SKIP):
             self.screen_status = ScreenStatus.SKIP
+            return
+
+        # If Taxonomy steps were skipped, and we passed, then update to skipped pass.
+        if (self.screen_status == ScreenStatus.PASS and 
+                (self.protein_taxonomy == ScreenStatus.SKIP or 
+                self.nucleotide_taxonomy == ScreenStatus.SKIP)
+            ):
+            self.screen_status = ScreenStatus.PASS_SKIP_TX
             return
 
 
@@ -575,6 +589,12 @@ class QueryResult:
         # --------------------------------------------------------------------
         if state.screen_status == ScreenStatus.PASS:
             state.rationale = Rationale.START_PASS + "."
+            return
+
+        # Handle simple passes - with --skip-tx or --skip-nt
+        # --------------------------------------------------------------------
+        if state.screen_status == ScreenStatus.PASS_SKIP_TX:
+            state.rationale = Rationale.START_PASS + ". However, " + Rationale.SKIPPED_TX
             return
 
         # Handle ONLY cleared outputs
