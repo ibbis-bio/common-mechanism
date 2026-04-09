@@ -162,11 +162,29 @@ class ControlList:
     Contains the name, acronym, url, and affected regions for a Control List.
     """
     name : str = ""
+    name_translated : str = ""
+    display_name : str = ""
     acronym : str = ""
     url : str = ""
     region : Region = field(default_factory=Region)
     status : ListMode = field(default_factory=ListMode)
     use : ListUseAcronym = field(default_factory=ListUseAcronym)
+
+    def __init__(self, name : str, name_translated : str,
+                acronym : str, url : str, region : Region,
+                status : ListMode, use : ListUseAcronym):
+        self.name = name
+        self.name_translated = name_translated
+        self.acronym = acronym
+        self.url = url
+        self.region = region
+        self.status = status
+        self.use = use
+        # Translate non-English names.
+        if name_translated:
+            self.display_name = self.name + "[" + self.name_translated +"]"
+        else:
+            self.display_name = self.name
 
     def __str__(self):
         """
@@ -181,7 +199,7 @@ class ControlList:
         """
         Human readable text based description of this control list.
         """
-        return f"[{self}] {self.name} - {self.region.name}\n({self.url})"
+        return f"[{self}] {self.display_name} - {self.region.name}\n({self.url})"
     
     def __eq__(self, value):
         if (self.name != value.name or
@@ -221,6 +239,7 @@ class ControlListContext:
     """
     derived_from : str = None
     is_child : bool = False
+    child_name : str = ""
     #should_ignore : bool = False
 
 @dataclass

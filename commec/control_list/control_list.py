@@ -3,11 +3,11 @@
 """
 Entry point for Control List, handles major API calls.
 
-get_control_lists
-get_regulation
-is_regulated
-
-
+get_control_lists - Returns a list of the control lists information.
+get_regulation - Returns control list information for an accession.
+get_regulations - Batch version of get_regulation.
+is_regulated - Returns truthiness for whether accession is regulated.
+are_regulated - Batch version of is_regulated.
 """
 import os
 import logging
@@ -111,6 +111,45 @@ def is_regulated(accession : str) -> bool:
     index_values = __data.CONTROL_LIST_ANNOTATIONS.index
     return not accession_to_check.isdisjoint(index_values)
 
+def are_regulated_test(accessions) -> dict[str, bool]:
+    """
+    Batch alternative to calling is_regulated() per-element.
+    Requires testing to know if this is faster.
+
+    Replaces the dict comprehension in get_controlled_labels():
+        # Before:
+        taxid_to_regulated = {taxid: is_regulated(taxid) for taxid in unique_taxids}
+        # After:
+        taxid_to_regulated = are_regulated_test(unique_taxids)
+
+    Performance difference vs is_regulated() x N:
+        - ACCESSION_MAP is filtered once with isin() instead of N separate .loc[] calls.
+        - CONTROL_LIST_ANNOTATIONS.index is converted to a set once instead of N times.
+        - Per-taxid disjoint check is still a Python loop (unavoidable without a bulk index op).
+    """
+    accessions = list(accessions)
+
+    # Convert index to a plain set once — avoids re-wrapping the Index on every call.
+    index_set = set(__data.CONTROL_LIST_ANNOTATIONS.index)
+
+    # One vectorised filter for all parent-taxid lookups.
+    mask = __data.ACCESSION_MAP["child_taxid"].isin(accessions)
+    parent_map: dict[str, list[str]] = (
+        __data.ACCESSION_MAP[mask]
+        .groupby("child_taxid")["controlled_taxid"]
+        .apply(list)
+        .to_dict()
+    )
+
+    result: dict[str, bool] = {}
+    for accession in accessions:
+        to_check = {Accession(accession)}
+        to_check.update(Accession(p) for p in parent_map.get(accession, []))
+        result[accession] = not to_check.isdisjoint(index_set)
+
+    return result
+
+
 def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[ControlListContext]]:
     """
     Check the given Accession against all imported control lists.
@@ -144,26 +183,22 @@ def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[Contr
     logger.debug("Filtered Output DBS: %s", filtered_regulated_taxid_annotations.to_string())
 
     # For each annotation, process its output, and context
-    for hash_taxid, row in filtered_regulated_taxid_annotations.iterrows():
-        lineages = row["lineage"].split(";")
-        logger.debug("Extracted lineage information: #[%i] %s", len(lineages), lineages)
-        species = ""
-        genus = ""
-        if len(lineages) > 7:
-            species = lineages[7]
-        if len(lineages) > 6:
-            genus = lineages[6]
-        
-        output_data.append(ControlListOutput(row["name"],
+    for hash_taxid, row in filtered_regulated_taxid_annotations.iterrows():      
+        output_data.append(ControlListOutput(row["display_name"],
                                             row["category"],
                                             row["list_acronym"],
-                                            species,
-                                            genus))
+                                            row["species"],
+                                            row["genus"]))
 
-        derived_text = str(row["derived_from"])
+        derived_text = str(row["list_item"])
         is_child = (accession_hash != hash_taxid)
+        child_name = ""
+        if is_child: # We want the childs name in this instance.
+            child_name = __data.ACCESSION_MAP.get(accession_hash.code)["child_name"]
+
         output_context.append(ControlListContext(derived_text,
-                                                 is_child))
+                                                 is_child,
+                                                 child_name))
 
     # Return the list pairs of output data and contexts.
     if len(output_data) > 0:

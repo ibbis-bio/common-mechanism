@@ -19,26 +19,31 @@ CONTROL_LISTS : dict[str, ControlList] = {}
 # unique for list acronym, and taxid.
 # Indexed on Accession
 CONTROL_LIST_ANNOTATIONS : pd.DataFrame = pd.DataFrame({
-    "category": pd.Series(dtype="str"),
-    "name": pd.Series(dtype="str"),
-    "notes": pd.Series(dtype="str"),
-    "derived_from": pd.Series(dtype="str"),
-    "preferred_taxonomy_name": pd.Series(dtype="str"),
-    "other_taxonomy_name": pd.Series(dtype="str"),
-    "tax_id": pd.Series(dtype="str"),
-    "genbank_protein": pd.Series(dtype="str"),
-    "uniprot": pd.Series(dtype="str"),
     "list_acronym": pd.Series(dtype="str"),
-    "target": pd.Series(dtype="str"),
-    "hazard_group": pd.Series(dtype="str"),
-    "lineage": pd.Series(dtype="str")
+    "list_item": pd.Series(dtype="str"),
+    "tax_id": pd.Series(dtype="str"),
+    "display_name": pd.Series(dtype="str"),
+    "category": pd.Series(dtype="str"),
+    "notes": pd.Series(dtype="str"),
+    "kingdom": pd.Series(dtype="str"),
+    "genus": pd.Series(dtype="str"),
+    "species": pd.Series(dtype="str"),
+    "strain": pd.Series(dtype="str")
+    #"derived_from": pd.Series(dtype="str"),
+    #"preferred_taxonomy_name": pd.Series(dtype="str"),
+    #"other_taxonomy_name": pd.Series(dtype="str"),
+    #"genbank_protein": pd.Series(dtype="str"),
+    #"uniprot": pd.Series(dtype="str"),
+    #"target": pd.Series(dtype="str"),
+    #"hazard_group": pd.Series(dtype="str"),
     })
 
 # Precalculated and imported map of child
 # accessions to control list Accessions.
 ACCESSION_MAP = pd.DataFrame({
     "child_taxid": pd.Series(dtype="str"),
-    "controlled_taxid": pd.Series(dtype="str")
+    "controlled_taxid": pd.Series(dtype="str"),
+    "child_name": pd.Series(dtype="str"),
     })
 
 # Precalculated and imported set of accessions
@@ -156,21 +161,16 @@ def clear(target : str | None = None) -> bool:
     })
         IGNORED_ACCESSION = pd.DataFrame({
     "child_taxid": pd.Series(dtype="str"),
+    "ignored_taxid": pd.Series(dtype="str"),
     "ignored_taxid": pd.Series(dtype="str")
     })
         CONTROL_LIST_ANNOTATIONS = pd.DataFrame({
-    "category": pd.Series(dtype="str"),
-    "name": pd.Series(dtype="str"),
-    "notes": pd.Series(dtype="str"),
-    "derived_from": pd.Series(dtype="str"),
-    "preferred_taxonomy_name": pd.Series(dtype="str"),
-    "other_taxonomy_name": pd.Series(dtype="str"),
-    "tax_id": pd.Series(dtype="str"),
-    "genbank_protein": pd.Series(dtype="str"),
-    "uniprot": pd.Series(dtype="str"),
     "list_acronym": pd.Series(dtype="str"),
-    "target": pd.Series(dtype="str"),
-    "hazard_group": pd.Series(dtype="str"),
+    "list_item": pd.Series(dtype="str"),
+    "tax_id": pd.Series(dtype="str"),
+    "display_name": pd.Series(dtype="str"),
+    "category": pd.Series(dtype="str"),
+    "notes": pd.Series(dtype="str"),
     "lineage": pd.Series(dtype="str")
     })
         return True

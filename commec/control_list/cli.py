@@ -132,12 +132,15 @@ def generate_output_summary_csv(output_filepath : str | os.PathLike):
     """
 
     output_data = data.CONTROL_LIST_ANNOTATIONS.copy(deep = True)
-    output_data["name"] = (
-        output_data["preferred_taxonomy_name"].replace("", pd.NA)
-        .combine_first(output_data["name"])
-        .combine_first(output_data["other_taxonomy_name"].replace("", pd.NA))
-    )
-    output_data.drop(columns = ["preferred_taxonomy_name"], inplace=True)
+    
+    # Currently removed as display_name, and list_item are new ways of working...
+    #output_data["name"] = (
+    #    output_data["preferred_taxonomy_name"].replace("", pd.NA)
+    #    .combine_first(output_data["display_name"])
+    #    .combine_first(output_data["other_taxonomy_name"].replace("", pd.NA))
+    #)
+    # output_data.drop(columns = ["preferred_taxonomy_name"], inplace=True)
+    
     # Step 1: create dummy columns for list_acronym
     dummies = pd.get_dummies(output_data["list_acronym"], dtype = int)
 

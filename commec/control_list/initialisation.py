@@ -168,13 +168,17 @@ def _import_control_list_info(input_path : str | os.PathLike):
                          input_path, e)
             return
 
+        # Optional.
+        name_translated = row.get("list_name_translated", "").strip()
+
         new_list = ControlList(
-            row["list_name"].strip(),
-            row["list_acronym"].strip(),
-            row["list_url"].strip(),
-            new_region,
-            ListMode.COMPLIANCE,
-            listuseacronym
+            name = row["list_name"].strip(),
+            name_translated = name_translated,
+            acronym = row["list_acronym"].strip(),
+            url = row["list_url"].strip(),
+            region = new_region,
+            status = ListMode.COMPLIANCE,
+            use = listuseacronym
             )
 
         if ld.add_control_list(new_list):
@@ -227,7 +231,7 @@ def _import_control_list_annotations(input_path : str | os.PathLike):
     dropped = taxid_info[~mask]
     if not dropped.empty:
         logger.warning("The following list acronyms were not valid from %s", input_path)
-        logger.warning(dropped[["name","tax_id", "list_acronym"]].to_string())
+        logger.warning(dropped[["display_name","tax_id", "list_acronym"]].to_string())
 
     # Append the new list data:
     ld.add_control_list_annotations(valid_list_taxid_info)
@@ -287,15 +291,15 @@ def tidy_control_list_data():
     # Report errors for bad entries
     bad_entries = ld.CONTROL_LIST_ANNOTATIONS[
         ld.CONTROL_LIST_ANNOTATIONS["accession"] == Accession(None)]
-    bad_entries.loc[bad_entries["name"].str.len() >= 57, "name"] = (
-        bad_entries["name"].str[:57].str.strip() + "..."
+    bad_entries.loc[bad_entries["display_name"].str.len() >= 57, "display_name"] = (
+        bad_entries["display_name"].str[:57].str.strip() + "..."
     )
     if not bad_entries.empty:
         logger.error("%i imported control list annotations"
                        " were bad entries with no TaxID Accession:\n%s"
                        "\n Run in --verbose mode for raw row input details.",
                        len(bad_entries.index),
-                       bad_entries[["name","category","list_acronym"]].to_string(index = False))
+                       bad_entries[["display_name","category","list_acronym"]].to_string(index = False))
 
     # Drop duplicates before indexing, using strict and non-strict strategy.
     bad_duplicates = ld.CONTROL_LIST_ANNOTATIONS.drop_duplicates()
@@ -322,7 +326,7 @@ def tidy_control_list_data():
     if not diff.empty:
         logger.debug("The following imported control list annotations"
                        " were duplicates with differing metadata:\n%s",
-                       diff[["accession","name","category","list_acronym"]].to_string(index = False))
+                       diff[["accession","display_name","category","list_acronym"]].to_string(index = False))
 
     logger.debug("Loaded the following control list dataset: Top 20:\n%s",
                  ld.CONTROL_LIST_ANNOTATIONS.head(20).to_string())

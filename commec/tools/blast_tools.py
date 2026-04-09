@@ -131,6 +131,7 @@ def get_controlled_labels(
     logger.debug("Checking %s unique taxids", len(unique_taxids))
     # Build a mapping {taxid: truthiness}
     taxid_to_regulated = {taxid: is_regulated(taxid) for taxid in unique_taxids}
+    # taxid_to_regulated = are_regulated_test(unique_taxids) # This is a potential performance improvement to test.
     # Map back to the dataframe
     blast["regulated"] = blast[taxids_column_name].map(taxid_to_regulated)
     # filter out synthetic taxids.
