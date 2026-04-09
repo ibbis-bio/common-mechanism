@@ -28,6 +28,8 @@ class SearchHandler(ABC):
     query, and an output file to be used for screening.
     """
 
+    MAX_THREADS: int | None = None
+
     def __init__(
         self,
         database_file: str | os.PathLike,
@@ -62,7 +64,7 @@ class SearchHandler(ABC):
         self.db_file = os.path.abspath(os.path.expanduser(database_file))
         self.input_file = os.path.abspath(os.path.expanduser(input_file))
         self.out_file = os.path.abspath(os.path.expanduser(out_file))
-        self.threads = kwargs.get('threads', 1)
+        self.threads = self._apply_thread_cap(kwargs.get('threads', 1))
         self.force = kwargs.get('force', False)
         self.arguments_dictionary = {}
         self.successful = True
@@ -146,6 +148,20 @@ class SearchHandler(ABC):
                 f"Provided database file not found: {self.db_file}."
                 " File location can be set via --databases option or --config yaml."
             )
+
+    def _apply_thread_cap(self, threads: int) -> int:
+        """
+        If MAX_THREADS is set and the given threads exceeds it, warn and return the capped value.
+        """
+        if self.MAX_THREADS is not None and threads > self.MAX_THREADS:
+            logger.warning(
+                "%s: requested %d threads; capping at %d for optimal performance.",
+                self.__class__.__name__,
+                threads,
+                self.MAX_THREADS,
+            )
+            return self.MAX_THREADS
+        return threads
 
     def has_empty_output(self) -> bool:
         """Check if the output file is empty or non-existent."""

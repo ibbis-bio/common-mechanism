@@ -18,6 +18,8 @@ from commec.utils.coordinates import convert_protein_to_nucleotide_coords
 class HmmerHandler(SearchHandler):
     """A Database handler specifically for use with Hmmer files for commec screening."""
 
+    MAX_THREADS = 4
+
     def _search(self):
         command = [
             "hmmscan",

@@ -15,6 +15,8 @@ from commec.tools.search_handler import SearchHandler, SearchToolVersion
 class CmscanHandler(SearchHandler):
     """A Database handler specifically for use with Hmmer files for commec screening."""
 
+    MAX_THREADS = 4
+
     def _search(self):
         command = [
             "cmscan",
