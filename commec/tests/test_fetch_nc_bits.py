@@ -19,36 +19,53 @@ from commec.tools.blastx import BlastXHandler
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs")
 
 @pytest.mark.parametrize(
-    "hits, nc_ranges",
+    "hits, query_length, nc_ranges",
     [
         # Two protein hits, no noncoding regions > 50bp
-        ([(1, 50), (100, 150), (175, 299)], []),
+        ([(1, 50), (100, 150), (175, 299)], 300, []),
         # One protein hit, < 50bp nocoding regions on the ends
-        ([(50, 251)], []),
+        ([(50, 251)], 300, []),
         # One protein hit, > 50bp nocoding regions on the ends
-        ([(51, 250)], [(1, 50), (251, 300)]),
+        ([(51, 250)], 300, [(1, 50), (251, 300)]),
         # Three protein hits, one noncoding region >50bp
         (
             [(1, 40), (140, 265), (300, 349)],
+            300,
             [(41, 139)],
         ),
+        # Regression: reported by Synplogen. When a lower-identity hit
+        # encompasses a higher-identity one, the coding region is the union of
+        # both hits, so for hits [(400, 600), (200, 800)] on a 1000 bp query the
+        # only non-coding regions are [1, 199] and [801, 1000].
+        # Previously _get_ranges_with_no_hits walked hits pairwise in
+        # sorted-by-start order and used hit_ranges[-1][1] (= 600, the end of
+        # [400, 600]) as the rightmost covered base, incorrectly returning
+        # [(1, 199), (601, 1000)] and re-screening [601, 800] at the nucleotide
+        # level even though it is covered by the [200, 800] protein hit.
+        ([(400, 600), (200, 800)], 1000, [(1, 199), (801, 1000)]),
+        # Fully nested: inner hit is entirely inside the outer one.
+        ([(100, 200), (120, 180)], 300, [(1, 99), (201, 300)]),
+        # Partial overlap on the right.
+        ([(100, 250), (200, 400)], 500, [(1, 99), (401, 500)]),
+        # Adjacent hits (no gap between them) should be treated as one coding block.
+        ([(60, 150), (151, 240)], 300, [(1, 59), (241, 300)]),
     ],
 )
-def test_get_ranges_with_no_hits(hits, nc_ranges):
+def test_get_ranges_with_no_hits(hits, query_length, nc_ranges):
     """
     Test the BLAST hits are successfully converted into noncoding ranges.
     """
 
-    def _create_mock_blast_df_from(hits):
+    def _create_mock_blast_df_from(hits, query_length):
         data = {
             "q. start": [hit[0] for hit in hits],
             "q. end": [hit[1] for hit in hits],
-            "query length": [300] * len(hits),
+            "query length": [query_length] * len(hits),
         }
         df = pd.DataFrame(data)
         return df.reset_index(drop=True)  # This adds a numeric index
 
-    blast_df = _create_mock_blast_df_from(hits)
+    blast_df = _create_mock_blast_df_from(hits, query_length)
     assert _get_ranges_with_no_hits(blast_df) == nc_ranges
 
 
