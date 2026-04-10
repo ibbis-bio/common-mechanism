@@ -42,11 +42,11 @@ def clean_state():
 def _setup_lists_with_annotations():
     """Populate module state with two lists and a few annotations."""
     ld.add_control_list(ControlList(
-        "Export Controls", "EC", "http://ec.gov",
+        "Export Controls", "Moderationes Exportationis", "EC", "http://ec.gov",
         Region("New Zealand", "NZ"),
         ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list(ControlList(
-        "Pathogen List", "PL", "http://pl.gov",
+        "Pathogen List", "Charta Pathogenorum", "PL", "http://pl.gov",
         Region("Australia", "AU"),
         ListMode.CONDITIONAL_NUM, "PATHGN"))
     ld.add_control_list_annotations(pd.DataFrame([

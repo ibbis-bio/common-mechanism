@@ -160,7 +160,7 @@ class TestControlList:
 
     def _make(self, **overrides):
         defaults = dict(
-            name="SCOMET", acronym="SCM", url="http://example.com",
+            name="The List", name_translated="Listus", acronym="SCM", url="http://example.com",
             region=Region("European Union", "EU"),
             status=ListMode.COMPLIANCE, use=ListUseAcronym.EXPORTCONTROLS,
         )
@@ -172,7 +172,7 @@ class TestControlList:
 
     def test_description_contains_key_fields(self):
         desc = self._make().description()
-        assert "SCOMET" in desc
+        assert "The List" in desc
         assert "European Union" in desc
         assert "http://example.com" in desc
         assert "EU_SCM_EXPORT" in desc

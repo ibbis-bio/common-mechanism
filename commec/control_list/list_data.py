@@ -53,6 +53,52 @@ IGNORED_ACCESSION = pd.DataFrame({
     "ignored_taxid": pd.Series(dtype="str")
     })
 
+def clear(target : str | None = None) -> bool:
+    """
+    Removes the targeted list from the module state, or
+    if no target is provided, clears the entired module state.
+    returns whether operation was successful.
+    """
+    global CONTROL_LISTS
+    global CONTROL_LIST_ANNOTATIONS
+    global ACCESSION_MAP
+    global IGNORED_ACCESSION
+
+    if target and target in CONTROL_LISTS:
+        # implement targetted removal logic.
+        del CONTROL_LISTS[target]
+        CONTROL_LIST_ANNOTATIONS = CONTROL_LIST_ANNOTATIONS[
+            CONTROL_LIST_ANNOTATIONS["list_acronym"] != target]
+        # Consider updating the REG_TAXID_LISTS too.
+        return True
+
+    if not target:
+        CONTROL_LISTS = {}
+        ACCESSION_MAP = pd.DataFrame({
+    "child_taxid": pd.Series(dtype="str"),
+    "controlled_taxid": pd.Series(dtype="str"),
+    "child_name": pd.Series(dtype="str")
+    })
+        IGNORED_ACCESSION = pd.DataFrame({
+    "child_taxid": pd.Series(dtype="str"),
+    "ignored_taxid": pd.Series(dtype="str")
+    })
+        CONTROL_LIST_ANNOTATIONS = pd.DataFrame({
+    "list_acronym": pd.Series(dtype="str"),
+    "list_item": pd.Series(dtype="str"),
+    "tax_id": pd.Series(dtype="str"),
+    "display_name": pd.Series(dtype="str"),
+    "category": pd.Series(dtype="str"),
+    "notes": pd.Series(dtype="str"),
+    "kingdom": pd.Series(dtype="str"),
+    "genus": pd.Series(dtype="str"),
+    "species": pd.Series(dtype="str"),
+    "strain": pd.Series(dtype="str")
+    })
+        return True
+
+    return False
+
 def add_control_list(new_list : ControlList) -> bool:
     """
     Wrapper for safely adding a Control List to this modules global data.
@@ -134,46 +180,4 @@ def add_ignored_accession_data(input_data: pd.DataFrame):
         [IGNORED_ACCESSION, input_data], ignore_index=True
         ).drop_duplicates().reset_index(drop=True)
 
-def clear(target : str | None = None) -> bool:
-    """
-    Removes the targeted list from the module state, or
-    if no target is provided, clears the entired module state.
-    returns whether operation was successful.
-    """
-    global CONTROL_LISTS
-    global CONTROL_LIST_ANNOTATIONS
-    global ACCESSION_MAP
-    global IGNORED_ACCESSION
-
-    if target and target in CONTROL_LISTS:
-        # implement targetted removal logic.
-        del CONTROL_LISTS[target]
-        CONTROL_LIST_ANNOTATIONS = CONTROL_LIST_ANNOTATIONS[
-            CONTROL_LIST_ANNOTATIONS["list_acronym"] != target]
-        # Consider updating the REG_TAXID_LISTS too.
-        return True
-
-    if not target:
-        CONTROL_LISTS = {}
-        ACCESSION_MAP = pd.DataFrame({
-    "child_taxid": pd.Series(dtype="str"),
-    "controlled_taxid": pd.Series(dtype="str")
-    })
-        IGNORED_ACCESSION = pd.DataFrame({
-    "child_taxid": pd.Series(dtype="str"),
-    "ignored_taxid": pd.Series(dtype="str"),
-    "ignored_taxid": pd.Series(dtype="str")
-    })
-        CONTROL_LIST_ANNOTATIONS = pd.DataFrame({
-    "list_acronym": pd.Series(dtype="str"),
-    "list_item": pd.Series(dtype="str"),
-    "tax_id": pd.Series(dtype="str"),
-    "display_name": pd.Series(dtype="str"),
-    "category": pd.Series(dtype="str"),
-    "notes": pd.Series(dtype="str"),
-    "lineage": pd.Series(dtype="str")
-    })
-        return True
-
-    return False
 

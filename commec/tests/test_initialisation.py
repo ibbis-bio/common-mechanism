@@ -183,7 +183,7 @@ def test_import_annotations_invalid_acronym_filtered(tmp_path):
 
 def test_update_regional_context_matching_region():
     ld.add_control_list(ControlList(
-        "L1", "L1", "url", Region("New Zealand", "NZ"),
+        "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"),
         ListMode.CONDITIONAL_NUM, "EXPORT"))
     update_regional_context({"NZ"})
     assert ld.CONTROL_LISTS["L1"].status == ListMode.COMPLIANCE
@@ -191,7 +191,7 @@ def test_update_regional_context_matching_region():
 
 def test_update_regional_context_non_matching():
     ld.add_control_list(ControlList(
-        "L1", "L1", "url", Region("New Zealand", "NZ"),
+        "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"),
         ListMode.COMPLIANCE, "EXPORT"))
     update_regional_context({"AU"})
     assert ld.CONTROL_LISTS["L1"].status == ListMode.CONDITIONAL_NUM
@@ -200,10 +200,10 @@ def test_update_regional_context_non_matching():
 def test_update_regional_context_all_keyword():
     """The 'all' sentinel should force every list to COMPLIANCE."""
     ld.add_control_list(ControlList(
-        "L1", "L1", "url1", Region("New Zealand", "NZ"),
+        "L1", "Lista Prima", "L1", "url1", Region("New Zealand", "NZ"),
         ListMode.CONDITIONAL_NUM, "EXPORT"))
     ld.add_control_list(ControlList(
-        "L2", "L2", "url2", Region("Australia", "AU"),
+        "L2", "Lista Secunda", "L2", "url2", Region("Australia", "AU"),
         ListMode.CONDITIONAL_NUM, "EXPORT"))
     update_regional_context({"all"})
     assert ld.CONTROL_LISTS["L1"].status == ListMode.COMPLIANCE
@@ -213,7 +213,7 @@ def test_update_regional_context_all_keyword():
 def test_update_regional_context_none_defaults_to_all():
     """Passing None should behave like 'all' (no restriction)."""
     ld.add_control_list(ControlList(
-        "L1", "L1", "url", Region("New Zealand", "NZ"),
+        "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"),
         ListMode.CONDITIONAL_NUM, "EXPORT"))
     update_regional_context(None)
     assert ld.CONTROL_LISTS["L1"].status == ListMode.COMPLIANCE
@@ -221,7 +221,7 @@ def test_update_regional_context_none_defaults_to_all():
 
 def test_update_regional_context_custom_alternative_mode():
     ld.add_control_list(ControlList(
-        "L1", "L1", "url", Region("New Zealand", "NZ"),
+        "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"),
         ListMode.COMPLIANCE, "EXPORT"))
     update_regional_context({"AU"}, alternative_mode=ListMode.IGNORE)
     assert ld.CONTROL_LISTS["L1"].status == ListMode.IGNORE
@@ -233,7 +233,7 @@ def test_update_regional_context_custom_alternative_mode():
 
 def test_tidy_creates_accession_index():
     ld.add_control_list(ControlList(
-        "L1", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
+        "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(pd.DataFrame([{
         "list_acronym": "L1", "tax_id": "12345",
         "name": "Virus", "category": "Viruses", "lineage": "",
@@ -245,7 +245,7 @@ def test_tidy_creates_accession_index():
 def test_tidy_removes_invalid_accessions():
     """Entries with empty tax_id should be dropped during tidying."""
     ld.add_control_list(ControlList(
-        "L1", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
+        "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(pd.DataFrame([
         {"list_acronym": "L1", "tax_id": "12345",
          "name": "Valid", "category": "Viruses"},
@@ -261,7 +261,7 @@ def test_tidy_removes_invalid_accessions():
 def test_tidy_deduplicates_by_list_and_accession():
     """Exact duplicates on (list_acronym, accession) should be collapsed."""
     ld.add_control_list(ControlList(
-        "L1", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
+        "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(pd.DataFrame([
         {"list_acronym": "L1", "tax_id": "100",
          "name": "Same", "category": "Viruses"},
@@ -274,7 +274,7 @@ def test_tidy_deduplicates_by_list_and_accession():
 
 def test_tidy_invalid_category_defaults_to_none():
     ld.add_control_list(ControlList(
-        "L1", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
+        "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(pd.DataFrame([{
         "list_acronym": "L1", "tax_id": "100",
         "name": "Test", "category": "InvalidCategory",
@@ -285,7 +285,7 @@ def test_tidy_invalid_category_defaults_to_none():
 
 def test_tidy_valid_category_preserved():
     ld.add_control_list(ControlList(
-        "L1", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
+        "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(pd.DataFrame([{
         "list_acronym": "L1", "tax_id": "100",
         "name": "Test", "category": "Bacteria",

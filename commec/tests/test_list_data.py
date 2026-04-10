@@ -25,7 +25,7 @@ def clean_state():
 # ---------------------------------------------------------------------------
 
 def test_add_control_list_success():
-    cl = ControlList("TestList", "TL", "http://example.com",
+    cl = ControlList("TestList", "Lista Testis", "TL", "http://example.com",
                      Region("NZ", "NZ"), ListMode.COMPLIANCE, "EXPORT")
     assert ld.add_control_list(cl) is True
     assert "TL" in ld.CONTROL_LISTS
@@ -34,7 +34,7 @@ def test_add_control_list_success():
 
 def test_add_control_list_idempotent():
     """Adding the exact same list twice succeeds (returns True both times)."""
-    cl = ControlList("TestList", "TL", "http://example.com",
+    cl = ControlList("TestList", "Lista Testis", "TL", "http://example.com",
                      Region("NZ", "NZ"), ListMode.COMPLIANCE, "EXPORT")
     assert ld.add_control_list(cl) is True
     assert ld.add_control_list(cl) is True
@@ -42,9 +42,9 @@ def test_add_control_list_idempotent():
 
 def test_add_control_list_collision():
     """Different lists sharing an acronym should collide (return False)."""
-    cl1 = ControlList("ListA", "TL", "http://a.com",
+    cl1 = ControlList("ListA", "Lista Prima", "TL", "http://a.com",
                       Region("NZ", "NZ"), ListMode.COMPLIANCE, "EXPORT")
-    cl2 = ControlList("ListB", "TL", "http://b.com",
+    cl2 = ControlList("ListB", "Lista Secunda", "TL", "http://b.com",
                       Region("AU", "AU"), ListMode.COMPLIANCE, "EXPORT")
     assert ld.add_control_list(cl1) is True
     assert ld.add_control_list(cl2) is False
@@ -195,7 +195,7 @@ def test_add_ignored_accession_data_deduplication():
 def test_clear_all():
     """clear() with no argument should reset every piece of module state."""
     ld.add_control_list(
-        ControlList("L1", "L1", "url", Region("NZ", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
+        ControlList("L1", "Lista Prima", "L1", "url", Region("NZ", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(
         pd.DataFrame([{"list_acronym": "L1", "tax_id": "100"}]))
     ld.add_child_lut_data(
@@ -213,9 +213,9 @@ def test_clear_all():
 def test_clear_specific_list():
     """Clearing a specific list by acronym removes only that list and its annotations."""
     ld.add_control_list(
-        ControlList("List1", "L1", "url1", Region("NZ", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
+        ControlList("List1", "Lista Prima", "L1", "url1", Region("NZ", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list(
-        ControlList("List2", "L2", "url2", Region("AU", "AU"), ListMode.COMPLIANCE, "EXPORT"))
+        ControlList("List2", "Lista Secunda", "L2", "url2", Region("AU", "AU"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(pd.DataFrame([
         {"list_acronym": "L1", "tax_id": "100"},
         {"list_acronym": "L2", "tax_id": "200"},

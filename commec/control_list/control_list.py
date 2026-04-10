@@ -194,7 +194,7 @@ def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[Contr
         is_child = (accession_hash != hash_taxid)
         child_name = ""
         if is_child: # We want the childs name in this instance.
-            child_name = __data.ACCESSION_MAP.get(accession_hash.code)["child_name"]
+            child_name = __data.ACCESSION_MAP[__data.ACCESSION_MAP["child_taxid"] == str(accession_hash)]["child_name"].iloc[0]
 
         output_context.append(ControlListContext(derived_text,
                                                  is_child,

@@ -156,6 +156,7 @@ class ScreenTesterFactory:
 
         if regulated:
             ld.add_control_list(ControlList("default_test_list",
+                                            "Index experimentorum communium",
                                             "DTL","www.nourl.com",
                                             Region("New Zealand","NZ"),
                                             ListMode.COMPLIANCE,
@@ -166,6 +167,9 @@ class ScreenTesterFactory:
                     "tax_id": taxid,
                     "list_acronym": "DTL",
                     "category" : superkingdom,
+                    "species" : species,
+                    "genus" : genus,
+                    "superkingdom" : superkingdom,
                 },
             ]))
 

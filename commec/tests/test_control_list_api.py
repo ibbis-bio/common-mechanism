@@ -74,12 +74,13 @@ _DEFAULT_LIST = {
         "use": "EXPORT",
     }],
     "taxids": [{
-        "tax_id": "100", "list_acronym": "TL", "name": "TestOrg",
+        "tax_id": "100", "list_acronym": "TL", "display_name": "TestOrg",
         "category": "Viruses",
-        "lineage": "root;kingdom;phylum;class;order;family;MyGenus;MySpecies",
+        "genus": "MyGenus",
+        "species": "MySpecies",
     }],
     "children": [
-        {"child_taxid": "200", "controlled_taxid": "100"},
+        {"child_taxid": "200", "controlled_taxid": "100", "child_name":"A Child"},
     ],
 }
 
@@ -87,15 +88,19 @@ _DEFAULT_LIST = {
 def _setup_regulated_state():
     """Populate module state directly (no filesystem) for unit-level query tests."""
     ld.add_control_list(ControlList(
-        "L1", "L1", "url", Region("NZ", "NZ"),
+        "L1", "Lista Prima", "L1", "url", Region("NZ", "NZ"),
         ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(pd.DataFrame([{
-        "list_acronym": "L1", "tax_id": "11320", "name": "Flu A",
+        "list_acronym": "L1",
+        "list_item": "A.1: Flu A",
+        "tax_id": "11320",
+        "display_name": "Flu A",
         "category": "Viruses",
-        "lineage": "a;b;c;d;e;f;FluGenus;FluSpecies",
+        "species": "FluSpecies",
+        "genus": "FluGenus",
     }]))
     ld.add_child_lut_data(pd.DataFrame([
-        {"child_taxid": "99999", "controlled_taxid": "11320"},
+        {"child_taxid": "99999", "controlled_taxid": "11320", "child_name":"Flu A Variant X"},
     ]))
     tidy_control_list_data()
 
@@ -133,11 +138,11 @@ def test_import_data_nested_directories(tmp_path):
         "region_name": "NZ", "region_code": "NZ", "use": "EXPORT",
     }]).to_csv(str(nested / "list_info.csv"), index=False)
     pd.DataFrame([{
-        "tax_id": "100", "list_acronym": "TL", "name": "Org",
-        "category": "Viruses", "lineage": "",
+        "tax_id": "100", "list_acronym": "TL", "display_name": "Org",
+        "category": "Viruses", "species": "MySpecies","genus": "MyGenus",
     }]).to_csv(str(nested / "controlled_taxids.csv"), index=False)
     pd.DataFrame([{
-        "child_taxid": "1", "controlled_taxid": "100",
+        "child_taxid": "1", "controlled_taxid": "100", "child_name" : "Org-like Borg Virus"
     }]).to_csv(str(nested / "children_of_controlled_taxids.csv"), index=False)
 
     assert import_data(str(tmp_path)) is True
@@ -206,56 +211,23 @@ def test_get_regulation_no_hit():
 def test_get_regulation_multiple_lists():
     """A TaxID on two lists should produce two output entries."""
     ld.add_control_list(ControlList(
-        "L1", "L1", "url1", Region("NZ", "NZ"),
+        "L1", "Lista Prima", "L1", "url1", Region("NZ", "NZ"),
         ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list(ControlList(
-        "L2", "L2", "url2", Region("AU", "AU"),
+        "L2", "Lista Secunda", "L2", "url2", Region("AU", "AU"),
         ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(pd.DataFrame([
-        {"list_acronym": "L1", "tax_id": "100",
-         "name": "Org", "category": "Viruses", "lineage": ""},
-        {"list_acronym": "L2", "tax_id": "100",
-         "name": "Org", "category": "Viruses", "lineage": ""},
+        {"list_acronym": "L1","list_item": "A.1. Org Virus", "tax_id": "100",
+         "display_name": "Org", "category": "Viruses", "species": "MySpecies","genus": "MyGenus"},
+        {"list_acronym": "L2","list_item": "C.5. Org Virus", "tax_id": "100",
+         "display_name": "Org", "category": "Viruses", "species": "MySpecies","genus": "MyGenus"},
     ]))
+
     tidy_control_list_data()
 
     outputs, _ = get_regulation("100")
     assert len(outputs) == 2
     assert {o.list for o in outputs} == {"L1", "L2"}
-
-
-def test_get_regulation_lineage_parsing():
-    """Genus (index 6) and species (index 7) should be extracted from lineage."""
-    ld.add_control_list(ControlList(
-        "L1", "L1", "url", Region("NZ", "NZ"),
-        ListMode.COMPLIANCE, "EXPORT"))
-    ld.add_control_list_annotations(pd.DataFrame([{
-        "list_acronym": "L1", "tax_id": "100", "name": "Test",
-        "category": "Viruses",
-        "lineage": "root;kingdom;phylum;class;order;family;MyGenus;MySpecies",
-    }]))
-    tidy_control_list_data()
-
-    outputs, _ = get_regulation("100")
-    assert len(outputs) == 1
-    assert outputs[0].genus == "MyGenus"
-    assert outputs[0].species == "MySpecies"
-
-
-def test_get_regulation_short_lineage():
-    """A lineage with fewer than 7 elements should leave genus/species empty."""
-    ld.add_control_list(ControlList(
-        "L1", "L1", "url", Region("NZ", "NZ"),
-        ListMode.COMPLIANCE, "EXPORT"))
-    ld.add_control_list_annotations(pd.DataFrame([{
-        "list_acronym": "L1", "tax_id": "100", "name": "Test",
-        "category": "Viruses", "lineage": "a;b;c",
-    }]))
-    tidy_control_list_data()
-
-    outputs, _ = get_regulation("100")
-    assert outputs[0].genus == ""
-    assert outputs[0].species == ""
 
 
 # ---------------------------------------------------------------------------
@@ -264,16 +236,16 @@ def test_get_regulation_short_lineage():
 
 def test_get_control_lists_all():
     ld.add_control_list(ControlList(
-        "L1", "L1", "u1", Region("NZ", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
+        "L1", "Lista Prima", "L1", "u1", Region("NZ", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list(ControlList(
-        "L2", "L2", "u2", Region("AU", "AU"), ListMode.COMPLIANCE, "EXPORT"))
+        "L2", "Lista Secunda", "L2", "u2", Region("AU", "AU"), ListMode.COMPLIANCE, "EXPORT"))
     result = get_control_lists()
     assert isinstance(result, list)
     assert len(result) == 2
 
 
 def test_get_control_lists_specific():
-    cl = ControlList("L1", "L1", "url", Region("NZ", "NZ"),
+    cl = ControlList("L1", "Lista Prima", "L1", "url", Region("NZ", "NZ"),
                      ListMode.COMPLIANCE, "EXPORT")
     ld.add_control_list(cl)
     result = get_control_lists("L1")
