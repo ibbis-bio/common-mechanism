@@ -23,6 +23,13 @@ class BlastNHandler(BlastHandler):
         super().__init__(database_file, input_file, out_file, **kwargs)
         # We fill this with defaults, however they can always be overridden before screening.
         self.arguments_dictionary = {
+            "-task": "dc-megablast",
+            "-template_type": "optimal",
+            "-template_length": 16,
+            "-num_threads": self.threads,
+            "-evalue": 1e-5,
+            "-max_target_seqs": 50,
+            "-culling_limit": 1,
             "-outfmt": [
                 "7",
                 "qacc",
@@ -39,10 +46,6 @@ class BlastNHandler(BlastHandler):
                 "sstart",
                 "send",
             ],
-            "-num_threads": self.threads,
-            "-evalue": 10,
-            "-max_target_seqs": 50,
-            "-culling_limit": 5,
         }
         self.blastcall = "blastn"
 
