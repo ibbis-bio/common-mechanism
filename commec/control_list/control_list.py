@@ -185,10 +185,10 @@ def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[Contr
     # For each annotation, process its output, and context
     for hash_taxid, row in filtered_regulated_taxid_annotations.iterrows():      
         output_data.append(ControlListOutput(row["display_name"],
-                                            row["category"],
-                                            row["list_acronym"],
-                                            row["species"],
-                                            row["genus"]))
+                                             row["category"],
+                                             row["list_acronym"],
+                                             row["species"],
+                                             row["genus"]))
 
         derived_text = str(row["list_item"])
         is_child = (accession_hash != hash_taxid)

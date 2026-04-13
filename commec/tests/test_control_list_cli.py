@@ -50,12 +50,12 @@ def _setup_lists_with_annotations():
         Region("Australia", "AU"),
         ListMode.CONDITIONAL_NUM, "PATHGN"))
     ld.add_control_list_annotations(pd.DataFrame([
-        {"list_acronym": "EC", "tax_id": "100", "name": "Virus A",
-         "category": "Viruses", "lineage": ""},
-        {"list_acronym": "EC", "tax_id": "200", "name": "Virus B",
-         "category": "Viruses", "lineage": ""},
-        {"list_acronym": "PL", "tax_id": "300", "name": "Bacterium X",
-         "category": "Bacteria", "lineage": ""},
+        {"list_acronym": "EC", "list_item": "A.1. Virus A", "tax_id": "100", "display_name": "Virus A",
+         "category": "Viruses", "species" : "Aicus Virus", "genus" : "BadVirusGenus"},
+        {"list_acronym": "EC", "list_item": "A.2. Virus B", "tax_id": "200", "display_name": "Virus B",
+         "category": "Viruses", "species" : "Bicus Virus", "genus" : "BadVirusGenus"},
+        {"list_acronym": "PL", "list_item": "G.10. Bacterium X", "tax_id": "300", "display_name": "Bacterium X",
+         "category": "Bacteria", "species" : "Baccilus Xanthomouse", "genus" : "BadBacteriaGenus"},
     ]))
     tidy_control_list_data()
 
@@ -72,11 +72,11 @@ def _build_minimal_db(base_path):
         "region_name": "NZ", "region_code": "NZ", "use": "EXPORT",
     }]).to_csv(os.path.join(list_dir, "list_info.csv"), index=False)
     pd.DataFrame([{
-        "tax_id": "100", "list_acronym": "TL", "name": "Org",
-        "category": "Viruses", "lineage": "",
+        "tax_id": "100", "list_acronym": "TL", "display_name": "Org",
+        "category": "Viruses", "species" : "Orgonovirus Organa", "genus" : "Orthoorgonovirae",
     }]).to_csv(os.path.join(list_dir, "controlled_taxids.csv"), index=False)
     pd.DataFrame([{
-        "child_taxid": "1", "controlled_taxid": "100",
+        "child_taxid": "1", "controlled_taxid": "100", "child_name" : "Orgonovirus Sisterina"
     }]).to_csv(os.path.join(list_dir, "children_of_controlled_taxids.csv"), index=False)
 
 

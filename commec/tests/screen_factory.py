@@ -163,13 +163,13 @@ class ScreenTesterFactory:
                                             "EXPORT"))
             ld.add_control_list_annotations(pd.DataFrame([
                 {
-                    "name": title,
+                    "display_name": title,
                     "tax_id": taxid,
                     "list_acronym": "DTL",
                     "category" : superkingdom,
                     "species" : species,
                     "genus" : genus,
-                    "superkingdom" : superkingdom,
+                    "kingdom" : superkingdom,
                 },
             ]))
 

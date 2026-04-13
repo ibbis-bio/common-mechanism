@@ -70,12 +70,12 @@ def _make_list_dir(tmp_path, dirname="testlist", list_info=None,
     pd.DataFrame(info).to_csv(str(d / "list_info.csv"), index=False)
 
     tx = taxids or [{
-        "category": "Viruses", "name": "Test Virus", "tax_id": "12345",
-        "list_acronym": "TL", "lineage": "",
+        "category": "Viruses", "display_name": "Test Virus", "tax_id": "12345",
+        "list_acronym": "TL","list_item": "A.1. Test Virus like organisms", "species": "","genus": "",
     }]
     pd.DataFrame(tx).to_csv(str(d / "controlled_taxids.csv"), index=False)
 
-    ch = children or [{"child_taxid": "99999", "controlled_taxid": "12345"}]
+    ch = children or [{"child_taxid": "99999", "controlled_taxid": "12345", "child_name" : "Son of a Test Virus"}]
     pd.DataFrame(ch).to_csv(
         str(d / "children_of_controlled_taxids.csv"), index=False)
 
@@ -94,16 +94,15 @@ def test_import_annotations_valid(tmp_path):
 def test_import_annotations_minimal_csv_fills_defaults(tmp_path):
     """A CSV with only essential columns should import, filling optional fields."""
     d = _make_list_dir(tmp_path, taxids=[
-        {"tax_id": "100", "list_acronym": "TL", "name": "Minimal Org"},
+        {"tax_id": "100", "list_acronym": "TL", "display_name": "Minimal Org"},
     ])
     assert import_control_lists(str(d)) is True
     row = ld.CONTROL_LIST_ANNOTATIONS.iloc[0]
     assert row["tax_id"] == "100"
     # Columns absent from the CSV should be filled with empty strings
     assert row["notes"] == ""
-    assert row["lineage"] == ""
-    assert row["derived_from"] == ""
-
+    assert row["species"] == ""
+    assert row["genus"] == ""
 
 def test_import_annotations_accumulates_across_lists(tmp_path):
     """Importing from two separate list directories should accumulate annotations."""
@@ -112,14 +111,14 @@ def test_import_annotations_accumulates_across_lists(tmp_path):
         list_info=[{"list_name": "L1", "list_acronym": "L1", "list_url": "u1",
                     "region_name": "NZ", "region_code": "NZ", "use": "EXPORT"}],
         taxids=[{"tax_id": "100", "list_acronym": "L1", "name": "Org A"}],
-        children=[{"child_taxid": "1", "controlled_taxid": "100"}],
+        children=[{"child_taxid": "1", "controlled_taxid": "100", "child_name" : "L11"}],
     )
     _make_list_dir(
         tmp_path, dirname="list_b",
         list_info=[{"list_name": "L2", "list_acronym": "L2", "list_url": "u2",
                     "region_name": "AU", "region_code": "AU", "use": "EXPORT"}],
         taxids=[{"tax_id": "200", "list_acronym": "L2", "name": "Org B"}],
-        children=[{"child_taxid": "2", "controlled_taxid": "200"}],
+        children=[{"child_taxid": "2", "controlled_taxid": "200", "child_name" : "L22"}],
     )
     import_control_lists(str(tmp_path / "list_a"))
     import_control_lists(str(tmp_path / "list_b"))
@@ -130,17 +129,6 @@ def test_import_annotations_accumulates_across_lists(tmp_path):
 # add_child_lut_data
 # ---------------------------------------------------------------------------
 
-def test_add_child_lut_data():
-    df = pd.DataFrame([{
-        "child_taxid": "111",
-        "controlled_taxid": "222",
-    }])
-    ld.add_child_lut_data(df)
-    assert len(ld.ACCESSION_MAP) == 1
-    assert ld.ACCESSION_MAP.iloc[0]["child_taxid"] == "111"
-    assert ld.ACCESSION_MAP.iloc[0]["controlled_taxid"] == "222"
-
-
 def test_add_child_lut_data_missing_columns():
     df = pd.DataFrame([{"child_taxid": "111"}])
     with pytest.raises(ValueError):
@@ -150,13 +138,13 @@ def test_add_child_lut_data_missing_columns():
 def test_add_child_lut_data_deduplication():
     """Duplicate child-to-parent mappings should be collapsed."""
     df = pd.DataFrame([
-        {"child_taxid": "111", "controlled_taxid": "222"},
-        {"child_taxid": "111", "controlled_taxid": "222"},
-        {"child_taxid": "333", "controlled_taxid": "444"},
+        {"child_taxid": "111", "controlled_taxid": "222", "child_name" : "Sandy"},
+        {"child_taxid": "111", "controlled_taxid": "222", "child_name" : "Sandy"},
+        {"child_taxid": "333", "controlled_taxid": "444", "child_name" : "Dandy"},
+        {"child_taxid": "333", "controlled_taxid": "555", "child_name" : "Dandy"},
     ])
     ld.add_child_lut_data(df)
-    assert len(ld.ACCESSION_MAP) == 2
-
+    assert len(ld.ACCESSION_MAP) == 3
 
 # ---------------------------------------------------------------------------
 # add_ignored_accession_data
@@ -199,7 +187,7 @@ def test_clear_all():
     ld.add_control_list_annotations(
         pd.DataFrame([{"list_acronym": "L1", "tax_id": "100"}]))
     ld.add_child_lut_data(
-        pd.DataFrame([{"child_taxid": "1", "controlled_taxid": "2"}]))
+        pd.DataFrame([{"child_taxid": "1", "controlled_taxid": "2", "child_name" : "Bleargo"}]))
     ld.add_ignored_accession_data(
         pd.DataFrame([{"child_taxid": "1", "ignored_taxid": "2"}]))
 

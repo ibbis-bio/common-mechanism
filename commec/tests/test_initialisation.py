@@ -58,16 +58,17 @@ def _make_valid_list_dir(tmp_path, dirname="testlist", extra_lists=None,
     _write_csv(d, "list_info.csv", info)
 
     tx = taxids or [{
-        "category": "Viruses", "name": "Test Virus",
+        "category": "Viruses", "display_name": "Test Virus",
         "tax_id": "11320", "list_acronym": "TL",
-        "lineage": "a;b;c;d;e;f;TestGenus;TestSpecies",
+        "species": "TestSpecies",
+        "genus": "TestGenus",
     }]
     if extra_taxids:
         tx.extend(extra_taxids)
     _write_csv(d, "controlled_taxids.csv", tx)
 
     children = extra_children or [
-        {"child_taxid": "99999", "controlled_taxid": "11320"},
+        {"child_taxid": "99999", "controlled_taxid": "11320", "child_name" : "Test Viruses first born son"},
     ]
     _write_csv(d, "children_of_controlled_taxids.csv", children)
 
@@ -111,7 +112,7 @@ def test_import_control_lists_missing_children_csv(tmp_path):
         "region_name": "NZ", "region_code": "NZ", "use": "EXPORT",
     }])
     _write_csv(d, "controlled_taxids.csv", [
-        {"tax_id": "100", "list_acronym": "TL", "name": "Org"},
+        {"tax_id": "100", "list_acronym": "TL", "display_name": "Org"},
     ])
     # children_of_controlled_taxids.csv is missing
     assert import_control_lists(str(d)) is False
@@ -142,7 +143,7 @@ def test_import_control_lists_with_ignored_accessions(tmp_path):
 def test_import_annotations_comma_separated_taxids(tmp_path):
     """Comma-separated tax_id values should be exploded into separate rows."""
     d = _make_valid_list_dir(tmp_path, taxids=[
-        {"tax_id": "100,200,300", "list_acronym": "TL", "name": "Multi"},
+        {"tax_id": "100,200,300", "list_acronym": "TL", "display_name": "Multi"},
     ])
     assert import_control_lists(str(d)) is True
     assert len(ld.CONTROL_LIST_ANNOTATIONS) == 3
@@ -159,7 +160,7 @@ def test_import_annotations_comma_separated_list_acronyms(tmp_path):
              "region_name": "AU", "region_code": "AU", "use": "EXPORT"},
         ],
         taxids=[
-            {"tax_id": "100", "list_acronym": "L1, L2", "name": "Shared Organism"},
+            {"tax_id": "100", "list_acronym": "L1, L2", "display_name": "Shared Organism"},
         ],
     )
     assert import_control_lists(str(d)) is True
@@ -169,8 +170,8 @@ def test_import_annotations_comma_separated_list_acronyms(tmp_path):
 def test_import_annotations_invalid_acronym_filtered(tmp_path):
     """Annotations referencing unknown list acronyms should be silently dropped."""
     d = _make_valid_list_dir(tmp_path, taxids=[
-        {"tax_id": "100", "list_acronym": "TL", "name": "Valid"},
-        {"tax_id": "200", "list_acronym": "NOPE", "name": "Invalid"},
+        {"tax_id": "100", "list_acronym": "TL", "display_name": "Valid"},
+        {"tax_id": "200", "list_acronym": "NOPE", "display_name": "Invalid"},
     ])
     assert import_control_lists(str(d)) is True
     # Only the row for "TL" should survive.
@@ -236,7 +237,7 @@ def test_tidy_creates_accession_index():
         "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(pd.DataFrame([{
         "list_acronym": "L1", "tax_id": "12345",
-        "name": "Virus", "category": "Viruses", "lineage": "",
+        "display_name": "Virus", "category": "Viruses", "lineage": "",
     }]))
     tidy_control_list_data()
     assert isinstance(ld.CONTROL_LIST_ANNOTATIONS.index[0], Accession)
@@ -248,9 +249,9 @@ def test_tidy_removes_invalid_accessions():
         "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(pd.DataFrame([
         {"list_acronym": "L1", "tax_id": "12345",
-         "name": "Valid", "category": "Viruses"},
+         "display_name": "Valid", "category": "Viruses"},
         {"list_acronym": "L1", "tax_id": "",
-         "name": "BadEntry", "category": "Viruses"},
+         "display_name": "BadEntry", "category": "Viruses"},
     ]))
     print("Current Control List Data before tidying: %s", ld.CONTROL_LIST_ANNOTATIONS)
     tidy_control_list_data()
@@ -264,9 +265,9 @@ def test_tidy_deduplicates_by_list_and_accession():
         "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(pd.DataFrame([
         {"list_acronym": "L1", "tax_id": "100",
-         "name": "Same", "category": "Viruses"},
+         "display_name": "Same", "category": "Viruses"},
         {"list_acronym": "L1", "tax_id": "100",
-         "name": "Same", "category": "Viruses"},
+         "display_name": "Same", "category": "Viruses"},
     ]))
     tidy_control_list_data()
     assert len(ld.CONTROL_LIST_ANNOTATIONS) == 1
@@ -277,7 +278,7 @@ def test_tidy_invalid_category_defaults_to_none():
         "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(pd.DataFrame([{
         "list_acronym": "L1", "tax_id": "100",
-        "name": "Test", "category": "InvalidCategory",
+        "display_name": "Test", "category": "InvalidCategory",
     }]))
     tidy_control_list_data()
     assert ld.CONTROL_LIST_ANNOTATIONS.iloc[0]["category"] == CategoryType.NONE
@@ -288,7 +289,7 @@ def test_tidy_valid_category_preserved():
         "L1", "Lista Prima", "L1", "url", Region("New Zealand", "NZ"), ListMode.COMPLIANCE, "EXPORT"))
     ld.add_control_list_annotations(pd.DataFrame([{
         "list_acronym": "L1", "tax_id": "100",
-        "name": "Test", "category": "Bacteria",
+        "display_name": "Test", "category": "Bacteria",
     }]))
     tidy_control_list_data()
     assert ld.CONTROL_LIST_ANNOTATIONS.iloc[0]["category"] == CategoryType.BACTERIA
