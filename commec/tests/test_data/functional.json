@@ -3,7 +3,7 @@
     "commec_version": "1.1.0",
     "json_output_version": "0.4",
     "time_taken": "00:00:02",
-    "date_run": "2026-02-18 23:42:34",
+    "date_run": "2026-04-13 21:31:47",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -42,7 +42,7 @@
     ]
   },
   "query_info": {
-    "file": "/tmp/pytest-of-root/pytest-5/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-michael/pytest-65/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -97,8 +97,8 @@
                         "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
                         "list": "NZ_DTL_EXPORT",
-                        "species": "",
-                        "genus": ""
+                        "species": "regulaticus",
+                        "genus": "orthoregulatidae"
                       }
                     ]
                   }
@@ -153,8 +153,8 @@
                         "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
                         "list": "NZ_DTL_EXPORT",
-                        "species": "",
-                        "genus": ""
+                        "species": "regulaticus",
+                        "genus": "orthoregulatidae"
                       }
                     ]
                   },
@@ -168,8 +168,8 @@
                         "name": "SUBJECT_3",
                         "category": "Viruses",
                         "list": "NZ_DTL_EXPORT",
-                        "species": "",
-                        "genus": ""
+                        "species": "Viria Novia blue beads",
+                        "genus": "orthonovaregulatidae"
                       }
                     ]
                   }
@@ -217,8 +217,8 @@
                         "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
                         "list": "NZ_DTL_EXPORT",
-                        "species": "",
-                        "genus": ""
+                        "species": "regulaticus",
+                        "genus": "orthoregulatidae"
                       }
                     ]
                   },
@@ -232,8 +232,8 @@
                         "name": "SUBJECT_3",
                         "category": "Viruses",
                         "list": "NZ_DTL_EXPORT",
-                        "species": "",
-                        "genus": ""
+                        "species": "Viria Novia blue beads",
+                        "genus": "orthonovaregulatidae"
                       }
                     ]
                   }
@@ -281,8 +281,8 @@
                         "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
                         "list": "NZ_DTL_EXPORT",
-                        "species": "",
-                        "genus": ""
+                        "species": "regulaticus",
+                        "genus": "orthoregulatidae"
                       }
                     ]
                   }
@@ -330,8 +330,8 @@
                         "name": "ShouldMixedReg1",
                         "category": "Viruses",
                         "list": "NZ_DTL_EXPORT",
-                        "species": "",
-                        "genus": ""
+                        "species": "danger-poop",
+                        "genus": "faecia"
                       }
                     ]
                   }
@@ -392,8 +392,8 @@
                         "name": "ShouldClear",
                         "category": "Viruses",
                         "list": "NZ_DTL_EXPORT",
-                        "species": "",
-                        "genus": ""
+                        "species": "fine-icus",
+                        "genus": "orthoderegulatidae"
                       }
                     ]
                   }
@@ -441,8 +441,8 @@
                         "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
                         "list": "NZ_DTL_EXPORT",
-                        "species": "",
-                        "genus": ""
+                        "species": "regulaticus",
+                        "genus": "orthoregulatidae"
                       }
                     ]
                   }
@@ -490,8 +490,8 @@
                         "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
                         "list": "NZ_DTL_EXPORT",
-                        "species": "",
-                        "genus": ""
+                        "species": "regulaticus",
+                        "genus": "orthoregulatidae"
                       }
                     ]
                   }
@@ -539,8 +539,8 @@
                         "name": "NR_HIT_ShouldntClear",
                         "category": "Viruses",
                         "list": "NZ_DTL_EXPORT",
-                        "species": "",
-                        "genus": ""
+                        "species": "regulaticus",
+                        "genus": "orthoregulatidae"
                       }
                     ]
                   }
