@@ -110,11 +110,8 @@ class ScreenTesterFactory:
         print("Using the following Taxonomy Information:\n", TAXONOMY.to_string())
         # We patch taxonomic labels to avoid having to make a mini-taxonomy database.
         # We also patch in the desired CLI arguments to avoid an input yaml, and control output.
-        with (patch("commec.screeners.check_reg_path.get_taxonomic_labels", new=skip_taxonomy_info), patch(
-                "commec.screeners.check_biorisk.read_biorisk_annotations", new=skip_biorisk_annotations), patch(
-            "sys.argv",
-            arguments,
-        )):
+        with (patch("commec.screeners.check_biorisk.read_biorisk_annotations", new=skip_biorisk_annotations),
+             patch("sys.argv", arguments)):
             parser = ScreenArgumentParser()
             add_args(parser)
             args = parser.parse_args()
