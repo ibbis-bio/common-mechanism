@@ -7,7 +7,7 @@ Static functions useful for dealing with common dictionary tasks.
 @staticmethod
 def deep_update(to_update: dict[str, any], 
                 has_updates: dict[str, any],
-                force: bool = False) -> tuple[
+                accept_new_keys: bool = False) -> tuple[
                     dict[str,any], 
                     list[tuple[str,any]]]:
     """
@@ -32,11 +32,11 @@ def deep_update(to_update: dict[str, any],
     for key, value in has_updates.items():
         # If both values are dictionaries, recursively update
         if key in updated and isinstance(updated[key], dict) and isinstance(value, dict):
-            force_next = (key == "base_paths")
-            updated[key], additional_rejects = deep_update(updated[key], value, force_next)
+            accept_next : bool = (key == "base_paths")
+            updated[key], additional_rejects = deep_update(updated[key], value, accept_next)
             rejected.extend(additional_rejects)
         # If not a dictionary, just copy the value, forced if required.
-        elif key in updated or force:
+        elif key in updated or accept_new_keys:
             updated[key] = value
         # If not present, we log an unexpected input one.
         else:
