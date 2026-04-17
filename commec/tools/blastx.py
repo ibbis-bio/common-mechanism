@@ -26,7 +26,7 @@ class BlastXHandler(BlastHandler):
             "-task": "blastx-fast",
             "-num_threads": self.threads,
             "-evalue": 1e-10,
-            "-max_target_seqs": 100,
+            "-max_target_seqs": 500,
             "-culling_limit": 1,
             "-outfmt": [
                 "7",

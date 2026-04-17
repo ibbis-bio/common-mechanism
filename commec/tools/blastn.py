@@ -29,7 +29,7 @@ class BlastNHandler(BlastHandler):
             "-num_threads": self.threads,
             "-mt_mode": 1,
             "-evalue": 1e-5,
-            "-max_target_seqs": 50,
+            "-max_target_seqs": 500,
             "-culling_limit": 1,
             "-outfmt": [
                 "7",
