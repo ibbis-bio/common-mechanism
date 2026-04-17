@@ -328,6 +328,7 @@ class Screen:
 
                 # Link query to the output data.
                 qr = QueryResult(query.original_name,
+                                 query.description,
                                  query.length)
                 self.screen_data.queries[query.name] = qr
                 query.result = qr

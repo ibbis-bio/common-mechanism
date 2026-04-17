@@ -421,6 +421,7 @@ class QueryResult:
     Container to hold screening result data pertinant to a single Query
     """
     query: str = ""
+    description: str = ""
     length: int = 0
     status: QueryScreenStatus = field(default_factory=QueryScreenStatus)
     hits: dict[str, HitResult] = field(default_factory=dict)
