@@ -292,7 +292,7 @@ class Rationale(StrEnum):
     NO_HITS = ("No matches found during any stage of analysis. "
                 "Sequence risk is unknown, possibly generated in silico. ")
     NO_HITS_SKIP_NOTE = NO_HITS + "Matches may be found if re-run without skipping steps."
-    TOO_SHORT = "Query is too short, and was skipped."
+    LENGTH_OUT_OF_RANGE = "Query is either too short or too long, and was skipped."
 
     FLAG = " flags"
     WARN = " warnings"
@@ -571,7 +571,7 @@ class QueryResult:
             return
 
         if state.screen_status == ScreenStatus.SKIP:
-            state.rationale = Rationale.TOO_SHORT
+            state.rationale = Rationale.LENGTH_OUT_OF_RANGE
             return
 
         if state.screen_status == ScreenStatus.STOP:
