@@ -3,6 +3,7 @@
 
 # SCREENING
 MINIMUM_QUERY_LENGTH = 41
+MAXIMUM_QUERY_LENGTH = 100000
 
 # BIORISK E-VALUE FILTERING
 # Sequences shorter than this threshold use a length-dependent E-value cutoff.

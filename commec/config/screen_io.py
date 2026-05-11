@@ -23,6 +23,7 @@ from commec.config.query import Query
 from commec.config.constants import (
     DEFAULT_CONFIG_YAML_PATH,
     MINIMUM_QUERY_LENGTH,
+    MAXIMUM_QUERY_LENGTH,
     MAXIMUM_FILENAME_SIZE,
 )
 from commec.utils.file_utils import expand_and_normalize
@@ -129,8 +130,8 @@ class ScreenIO:
             except Exception as e:
                 raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}, {e}") from e
             
-        # Don't write a cleaned fasta for queries below a given length.
-        records = [record for record in records if len(record.seq) > MINIMUM_QUERY_LENGTH]
+        # Don't write a cleaned fasta for queries outside the valid length range.
+        records = [record for record in records if MINIMUM_QUERY_LENGTH < len(record.seq) <= MAXIMUM_QUERY_LENGTH]
 
         with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
             SeqIO.write(records, fasta_file, "fasta")

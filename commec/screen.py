@@ -80,7 +80,7 @@ from commec.screeners.check_reg_path import parse_taxonomy_hits
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.tools.search_handler import DatabaseValidationError
 from commec.config.json_io import encode_screen_data_to_json
-from commec.config.constants import MINIMUM_QUERY_LENGTH
+from commec.config.constants import MINIMUM_QUERY_LENGTH, MAXIMUM_QUERY_LENGTH
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -332,10 +332,15 @@ class Screen:
                 self.screen_data.queries[query.name] = qr
                 query.result = qr
 
-                # Determine short querys as skipped:
+                # Determine out-of-range queries as skipped:
                 if query.length < MINIMUM_QUERY_LENGTH:
                     logger.debug("%s length %i is less than %i",
                                     query.name, query.length, MINIMUM_QUERY_LENGTH)
+                    qr.skip()
+                    continue
+                elif query.length > MAXIMUM_QUERY_LENGTH:
+                    logger.debug("%s length %i exceeds maximum %i",
+                                    query.name, query.length, MAXIMUM_QUERY_LENGTH)
                     qr.skip()
                     continue
 
