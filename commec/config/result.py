@@ -385,11 +385,11 @@ class QueryScreenStatus:
             self.screen_status = ScreenStatus.SKIP
             return
 
-        # If Taxonomy steps were skipped, and we passed, then update to skipped pass.
+        # If Taxonomy steps were skipped, but we passed, then --skip-tx or --skip-nt was used. 
+        # Update to skipped pass.
         if (self.screen_status == ScreenStatus.PASS and 
-                (self.protein_taxonomy == ScreenStatus.SKIP or 
-                self.nucleotide_taxonomy == ScreenStatus.SKIP)
-            ):
+            (self.protein_taxonomy == ScreenStatus.PASS_SKIP_TX or
+             self.nucleotide_taxonomy == ScreenStatus.PASS_SKIP_TX)):
             self.screen_status = ScreenStatus.PASS_SKIP_TX
             return
 
@@ -498,7 +498,7 @@ class QueryResult:
         logger.debug("Updating step status flags for query %s", self.query)
         logger.debug("Current status %s", self.status)
         
-        ignored_status = {ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.PASS}
+        ignored_status = {ScreenStatus.PASS_SKIP_TX, ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.PASS}
         
         if self.status.biorisk not in ignored_status:
             self.status.biorisk = ScreenStatus.NULL
