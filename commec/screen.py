@@ -334,14 +334,14 @@ class Screen:
 
                 # Determine out-of-range queries as skipped:
                 if query.length < MINIMUM_QUERY_LENGTH:
-                    logger.debug("%s length %i is less than %i",
+                    logger.warning("%s length %i is less than %i",
                                     query.name, query.length, MINIMUM_QUERY_LENGTH)
-                    qr.skip()
+                    qr.skip(f"Sequence is too short (must be at least {MINIMUM_QUERY_LENGTH} bp).")
                     continue
                 elif query.length > MAXIMUM_QUERY_LENGTH:
-                    logger.debug("%s length %i exceeds maximum %i",
+                    logger.warning("%s length %i exceeds maximum %i",
                                     query.name, query.length, MAXIMUM_QUERY_LENGTH)
-                    qr.skip()
+                    qr.skip(f"Sequence is too long (must be at most {MAXIMUM_QUERY_LENGTH} bp).")
                     continue
 
                 # Only translate if valid.

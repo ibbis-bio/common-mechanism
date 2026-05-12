@@ -292,7 +292,7 @@ class Rationale(StrEnum):
     NO_HITS = ("No matches found during any stage of analysis. "
                 "Sequence risk is unknown, possibly generated in silico. ")
     NO_HITS_SKIP_NOTE = NO_HITS + "Matches may be found if re-run without skipping steps."
-    LENGTH_OUT_OF_RANGE = "Query is either too short or too long, and was skipped."
+    SKIPPED = "Query was skipped."
 
     FLAG = " flags"
     WARN = " warnings"
@@ -312,7 +312,7 @@ class QueryScreenStatus:
     protein_taxonomy: ScreenStatus = ScreenStatus.NULL
     nucleotide_taxonomy: ScreenStatus = ScreenStatus.NULL
     low_concern: ScreenStatus = ScreenStatus.NULL
-    rationale : str = "-"
+    rationale : str = Rationale.NULL
 
     # Mapping between screen steps and the fields above
     STEP_TO_STATUS_FIELD = {
@@ -571,7 +571,7 @@ class QueryResult:
             return
 
         if state.screen_status == ScreenStatus.SKIP:
-            state.rationale = Rationale.LENGTH_OUT_OF_RANGE
+            state.rationale = f"{Rationale.SKIPPED} {self._skip_reason}"
             return
 
         if state.screen_status == ScreenStatus.STOP:
@@ -704,7 +704,7 @@ class QueryResult:
         self.hits = dict(sorted_items_desc)
         self._update_step_flags(query_data)
 
-    def skip(self):
+    def skip(self, reason: str = ""):
         """
         Called to skip this query, sets all recommendations to skip.
         """
@@ -713,6 +713,7 @@ class QueryResult:
         self.status.protein_taxonomy = ScreenStatus.SKIP
         self.status.nucleotide_taxonomy = ScreenStatus.SKIP
         self.status.low_concern = ScreenStatus.SKIP
+        self._skip_reason = reason
         logger.debug("Query %s has all statuses assigned to SKIP.", self.query)
 
     def error(self):
