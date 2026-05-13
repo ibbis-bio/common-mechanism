@@ -128,7 +128,7 @@ class ScreenIO:
                 # Override the original cleaned fasta, with queries above a given length and updated names
                 if len(record.seq) > MINIMUM_QUERY_LENGTH:
                     # Creating new SeqRecord to avoid overwriting the seq_record object inside query and preserve the original seq id
-                    updated_records.append(SeqRecord(record.seq, id=query.name))
+                    updated_records.append(SeqRecord(record.seq, id=query.name, description=""))
             except Exception as e:
                 raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}, {e}") from e
 
