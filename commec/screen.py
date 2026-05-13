@@ -336,12 +336,12 @@ class Screen:
                 if query.length < MINIMUM_QUERY_LENGTH:
                     logger.warning("%s length %i is less than %i",
                                     query.name, query.length, MINIMUM_QUERY_LENGTH)
-                    qr.skip(f"Sequence is too short (must be at least {MINIMUM_QUERY_LENGTH} bp).")
+                    qr.skip(ScreenStatus.SKIP_SHORT)
                     continue
                 elif query.length > MAXIMUM_QUERY_LENGTH:
                     logger.warning("%s length %i exceeds maximum %i",
                                     query.name, query.length, MAXIMUM_QUERY_LENGTH)
-                    qr.skip(f"Sequence is too long (must be at most {MAXIMUM_QUERY_LENGTH} bp).")
+                    qr.skip(ScreenStatus.SKIP_LONG)
                     continue
 
                 # Only translate if valid.
