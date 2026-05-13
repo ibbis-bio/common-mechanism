@@ -150,9 +150,9 @@ class ScreenStep(StrEnum):
     BIORISK = "Biorisk Search"
     TAXONOMY_NT = "Nucleotide Taxonomy Search"
     TAXONOMY_AA = "Protein Taxonomy Search"
-    LOW_CONCERN_PROTEIN = "Benign Protein Search"
-    LOW_CONCERN_RNA = "Benign RNA Search"
-    LOW_CONCERN_DNA = "Benign DNA Search"
+    LOW_CONCERN_PROTEIN = "Low Concern Protein Search"
+    LOW_CONCERN_RNA = "Low Concern RNA Search"
+    LOW_CONCERN_DNA = "Low Concern DNA Search"
 
 
 @dataclass

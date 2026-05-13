@@ -102,11 +102,11 @@ def overlay_text_from_hit(hit : HitResult):
         case ScreenStep.TAXONOMY_NT:
             return "Nucl. "+outcome
         case ScreenStep.LOW_CONCERN_PROTEIN:
-            return "Benign Protein"
+            return "Low Concern Protein"
         case ScreenStep.LOW_CONCERN_RNA:
-            return "Benign RNA"
+            return "Low Concern RNA"
         case ScreenStep.LOW_CONCERN_DNA:
-            return "Benign DNA"
+            return "Low Concern DNA"
 
 def generate_html_from_screen_data(input_data : ScreenResult, output_file : str):
     """

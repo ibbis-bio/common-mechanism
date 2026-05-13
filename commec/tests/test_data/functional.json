@@ -1,6 +1,6 @@
 {
   "commec_info": {
-    "commec_version": "1.0.3",
+    "commec_version": "1.0.4",
     "json_output_version": "0.3",
     "time_taken": "00:00:02",
     "date_run": "2025-12-03 16:57:20",
@@ -586,7 +586,7 @@
         "BENIGNPROT": {
           "recommendation": {
             "status": "Flag (Cleared)",
-            "from_step": "Benign Protein Search"
+            "from_step": "Low Concern Protein Search"
           },
           "name": "BENIGNPROT",
           "description": "",
@@ -606,7 +606,7 @@
         "BENIGNRNA": {
           "recommendation": {
             "status": "Flag (Cleared)",
-            "from_step": "Benign RNA Search"
+            "from_step": "Low Concern RNA Search"
           },
           "name": "BENIGNRNA",
           "description": "BenignCMTestOutput",
@@ -624,7 +624,7 @@
         "BENIGNSYNBIO": {
           "recommendation": {
             "status": "Flag (Cleared)",
-            "from_step": "Benign DNA Search"
+            "from_step": "Low Concern DNA Search"
           },
           "name": "BENIGNSYNBIO",
           "description": "BENIGNSYNBIO",

@@ -47,24 +47,35 @@ def _get_ranges_with_no_hits(input_df : pd.DataFrame):
     # Sort each pair to ensure that start < end, then sort entire list of ranges
     hit_ranges = sorted([sorted(pair) for pair in hit_ranges])
 
+    # Merge overlapping / adjacent intervals so coverage is computed from the
+    # union of hits, not pairwise. This handles nested and partially-overlapping
+    # hits correctly (e.g. a lower-identity hit that extends beyond a stronger
+    # one on either side).
+    merged : list[list[int]] = []
+    for start, end in hit_ranges:
+        if merged and start <= merged[-1][1] + 1:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+
     nc_ranges : list[tuple[int,int]] = []
+    query_length = int(input_df["query length"].iloc[0])
 
     # Include the start if the first hit begins more than 50 bp after the start
-    if hit_ranges[0][0] > 50:
-        nc_ranges.append((1, hit_ranges[0][0] - 1))
+    if merged[0][0] > 50:
+        nc_ranges.append((1, merged[0][0] - 1))
 
-    # Add ranges if there is a noncoding region of >=50 between hits
-    for i in range(len(hit_ranges) - 1):
-        nc_start = hit_ranges[i][1] + 1  # starts after this hit
-        nc_end = hit_ranges[i + 1][0] - 1 # ends before next hit
+    # Add ranges if there is a noncoding region of >=50 between merged hits
+    for i in range(len(merged) - 1):
+        nc_start = merged[i][1] + 1  # starts after this hit
+        nc_end = merged[i + 1][0] - 1  # ends before next hit
 
         if nc_end - nc_start + 1 >= 50:
             nc_ranges.append((nc_start, nc_end))
 
     # Include the end if the last hit ends more than 50 bp before the end
-    query_length = input_df["query length"].iloc[0]
-    if query_length - hit_ranges[-1][1] >= 50:
-        nc_ranges.append((hit_ranges[-1][1] + 1, int(query_length)))
+    if query_length - merged[-1][1] >= 50:
+        nc_ranges.append((merged[-1][1] + 1, query_length))
 
     return nc_ranges
 

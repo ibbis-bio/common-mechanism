@@ -19,9 +19,9 @@ def expected_defaults():
         },
         "databases": {
             "low_concern": {
-                "rna": {"path": "/commec-dbs/low_concern/rna/benign.cm"},
-                "dna": {"path": "/commec-dbs/low_concern/dna/benign.fasta"},
-                "protein": {"path": "/commec-dbs/low_concern/protein/benign.hmm"},
+                "rna": {"path": "/commec-dbs/low_concern/rna/low_concern.cm"},
+                "dna": {"path": "/commec-dbs/low_concern/dna/low_concern.fasta"},
+                "protein": {"path": "/commec-dbs/low_concern/protein/low_concern.hmm"},
                 "annotations": '/commec-dbs/low_concern/low_concern_annotations.tsv',
                 "taxids": "/commec-dbs/low_concern/vax_taxids.txt"
             },
@@ -74,9 +74,9 @@ def expected_updated_from_custom_yaml():
         },
         "databases": {
             "low_concern": {
-                "rna": {"path": "/commec-dbs/low_concern/rna/benign.cm"},
-                "dna": {"path": "/commec-dbs/low_concern/dna/benign.fasta"},
-                "protein": {"path": "/commec-dbs/low_concern/protein/benign.hmm"},
+                "rna": {"path": "/commec-dbs/low_concern/rna/low_concern.cm"},
+                "dna": {"path": "/commec-dbs/low_concern/dna/low_concern.fasta"},
+                "protein": {"path": "/commec-dbs/low_concern/protein/low_concern.hmm"},
                 "annotations": '/commec-dbs/low_concern/low_concern_annotations.tsv',
                 "taxids": "/commec-dbs/low_concern/vax_taxids.txt"
             },
@@ -261,6 +261,34 @@ def test_d_shadowing_yaml_logs_info(tmp_path, caplog):
     assert any(
         "overriding YAML base_paths.default" in rec.message
         for rec in caplog.records
+    )
+
+
+def test_custom_base_paths(tmp_path):
+    """User-defined base_paths entries (e.g. `lowconcernfiles`) should be preserved,
+    resolved against `default` if they reference it, and usable in database paths. (#105)"""
+    user_config_path = tmp_path / "user_config.yaml"
+    with open(user_config_path, "w") as f:
+        yaml.dump({
+            "base_paths": {
+                "default": "/commec-dbs/",
+                "lowconcernfiles": "{default}low_concern/",
+            },
+            "databases": {
+                "low_concern": {
+                    "rna": {"path": "{lowconcernfiles}rna/low_concern.cm"},
+                },
+            },
+        }, f)
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
+    params = ScreenIO(args)
+
+    assert params.config["base_paths"]["lowconcernfiles"] == "/commec-dbs/low_concern/"
+    assert (
+        params.config["databases"]["low_concern"]["rna"]["path"]
+        == "/commec-dbs/low_concern/rna/low_concern.cm"
     )
 
 

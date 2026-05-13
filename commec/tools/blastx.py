@@ -23,17 +23,12 @@ class BlastXHandler(BlastHandler):
         super().__init__(database_file, input_file, out_file, **kwargs)
         # We fill this with defaults, however they can always be overridden before screening.
         self.arguments_dictionary = {
+            "-task": "blastx-fast",
             "-num_threads": self.threads,
+            "-mt_mode": 1,
             "-evalue": 1e-10,
-            "-word_size": 6,
-            "-threshold": 21,
-            "-max_target_seqs": 5000,
-            "-culling_limit": 50,
-            "-window_size": 40,
-            "-matrix": "BLOSUM62",
-            "-gapopen": 11,
-            "-gapextend": 1,
-            "-seg": "yes",
+            "-max_target_seqs": 500,
+            "-culling_limit": 1,
             "-outfmt": [
                 "7",
                 "qacc",

@@ -303,7 +303,7 @@ class Screen:
         # Needed to initialize parameters before logging to files
         setup_file_logging(self.params.output_screen_file, log_level)
 
-        logger.info("Validating input query and databases...")
+        logger.info("Validating input parameters, query and databases...")
         try:
             self.database_tools: ScreenTools = ScreenTools(self.params)
         except(DatabaseValidationError) as e:

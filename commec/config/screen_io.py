@@ -261,6 +261,23 @@ class ScreenIO:
         This script will update the dictionary to propagate these substitutions.
         If a database directory is provided, it will override the base_path provided in the yaml.
         """
+        def recursive_format(nested_yaml, paths):
+            """
+            Recursively apply string formatting to read paths from nested yaml config dicts.
+            """
+            if isinstance(nested_yaml, dict):
+                return {key: recursive_format(value, paths)
+                        for key, value in nested_yaml.items()}
+            if isinstance(nested_yaml, str):
+                try:
+                    return nested_yaml.format(**paths)
+                except KeyError as e:
+                    raise IoValidationError(
+                        f"Unknown base path key {e} referenced in path: {nested_yaml!r}. "
+                        f"Known keys: {sorted(paths.keys())}"
+                    ) from e
+            return nested_yaml
+
         base_paths = self.config.get("base_paths") or {}
         yaml_default = base_paths.get("default")
 
@@ -280,7 +297,12 @@ class ScreenIO:
                 "  - run `commec setup` to download databases and emit a config snippet"
             )
 
-        # Validate every base path is absolute, then normalize with trailing separator
+        # Substitute placeholders within base_paths first, so user-defined entries like
+        # `lowconcernfiles: '{default}low_concern/'` resolve to an absolute path before
+        # we validate them. See PR #105 for the original use case.
+        base_paths = recursive_format(base_paths, base_paths)
+
+        # Every resolved base path must be absolute. Normalize with trailing separator.
         for key, value in base_paths.items():
             if value is None:
                 continue
@@ -294,24 +316,7 @@ class ScreenIO:
         self.config["base_paths"] = base_paths
         self.db_dir = base_paths["default"]
 
-        def recursive_format(nested_yaml):
-            """
-            Recursively apply string formatting to read paths from nested yaml config dicts.
-            """
-            if isinstance(nested_yaml, dict):
-                return {key: recursive_format(value)
-                        for key, value in nested_yaml.items()}
-            if isinstance(nested_yaml, str):
-                try:
-                    return nested_yaml.format(**base_paths)
-                except KeyError as e:
-                    raise IoValidationError(
-                        f"Unknown base path key {e} referenced in path: {nested_yaml!r}. "
-                        f"Known keys: {sorted(base_paths.keys())}"
-                    ) from e
-            return nested_yaml
-
-        self.config = recursive_format(self.config)
+        self.config = recursive_format(self.config, base_paths)
         self._validate_database_paths(self.config.get("databases", {}))
 
     def _validate_database_paths(self, tree, breadcrumbs=()):

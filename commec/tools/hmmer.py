@@ -10,6 +10,7 @@ import re
 import subprocess
 import pandas as pd
 import itertools
+from commec.config.constants import HMMSCAN_MAX_THREAD_LIMIT
 from commec.config.query import Query
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
 from commec.utils.coordinates import convert_protein_to_nucleotide_coords
@@ -17,6 +18,8 @@ from commec.utils.coordinates import convert_protein_to_nucleotide_coords
 
 class HmmerHandler(SearchHandler):
     """A Database handler specifically for use with Hmmer files for commec screening."""
+
+    MAX_THREADS = HMMSCAN_MAX_THREAD_LIMIT
 
     def _search(self):
         command = [

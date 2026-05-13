@@ -231,8 +231,10 @@ class ScreenTesterFactory:
         self.input_fasta_path = self.tmp_path / f"{self.name}.fasta"
         print("Using fasta file: " + str(self.input_fasta_path))
 
+        query_fasta = ""
         for key, value in self.queries.items():
-            self.input_fasta_path.write_text(f">{key}\n{value}\n")
+            query_fasta = query_fasta + f">{key}\n{value}\n"
+        self.input_fasta_path.write_text(query_fasta)
 
         # --RESUME FILES::
         # BIORISK FILES
