@@ -15,30 +15,30 @@ DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
 def expected_defaults():
     return {
         "base_paths": {
-            "default": "commec-dbs/"
+            "default": "/commec-dbs/"
         },
         "databases": {
             "low_concern": {
-                "rna": {"path": "commec-dbs/low_concern/rna/benign.cm"},
-                "dna": {"path": "commec-dbs/low_concern/dna/benign.fasta"},
-                "protein": {"path": "commec-dbs/low_concern/protein/benign.hmm"},
-                "annotations": 'commec-dbs/low_concern/low_concern_annotations.tsv',
-                "taxids": "commec-dbs/low_concern/vax_taxids.txt"
+                "rna": {"path": "/commec-dbs/low_concern/rna/benign.cm"},
+                "dna": {"path": "/commec-dbs/low_concern/dna/benign.fasta"},
+                "protein": {"path": "/commec-dbs/low_concern/protein/benign.hmm"},
+                "annotations": '/commec-dbs/low_concern/low_concern_annotations.tsv',
+                "taxids": "/commec-dbs/low_concern/vax_taxids.txt"
             },
             "biorisk": {
-                "path": "commec-dbs/biorisk/biorisk.hmm",
-                "annotations": 'commec-dbs/biorisk/biorisk_annotations.csv',
-                "taxids": "commec-dbs/biorisk/reg_taxids.txt",
+                "path": "/commec-dbs/biorisk/biorisk.hmm",
+                "annotations": '/commec-dbs/biorisk/biorisk_annotations.csv',
+                "taxids": "/commec-dbs/biorisk/reg_taxids.txt",
             },
             "regulated_nt": {
-                "path": "commec-dbs/nt_blast/core_nt"
+                "path": "/commec-dbs/nt_blast/core_nt"
             },
             "regulated_protein": {
-                "blast": {"path": "commec-dbs/nr_blast/nr"},
-                "diamond": {"path": "commec-dbs/nr_dmnd/nr.dmnd"}
+                "blast": {"path": "/commec-dbs/nr_blast/nr"},
+                "diamond": {"path": "/commec-dbs/nr_dmnd/nr.dmnd"}
             },
             "taxonomy": {
-                "path": "commec-dbs/taxonomy/",
+                "path": "/commec-dbs/taxonomy/",
             }
         },
         "threads": 1,
@@ -55,9 +55,10 @@ def expected_defaults():
 @pytest.fixture
 def custom_yaml_config():
     return {
+        "base_paths": {"default": "/commec-dbs/"},
         "databases": {
             "biorisk": {
-                "taxids" : "custom_path.txt"
+                "taxids" : "/custom_path.txt"
             }
         },
         "skip_taxonomy_search": True,
@@ -69,30 +70,30 @@ def custom_yaml_config():
 def expected_updated_from_custom_yaml():
     return {
         "base_paths": {
-            "default": "commec-dbs/"
+            "default": "/commec-dbs/"
         },
         "databases": {
             "low_concern": {
-                "rna": {"path": "commec-dbs/low_concern/rna/benign.cm"},
-                "dna": {"path": "commec-dbs/low_concern/dna/benign.fasta"},
-                "protein": {"path": "commec-dbs/low_concern/protein/benign.hmm"},
-                "annotations": 'commec-dbs/low_concern/low_concern_annotations.tsv',
-                "taxids": "commec-dbs/low_concern/vax_taxids.txt"
+                "rna": {"path": "/commec-dbs/low_concern/rna/benign.cm"},
+                "dna": {"path": "/commec-dbs/low_concern/dna/benign.fasta"},
+                "protein": {"path": "/commec-dbs/low_concern/protein/benign.hmm"},
+                "annotations": '/commec-dbs/low_concern/low_concern_annotations.tsv',
+                "taxids": "/commec-dbs/low_concern/vax_taxids.txt"
             },
             "biorisk": {
-                "path": "commec-dbs/biorisk/biorisk.hmm",
-                "annotations": 'commec-dbs/biorisk/biorisk_annotations.csv',
-                "taxids": "custom_path.txt",
+                "path": "/commec-dbs/biorisk/biorisk.hmm",
+                "annotations": '/commec-dbs/biorisk/biorisk_annotations.csv',
+                "taxids": "/custom_path.txt",
             },
             "regulated_nt": {
-                "path": "commec-dbs/nt_blast/core_nt"
+                "path": "/commec-dbs/nt_blast/core_nt"
             },
             "regulated_protein": {
-                "blast": {"path": "commec-dbs/nr_blast/nr"},
-                "diamond": {"path": "commec-dbs/nr_dmnd/nr.dmnd"}
+                "blast": {"path": "/commec-dbs/nr_blast/nr"},
+                "diamond": {"path": "/commec-dbs/nr_dmnd/nr.dmnd"}
             },
             "taxonomy": {
-                "path": "commec-dbs/taxonomy/",
+                "path": "/commec-dbs/taxonomy/",
             }
         },
         "threads": 8,
@@ -112,14 +113,28 @@ def test_missing_input_file():
     with pytest.raises(SystemExit):
         args = args.parse_args()
     
-def test_default_config_only(expected_defaults):
-    """Test that default config is loaded when no overrides exist"""
+def test_default_config_only_raises():
+    """Default config alone has no base_paths.default — must raise rather than fall back."""
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args([INPUT_QUERY])
+    with pytest.raises(IoValidationError, match="base_paths.default is not configured"):
+        ScreenIO(args)
+
+
+def test_default_config_with_yaml_base_path(tmp_path, expected_defaults):
+    """When user YAML supplies only base_paths.default, packaged defaults populate everything else."""
+    user_config_path = tmp_path / "user_config.yaml"
+    with open(user_config_path, 'w') as f:
+        yaml.dump({"base_paths": {"default": "/commec-dbs/"}}, f)
+
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
     params = ScreenIO(args)
-    
+
     assert expected_defaults == params.config
+
 
 def test_user_yaml_override(tmp_path, expected_updated_from_custom_yaml, custom_yaml_config):
     """Test that user YAML properly overrides default config"""
@@ -189,7 +204,7 @@ def test_missing_default_config():
         args = ScreenArgumentParser()
         add_args(args)
         args = args.parse_args([INPUT_QUERY])
-
+        
         with pytest.raises(FileNotFoundError, match="No default yaml found"):
             _ = ScreenIO(args)
 
@@ -208,6 +223,7 @@ def test_unknown_yaml_key_raises(tmp_path):
     user_config_path = tmp_path / "user_config.yaml"
     with open(user_config_path, "w") as f:
         yaml.dump({
+            "base_paths": {"default": "/commec-dbs/"},
             "databse": {"biorisk": {"path": "/ignored"}},  # typo
         }, f)
     parser = ScreenArgumentParser()
@@ -217,18 +233,48 @@ def test_unknown_yaml_key_raises(tmp_path):
         ScreenIO(args)
 
 
+def test_relative_path_in_yaml_raises(tmp_path):
+    """YAML must use absolute paths — a relative base_paths.default should raise."""
+    user_config_path = tmp_path / "user_config.yaml"
+    with open(user_config_path, "w") as f:
+        yaml.dump({"base_paths": {"default": "relative/dbs/"}}, f)
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
+    with pytest.raises(IoValidationError, match="must be an absolute path"):
+        ScreenIO(args)
+
+
+def test_d_shadowing_yaml_logs_info(tmp_path, caplog):
+    """When -d overrides a YAML-supplied base_paths.default, log it at INFO."""
+    import logging
+    user_config_path = tmp_path / "user_config.yaml"
+    with open(user_config_path, "w") as f:
+        yaml.dump({"base_paths": {"default": "/from-yaml/"}}, f)
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    args = parser.parse_args(
+        [INPUT_QUERY, "--config", str(user_config_path), "-d", str(tmp_path)]
+    )
+    with caplog.at_level(logging.INFO, logger="commec.config.screen_io"):
+        ScreenIO(args)
+    assert any(
+        "overriding YAML base_paths.default" in rec.message
+        for rec in caplog.records
+    )
+
 
 @pytest.mark.parametrize(
     "base_path, low_concern_path, expected_path",
     [
         # Expected (basepath has terminal separator)
-        ("commec-test/", "{default}low_concern/rna/test.cm", "commec-test/low_concern/rna/test.cm"),
+        ("/commec-test/", "{default}low_concern/rna/test.cm", "/commec-test/low_concern/rna/test.cm"),
         # No separators
-        ("commec-test", "{default}low_concern/rna/test.cm", "commec-test/low_concern/rna/test.cm"),
+        ("/commec-test", "{default}low_concern/rna/test.cm", "/commec-test/low_concern/rna/test.cm"),
         # Subpath has separator
-        ("commec-test", "{default}/low_concern/rna/test.cm", "commec-test//low_concern/rna/test.cm"),
+        ("/commec-test", "{default}/low_concern/rna/test.cm", "/commec-test//low_concern/rna/test.cm"),
         # Double separators
-        ("commec-test/", "{default}/low_concern/rna/test.cm", "commec-test//low_concern/rna/test.cm"),
+        ("/commec-test/", "{default}/low_concern/rna/test.cm", "/commec-test//low_concern/rna/test.cm"),
     ],
 )
 def test_format_config_paths(tmp_path, base_path, low_concern_path, expected_path):

@@ -188,8 +188,11 @@ class ScreenIO:
         # Override configuration with any user-provided CLI arguments
         self._update_config_from_cli(args)
 
+        # CLI -d accepts relative paths for shell convenience; normalize to absolute.
+        db_dir_override = expand_and_normalize(self.db_dir) if self.db_dir else None
+
         # Update paths in configuration using appropriate string substitution
-        self._format_config_paths(self.db_dir)
+        self._format_config_paths(db_dir_override)
 
         logger.debug("Running Screen with the following parameter set:")
         logger.debug(pformat(self.config))
@@ -250,7 +253,7 @@ class ScreenIO:
         substitutions, so that base paths do not need to be defined more than once. For example:
 
             base_paths:
-                default: path/to/databases/
+                default: /path/to/databases/
             databases:
                 regulated_nt:
                     path: '{default}nt_blast/core_nt'
@@ -258,38 +261,75 @@ class ScreenIO:
         This script will update the dictionary to propagate these substitutions.
         If a database directory is provided, it will override the base_path provided in the yaml.
         """
-        if self.config.get("base_paths"):
-            try:
-                base_paths = self.config["base_paths"]
-                if db_dir_override is not None:
-                    logger.debug(f"Command line arguments updated base databases directory: {db_dir_override}")
-                    base_paths["default"] = db_dir_override
-                else:
-                    self.db_dir = base_paths["default"]
+        base_paths = self.config.get("base_paths") or {}
+        yaml_default = base_paths.get("default")
 
-                # Ensure all the base paths end with a separator
-                for key, value in base_paths.items():
-                    base_paths[key] = os.path.join(value,'')
+        if db_dir_override is not None:
+            if yaml_default and yaml_default != db_dir_override:
+                logger.info(
+                    "CLI --databases (%s) overriding YAML base_paths.default (%s)",
+                    db_dir_override, yaml_default,
+                )
+            base_paths["default"] = db_dir_override
 
-                def recursive_format(nested_yaml, base_paths):
-                    """
-                    Recursively apply string formatting to read paths from nested yaml config dicts.
-                    """
-                    if isinstance(nested_yaml, dict):
-                        return {key : recursive_format(value, base_paths) 
-                                for key, value in nested_yaml.items()}
-                    if isinstance(nested_yaml, str):
-                        try:
-                            return nested_yaml.format(**base_paths)
-                        except KeyError as e:
-                            raise ValueError(
-                                f"Unknown base path key referenced in path: {nested_yaml}"
-                            ) from e
-                    return nested_yaml
+        if not base_paths.get("default"):
+            raise IoValidationError(
+                "base_paths.default is not configured. Set it via one of:\n"
+                "  - `commec screen -d /path/to/databases ...`\n"
+                "  - `base_paths: {default: /abs/path/to/databases}` in your --config YAML\n"
+                "  - run `commec setup` to download databases and emit a config snippet"
+            )
 
-                self.config = recursive_format(self.config, base_paths)
-            except TypeError:
-                pass
+        # Validate every base path is absolute, then normalize with trailing separator
+        for key, value in base_paths.items():
+            if value is None:
+                continue
+            expanded = expand_and_normalize(value)
+            if not os.path.isabs(expanded):
+                raise IoValidationError(
+                    f"base_paths.{key} must be an absolute path, got: {value!r}"
+                )
+            base_paths[key] = os.path.join(expanded, "")
+
+        self.config["base_paths"] = base_paths
+        self.db_dir = base_paths["default"]
+
+        def recursive_format(nested_yaml):
+            """
+            Recursively apply string formatting to read paths from nested yaml config dicts.
+            """
+            if isinstance(nested_yaml, dict):
+                return {key: recursive_format(value)
+                        for key, value in nested_yaml.items()}
+            if isinstance(nested_yaml, str):
+                try:
+                    return nested_yaml.format(**base_paths)
+                except KeyError as e:
+                    raise IoValidationError(
+                        f"Unknown base path key {e} referenced in path: {nested_yaml!r}. "
+                        f"Known keys: {sorted(base_paths.keys())}"
+                    ) from e
+            return nested_yaml
+
+        self.config = recursive_format(self.config)
+        self._validate_database_paths(self.config.get("databases", {}))
+
+    def _validate_database_paths(self, tree, breadcrumbs=()):
+        """
+        Walk the resolved `databases:` subtree and raise on any string value that
+        isn't an absolute path.
+        """
+        if isinstance(tree, dict):
+            for key, value in tree.items():
+                self._validate_database_paths(value, breadcrumbs + (key,))
+            return
+        if isinstance(tree, str):
+            location = ".".join(breadcrumbs)
+            if not os.path.isabs(expand_and_normalize(tree)):
+                raise IoValidationError(
+                    f"databases.{location} must be an absolute path, got: {tree!r}. "
+                    "Use absolute paths in YAML; CLI `-d` accepts relative paths."
+                )
 
     @staticmethod
     def _get_output_prefixes(input_file: str | os.PathLike, prefix_arg=None) -> str:
