@@ -189,7 +189,6 @@ class ScreenIO:
         logger.debug("Running Screen with the following parameter set:")
         logger.debug(pformat(self.config))
 
-
     @staticmethod
     def _get_output_prefixes(input_file: str | os.PathLike, prefix_arg=None) -> str:
         """

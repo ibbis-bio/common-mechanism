@@ -653,7 +653,7 @@
         "BENIGNPROT": {
           "recommendation": {
             "status": "Flag (Cleared)",
-            "from_step": "Benign Protein Search"
+            "from_step": "Low Concern Protein Search"
           },
           "name": "BENIGNPROT",
           "description": "",
@@ -673,7 +673,7 @@
         "BENIGNRNA": {
           "recommendation": {
             "status": "Flag (Cleared)",
-            "from_step": "Benign RNA Search"
+            "from_step": "Low Concern RNA Search"
           },
           "name": "BENIGNRNA",
           "description": "BenignCMTestOutput",
@@ -691,7 +691,7 @@
         "BENIGNSYNBIO": {
           "recommendation": {
             "status": "Flag (Cleared)",
-            "from_step": "Benign DNA Search"
+            "from_step": "Low Concern DNA Search"
           },
           "name": "BENIGNSYNBIO",
           "description": "BENIGNSYNBIO",

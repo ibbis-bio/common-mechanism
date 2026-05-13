@@ -13,7 +13,7 @@ dependencies:
   - pyyaml
   - pycountry
   # Runtime non-Python dependencies
-  - blast
+  - blast>=2.17
   - diamond>=2.1
   - hmmer
   - infernal

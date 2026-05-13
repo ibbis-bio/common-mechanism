@@ -81,37 +81,45 @@ def format_config_paths(yaml_config : dict) -> dict:
     This script will update the dictionary to propagate these substitutions.
     If a database directory is provided, it will override the base_path provided in the yaml.
     """
-    if yaml_config.get("base_paths"):
-        try:
-            base_paths = yaml_config["base_paths"]
 
-            # Ensure all the base paths end with a separator
-            for key, value in base_paths.items():
-                base_paths[key] = os.path.join(value,'')
+    if not yaml_config.get("base_paths"):
+        logger.debug("No Base paths to perform yaml substitution.")
+        return yaml_config
+    
+    try:
+        base_paths = yaml_config["base_paths"]
 
-            def recursive_format(nested_yaml, base_paths):
-                """
-                Recursively apply string formatting to
-                read paths from nested yaml config dicts.
-                """
-                if isinstance(nested_yaml, dict):
-                    return {key : recursive_format(value, base_paths) 
-                            for key, value in nested_yaml.items()}
-                if isinstance(nested_yaml, str):
-                    try:
-                        return nested_yaml.format(**base_paths)
-                    except KeyError as e:
-                        raise ValueError(
-                            f"Unknown base path key referenced in path: {nested_yaml}"
-                        ) from e
-                return nested_yaml
+        # Ensure all the base paths end with a separator "/""
+        for key, value in base_paths.items():
+            base_paths[key] = os.path.join(value,'')
 
-            yaml_config = recursive_format(yaml_config, base_paths)
-        except TypeError:
-            pass
+        def recursive_format(nested_yaml, base_paths):
+            """
+            Recursively apply string formatting to
+            read paths from nested yaml config dicts.
+            """
+            if isinstance(nested_yaml, dict):
+                return {key : recursive_format(value, base_paths) 
+                        for key, value in nested_yaml.items()}
+            if isinstance(nested_yaml, str):
+                try:
+                    return nested_yaml.format(**base_paths)
+                except KeyError as e:
+                    raise ValueError(
+                        f"Unknown base path key referenced in path: {nested_yaml}"
+                    ) from e
+            return nested_yaml
+
+        # Recursively format all paths
+        yaml_config["base_paths"] = recursive_format(yaml_config["base_paths"], yaml_config["base_paths"])
+        yaml_config = recursive_format(yaml_config, yaml_config["base_paths"])
+
+        yaml_config = recursive_format(yaml_config, base_paths)
+    except TypeError as e:
+        logger.error("Encountered unexpected TypeError during yaml config base path substitution: %s", e)
+        pass
 
     return yaml_config
-
 
 def get_defaults() -> dict:
     """
