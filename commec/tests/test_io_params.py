@@ -3,7 +3,7 @@ from unittest.mock import patch
 import os
 import yaml
 
-from commec.config.screen_io import ScreenIO
+from commec.config.screen_io import ScreenIO, IoValidationError
 from commec.cli import ScreenArgumentParser
 from commec.screen import add_args
 from commec.utils.file_utils import expand_and_normalize
@@ -200,6 +200,20 @@ def test_missing_user_yaml_raises(tmp_path):
     add_args(parser)
     args = parser.parse_args([INPUT_QUERY, "--config", str(tmp_path / "does_not_exist.yaml")])
     with pytest.raises(FileNotFoundError, match="--config YAML not found"):
+        ScreenIO(args)
+
+
+def test_unknown_yaml_key_raises(tmp_path):
+    """A typo in user YAML (e.g. `databse:`) should abort with the rejected key listed."""
+    user_config_path = tmp_path / "user_config.yaml"
+    with open(user_config_path, "w") as f:
+        yaml.dump({
+            "databse": {"biorisk": {"path": "/ignored"}},  # typo
+        }, f)
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
+    with pytest.raises(IoValidationError, match="Unrecognized key"):
         ScreenIO(args)
 
 

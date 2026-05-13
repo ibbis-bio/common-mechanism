@@ -210,15 +210,18 @@ class ScreenIO:
 
     def _update_config_from_yaml(self, config_filepath: str | os.PathLike) -> None:
         """
-        Override YAML configuration based on provided YAML file. Items in the provided file, but
-        not in the default YAML, will be ignored.
+        Override config with values from a user-provided YAML file. Any keys in the provided
+        file that don't exist in the default YAML are treated as a fatal config error
+        (typically caused by typos like `databse:` instead of `databases:`).
         """
         config_from_yaml = self._load_config_from_yaml(config_filepath)
         self.config, rejected = deep_update(self.config, config_from_yaml)
-        for rejects in rejected:
-            logger.warning("The follow input from the user provided"
-                " configuration was not recognised: %s : %s",
-                rejects[0], rejects[1])
+        if rejected:
+            keys = ", ".join(f"{k}={v!r}" for k, v in rejected)
+            raise IoValidationError(
+                f"Unrecognized key(s) in {config_filepath}: {keys}. "
+                "Check for typos against the packaged default config."
+            )
 
     def _update_config_from_cli(self, args: argparse.Namespace):
         """ 
