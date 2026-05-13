@@ -59,7 +59,16 @@ class SearchHandler(ABC):
         - `database_file`, `input_file`, and `out_file` are validated on instantiation.
         """
 
-        self.db_file = os.path.abspath(os.path.expanduser(database_file))
+        # Database paths should already be absolute by the time they reach a SearchHandler
+        # (ScreenIO validates this). Belt-and-braces: raise if upstream missed a case,
+        # so the failure points at the real bug rather than a CWD-relative resolution.
+        expanded_db = os.path.expanduser(str(database_file))
+        if not os.path.isabs(expanded_db):
+            raise ValueError(
+                f"SearchHandler received a non-absolute database path: {database_file!r}. "
+                "Upstream config validation should have caught this."
+            )
+        self.db_file = os.path.abspath(expanded_db)
         self.input_file = os.path.abspath(os.path.expanduser(input_file))
         self.out_file = os.path.abspath(os.path.expanduser(out_file))
         self.threads = kwargs.get('threads', 1)
