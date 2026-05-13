@@ -304,7 +304,7 @@ class Rationale(StrEnum):
                 "Sequence risk is unknown, possibly generated in silico. ")
     NO_HITS_SKIP_NOTE = NO_HITS + "Matches may be found if re-run without skipping steps."
     SKIPPED = "Query was skipped."
-    TOO_LONG = f"Sequence is too long (must be at least {MAXIMUM_QUERY_LENGTH} bp)."
+    TOO_LONG = f"Sequence is too long (must be at most {MAXIMUM_QUERY_LENGTH} bp)."
     TOO_SHORT = f"Sequence is too short (must be at least {MINIMUM_QUERY_LENGTH} bp)."
 
     FLAG = " flags"
