@@ -177,7 +177,11 @@ class ScreenIO:
 
         # Override configuration with any in user-provided YAML file
         cli_config_yaml=args.config_yaml.strip()
-        if os.path.exists(cli_config_yaml):
+        if cli_config_yaml:
+            if not os.path.exists(cli_config_yaml):
+                raise FileNotFoundError(
+                    f"--config YAML not found: {cli_config_yaml}"
+                )
             logger.debug(f"Overriding defaults in {default_yaml} with values from {cli_config_yaml}")
             self._update_config_from_yaml(cli_config_yaml)
 

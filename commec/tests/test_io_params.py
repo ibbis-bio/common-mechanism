@@ -189,9 +189,18 @@ def test_missing_default_config():
         args = ScreenArgumentParser()
         add_args(args)
         args = args.parse_args([INPUT_QUERY])
-        
+
         with pytest.raises(FileNotFoundError, match="No default yaml found"):
             _ = ScreenIO(args)
+
+
+def test_missing_user_yaml_raises(tmp_path):
+    """-y pointed at a nonexistent file should fail loudly, not silently fall back."""
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([INPUT_QUERY, "--config", str(tmp_path / "does_not_exist.yaml")])
+    with pytest.raises(FileNotFoundError, match="--config YAML not found"):
+        ScreenIO(args)
 
 
 
