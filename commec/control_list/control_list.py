@@ -48,6 +48,8 @@ def import_data(import_path : str | os.PathLike,
 
     # This needs to occur before we interpret regional context.
     __region.load_region_list_data(os.path.join(import_path, "region_definitions.json"))
+    __init.import_ignored_accesions(os.path.join(import_path, "ignored_taxids.csv"))
+    
 
     # If the user puts in EU for example, we need to expand the set.
     cleaned_context = __region.get_regions_set(regional_context)
@@ -90,7 +92,7 @@ def should_ignore(accession : str) -> bool:
     """
     Check whether this accession should simple be ignored by commec screen.
     """
-    return (accession in __data.IGNORED_ACCESSION.to_numpy())
+    return (accession in __data.IGNORED_ACCESSION["ignored_taxid"])
 
 def is_regulated(accession : str) -> bool:
     """
@@ -111,6 +113,56 @@ def is_regulated(accession : str) -> bool:
     index_values = __data.CONTROL_LIST_ANNOTATIONS.index
     return not accession_to_check.isdisjoint(index_values)
 
+def get_cluster_hash(taxid: str) -> str | None:
+    """
+    Returns the highest parent, given the input accession.
+    The highest parent is the child->controlled_taxid mapping that no longer
+    maps to another taxid, whilst also being in the control list annotation index.
+    Returns None if no regulated top-level ancestor exists.
+    """
+    accession_hash = Accession(taxid)
+    index_values = __data.CONTROL_LIST_ANNOTATIONS.index
+
+    # Early exit if not present in control lists.
+    in_map = accession_hash in __data.ACCESSION_MAP["child_taxid"].values
+    in_index = accession_hash in index_values
+    if not in_map and not in_index:
+        return None
+
+    # Figure out the most parenty parent.
+    accessions_to_check = {accession_hash}
+
+    promote_child_to_parents = True
+    while promote_child_to_parents:
+        new_accession_set = set()
+        promote_child_to_parents = False
+        for accession in accessions_to_check:
+            # Collect parent TaxIDs, if any
+            taxid_parents = __data.ACCESSION_MAP.loc[
+                __data.ACCESSION_MAP["child_taxid"] == accession, "controlled_taxid"
+            ]
+            if not taxid_parents.empty:
+                new_accession_set.update(Accession(t) for t in taxid_parents)
+                promote_child_to_parents = True
+                continue
+            # No further parent — this is a top-level node, keep it
+            new_accession_set.add(accession)
+        accessions_to_check = new_accession_set
+        if len(accessions_to_check) == 1:
+            break
+
+    if len(accessions_to_check) == 0:
+        raise RuntimeError(
+            f"get_cluster_hash({taxid!r}): traversal produced an empty set — "
+            "taxid passed the early-exit check but all parents were consumed without resolution."
+        )
+    if len(accessions_to_check) > 1:
+        logger.warning("More than 1 highest parent for %s: %s", taxid, accessions_to_check)
+
+    accession_to_check = next(iter(accessions_to_check))
+    return accession_to_check if accession_to_check in index_values else None
+
+
 def are_regulated_test(accessions) -> dict[str, bool]:
     """
     Batch alternative to calling is_regulated() per-element.
@@ -123,7 +175,7 @@ def are_regulated_test(accessions) -> dict[str, bool]:
         taxid_to_regulated = are_regulated_test(unique_taxids)
 
     Performance difference vs is_regulated() x N:
-        - ACCESSION_MAP is filtered once with isin() instead of N separate .loc[] calls.
+        - ACCESSION_MAP is filtered oaccessionsnce with isin() instead of N separate .loc[] calls.
         - CONTROL_LIST_ANNOTATIONS.index is converted to a set once instead of N times.
         - Per-taxid disjoint check is still a Python loop (unavoidable without a bulk index op).
     """
@@ -162,7 +214,6 @@ def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[Contr
     taxid specific regulation information.
     """
     output_data : list[ControlListOutput] = []
-    output_context : list[ControlListContext] = []
 
     # Modify based on input accession format:
     accession_hash = Accession(accession)
@@ -183,28 +234,28 @@ def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[Contr
     logger.debug("Filtered Output DBS: %s", filtered_regulated_taxid_annotations.to_string())
 
     # For each annotation, process its output, and context
-    for hash_taxid, row in filtered_regulated_taxid_annotations.iterrows():      
+    for hash_taxid, row in filtered_regulated_taxid_annotations.iterrows():    
+
+        is_child = (accession_hash != hash_taxid)
+        child_name = ""
+        if is_child: # We want the childs name in this instance.
+            child_name = (__data.ACCESSION_MAP[__data.ACCESSION_MAP["child_taxid"]
+                            == str(accession_hash)]["child_name"].iloc[0])
+
         output_data.append(ControlListOutput(row["display_name"],
                                              row["category"],
                                              row["list_acronym"],
                                              row["species"],
-                                             row["genus"]))
-
-        derived_text = str(row["list_item"])
-        is_child = (accession_hash != hash_taxid)
-        child_name = ""
-        if is_child: # We want the childs name in this instance.
-            child_name = __data.ACCESSION_MAP[__data.ACCESSION_MAP["child_taxid"] == str(accession_hash)]["child_name"].iloc[0]
-
-        output_context.append(ControlListContext(derived_text,
-                                                 is_child,
-                                                 child_name))
+                                             row["genus"],
+                                             row["list_item"],
+                                             is_child,
+                                             child_name))
 
     # Return the list pairs of output data and contexts.
     if len(output_data) > 0:
         logger.debug("Checking %s [%s] for regulation resulted in %i annotations",
                      accession_hash.get_format(), accession, len(output_data))
-    return output_data, output_context
+    return output_data
 
 def get_control_lists(list_acronym = None):
     """
@@ -258,7 +309,20 @@ def run(arguments: argparse.Namespace):
         return 2
         
     import_data(database_location, regions)
-        
+    
+    # Temp testing for hash generation.
+    children : pd.Series = __data.ACCESSION_MAP["child_taxid"]
+    parents = __data.ACCESSION_MAP["controlled_taxid"]
+    import pandas as pd
+    hasherinos = []
+    all_to_test = pd.concat([children, parents]).unique()
+    for taxid in all_to_test:
+        taxid = str(taxid)
+        hash_taxid = get_cluster_hash(taxid)
+        hasherinos.append(hash_taxid)
+    
+    hasherinos = set(hasherinos)
+    logger.info("Total number of unique parent hashes : %i", len(hasherinos))
 
     if arguments.showlists:
         logger.info(" *----------* CONTROL LISTS *----------* ")

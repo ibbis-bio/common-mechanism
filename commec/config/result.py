@@ -220,12 +220,15 @@ class TaxonomyAnnotation:
     dict of a HitResult when determined by a taxonomy step.
     """
     evalue : float = 0.0
+    percent_identity : float = 0.0
     taxid : str = ""
-    #species: str = ""
-    #genus : str = ""
-    #superkingdom: str = ""
+    start : str = ""
+    end : str = ""
+    genus : str = ""
+    species: str = ""
     target_hit : str = ""
     target_description : str = ""
+    control_lists : list[tuple[str, str]] = field(default_factory=list[tuple[str, str]])
 
 @dataclass
 class HitResult:
@@ -237,15 +240,11 @@ class HitResult:
     recommendation: HitScreenStatus = field(default_factory=HitScreenStatus)
     name: str = ""
     description: str = ""
-    ranges: list[MatchRange] = field(default_factory=list)
+    region: MatchRange = field(default_factory=MatchRange)
     annotations: dict = field(default_factory=dict)
 
     def get_e_value(self) -> float:
-        """Gets the best e-value across all ranges, useful for sorting hits"""
-        out: float = 10.0
-        for r in self.ranges:
-            out = min(out, r.e_value)
-        return out
+        return self.region.e_value
 
     def __str__(self) -> str:
         output = (
@@ -436,12 +435,11 @@ class QueryResult:
         Returns the relevant hit, or None.
         """
         for hit in self.hits.values():
-            for region in hit.ranges:
-                if (
-                    input_region.query_start == region.query_start
-                    and input_region.query_end == region.query_end
-                ):
-                    return hit
+            if (
+                input_region.query_start == hit.region.query_start
+                and input_region.query_end == hit.region.query_end
+            ):
+                return hit
         return None
 
     def add_new_hit_information(self, new_hit: HitResult) -> bool:
@@ -456,19 +454,19 @@ class QueryResult:
             self.hits[new_hit.name] = new_hit
             return False
 
-        for new_region in new_hit.ranges:
-            is_unique_region = True
-            for existing_region in existing_hit.ranges:
-                if (
-                    new_region.query_start == existing_region.query_start
-                    and new_region.query_end == existing_region.query_end
-                ):
-                    logger.debug(f"[{new_region.query_start}-{new_region.query_end}] Region already exists...")
-                    is_unique_region = False
-
-            if is_unique_region:
-                hits_is_updated = True
-                existing_hit.ranges.append(new_region)
+        #for new_region in new_hit.ranges:
+        #    is_unique_region = True
+        #    for existing_region in existing_hit.ranges:
+        #        if (
+        #            new_region.query_start == existing_region.query_start
+        #            and new_region.query_end == existing_region.query_end
+        #        ):
+        #            logger.debug(f"[{new_region.query_start}-{new_region.query_end}] Region already exists...")
+        #            is_unique_region = False
+        #
+        #    if is_unique_region:
+        #        hits_is_updated = True
+        #        existing_hit.ranges.append(new_region)
 
         return hits_is_updated
 
@@ -695,12 +693,12 @@ class QueryResult:
             self.hits.items(), key=lambda item: item[1].get_e_value(), reverse=True
         )
 
-        # Sort the annotations for each hit based on taxid
+        # Sort the annotations for each hit based on evalue
         for _, hit in self.hits.items():
-            annotations = hit.annotations.get("regulated_taxonomy")
+            annotations = hit.annotations.get("controlled_taxa")
             if annotations:
-                for entry in hit.annotations["regulated_taxonomy"]:
-                    entry["regulated_taxa"].sort(key=lambda x: x["evalue"])
+                for entry in hit.annotations["controlled_taxa"]:
+                    entry["controlled_taxa"].sort(key=lambda x: x["evalue"])
 
         self.hits = dict(sorted_items_desc)
         self._update_step_flags(query_data)
@@ -803,8 +801,7 @@ class ScreenResult:
         """
         for query in self.queries.values():
             for hit in query.hits.values():
-                for region in hit.ranges:
-                    yield query, hit, region
+                yield query, hit, hit.region
 
     def hits(self) -> Iterator[Tuple[QueryResult, HitResult]]:
         """

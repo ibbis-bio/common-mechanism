@@ -13,11 +13,8 @@ from typing import BinaryIO, TextIO
 import pytaxonkit
 import pandas as pd
 import numpy as np
+import commec.control_list as cl
 from commec.tools.search_handler import SearchHandler, DatabaseValidationError
-from commec.control_list import is_regulated
-
-TAXID_SYNTHETIC_CONSTRUCTS = 32630
-TAXID_VECTORS = 29278
 
 logger = logging.getLogger(__name__)
 
@@ -89,32 +86,6 @@ def _split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
     return split
 
 
-def _get_lineages(taxids, db_path: str | os.PathLike, threads: int):
-    """
-    Get the full lineage for each unique taxid. This is needed to determine whether it belongs to
-    any regulated pathogen, since pathogens might be regulated at various points in the lineage
-    (i.e. not just species or genus).
-    """
-    lin = pytaxonkit.lineage(taxids.drop_duplicates(), data_dir=db_path, threads=threads)
-
-    # Warn about error codes from lineage search
-    taxids_not_found = lin[lin["Code"] == -1]["TaxID"]
-    if not taxids_not_found.empty:
-        logger.warning(
-            "No information about the following taxID(s) was found in the taxonomy database: %s",
-            ", ".join(taxids_not_found.astype(str).tolist()),
-        )
-
-    taxids_deleted = lin[lin["Code"] == 0]["TaxID"]
-    if not taxids_deleted.empty:
-        logger.warning(
-            "The following taxID(s) have been deleted (in delnodes.dmp): %s",
-            ", ".join(taxids_deleted.astype(str).tolist()),
-        )
-
-    # Remove non-success codes from the list
-    return lin[(lin["Code"] != -1) & (lin["Code"] != 0)]
-
 def get_controlled_labels(
         blast : pd.DataFrame,
         taxids_column_name = "subject tax ids"
@@ -124,25 +95,25 @@ def get_controlled_labels(
     blast outputs to label as regulated True/False, depending on its existance
     in the regulated lists.
     Ignores synthetic constructs.
+    Returns the mutated blast dataframe to contain the following headings:
+    cluster_hash - the TaxID of the "most parent" in the context of a controlled taxid hierarchy.
+    species - the species of the subject taxid
+    genus - genus of subject taxid.
+    control_list - list of all controlled outputs.
     """
     blast = _split_by_tax_id(blast, taxids_column_name)
+
+    # Remove ignored taxa; ie vaccines or synthetic taxa
+    blast = blast[~blast[taxids_column_name].apply(cl.should_ignore)]
+
     # Get unique taxids
     unique_taxids = blast[taxids_column_name].dropna().unique()
-    logger.debug("Checking %s unique taxids", len(unique_taxids))
-    # Build a mapping {taxid: truthiness}
-    taxid_to_regulated = {taxid: is_regulated(taxid) for taxid in unique_taxids}
-    # taxid_to_regulated = are_regulated_test(unique_taxids) # This is a potential performance improvement to test.
+    logger.debug("Checking %s unique taxids", len(unique_taxids))    
+    taxid_to_controlhash = {taxid: cl.get_cluster_hash(taxid) for taxid in unique_taxids}
+
     # Map back to the dataframe
-    blast["regulated"] = blast[taxids_column_name].map(taxid_to_regulated)
-    # filter out synthetic taxids.
-    # TODO: Update to filter out ignored_taxids.csv from control lists in future.
-    blast = blast[
-        (blast[taxids_column_name] != TAXID_SYNTHETIC_CONSTRUCTS)
-        & (blast[taxids_column_name] != TAXID_VECTORS)
-    ]
-    # Sort and Clean up
-    blast = blast.sort_values(by=["% identity"], ascending=False)
-    blast = blast.reset_index(drop=True)
+    blast["control_hash"] = blast[taxids_column_name].map(taxid_to_controlhash)    
+
     return blast
 
 def get_taxonomic_labels(

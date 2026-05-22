@@ -83,13 +83,11 @@ def _filter_low_concern_proteins(query : Query,
     # Report top hit for Protein / RNA / Synbio
     low_concern_hit = low_concern_protein_for_query_trimmed["subject title"].iloc[0]
     low_concern_hit_description = str(*low_concern_descriptions["Description"][low_concern_descriptions["ID"] == low_concern_hit])
-    match_ranges = [
-        MatchRange(
+    match_range = MatchRange(
         float(low_concern_protein_for_query_trimmed['evalue'].iloc[0]),
         int(low_concern_protein_for_query_trimmed['s. start'].iloc[0]), int(low_concern_protein_for_query_trimmed['s. end'].iloc[0]),
         int(low_concern_protein_for_query_trimmed['q. start'].iloc[0]), int(low_concern_protein_for_query_trimmed['q. end'].iloc[0])
         )
-    ]
     low_concern_hit_outcome = HitResult(
             HitScreenStatus(
                 ScreenStatus.PASS,
@@ -97,7 +95,7 @@ def _filter_low_concern_proteins(query : Query,
             ),
             low_concern_hit,
             low_concern_hit_description,
-            match_ranges,
+            match_range,
             annotations={"Coverage: ":float(low_concern_protein_for_query_trimmed['coverage_ratio'].iloc[0])}
         )
 
@@ -139,13 +137,11 @@ def _filter_low_concern_rna(query : Query,
     if not low_concern_rna_for_query_passed.empty:
         low_concern_hit = low_concern_rna_for_query_trimmed["subject title"].iloc[0]
         low_concern_hit_description =  low_concern_rna_for_query_trimmed["description of target"].iloc[0]
-        match_ranges = [
-            MatchRange(
+        match_range = MatchRange(
             float(low_concern_rna_for_query_trimmed['evalue'].iloc[0]),
             int(low_concern_rna_for_query_trimmed['s. start'].iloc[0]), int(low_concern_rna_for_query_trimmed['s. end'].iloc[0]),
             int(low_concern_rna_for_query_trimmed['q. start'].iloc[0]), int(low_concern_rna_for_query_trimmed['q. end'].iloc[0])
             )
-        ]
         low_concern_hit_outcome = HitResult(
                 HitScreenStatus(
                     ScreenStatus.PASS,
@@ -153,7 +149,7 @@ def _filter_low_concern_rna(query : Query,
                 ),
                 low_concern_hit,
                 low_concern_hit_description,
-                match_ranges,
+                match_range,
             )
         
         if hit.recommendation.status not in {ScreenStatus.CLEARED_FLAG, ScreenStatus.CLEARED_WARN}:
@@ -200,13 +196,12 @@ def _filter_low_concern_dna(query : Query,
 
     low_concern_hit = low_concern_dna_for_query_trimmed["subject title"].iloc[0]
     low_concern_hit_description =  low_concern_dna_for_query_trimmed["subject title"].iloc[0]
-    match_ranges = [
-        MatchRange(
+    match_range = MatchRange(
         float(low_concern_dna_for_query_trimmed['evalue'].iloc[0]),
         int(low_concern_dna_for_query_trimmed['s. start'].iloc[0]), int(low_concern_dna_for_query_trimmed['s. end'].iloc[0]),
         int(low_concern_dna_for_query_trimmed['q. start'].iloc[0]), int(low_concern_dna_for_query_trimmed['q. end'].iloc[0])
         )
-    ]
+
     low_concern_hit_outcome = HitResult(
             HitScreenStatus(
                 ScreenStatus.PASS,
@@ -214,7 +209,7 @@ def _filter_low_concern_dna(query : Query,
             ),
             low_concern_hit,
             low_concern_hit_description,
-            match_ranges,
+            match_range,
         )
     
     logger.debug("Processing low-concern Hit: %s", low_concern_hit_outcome)
@@ -281,35 +276,35 @@ def _update_low_concern_data_for_query(query : Query,
             continue
 
         cleared_regions = 0
-        total_regions_to_clear = len(hit.ranges)
+        total_regions_to_clear = 1
         logger.debug("Hit has %i regions required to clear.", total_regions_to_clear)
 
-        for region in hit.ranges:
+        region = hit.region
 
-            if not low_concern_protein_for_query.empty:
-                query.mark_as_hit()
-                low_concern_proteins = _filter_low_concern_proteins(query, hit, region,
-                                            low_concern_protein_for_query,
-                                            low_concern_descriptions)
-                if low_concern_proteins:
-                    cleared_regions += 1
-                    new_low_concern_protein_hits.extend(low_concern_proteins)
+        if not low_concern_protein_for_query.empty:
+            query.mark_as_hit()
+            low_concern_proteins = _filter_low_concern_proteins(query, hit, region,
+                                        low_concern_protein_for_query,
+                                        low_concern_descriptions)
+            if low_concern_proteins:
+                cleared_regions += 1
+                new_low_concern_protein_hits.extend(low_concern_proteins)
+        
+        if not low_concern_rna_for_query.empty:
+            query.mark_as_hit()
+            low_concern_rna = _filter_low_concern_rna(query, hit, region,
+                                    low_concern_rna_for_query)
+            if low_concern_rna:
+                cleared_regions += 1
+                new_low_concern_rna_hits.extend(low_concern_rna)
             
-            if not low_concern_rna_for_query.empty:
-                query.mark_as_hit()
-                low_concern_rna = _filter_low_concern_rna(query, hit, region,
-                                       low_concern_rna_for_query)
-                if low_concern_rna:
-                    cleared_regions += 1
-                    new_low_concern_rna_hits.extend(low_concern_rna)
-                
-            if not low_concern_dna_for_query.empty:
-                query.mark_as_hit()
-                low_concern_dna = _filter_low_concern_dna(query, hit, region,
-                                          low_concern_dna_for_query)
-                if low_concern_dna:
-                    cleared_regions += 1
-                    new_low_concern_dna_hits.extend(low_concern_dna)
+        if not low_concern_dna_for_query.empty:
+            query.mark_as_hit()
+            low_concern_dna = _filter_low_concern_dna(query, hit, region,
+                                        low_concern_dna_for_query)
+            if low_concern_dna:
+                cleared_regions += 1
+                new_low_concern_dna_hits.extend(low_concern_dna)
 
         # Quickly check if this hit had all regions cleared.
         if cleared_regions >= total_regions_to_clear:

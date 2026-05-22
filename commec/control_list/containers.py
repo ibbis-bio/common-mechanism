@@ -240,7 +240,6 @@ class ControlListContext:
     derived_from : str = None
     is_child : bool = False
     child_name : str = ""
-    #should_ignore : bool = False
 
 @dataclass
 class ControlListOutput:
@@ -260,4 +259,8 @@ class ControlListOutput:
     # Taxonomy Information
     species : str = ""
     genus : str = ""
-    #superkingdom : str = "" Better reported by category(?)
+
+    # Control Context
+    source_text : str = None
+    is_child : bool = False
+    child_name : str = ""

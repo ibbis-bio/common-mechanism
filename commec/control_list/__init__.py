@@ -15,7 +15,9 @@ from .control_list import (
     get_control_lists,
     get_regulation,
     is_regulated,
-    import_data
+    import_data,
+    get_cluster_hash,
+    should_ignore
 )
 
 from .cli import (

@@ -327,36 +327,35 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
     n_stacks = 1
 
     for hit in query_to_draw.hits.values():
-        for match in hit.ranges:
-            # Find the best vertical position to reduce collisions, and fill all space.
-            collision_free = False
-            stack_write = 1 # 1 gives a bit of space between the query and the data.
-            while not collision_free:
-                stack_write += 1
-                collision_free = True
-                for entry in graph_data:
-                    if entry["stack"] == stack_write:
-                        collision_free = (collision_free and
-                                            (match.query_start > entry["stop"] 
-                                            or match.query_end < entry["start"])
-                                            )
+        # Find the best vertical position to reduce collisions, and fill all space.
+        collision_free = False
+        stack_write = 1 # 1 gives a bit of space between the query and the data.
+        while not collision_free:
+            stack_write += 1
+            collision_free = True
+            for entry in graph_data:
+                if entry["stack"] == stack_write:
+                    collision_free = (collision_free and
+                                        (hit.region.query_start > entry["stop"] 
+                                        or hit.region.query_end < entry["start"])
+                                        )
 
-            n_stacks = max(n_stacks, stack_write + 1)
+        n_stacks = max(n_stacks, stack_write + 1)
 
-            graph_data.append(
-                {
-                    "label" : hit.description[:25] + "...",
-                    "label_verbose" : hit.description[:],
-                    "outcome" : f"{hit.recommendation.status} from {hit.recommendation.from_step}",
-                    "outcome_verbose" : generate_outcome_string(query_to_draw, hit),
-                    "start" : match.query_start,
-                    "stop" : match.query_end,
-                    "color" : color_from_hit(hit),
-                    "stack" : stack_write,
-                    "text" : overlay_text_from_hit(hit),
-                    "text_color" : constrast_color_from_hit(hit),
-                }
-            )
+        graph_data.append(
+            {
+                "label" : hit.description[:25] + "...",
+                "label_verbose" : hit.description[:],
+                "outcome" : f"{hit.recommendation.status} from {hit.recommendation.from_step}",
+                "outcome_verbose" : generate_outcome_string(query_to_draw, hit),
+                "start" : hit.region.query_start,
+                "stop" : hit.region.query_end,
+                "color" : color_from_hit(hit),
+                "stack" : stack_write,
+                "text" : overlay_text_from_hit(hit),
+                "text_color" : constrast_color_from_hit(hit),
+            }
+        )
 
     df = pd.DataFrame(graph_data)
 

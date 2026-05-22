@@ -140,6 +140,16 @@ def update_regional_context(
                          reg_list.name, str(list_affected_regions))
             reg_list.status = alternative_mode
 
+def import_ignored_accesions(input_filepath : str | os.PathLike) -> bool:
+    """
+    Imports the shred ignored taxids csv, which usually contains vaccine, and 
+    sythetic taxid targets - those which we want to exclude from our analysis
+    when filtering data to be used in control list screening.
+    """
+    if os.path.isfile(input_filepath):
+        ignored_data = pd.read_csv(input_filepath, dtype = str, keep_default_na=False, na_values=[])
+        ld.add_ignored_accession_data(ignored_data)
+
 
 def _import_control_list_info(input_path : str | os.PathLike):
     """

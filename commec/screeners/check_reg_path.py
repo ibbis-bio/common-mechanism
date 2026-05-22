@@ -18,7 +18,6 @@ from commec.config.query import Query
 from commec.tools.blast_tools import (
     read_blast,
     get_controlled_labels,
-    get_top_hits,
 )
 from commec.config.result import (
     ScreenResult,
@@ -33,8 +32,15 @@ from commec.config.result import (
 from commec.control_list import (
     get_control_lists,
     get_regulation,
+    is_regulated,
     ListMode,
     ControlList,
+)
+
+from commec.tools.data_functions import (
+    find_clusters,
+    get_top_hits,
+    remove_synthetic_and_vaccine_taxids,
 )
 
 pd.set_option("display.max_colwidth", 10000)
@@ -71,60 +77,12 @@ def _check_inputs(
     return True
 
 
-# ── Data preparation ───────────────────────────────────────────────────────────
-
-
-def _load_blast_data(
-    search_handler: SearchHandler,
-    step: ScreenStep,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Read raw BLAST output, apply regulated/non-regulated classification,
-    and trim to per-base top hits.
-
-    Returns:
-        blast: Full labelled DataFrame (for initial hit marking).
-        top_hits: Trimmed top-hit DataFrame with 'regulated' column (for analysis).
-    """
-    blast = read_blast(search_handler.out_file)
-    logger.debug("%s Blast Import: shape %s\n%s", step, blast.shape, blast.head())
-
-    blast = get_controlled_labels(blast)
-    logger.debug("%s Controlled Labels applied: shape %s\n%s", step, blast.shape, blast.head())
-
-    top_hits = get_top_hits(blast)
-    logger.debug("%s Top Hits derived: shape %s\n%s", step, top_hits.shape, top_hits.head())
-
-    return blast, top_hits
-
-
-def _mark_initial_hits(
-    blast: pd.DataFrame,
-    queries: dict[str, Query],
-) -> None:
-    """
-    Mark each Query object as having at least one BLAST hit.
-
-    Logs an error for any query accession present in the BLAST output
-    that cannot be located in the supplied queries map.
-    """
-    for query_acc in blast["query acc."].unique():
-        query_obj = queries.get(query_acc)
-        if query_obj:
-            logger.debug("Confirming hit for query %s.", query_acc)
-            query_obj.mark_as_hit()
-        else:
-            logger.error(
-                "Could not mark query %s as hit: query not found in input queries.",
-                query_acc,
-            )
-
 
 # ── Region-level annotation collection ────────────────────────────────────────
 
 
 def _collect_region_annotations(
-    region: pd.Series,
+    q_start : int, q_end : int,
     unique_query_data: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -139,8 +97,8 @@ def _collect_region_annotations(
         non_regulated_for_region: Non-regulated hits at this position.
     """
     shared_site = unique_query_data[
-        (unique_query_data["q. start"] == region["q. start"])
-        | (unique_query_data["q. end"] == region["q. end"])
+        (unique_query_data["q. start"] == q_start)
+        | (unique_query_data["q. end"] == q_end)
     ]
 
     regulated_for_region = shared_site[shared_site["regulated"]]
@@ -221,13 +179,15 @@ def _update_using_control_lists(
 def _extract_unique_annotations(df: pd.DataFrame) -> set[TaxonomyAnnotation]:
     """
     Build a set of TaxonomyAnnotation objects from a BLAST-result DataFrame.
-
-    Expected columns: evalue, subject tax ids, subject acc., subject title.
+    Expected columns: 
     """
     return {
         TaxonomyAnnotation(*row)
         for row in df[
-            ["evalue", "subject tax ids", "subject acc.", "subject title"]
+            ["evalue",
+             "subject tax ids",
+             "subject acc.",
+             "subject title"]
         ].itertuples(index=False, name=None)
     }
 
@@ -339,7 +299,150 @@ def _determine_screen_outcome(
 
 
 # ── Per-hit orchestration ──────────────────────────────────────────────────────
+def get_hit_result_from_data(unique_query_data : pd.DataFrame, step : ScreenStep) -> list[HitResult]:
+    """
+    Given a dataframe that has been annotated with control list information,
+    derive a list of HitResults that represent the outcome of this data.
+    Data submitted is taken as a whole, and is assumed to represent a single Query.
+    """
+    output_hit_results : list[HitResult] = []
 
+    # Filter data to the top hits only.
+    top_hits = get_top_hits(unique_query_data)
+    top_hits = get_controlled_labels(top_hits)
+    regulated_only = top_hits[top_hits["regulated"]]
+    non_regulated_only = top_hits[~top_hits["regulated"]]
+    unique_controlled_parents = regulated_only["control_hash"].unique()
+
+    #logger.debug("%s: %s query has %i unique control hits",
+    #            step, query_acc, len(unique_controlled_parents))
+
+    for controlled_parent in unique_controlled_parents:
+        cluster_data, clusters = find_clusters(regulated_only[regulated_only["control_hash"] == controlled_parent])
+        #logger.debug("%s: query %s has %i regulated clusters", step, query_acc, len(clusters))
+        for i, cluster in enumerate(clusters):
+            logger.debug("Processing cluster[%i]: %s",i, cluster)
+            hit_name = f"{controlled_parent}_{cluster[0]}_{cluster[1]}"
+            new_hit_result = create_hit_result_for_cluster(cluster_data[cluster_data["cluster"] == i],
+                                                            non_regulated_only, cluster[0], cluster[1], hit_name, step)
+            output_hit_results.append(new_hit_result)
+    return output_hit_results
+
+def create_hit_result_for_cluster(
+    cluster_data : pd.DataFrame,
+    non_regulated_only : pd.DataFrame,
+    cluster_start : int,
+    cluster_end : int,
+    hit_name : str,
+    step : ScreenStep) -> HitResult:
+    """
+    Given a cluster of controlled hits, and the common start and end point.
+    Find overlapping non-regulated hits, and generate a HitResult, to describe
+    the data for commec screen output.
+
+    """
+    best_evalue = min(cluster_data["evalue"])
+    match_range = MatchRange(
+            best_evalue,
+            0, 0,
+            int(cluster_start), int(cluster_end),
+        )
+
+    # Get the top 10 non-controlled hits for reporting.
+    shared_site = non_regulated_only[
+        (non_regulated_only["q. start"] == cluster_start)
+        | (non_regulated_only["q. end"] == cluster_end)
+    ]
+    
+    regulated_for_region = cluster_data
+    non_regulated_for_region = (
+        shared_site[~shared_site["regulated"]]
+        .drop_duplicates(subset="subject tax ids")
+        .drop_duplicates(subset="subject acc.")
+        .sort_values(by="evalue", ascending=True)
+        .head(10)
+    )
+
+    reg_species = []
+    domains = []
+    reg_taxids = regulated_for_region["subject tax ids"].unique()
+    non_reg_taxids = non_regulated_for_region["subject tax ids"].unique()
+
+    regulated_annotations = []
+    # Gather control list information
+    
+    for i, row in regulated_for_region.iterrows():
+        control_output = get_regulation(row["subject tax ids"])
+        control_lists = [tuple([co.list, co.source_text]) for co in control_output]
+
+        species = control_output[0].species
+        genus = control_output[0].genus
+        category = control_output[0].category
+
+        new_annotation = TaxonomyAnnotation(
+            evalue = row["evalue"],
+            percent_identity = row["% identity"],
+            taxid = row["subject tax ids"],
+            start = row["q. start"],
+            end = row["q. end"],
+            genus = genus,
+            species = species,
+            target_hit = row["subject acc."],
+            target_description = row["subject title"],
+            control_lists = control_lists,
+        )
+        regulated_annotations.append(new_annotation)
+        reg_species.append(species)
+        domains.append(category)
+    
+    reg_species = list(set(reg_species))
+    unique_domains = list(set(domains))
+
+    # Compile per-domain counts for regulation_dict
+    n_virus = sum(1 for d in unique_domains if d == "Viruses")
+    n_bacteria = sum(1 for d in unique_domains if d == "Bacteria")
+    n_eukaryote = sum(1 for d in unique_domains if d == "Eukaryota")
+
+    # Generate the Taxonomy Annotation dict for adding to HitResult
+    taxonomy_annotations = {
+        "controlled_taxa" : [],
+        "non-controlled_taxa" : [],
+        "statistics" : {
+            "number_of_controlled_taxids" : len(reg_taxids),
+            "number_of_non-controlled_taxids" : len(non_reg_taxids),
+            "controlled_bacteria" : n_bacteria,
+            "controlled_viruses" : n_virus,
+            "controlled_eukaryota" : n_eukaryote
+        }
+    }
+
+    taxonomy_annotations["controlled_taxa"] = regulated_annotations
+
+    non_regulated_annotations = []
+    for i, row in non_regulated_for_region.iterrows():
+        non_regulated_annotations.append({
+            "evalue" : row["evalue"],
+            "percent_identity" : row["% identity"],
+            "taxid" : row["subject tax ids"],
+            "start" : row["q. start"],
+            "end" : row["q. end"],
+            "target_hit" : row["subject acc."],
+            "target_description" : row["subject title"],
+        })
+    taxonomy_annotations["non-controlled_taxa"] = non_regulated_annotations
+
+    screen_status = ScreenStatus.WARN
+    hit_description = "No description yet."
+
+    new_hit = HitResult(
+        HitScreenStatus(screen_status, step),
+        hit_name,
+        hit_description,
+        match_range,
+        {   "domain": unique_domains,
+            "controlled_taxonomy": [taxonomy_annotations]},
+    )
+    return new_hit
 
 def _process_regulated_hit(
     hit_acc: str,
@@ -449,7 +552,7 @@ def _process_regulated_hit(
         hit_name,
         hit_description,
         match_ranges,
-        {"domain": unique_domains, "regulated_taxonomy": [regulation_dict]},
+        {"taxonomy": unique_domains, "regulated_taxonomy": [regulation_dict]},
     )
 
     # Build legacy-format log message (emitted later at INFO level, grouped by query)
@@ -577,17 +680,25 @@ def parse_taxonomy_hits(
     """
     Parse a taxonomic BLAST screen output and update the ScreenResult in-place.
 
-    Processing pipeline:
-        1. Validate inputs.
-        2. Load BLAST data, apply regulated labels, and derive top hits.
-        3. Mark any query that produced a BLAST hit.
-        4. For each query × regulated hit accession × BLAST region:
-           a. Collect co-localised regulated and non-regulated hits.
-           b. Apply control-list compliance rules.
-           c. Determine screen status and build a HitResult.
-           d. Update the ScreenResult.
-        5. Emit grouped INFO-level log messages.
-
+    Process:
+        1. Load in the dataframe from provided SearchHandler.db_directory
+        2. Remove Synthetic and Vaccine hits.
+        2. Annotation the dataframe with control list annotations based on Accession (TaxID)
+        3. Split the dataframe into per Query processing.
+         per Query: (Point of Threading)
+        4. Filter to Top Hits and Trim Edges.
+        4. Split into Controlled vs non-controlled.
+        6. Identify unique list of controlled parents.
+         per UCP:
+        5. Find regional clusters.
+        6. Identify top 10 non-regulated hits + clustered hits.
+        7. Generate a HitResults containing
+            > ID by "hash_parent"_"start"_"stop"
+            > Longest description for control hit.
+            > ScreenResult
+            > List of Control Lists Hit
+            > List of Hits regulated (Those inside cluster)
+            > List of Hits non-regulated (Top 10 non-regulated hits).
     Args:
         search_handler: Handle of the search tool used for the taxonomic screen.
         low_concern_taxid_path: Path to the low-concern taxid CSV.
@@ -604,7 +715,8 @@ def parse_taxonomy_hits(
     logger.debug("Acquiring Taxonomic Data for JSON output:")
 
     if not _check_inputs(
-        search_handler, low_concern_taxid_path, biorisk_taxid_path, taxonomy_directory
+        search_handler, low_concern_taxid_path,
+        biorisk_taxid_path, taxonomy_directory
     ):
         return 1
 
@@ -616,56 +728,55 @@ def parse_taxonomy_hits(
         logger.info("\t...no hits\n")
         return 0
 
-    # ── Phase 1: Data preparation ─────────────────────────────────────────────
-    blast, top_hits = _load_blast_data(search_handler, step)
+    # Data load and preparation.
+    blast = read_blast(search_handler.out_file)    
+    logger.debug("%s Blast Import: shape %s\n%s", step, blast.shape, blast.head())
 
-    # ── Phase 2: Mark queries with any BLAST hit ──────────────────────────────
-    _mark_initial_hits(blast, queries)
+    # Label data with parent hash taxids.
+    logger.info("    Identifying controlled taxa ...")
 
-    if top_hits["regulated"].sum() == 0:
+    # Build a mapping {taxid: truthiness}
+    taxid_to_regulated = {taxid: is_regulated(taxid) for taxid in blast["subject tax ids"].unique()}
+    # Map back to the dataframe
+    blast["regulated"] = blast["subject tax ids"].map(taxid_to_regulated)
+
+    # Early exit if no regulated hits.
+    #if sum(1 for ch in blast["control_hash"] if ch is not None) == 0:
+    if blast["regulated"].sum() == 0:
         logger.info("\t...no regulated hits\n")
         return 0
 
-    # ── Phase 3: Per-query, per-hit analysis ──────────────────────────────────
-    log_container: dict[str, list[str]] = {key: [] for key in data.queries}
-    unique_query_accs = top_hits["query acc."].unique()
+    logger.debug("%s Controlled Labels applied: shape %s\n%s", step, blast.shape, blast.head())
+
+    # Step 2: Per-query analysis
+    unique_query_accs = blast["query acc."].unique()
     logger.debug("%s: %d unique queries with regulated hits", step, len(unique_query_accs))
 
     for query_acc in unique_query_accs:
-        logger.debug("Processing query: %s", query_acc)
-
+        # From here should be Threaded:
+        logger.info("    Processing query: %s", query_acc)
         query_write = data.get_query(query_acc)
         if not query_write:
             logger.error("Query '%s' not found in ScreenResult during %s.", query_acc, step)
             continue
 
-        unique_query_data = top_hits[top_hits["query acc."] == query_acc]
-        regulated_only = unique_query_data[unique_query_data["regulated"]]
-        regulated_hit_accs = regulated_only["subject acc."].unique()
-        logger.debug(
-            "%s: query %s has %d regulated hit accessions",
-            step, query_acc, len(regulated_hit_accs),
-        )
+        # Filter to just top hits, trim the edges, sort and Clean up
+        unique_query_data = blast[blast["query acc."] == query_acc]
+        unique_query_data = unique_query_data.sort_values(by=["% identity"], ascending=False)
+        unique_query_data = unique_query_data.reset_index(drop=True)
+        hit_results_for_query = get_hit_result_from_data(unique_query_data, step)
 
-        for hit_acc in regulated_hit_accs:
-            logger.debug("Processing hit accession: %s", hit_acc)
-            hit_data = regulated_only[regulated_only["subject acc."] == hit_acc]
+        for new_hit in hit_results_for_query:
+            query_write.add_new_hit_information(new_hit)
 
-            new_hit, regulation_dict, unique_domains, screen_status, match_ranges, log_msg = (
-                _process_regulated_hit(
-                    hit_acc, hit_data, unique_query_data, query_acc, queries, step
-                )
-            )
+    for query_acc in unique_query_accs:
+        query_write = data.get_query(query_acc)
+        if not query_write:
+            logger.error("Query '%s' not found in ScreenResult during %s.", query_acc, step)
+            continue
+        # Collect all threads.
 
-            _apply_hit_to_screen_result(
-                query_write, hit_acc, new_hit,
-                match_ranges, unique_domains, regulation_dict, screen_status, step,
-            )
-
-            log_container[query_acc].append(log_msg)
-
-    # ── Phase 4: Emit grouped INFO logs ───────────────────────────────────────
-    _emit_query_logs(log_container, step)
+    # Step 3: Emit grouped INFO logs
 
     return 0
 

@@ -8,9 +8,12 @@ As well as methods for interacting safely with these globals:
  * clear()
  * 
 """
+import logging
 import pandas as pd
 
 from .containers import ControlList
+
+logger = logging.getLogger(__name__)
 
 # The information of the Control Lists, Indexed on the list acronym.
 CONTROL_LISTS : dict[str, ControlList] = {}
@@ -47,9 +50,9 @@ ACCESSION_MAP = pd.DataFrame({
     })
 
 # Precalculated and imported set of accessions
-# Typically unclassified cousins of controlled accession
+# Typically unclassified cousins of controlled accessions,
+# And contains all vaccine and synthetic taxids.
 IGNORED_ACCESSION = pd.DataFrame({
-    "child_taxid": pd.Series(dtype="str"),
     "ignored_taxid": pd.Series(dtype="str")
     })
 
@@ -79,8 +82,7 @@ def clear(target : str | None = None) -> bool:
     "controlled_taxid": pd.Series(dtype="str"),
     "child_name": pd.Series(dtype="str")
     })
-        IGNORED_ACCESSION = pd.DataFrame({
-    "child_taxid": pd.Series(dtype="str"),
+        IGNORED_ACCESSION = pd.Series({
     "ignored_taxid": pd.Series(dtype="str")
     })
         CONTROL_LIST_ANNOTATIONS = pd.DataFrame({
@@ -180,4 +182,5 @@ def add_ignored_accession_data(input_data: pd.DataFrame):
         [IGNORED_ACCESSION, input_data], ignore_index=True
         ).drop_duplicates().reset_index(drop=True)
 
+    logger.debug("Added Ignored Accession Data: %s", IGNORED_ACCESSION)
 
