@@ -18,6 +18,7 @@ import yaml
 from yaml.parser import ParserError
 
 from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 
 from commec.config.query import Query
 from commec.config.constants import (
@@ -25,6 +26,7 @@ from commec.config.constants import (
     MINIMUM_QUERY_LENGTH,
     MAXIMUM_QUERY_LENGTH,
     MAXIMUM_FILENAME_SIZE,
+    MAXIMUM_QUERY_NAME_LENGTH,
 )
 from commec.utils.file_utils import expand_and_normalize
 from commec.utils.dict_utils import deep_update
@@ -103,6 +105,7 @@ class ScreenIO:
         Parse queries from FASTA file.
         """
         records = []
+        updated_records = []
         queries = {}
 
         try:
@@ -121,20 +124,17 @@ class ScreenIO:
                 query = Query(record)
                 if query.name in queries:
                     raise ValueError(f"Duplicate sequence identifier generated: \"{query.name}\" from record: {record}\n"
-                                     "Ensure that the first 25 characters for each fasta record are unique.")
+                                     f"Ensure that the first {MAXIMUM_QUERY_NAME_LENGTH} characters for each fasta record are unique.")
                 queries[query.name] = query
-                # Override the original cleaned fasta, with updated names.
-                record.id = query.name
-                record.name = ""
-                record.description = ""
+                # Override the original cleaned fasta, with queries above a given length and updated names
+                if MINIMUM_QUERY_LENGTH < len(record.seq) <= MAXIMUM_QUERY_LENGTH:
+                    # Creating new SeqRecord to avoid overwriting the seq_record object inside query and preserve the original seq id
+                    updated_records.append(SeqRecord(record.seq, id=query.name, description=""))
             except Exception as e:
                 raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}, {e}") from e
-            
-        # Don't write a cleaned fasta for queries outside the valid length range.
-        records = [record for record in records if MINIMUM_QUERY_LENGTH < len(record.seq) <= MAXIMUM_QUERY_LENGTH]
 
         with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
-            SeqIO.write(records, fasta_file, "fasta")
+            SeqIO.write(updated_records, fasta_file, "fasta")
 
         return queries
 
@@ -344,7 +344,7 @@ class ScreenIO:
 
     def _write_clean_fasta(self) -> str:
         """
-        Write a FASTA in which whitespace (including non-breaking spaces) and 
+        Write a FASTA in which whitespace (excluding in header), including non-breaking spaces and 
         illegal characters are replaced with underscores.
         """
 
@@ -354,10 +354,15 @@ class ScreenIO:
         ):
             for line in fin:
                 line = line.strip()
-                modified_line = "".join(
-                    "_" if c.isspace() or c == "\xc2\xa0" or c == "#" else c
-                    for c in line
-                )
+                if line.startswith(">"):
+                    modified_line = "".join(
+                        "_" if c == "\xc2\xa0" or c == "#" else c for c in line
+                    )
+                else:
+                    modified_line = "".join(
+                        "_" if c.isspace() or c == "\xc2\xa0" or c == "#" else c
+                        for c in line
+                    )
                 fout.write(f"{modified_line}{os.linesep}")
 
     @property

@@ -145,6 +145,7 @@ def generate_html_from_screen_data(input_data : ScreenResult, output_file : str)
         # Collect full query data for template
         query_toc.append({
             'name': query.query,
+            'description': query.description,
             'status': query.status.screen_status,
             'length': query.length,
             'rationale': query.status.rationale
