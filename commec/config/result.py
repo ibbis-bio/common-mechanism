@@ -249,14 +249,9 @@ class HitResult:
     def __str__(self) -> str:
         output = (
             f"{self.name}: {self.description}.\n{self.recommendation.from_step}"
-            f", {self.recommendation.status}. Ranges (#{len(self.ranges)})\n"
+            f", {self.recommendation.status}. Range({self.region.query_start}-{self.region.query_end})\n"
             )
-        match_string = ""
-        for r in self.ranges:
-            match_string += f"{r.query_start}-{r.query_end}, "
-        match_string = match_string[:-2]
-
-        return output + "[" + match_string + "]"
+        return output
 
 class Rationale(StrEnum):
     """

@@ -108,7 +108,7 @@ def format_control_lists(verbosity = False):
     output = pd.DataFrame(rows, columns=["Control List", "Acronym", "# Entries","Region", "Status"]).to_string(index = False)
     return output
 
-def format_control_list_annotation(input_data : list[ControlListOutput], input_context : list[ControlListContext]):
+def format_control_list_annotation(input_data : list[ControlListOutput]):
     """
     Returns a formatted string of the controlled taxid information for logging purposes.
     """
@@ -116,9 +116,9 @@ def format_control_list_annotation(input_data : list[ControlListOutput], input_c
     output = "Controlled by the following lists:\n" if plural else ""
     offset = "       > " if plural else ""
     for i, output_info in enumerate(input_data):
-        derived_string = input_context[i].derived_from or ""
-        if derived_string:
-            derived_string = derived_string + " "
+        derived_string = output_info.source_text or ""
+        if output_info.is_child:
+            derived_string = "Child of "
         output += (offset + output_info.category + " "
                     + output_info.name
                     + f" controlled {derived_string}by {output_info.list}" + "\n")

@@ -279,7 +279,6 @@ def tidy_control_list_data():
     log any errors here.
     """
     ld.ACCESSION_MAP.drop_duplicates()
-    ld.IGNORED_ACCESSION.drop_duplicates()
 
     # Reindex the data based on the accession type column.
     # Currently taxid is used as the only accession format.

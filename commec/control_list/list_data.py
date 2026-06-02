@@ -52,9 +52,7 @@ ACCESSION_MAP = pd.DataFrame({
 # Precalculated and imported set of accessions
 # Typically unclassified cousins of controlled accessions,
 # And contains all vaccine and synthetic taxids.
-IGNORED_ACCESSION = pd.DataFrame({
-    "ignored_taxid": pd.Series(dtype="str")
-    })
+IGNORED_ACCESSION : set[str] = set()
 
 def clear(target : str | None = None) -> bool:
     """
@@ -82,9 +80,7 @@ def clear(target : str | None = None) -> bool:
     "controlled_taxid": pd.Series(dtype="str"),
     "child_name": pd.Series(dtype="str")
     })
-        IGNORED_ACCESSION = pd.Series({
-    "ignored_taxid": pd.Series(dtype="str")
-    })
+        IGNORED_ACCESSION = set()
         CONTROL_LIST_ANNOTATIONS = pd.DataFrame({
     "list_acronym": pd.Series(dtype="str"),
     "list_item": pd.Series(dtype="str"),
@@ -168,19 +164,12 @@ def add_ignored_accession_data(input_data: pd.DataFrame):
     Append pre-calculated ignored accessions to IGNORED_ACCESSION.
     """
     global IGNORED_ACCESSION
-    expected_cols = set(IGNORED_ACCESSION.columns)
 
-    # Check for missing columns
-    if not expected_cols.issubset(input_data.columns):
-        raise ValueError(f"Input data must contain columns {expected_cols}, "
+    if "ignored_taxid" not in input_data.columns:
+        raise ValueError(f"Input data must contain column 'ignored_taxid', "
                          f"got {list(input_data.columns)}")
 
-    # Restrict to only the expected columns
-    input_data = input_data.reindex(columns=expected_cols)
-    input_data = input_data.astype(IGNORED_ACCESSION.dtypes.to_dict())
-    IGNORED_ACCESSION = pd.concat(
-        [IGNORED_ACCESSION, input_data], ignore_index=True
-        ).drop_duplicates().reset_index(drop=True)
-
-    logger.debug("Added Ignored Accession Data: %s", IGNORED_ACCESSION)
+    new_accessions = set(input_data["ignored_taxid"].astype(str))
+    IGNORED_ACCESSION.update(new_accessions)
+    logger.debug("Added %i ignored accessions. Total: %i", len(new_accessions), len(IGNORED_ACCESSION))
 

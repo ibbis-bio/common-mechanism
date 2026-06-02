@@ -92,7 +92,13 @@ def should_ignore(accession : str) -> bool:
     """
     Check whether this accession should simple be ignored by commec screen.
     """
-    return (accession in __data.IGNORED_ACCESSION["ignored_taxid"])
+    test_accession = str(accession).strip()
+    result = test_accession in __data.IGNORED_ACCESSION
+    logger.debug("Checking whether \"%s\" is in ignored taxids (%i): %s",
+                test_accession,
+                len(__data.IGNORED_ACCESSION),
+                result)
+    return result
 
 def is_regulated(accession : str) -> bool:
     """
@@ -100,18 +106,27 @@ def is_regulated(accession : str) -> bool:
     for whether there is any control list data for the given accession.
     """
 
+
     accession_hash = Accession(accession)
     accession_to_check = {accession_hash}
+    index_values = __data.CONTROL_LIST_ANNOTATIONS.index
+
+    # Early exit if not present in control lists.
+    in_map = accession_hash in __data.ACCESSION_MAP["child_taxid"].values
+    in_index = accession_hash in index_values
+    if not in_map and not in_index:
+        return False
+    return True
 
     # Collect parent TaxIDs, if any
-    taxid_parents = __data.ACCESSION_MAP.loc[
-        __data.ACCESSION_MAP["child_taxid"] == accession, "controlled_taxid"
-    ]
-    accession_to_check.update(Accession(taxid) for taxid in taxid_parents)
+    #taxid_parents = __data.ACCESSION_MAP.loc[
+    #    __data.ACCESSION_MAP["child_taxid"] == accession, "controlled_taxid"
+    #]
+    #accession_to_check.update(Accession(taxid) for taxid in taxid_parents)
 
     # Check for intersection between sets of indexes vs accessions to check.
-    index_values = __data.CONTROL_LIST_ANNOTATIONS.index
-    return not accession_to_check.isdisjoint(index_values)
+    #index_values = __data.CONTROL_LIST_ANNOTATIONS.index
+    #return not accession_to_check.isdisjoint(index_values)
 
 def get_cluster_hash(taxid: str) -> str | None:
     """
@@ -202,7 +217,7 @@ def are_regulated_test(accessions) -> dict[str, bool]:
     return result
 
 
-def get_regulation(accession : str) -> tuple[list[ControlListOutput], list[ControlListContext]]:
+def get_regulation(accession : str) -> list[ControlListOutput]:
     """
     Check the given Accession against all imported control lists.
     The input Accession can be a TaxID, GenBank protein, or Uniprot ID.
@@ -310,19 +325,19 @@ def run(arguments: argparse.Namespace):
         
     import_data(database_location, regions)
     
-    # Temp testing for hash generation.
-    children : pd.Series = __data.ACCESSION_MAP["child_taxid"]
-    parents = __data.ACCESSION_MAP["controlled_taxid"]
-    import pandas as pd
-    hasherinos = []
-    all_to_test = pd.concat([children, parents]).unique()
-    for taxid in all_to_test:
-        taxid = str(taxid)
-        hash_taxid = get_cluster_hash(taxid)
-        hasherinos.append(hash_taxid)
+    ## Temp testing for hash generation.
+    #children : pd.Series = __data.ACCESSION_MAP["child_taxid"]
+    #parents = __data.ACCESSION_MAP["controlled_taxid"]
+    #import pandas as pd
+    #hasherinos = []
+    #all_to_test = pd.concat([children, parents]).unique()
+    #for taxid in all_to_test:
+    #    taxid = str(taxid)
+    #    hash_taxid = get_cluster_hash(taxid)
+    #    hasherinos.append(hash_taxid)
     
-    hasherinos = set(hasherinos)
-    logger.info("Total number of unique parent hashes : %i", len(hasherinos))
+    #hasherinos = set(hasherinos)
+    #logger.info("Total number of unique parent hashes : %i", len(hasherinos))
 
     if arguments.showlists:
         logger.info(" *----------* CONTROL LISTS *----------* ")
@@ -337,9 +352,14 @@ def run(arguments: argparse.Namespace):
             if not accession_format:
                 logger.error("Could not determine the accession format for input: %s", accession)
                 continue
-            outcome, outcome_context = get_regulation(accession)
+
+            if should_ignore(accession):
+                logger.info("   > Taxid %s is on the ignored list!", accession)
+                continue
+
+            outcome = get_regulation(accession)
             logger.info("   > Taxid %s: %s",accession,
-                        (format_control_list_annotation(outcome, outcome_context)
+                        (format_control_list_annotation(outcome)
                         if len(outcome) > 0 else "No control list annotation found."))
 
     if arguments.output_prefix:

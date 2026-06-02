@@ -34,10 +34,10 @@ def find_clusters(
     current_max_end = None
 
     for idx, row in sorted_df.iterrows():
-        start = row[start_heading]
-        end = row[end_heading]
+        start = row[start_heading] - 1
+        end = row[end_heading] + 1
 
-        if current_cluster == -1 or start > current_max_end:
+        if current_cluster == -1 or start >= current_max_end:
             current_cluster += 1
             clusters.append((start, end))
             current_max_end = end

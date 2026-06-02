@@ -65,25 +65,38 @@ def _split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
     Some results will have multiple tax ids listed in a semicolon-separated list; split these into
     multiple rows, each with their own taxon id.
     """
+    blast[taxids_col_name] = (
+        blast[taxids_col_name]
+        .astype(str)  # Ensure strings
+        .str.split(";")  # Split on commas
+        .apply(lambda x: [s.strip() for s in x])  # Strip whitespace
+    )
+    #"Explode" the lists into separate rows
+    blast = blast.explode(taxids_col_name, ignore_index=True)
+    blast[taxids_col_name] = blast[taxids_col_name].astype("int")
+    return blast
+
+
     # Create a list to hold all rows, including split ones
-    new_rows = []
+    #new_rows = []
 
-    for _, row in blast.iterrows():
-        tax_ids = str(row[taxids_col_name]).split(";")
-        if len(tax_ids) > 1:
-            # If there are multiple tax IDs, create a new row for each
-            for tax_id in tax_ids:
-                new_row = row.copy()
-                new_row[taxids_col_name] = tax_id
-                new_rows.append(new_row)
-        else:
-            # If there's only one tax ID, keep the original row
-            new_rows.append(row)
-
-    # Create a new DataFrame from the list of rows
-    split = pd.DataFrame(new_rows)
-    split[taxids_col_name] = split[taxids_col_name].astype("int")
-    return split
+    #for _, row in blast.iterrows():
+    #    tax_ids = str(row[taxids_col_name]).split(";")
+    #    if len(tax_ids) > 1:
+    #        logger.debug("     Splitting %i multi-taxid entry", len(tax_ids))
+    #        # If there are multiple tax IDs, create a new row for each
+    #        for tax_id in tax_ids:
+    #            new_row = row.copy()
+    #            new_row[taxids_col_name] = tax_id
+    #            new_rows.append(new_row)
+    #    else:
+    #        # If there's only one tax ID, keep the original row
+    #        new_rows.append(row)
+    #
+    ## Create a new DataFrame from the list of rows
+    #split = pd.DataFrame(new_rows)
+    #split[taxids_col_name] = split[taxids_col_name].astype("int")
+    #return split
 
 
 def get_controlled_labels(
@@ -101,19 +114,22 @@ def get_controlled_labels(
     genus - genus of subject taxid.
     control_list - list of all controlled outputs.
     """
+    logger.debug("Exploding taxa column ... ")
     blast = _split_by_tax_id(blast, taxids_column_name)
 
     # Remove ignored taxa; ie vaccines or synthetic taxa
-    blast = blast[~blast[taxids_column_name].apply(cl.should_ignore)]
+    ignored_mask = blast[taxids_column_name].apply(cl.should_ignore)
+    ignored_taxids = blast.loc[ignored_mask, taxids_column_name].unique()
+    logger.debug("Removing %s ignored taxids: \n%s", len(ignored_taxids), ignored_taxids)
+    blast = blast[~ignored_mask]
 
     # Get unique taxids
     unique_taxids = blast[taxids_column_name].dropna().unique()
-    logger.debug("Checking %s unique taxids", len(unique_taxids))    
+    logger.debug("Checking %s unique taxids: \n%s", len(unique_taxids), unique_taxids)    
     taxid_to_controlhash = {taxid: cl.get_cluster_hash(taxid) for taxid in unique_taxids}
 
-    # Map back to the dataframe
+    # Map control status hash to the dataframe
     blast["control_hash"] = blast[taxids_column_name].map(taxid_to_controlhash)    
-
     return blast
 
 def get_taxonomic_labels(

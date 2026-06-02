@@ -307,19 +307,21 @@ def get_hit_result_from_data(unique_query_data : pd.DataFrame, step : ScreenStep
     """
     output_hit_results : list[HitResult] = []
 
+    query_acc = unique_query_data["query acc."].to_list()[0]
+
     # Filter data to the top hits only.
     top_hits = get_top_hits(unique_query_data)
     top_hits = get_controlled_labels(top_hits)
     regulated_only = top_hits[top_hits["regulated"]]
     non_regulated_only = top_hits[~top_hits["regulated"]]
-    unique_controlled_parents = regulated_only["control_hash"].unique()
+    unique_controlled_parents = regulated_only["subject tax ids"].unique()
 
-    #logger.debug("%s: %s query has %i unique control hits",
-    #            step, query_acc, len(unique_controlled_parents))
+    logger.debug("%s: %s query has %i unique control hits:\n%s",
+                step, query_acc, len(unique_controlled_parents), unique_controlled_parents)
 
     for controlled_parent in unique_controlled_parents:
-        cluster_data, clusters = find_clusters(regulated_only[regulated_only["control_hash"] == controlled_parent])
-        #logger.debug("%s: query %s has %i regulated clusters", step, query_acc, len(clusters))
+        cluster_data, clusters = find_clusters(regulated_only[regulated_only["subject tax ids"] == controlled_parent])
+        logger.debug("%s: query %s has %i regulated clusters", step, query_acc, len(clusters))
         for i, cluster in enumerate(clusters):
             logger.debug("Processing cluster[%i]: %s",i, cluster)
             hit_name = f"{controlled_parent}_{cluster[0]}_{cluster[1]}"
@@ -767,6 +769,7 @@ def parse_taxonomy_hits(
         hit_results_for_query = get_hit_result_from_data(unique_query_data, step)
 
         for new_hit in hit_results_for_query:
+            logger.info("Adding hit for query %s : %s", query_acc, new_hit)
             query_write.add_new_hit_information(new_hit)
 
     for query_acc in unique_query_accs:
