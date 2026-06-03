@@ -13,7 +13,7 @@ import os
 from dataclasses import asdict
 
 import pandas as pd
-
+import pytaxonkit
 from commec.tools.search_handler import SearchHandler
 from commec.config.query import Query
 from commec.tools.blast_tools import (
@@ -121,9 +121,27 @@ def parse_taxonomy_hits(
     # We delay non-debug logging to sort messages via query.
     log_container = {key : [] for key in data.queries.keys()}
 
+    def _get_canonical_taxids(taxids: list[str], db_path: str | os.PathLike, threads: int) -> list[str]:
+        """
+        Retrieve the current canonical taxids to handle NCBI taxonomy updates.
+        """
+        lin = pytaxonkit.lineage(taxids, data_dir=db_path, threads=threads)
+        canonical_taxids = (
+            lin["FullLineageTaxIDs"].map(lambda x: x.split(";")[-1]).tolist()
+        )
+        return canonical_taxids
+    
     # Read in lists of regulated and low_concern tax ids
-    vax_taxids = pd.read_csv(low_concern_taxid_path, header=None).squeeze().astype(str).tolist()
-    reg_taxids = pd.read_csv(biorisk_taxid_path, header=None).squeeze().astype(str).tolist()
+    vax_taxids = _get_canonical_taxids(
+        pd.read_csv(low_concern_taxid_path, header=None).squeeze("columns").astype(str).tolist(),
+        taxonomy_directory,
+        n_threads,
+    )
+    reg_taxids = _get_canonical_taxids(
+        pd.read_csv(biorisk_taxid_path, header=None).squeeze("columns").astype(str).tolist(),
+        taxonomy_directory,
+        n_threads,
+    )
 
     blast = read_blast(search_handler.out_file)
     logger.debug("%s Blast Import: shape: %s preview:\n%s", step, blast.shape, blast.head())
