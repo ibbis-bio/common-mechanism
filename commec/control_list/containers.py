@@ -215,18 +215,21 @@ class CategoryType(StrEnum):
     Valid options for values under the 'category' column in regulated_taxids.csv
     inputs. Communicates the type of entity being references by the control list.
     """
-    BACTERIA = "Bacteria"
+    # The big 3, usefully different from each other
     VIRUSES = "Viruses"
-    EUKARYOTA = "Eukaryota"
     FUNGI = "Fungi"
-    PROTEIN = "Proteins"
-    TOXIN = "Toxin"
-    OTHER_EUKARYOTA = "Other Eukaryota"
-    OTHER_EUKAYROTA_ANIMAL = "Other Eukaryota (Animal)"
-    NON_PROTEIN_TOXIN = "Non-Protein Toxin"
-    TOXIN_SYNTHESIS_ENZYME = "Toxin Synthesis Enzyme"
+    BACTERIA = "Bacteria"
+    # Not the big 3, still on some control lists
+    HUMAN_PARASITE = "Human Parasite"
+    OTHER = "Other" # (not virus, bacteria, fungi, or human-infecting parasite)"
+    # Non-taxonomic categories on many control lists
     PRIONS_AND_TSE = "Prions & TSEs"
-    NONE = "None" # Default value.
+    TOXIN = "Toxin" # only used for protein toxins
+    NON_PROTEIN_TOXIN = "Non-Protein Toxin"
+    # Non-taxonomic categories recognized by the SBRC
+    TOXIN_SYNTHESIS_ENZYME = "Toxin Synthesis Enzyme"
+    # Default value
+    NONE = "None" 
 
 @dataclass
 class ControlListContext:
