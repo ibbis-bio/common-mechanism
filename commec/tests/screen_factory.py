@@ -42,6 +42,13 @@ def skip_biorisk_annotations(_input_file):
     """
     return BIORISK_ANNOTATIONS_DATA
 
+def skip_canonical_taxids(taxids, _db_path, _threads):
+    """
+    Override canonical taxid retrieval, so tests
+    don't require a real taxonomy database.
+    """
+    return taxids.astype(str).tolist()
+
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
 TAXONOMY = pd.DataFrame(columns=["subject acc.","regulated", "superkingdom", "phylum", "genus", "species"])
 BIORISK_ANNOTATIONS_DATA = pd.DataFrame(columns=["ID", "Description", "Must flag"])
@@ -99,6 +106,7 @@ class ScreenTesterFactory:
         # We also patch in the desired CLI arguments to avoid an input yaml, and control output.
         with (patch("commec.screeners.check_reg_path.get_taxonomic_labels", new=skip_taxonomy_info), patch(
                 "commec.screeners.check_biorisk.read_biorisk_annotations", new=skip_biorisk_annotations), patch(
+                "commec.screeners.check_reg_path.get_canonical_taxids", new=skip_canonical_taxids), patch(
             "sys.argv",
             arguments,
         )):

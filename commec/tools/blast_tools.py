@@ -88,7 +88,7 @@ def _split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
     return split
 
 
-def _get_lineages(taxids, db_path: str | os.PathLike, threads: int):
+def get_lineages(taxids: pd.Series, db_path: str | os.PathLike, threads: int):
     """
     Get the full lineage for each unique taxid. This is needed to determine whether it belongs to
     any regulated pathogen, since pathogens might be regulated at various points in the lineage
@@ -141,7 +141,7 @@ def get_taxonomic_labels(
     blast["genus"] = ""
     blast["species"] = ""
 
-    lin = _get_lineages(blast[TAXIDS_COL], db_path, threads)
+    lin = get_lineages(blast[TAXIDS_COL], db_path, threads)
 
     blast = blast[blast[TAXIDS_COL] != TAXID_SYNTHETIC_CONSTRUCTS]
     blast = blast[blast[TAXIDS_COL] != TAXID_VECTORS]
