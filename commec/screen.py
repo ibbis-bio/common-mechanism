@@ -322,6 +322,9 @@ class Screen:
 
         total_query_length = 0
 
+        # Ensure that the translation aa is cleared.
+        with open(self.params.aa_path, 'w', encoding = "utf-8"): ...
+
         try:
             for query in self.queries.values():
                 logger.debug("Processing query: %s, (%s)", query.name, query.original_name)
