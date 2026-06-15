@@ -14,6 +14,8 @@ import ftplib
 from urllib import request, error, parse
 import zipfile
 import tarfile
+import glob
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 import json
 from yaml.parser import ParserError
@@ -28,6 +30,38 @@ C_F_GRAY = "\033[38;5;242m" # Colour Foreground Gray
 C_F_BLUE = "\033[38;5;17m" # Colour Foreground Blue
 C_B_BLUE = "\033[48;5;17m" # Colour Background Blue
 C_RESET = "\033[0m" # Reset Console Formatting.
+
+
+def parallel_decompress(directory, jobs=None):
+    """Decompress all ``*.tar.gz`` BLAST volumes in ``directory`` concurrently.
+
+    ``update_blastdb.pl`` decompresses volumes serially on a single core, which
+    dominates database setup time. BLAST volumes are independent gzip archives,
+    so we extract them in parallel across ``jobs`` cores (default: all cores).
+    """
+    jobs = jobs or os.cpu_count() or 1
+    tarballs = glob.glob(os.path.join(directory, "*.tar.gz"))
+    if not tarballs:
+        return
+    tarballs.sort(key=os.path.getsize, reverse=True)
+
+    def _extract(tarball):
+        subprocess.run(["tar", "-xzf", tarball], cwd=directory, check=True)
+        os.remove(tarball)
+
+    failures = []
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        futures = {pool.submit(_extract, t): t for t in tarballs}
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as exc:
+                failures.append((os.path.basename(futures[future]), exc))
+    if failures:
+        raise RuntimeError(
+            f"Failed to decompress {len(failures)} volume(s): {failures}"
+        )
+
 
 class CliSetup:
     """
@@ -601,8 +635,12 @@ class CliSetup:
             nr_directory = os.path.join(self.database_directory, "nr_blast")
             os.makedirs(nr_directory, exist_ok=True)
             print(nr_directory)
-            command = ["update_blastdb.pl", "--decompress", self.blastnr_database]
+            # Download volumes without --decompress, then decompress in
+            # parallel: update_blastdb.pl decompresses serially on one core.
+            command = ["update_blastdb.pl", "--num_threads",
+                       str(os.cpu_count() or 1), self.blastnr_database]
             subprocess.run(command, cwd=nr_directory, check=True)
+            parallel_decompress(nr_directory)
 
         if self.download_blastnt:
             print(
@@ -613,8 +651,10 @@ class CliSetup:
             nt_directory = os.path.join(self.database_directory, "nt_blast")
             os.makedirs(nt_directory, exist_ok=True)
             print(nt_directory)
-            command = ["update_blastdb.pl", "--decompress", self.blastnt_database]
+            command = ["update_blastdb.pl", "--num_threads",
+                       str(os.cpu_count() or 1), self.blastnt_database]
             subprocess.run(command, cwd=nt_directory, check=True)
+            parallel_decompress(nt_directory)
 
         if self.download_taxonomy:
             print("Downloading Taxonomy databases from NCBI \n")
