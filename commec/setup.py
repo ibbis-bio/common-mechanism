@@ -44,19 +44,29 @@ def parallel_decompress(directory, jobs=None):
     if not tarballs:
         return
     tarballs.sort(key=os.path.getsize, reverse=True)
+    total = len(tarballs)
+    print(
+        f"{C_F_GRAY}Decompressing {total} volume(s) across {jobs} cores "
+        f"(largest first)...{C_RESET}"
+    )
 
     def _extract(tarball):
         subprocess.run(["tar", "-xzf", tarball], cwd=directory, check=True)
         os.remove(tarball)
 
     failures = []
+    done = 0
     with ThreadPoolExecutor(max_workers=jobs) as pool:
         futures = {pool.submit(_extract, t): t for t in tarballs}
         for future in as_completed(futures):
+            name = os.path.basename(futures[future])
             try:
                 future.result()
+                done += 1
+                print(f"{C_F_GRAY}  [{done}/{total}] {name}{C_RESET}", flush=True)
             except Exception as exc:
-                failures.append((os.path.basename(futures[future]), exc))
+                failures.append((name, exc))
+                print(f"{C_F_ORANGE}  [FAILED] {name}: {exc}{C_RESET}", flush=True)
     if failures:
         raise RuntimeError(
             f"Failed to decompress {len(failures)} volume(s): {failures}"
