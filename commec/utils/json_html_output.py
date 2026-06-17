@@ -272,8 +272,8 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
                 if isinstance(anno_data, TaxonomyAnnotation):
                     anno_data = asdict(anno_data)
                 regulated_species.append(anno_data["species"])
-                controlled_lists.extend([a[0] for a in anno_data["control_lists"]])
-                regulated_names.extend([a[0] + ":" + a[1] for a in anno_data["control_lists"]])
+                controlled_lists.extend([a["list"] for a in anno_data["controlled_by_lists"]])
+                regulated_names.extend([a["list"] + ":" + a["source"] for a in anno_data["controlled_by_lists"]])
 
             controlled_lists = set(controlled_lists)
             regulated_species = set(regulated_species)

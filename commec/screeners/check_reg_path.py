@@ -436,12 +436,12 @@ def create_hit_result_for_cluster(
 
         if len(warn_compliances) > 0:
             warn_regulated_annotations.extend(
-                [create_hit_info(row) for i, row in data.iterrows()])
+                [create_hit_info(row, warn_compliances) for i, row in data.iterrows()])
             continue
 
         if len(conditional_compliances) > 0:
             regionally_regulated_annotations.extend(
-                [create_hit_info(row) for i, row in data.iterrows()])
+                [create_hit_info(row, conditional_compliances) for i, row in data.iterrows()])
 
     # Create the list of non-controlled taxids.
     for i, row in non_regulated_for_region.iterrows():
@@ -451,63 +451,30 @@ def create_hit_result_for_cluster(
     # update controlled and non-controlled taxids list depending on control list mode annotations.
     is_controlled = len(compliances) > 0
     is_warning_controlled = len(warn_compliances) > 0
-    is_conditionally_controlled = len(conditional_compliances) > N_NON_REGIONAL_HITS_TO_WARN
+    is_conditionally_controlled = len(conditional_compliances) >= N_NON_REGIONAL_HITS_TO_WARN
 
     if is_controlled:
-        non_regulated_annotations += warn_regulated_annotations + regionally_regulated_annotations
+        non_regulated_annotations = non_regulated_annotations + warn_regulated_annotations + regionally_regulated_annotations
         return create_hit_result_from_annotations(
             regulated_annotations,
             non_regulated_annotations,
             compliances, ListMode.COMPLIANCE, step, match_range)
 
     if is_warning_controlled:
-        regulated_annotations += regionally_regulated_annotations
-        compliances += warn_compliances
         return create_hit_result_from_annotations(
-            regulated_annotations,
+            warn_regulated_annotations,
             non_regulated_annotations,
-            compliances, ListMode.COMPLIANCE_WARN, step, match_range)
+            warn_compliances, ListMode.COMPLIANCE_WARN, step, match_range)
 
     if is_conditionally_controlled:
-        regulated_annotations += warn_regulated_annotations
-        compliances += conditional_compliances
         return create_hit_result_from_annotations(
-            regulated_annotations,
+            regionally_regulated_annotations,
             non_regulated_annotations,
-            compliances, ListMode.CONDITIONAL_NUM, step, match_range)
+            conditional_compliances, ListMode.CONDITIONAL_NUM, step, match_range)
 
-    logger.debug("No controlled hits after parsing control list rules.")
+    logger.debug(" ... ... No controlled hits after parsing control list rules.")
     return None
 
-#       hit:
-#       "controlled_taxa": 
-#       [
-#         {
-#            "1972577 (controlled taxid)": 
-#               {
-#                   “Display name”: , (of parent / controlled taxid)
-#                   "genus": "Vesiculovirus",
-#                   "species": "Vesiculovirus indiana",
-#                   "targets_hit": [
-#                           {
-#                           "evalue": 7.87e-23,
-#                           "percent_identity": 100.0,
-#                           "taxid": 1972577,
-#                           "child_of": null,
-#                           "start": 1,
-#                           "end": 66,
-#                           "target_hit": "MN164438",
-#                           "target_description": "Vesiculovirus indiana strain Mudd-Summers, complete genome",
-#                           },
-#                   ],
-#       	        controlled_by_lists: [
-#       		        {
-#                      	"name": "EU Dual-Use Export Control Regime",
-#                       “Entry”: Vesicular stomatitis virus;"
-#                       }
-#       	        ]
-#               },
-#   }
 
 def create_hit_result_from_annotations(
     regulated_annotations,
@@ -520,13 +487,15 @@ def create_hit_result_from_annotations(
 
     if mode == ListMode.COMPLIANCE:
         status = ScreenStatus.FLAG
-    if mode == ListMode.CONDITIONAL_NUM:
-        status = ScreenStatus.WARN
-        control_text = "non-regionally controlled"
 
     if mode == ListMode.COMPLIANCE_WARN:
         status = ScreenStatus.WARN
         control_text = "observed"
+
+    if mode == ListMode.CONDITIONAL_NUM:
+        status = ScreenStatus.PASS
+        control_text = "non-regionally controlled"
+
 
     display_names = [compliance.name for compliance in compliances]
     display_name = max(display_names, key=len)
@@ -537,6 +506,7 @@ def create_hit_result_from_annotations(
     hit_description = f"{control_text} {domains_text} - {display_name}"
 
     if len(non_regulated_annotations) > 0:
+        status = ScreenStatus.WARN
         logger.debug(
             "Mixed result: %d regulated, %d non-regulated annotations.",
             len(reg_annotations), len(non_reg_annotations),
@@ -875,7 +845,7 @@ def parse_taxonomy_hits(
         hit_results_for_query = get_hit_result_from_data(unique_query_data, step)
 
         for new_hit in hit_results_for_query:
-            logger.info("Adding hit for query %s : %s", query_acc, new_hit)
+            logger.debug("Adding hit for query %s : %s", query_acc, new_hit)
             query_write.add_new_hit_information(new_hit)
 
     for query_acc in unique_query_accs:
