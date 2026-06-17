@@ -516,6 +516,7 @@ def create_hit_result_from_annotations(
                 f" and {len(non_reg_annotations)} non-controlled {domains_text}"
             )
 
+    reg_accessions = list(set([ra["query acc."]] for ra in regulated_annotations))
     reg_species = list(set([ra["species"] for ra in regulated_annotations]))
     reg_taxids = list(set([str(ra["taxid"]) for ra in regulated_annotations]))
     non_reg_taxids = list(set([str(ra["taxid"]) for ra in non_regulated_annotations]))
@@ -531,6 +532,7 @@ def create_hit_result_from_annotations(
     taxonomy_annotations = {
         "controlled_taxa" : regulated_annotations,
         "non-controlled_taxa" : non_regulated_annotations,
+        "regulated_accessions": reg_accessions,
         "statistics" : {
             "number_of_controlled_taxids" : len(reg_taxids),
             "number_of_non-controlled_taxids" : len(non_reg_taxids),
