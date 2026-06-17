@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import importlib.resources
 from mako.template import Template
-
+from dataclasses import asdict
 from commec.config.json_io import get_screen_data_from_json
 from commec.config.result import (
     ScreenResult,
@@ -19,6 +19,7 @@ from commec.config.result import (
     HitResult,
     ScreenStep,
     ScreenStatus,
+    TaxonomyAnnotation,
 )
 import commec.control_list as cl
 
@@ -244,43 +245,54 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
     if "Taxonomy" in hit.recommendation.from_step:
         output_string = ""
 
-        n_regulated_eukaryotes = 0
+        n_regulated_fungi = 0
+        n_regulated_parasites = 0
         n_regulated_bacteria = 0
         n_regulated_viruses = 0
         regulated_taxids = []
         non_regulated_taxids = []
         regulated_species = []
+        regulated_names = []
         controlled_lists = []
 
-        if "regulated_taxonomy" in hit.annotations:
-            reg = hit.annotations["regulated_taxonomy"]
-            for r in reg:
-                n_regulated_eukaryotes += int(r["regulated_eukaryotes"])
-                n_regulated_bacteria += int(r["regulated_bacteria"])
-                n_regulated_viruses += int(r["regulated_viruses"])
-                regulated_taxids.extend(r["regulated_taxa"])
-                non_regulated_taxids.extend(r["non_regulated_taxa"])
+        if "controlled_taxonomy" in hit.annotations:
+            reg = hit.annotations["controlled_taxonomy"]
+
+            r = reg.get("statistics")
+            if r:
+                n_regulated_fungi += int(r["controlled_fungi"])
+                n_regulated_parasites += int(r["controlled_parasites"])
+                n_regulated_bacteria += int(r["controlled_bacteria"])
+                n_regulated_viruses += int(r["controlled_viruses"])
+            
+            regulated_taxids.extend(reg["controlled_taxa"])
+            non_regulated_taxids.extend(reg["non-controlled_taxa"])
             
             for anno_data in regulated_taxids:
-                for controllist in anno_data["control_list"]:
-                    if isinstance(controllist, cl.ControlListOutput):
-                        name  = controllist.name
-                        list_acronym = controllist.list
-                    else:
-                        name = controllist["name"]
-                        list_acronym = controllist["list"]
-                    regulated_species.append(name)
-                    controlled_lists.append(list_acronym)
+                if isinstance(anno_data, TaxonomyAnnotation):
+                    anno_data = asdict(anno_data)
+                regulated_species.append(anno_data["species"])
+                controlled_lists.extend([a[0] for a in anno_data["control_lists"]])
+                regulated_names.extend([a[0] + ":" + a[1] for a in anno_data["control_lists"]])
 
             controlled_lists = set(controlled_lists)
             regulated_species = set(regulated_species)
-            
+            regulated_names = set(regulated_names)
+
             domain_string = " across multiple domains."
-            if n_regulated_bacteria > 0 and n_regulated_viruses == 0 and n_regulated_eukaryotes == 0:
+
+            no_non_bacteria = n_regulated_fungi + n_regulated_parasites + n_regulated_viruses == 0
+            no_non_fungi = n_regulated_bacteria + n_regulated_parasites + n_regulated_viruses == 0
+            no_non_viruses = n_regulated_fungi + n_regulated_parasites + n_regulated_bacteria == 0
+            no_non_parasites = n_regulated_fungi + n_regulated_bacteria + n_regulated_viruses == 0
+
+            if n_regulated_bacteria > 0 and no_non_bacteria:
                 domain_string = " bacteria"
-            elif n_regulated_eukaryotes > 0 and n_regulated_viruses == 0:
-                domain_string = " eukaryotes"
-            elif n_regulated_viruses > 0:
+            if n_regulated_parasites > 0 and no_non_parasites:
+                domain_string = " human parasites"
+            if n_regulated_fungi > 0 and no_non_fungi:
+                domain_string = " human parasites"
+            if n_regulated_viruses > 0 and no_non_viruses:
                 domain_string = " viruses"
 
             total_hits : int = len(regulated_taxids) + len(non_regulated_taxids)
@@ -291,14 +303,20 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
             else:
                 output_string += "Best match to regulated" + domain_string + ".<br>"
 
-            output_string += str(total_hits) + " Best match hits to " if total_hits > 1 else "Best hit to "
-            output_string += peptide_type + " found for " + str(len(regulated_species)) + " controlled entries and " + str(len(controlled_lists)) + " control lists, with regulated pathogen taxId in "
-            output_string += "lineage " if len(regulated_species) == 1 else "lineages "
+            output_string += str(total_hits) + " best match hits to " if total_hits > 1 else "Best hit to "
+            plural_species = len(regulated_species) > 1
+            plural_lists = len(controlled_lists) > 1
+            output_string += (
+                f"{peptide_type} found {"over" if plural_species else "in"} {len(regulated_species)} "
+                f"species {"across" if plural_lists else "from"} "
+                f"{len(controlled_lists)} control list{"s" if plural_lists else ""}: <br>"
+                )
+            #output_string += "lineage " if len(regulated_names) == 1 else "lineages "
 
             species_list = textwrap.fill(
-                ", ".join(regulated_species), 100
+                ", ".join(regulated_names), 100
             ).replace("\n", "<br>")
-            
+        
             output_string += "<br>" + species_list
 
             return output_string

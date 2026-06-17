@@ -324,9 +324,8 @@ def get_hit_result_from_data(unique_query_data : pd.DataFrame, step : ScreenStep
         logger.debug("%s: query %s has %i regulated clusters", step, query_acc, len(clusters))
         for i, cluster in enumerate(clusters):
             logger.debug("Processing cluster[%i]: %s",i, cluster)
-            hit_name = f"{controlled_parent}_{cluster[0]}_{cluster[1]}"
             new_hit_result = create_hit_result_for_cluster(cluster_data[cluster_data["cluster"] == i],
-                                                            non_regulated_only, cluster[0], cluster[1], hit_name, step)
+                                                            non_regulated_only, cluster[0], cluster[1], controlled_parent, step)
             output_hit_results.append(new_hit_result)
     return output_hit_results
 
@@ -335,7 +334,7 @@ def create_hit_result_for_cluster(
     non_regulated_only : pd.DataFrame,
     cluster_start : int,
     cluster_end : int,
-    hit_name : str,
+    controlled_parent_taxid : str,
     step : ScreenStep) -> HitResult:
     """
     Given a cluster of controlled hits, and the common start and end point.
@@ -343,6 +342,8 @@ def create_hit_result_for_cluster(
     the data for commec screen output.
 
     """
+    hit_name = f"{controlled_parent_taxid}_{cluster_start}_{cluster_end}"
+
     best_evalue = min(cluster_data["evalue"])
     match_range = MatchRange(
             best_evalue,
@@ -367,8 +368,9 @@ def create_hit_result_for_cluster(
 
     reg_species = []
     domains = []
-    reg_taxids = regulated_for_region["subject tax ids"].unique()
-    non_reg_taxids = non_regulated_for_region["subject tax ids"].unique()
+    reg_taxids = regulated_for_region["subject tax ids"].unique().astype(str).tolist()
+    non_reg_taxids = non_regulated_for_region["subject tax ids"].unique().astype(str).tolist()
+    display_names = []
 
     regulated_annotations = []
     # Gather control list information
@@ -376,6 +378,9 @@ def create_hit_result_for_cluster(
     for i, row in regulated_for_region.iterrows():
         control_output = get_regulation(row["subject tax ids"])
         control_lists = [tuple([co.list, co.source_text]) for co in control_output]
+
+        co_names = [co.name for co in control_output]
+        display_names = display_names + co_names
 
         species = control_output[0].species
         genus = control_output[0].genus
@@ -399,14 +404,51 @@ def create_hit_result_for_cluster(
     
     reg_species = list(set(reg_species))
     unique_domains = list(set(domains))
-
+    display_name = max(display_names, key=len)
     # Compile per-domain counts for regulation_dict
     n_virus = sum(1 for d in unique_domains if d == "Viruses")
     n_bacteria = sum(1 for d in unique_domains if d == "Bacteria")
-    n_eukaryote = sum(1 for d in unique_domains if d == "Eukaryota")
+    n_fungi = sum(1 for d in unique_domains if d == "Fungi")
+    # Note Other is non-virus/bacteria/fungi/human parasite. Which typically means a non-human parasite
+    n_parasite = sum(1 for d in unique_domains if (d == "Human parasite" or d == "Other"))
+
+
+#       hit:
+#       "controlled_taxa": [
+#         {
+#              "1972577 (controlled taxid)": 
+#               {
+#                   “Display name”: , (of parent / controlled taxid)
+#                   "genus": "Vesiculovirus",
+#                   "species": "Vesiculovirus indiana",
+#                        targets_hit: [
+#                           {
+#                           "evalue": 7.87e-23,
+#                           "percent_identity": 100.0,
+#                           "taxid": 1972577,
+#                           "child_of": null,
+#                           "start": 1,
+#                           "end": 66,
+#                           "target_hit": "MN164438",
+#                           "target_description": "Vesiculovirus indiana strain Mudd-Summers, complete genome",
+#                           },
+#                       ],
+#       	        controlled_by_lists: [
+#       		        {
+#                      	"name": "EU Dual-Use Export Control Regime",
+#                       “Entry”: Vesicular stomatitis virus;"
+#                       }
+#       	]
+#            }, 
+#         }
+
+
 
     # Generate the Taxonomy Annotation dict for adding to HitResult
     taxonomy_annotations = {
+        "name" : display_name,
+        #"genus" : display_name,
+        #"species" : display_name,
         "controlled_taxa" : [],
         "non-controlled_taxa" : [],
         "statistics" : {
@@ -414,7 +456,8 @@ def create_hit_result_for_cluster(
             "number_of_non-controlled_taxids" : len(non_reg_taxids),
             "controlled_bacteria" : n_bacteria,
             "controlled_viruses" : n_virus,
-            "controlled_eukaryota" : n_eukaryote
+            "controlled_parasites" : n_parasite,
+            "controlled_fungi" : n_fungi
         }
     }
 
@@ -433,8 +476,17 @@ def create_hit_result_for_cluster(
         })
     taxonomy_annotations["non-controlled_taxa"] = non_regulated_annotations
 
+
     screen_status = ScreenStatus.WARN
     hit_description = "No description yet."
+
+    screen_status, hit_description, domains_text = _determine_screen_outcome(regulated_annotations, non_regulated_annotations, domains, display_name)
+
+    log_message = _build_log_message(
+        screen_status, domains_text, [match_range],
+        reg_taxids, non_reg_taxids, reg_species,
+    )
+    logger.info(log_message)
 
     new_hit = HitResult(
         HitScreenStatus(screen_status, step),
@@ -442,7 +494,7 @@ def create_hit_result_for_cluster(
         hit_description,
         match_range,
         {   "domain": unique_domains,
-            "controlled_taxonomy": [taxonomy_annotations]},
+            "controlled_taxonomy": taxonomy_annotations},
     )
     return new_hit
 
@@ -526,6 +578,7 @@ def _process_regulated_hit(
     screen_status, hit_description, domains_text = _determine_screen_outcome(
         reg_annotation_list, non_reg_annotation_list, domains, hit_name
     )
+
     logger.debug(
         "Hit %s: status=%s  regulated=%d  non_regulated=%d  domains=%s",
         hit_acc, screen_status, len(reg_annotation_list), len(non_reg_annotation_list), domains,
@@ -572,43 +625,7 @@ def _process_regulated_hit(
 
     return new_hit, regulation_dict, unique_domains, screen_status, match_ranges, log_message
 
-
-# ── ScreenResult update ────────────────────────────────────────────────────────
-
-
-def _apply_hit_to_screen_result(
-    query_write,
-    hit_acc: str,
-    new_hit: HitResult,
-    match_ranges: list[MatchRange],
-    domains: list[str],
-    regulation_dict: dict,
-    screen_status: ScreenStatus,
-    step: ScreenStep,
-) -> None:
-    """
-    Update the QueryResult in the ScreenResult with the new HitResult.
-
-    Updates the query-level step status and, if the hit accession was already
-    recorded (duplicate accession across different regions), merges the new
-    match ranges, domain info, and taxonomy annotations into the existing entry.
-    """
-    query_write.status.update_step_status(step, screen_status)
-
-    if query_write.add_new_hit_information(new_hit):
-        existing_hit = query_write.get_hit(hit_acc)
-        if existing_hit:
-            existing_hit.ranges.extend(match_ranges)
-            existing_hit.annotations["domain"] = domains
-            existing_hit.annotations["regulated_taxonomy"].append(regulation_dict)
-            existing_hit.recommendation.status = compare(
-                existing_hit.recommendation.status, screen_status
-            )
-            existing_hit.description += "," + new_hit.description
-
-
 # ── Logging helpers ────────────────────────────────────────────────────────────
-
 
 def _build_log_message(
     screen_status: ScreenStatus,
