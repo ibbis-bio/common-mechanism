@@ -3,6 +3,7 @@
 
 # SCREENING
 MINIMUM_QUERY_LENGTH = 41
+N_NON_REGIONAL_HITS_TO_WARN = 2
 
 # BIORISK E-VALUE FILTERING
 # Sequences shorter than this threshold use a length-dependent E-value cutoff.

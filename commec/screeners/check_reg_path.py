@@ -43,6 +43,8 @@ from commec.tools.data_functions import (
     remove_synthetic_and_vaccine_taxids,
 )
 
+from commec.config.constants import N_NON_REGIONAL_HITS_TO_WARN
+
 pd.set_option("display.max_colwidth", 10000)
 
 logger = logging.getLogger(__name__)
@@ -248,6 +250,8 @@ def _enrich_non_regulated_annotations(annotation_list: list[dict]) -> list[dict]
 
 def _determine_screen_outcome(
     reg_annotations: list[dict],
+    regionally_reg_annotations: list[dict],
+    warn_reg_annotations: list[dict],
     non_reg_annotations: list[dict],
     domains: list[str],
     hit_title: str,
@@ -267,6 +271,14 @@ def _determine_screen_outcome(
     """
     unique_domains = list(set(domains))
     domains_text = ", ".join(unique_domains) or "sequence"
+
+    if reg_annotations:
+        logger.debug("Regulated annotations.")
+        return (
+            ScreenStatus.FLAG,
+            f"Controlled {domains_text} - {hit_title}",
+            domains_text,
+        )
 
     if not reg_annotations:
         logger.debug("No regulated annotations remain; regionally controlled.")
@@ -290,12 +302,7 @@ def _determine_screen_outcome(
             domains_text,
         )
 
-    logger.debug("Only regulated annotations present — FLAG.")
-    return (
-        ScreenStatus.FLAG,
-        f"Controlled {domains_text} - {hit_title}",
-        domains_text,
-    )
+
 
 
 # ── Per-hit orchestration ──────────────────────────────────────────────────────
@@ -311,6 +318,10 @@ def get_hit_result_from_data(unique_query_data : pd.DataFrame, step : ScreenStep
 
     # Filter data to the top hits only.
     top_hits = get_top_hits(unique_query_data)
+
+    # Merge top_hits based on only unique "subject title"
+    top_hits = top_hits.drop_duplicates(subset=["subject title"], keep="first")
+
     top_hits = get_controlled_labels(top_hits)
     regulated_only = top_hits[top_hits["regulated"]]
     non_regulated_only = top_hits[~top_hits["regulated"]]
@@ -326,23 +337,53 @@ def get_hit_result_from_data(unique_query_data : pd.DataFrame, step : ScreenStep
             logger.debug("Processing cluster[%i]: %s",i, cluster)
             new_hit_result = create_hit_result_for_cluster(cluster_data[cluster_data["cluster"] == i],
                                                             non_regulated_only, cluster[0], cluster[1], controlled_parent, step)
-            output_hit_results.append(new_hit_result)
+            if new_hit_result:
+                output_hit_results.append(new_hit_result)
     return output_hit_results
+
+def create_hit_info(row : pd.Series, control_output = None) -> dict:
+    """
+    Return the formated TaxonomyAnnotation Output. Optionally, if 
+    it is an item of a control list, we can add that info.
+    """
+    output_dict =  {
+        "evalue" : row["evalue"],
+        "percent_identity" : row["% identity"],
+        "taxid" : row["subject tax ids"],
+        "start" : row["q. start"],
+        "end" : row["q. end"],
+        "target_hit" : row["subject acc."],
+        "target_description" : row["subject title"],
+    }
+    if control_output:
+        output_dict["genus"] = control_output[0].genus
+        output_dict["species"] = control_output[0].species
+        output_dict["controlled_by_lists"] = [
+            {
+                "list" : get_control_lists(co.list).display_name, 
+                "source" : co.source_text
+            } for co in control_output]
+
+    return output_dict
 
 def create_hit_result_for_cluster(
     cluster_data : pd.DataFrame,
     non_regulated_only : pd.DataFrame,
     cluster_start : int,
     cluster_end : int,
-    controlled_parent_taxid : str,
-    step : ScreenStep) -> HitResult:
+    controlled_cluster_taxid : str,
+    step : ScreenStep) -> HitResult | None:
     """
     Given a cluster of controlled hits, and the common start and end point.
     Find overlapping non-regulated hits, and generate a HitResult, to describe
     the data for commec screen output.
 
     """
-    hit_name = f"{controlled_parent_taxid}_{cluster_start}_{cluster_end}"
+    cluster_regulation = get_regulation(controlled_cluster_taxid)
+    species = cluster_regulation[0].species
+    genus = cluster_regulation[0].genus
+    display_name = cluster_regulation[0].name
+    hit_name = f"{controlled_cluster_taxid}_{cluster_start}_{cluster_end}"
 
     best_evalue = min(cluster_data["evalue"])
     match_range = MatchRange(
@@ -366,62 +407,88 @@ def create_hit_result_for_cluster(
         .head(10)
     )
 
-    reg_species = []
-    domains = []
-    reg_taxids = regulated_for_region["subject tax ids"].unique().astype(str).tolist()
-    non_reg_taxids = non_regulated_for_region["subject tax ids"].unique().astype(str).tolist()
-    display_names = []
-
     regulated_annotations = []
+    regionally_regulated_annotations = []
+    warn_regulated_annotations = []
+    non_regulated_annotations = []
+
     # Gather control list information
-    
-    for i, row in regulated_for_region.iterrows():
-        control_output = get_regulation(row["subject tax ids"])
-        control_lists = [tuple([co.list, co.source_text]) for co in control_output]
+    compliances = []
+    conditional_compliances = []
+    warn_compliances = []
 
-        co_names = [co.name for co in control_output]
-        display_names = display_names + co_names
+    # For each uniquely controlled taxid, create the annotations according to list mode.
+    for candidate_taxid in regulated_for_region["subject tax ids"].unique():
+        control_output = get_regulation(candidate_taxid)
+        data = regulated_for_region[regulated_for_region["subject tax ids"] == candidate_taxid]
 
-        species = control_output[0].species
-        genus = control_output[0].genus
-        category = control_output[0].category
+        compliances.extend([output for output in control_output 
+            if get_control_lists(output.list).status == ListMode.COMPLIANCE])
+        conditional_compliances.extend([output for output in control_output 
+            if get_control_lists(output.list).status == ListMode.CONDITIONAL_NUM])
+        warn_compliances.extend([output for output in control_output 
+            if get_control_lists(output.list).status == ListMode.COMPLIANCE_WARN])
 
-        new_annotation = TaxonomyAnnotation(
-            evalue = row["evalue"],
-            percent_identity = row["% identity"],
-            taxid = row["subject tax ids"],
-            start = row["q. start"],
-            end = row["q. end"],
-            genus = genus,
-            species = species,
-            target_hit = row["subject acc."],
-            target_description = row["subject title"],
-            control_lists = control_lists,
-        )
-        regulated_annotations.append(new_annotation)
-        reg_species.append(species)
-        domains.append(category)
-    
-    reg_species = list(set(reg_species))
-    unique_domains = list(set(domains))
-    display_name = max(display_names, key=len)
-    # Compile per-domain counts for regulation_dict
-    n_virus = sum(1 for d in unique_domains if d == "Viruses")
-    n_bacteria = sum(1 for d in unique_domains if d == "Bacteria")
-    n_fungi = sum(1 for d in unique_domains if d == "Fungi")
-    # Note Other is non-virus/bacteria/fungi/human parasite. Which typically means a non-human parasite
-    n_parasite = sum(1 for d in unique_domains if (d == "Human parasite" or d == "Other"))
+        if len(compliances) > 0:
+            regulated_annotations.extend(
+                [create_hit_info(row, compliances) for i, row in data.iterrows()])
+            continue
 
+        if len(warn_compliances) > 0:
+            warn_regulated_annotations.extend(
+                [create_hit_info(row) for i, row in data.iterrows()])
+            continue
+
+        if len(conditional_compliances) > 0:
+            regionally_regulated_annotations.extend(
+                [create_hit_info(row) for i, row in data.iterrows()])
+
+    # Create the list of non-controlled taxids.
+    for i, row in non_regulated_for_region.iterrows():
+        non_regulated_annotations.extend(
+            [create_hit_info(row) for i, row in data.iterrows()])
+
+    # update controlled and non-controlled taxids list depending on control list mode annotations.
+    is_controlled = len(compliances) > 0
+    is_warning_controlled = len(warn_compliances) > 0
+    is_conditionally_controlled = len(conditional_compliances) > N_NON_REGIONAL_HITS_TO_WARN
+
+    if is_controlled:
+        non_regulated_annotations += warn_regulated_annotations + regionally_regulated_annotations
+        return create_hit_result_from_annotations(
+            regulated_annotations,
+            non_regulated_annotations,
+            compliances, ListMode.COMPLIANCE, step, match_range)
+
+    if is_warning_controlled:
+        regulated_annotations += regionally_regulated_annotations
+        compliances += warn_compliances
+        return create_hit_result_from_annotations(
+            regulated_annotations,
+            non_regulated_annotations,
+            compliances, ListMode.COMPLIANCE_WARN, step, match_range)
+
+    if is_conditionally_controlled:
+        regulated_annotations += warn_regulated_annotations
+        compliances += conditional_compliances
+        return create_hit_result_from_annotations(
+            regulated_annotations,
+            non_regulated_annotations,
+            compliances, ListMode.CONDITIONAL_NUM, step, match_range)
+
+    logger.debug("No controlled hits after parsing control list rules.")
+    return None
 
 #       hit:
-#       "controlled_taxa": [
+#       "controlled_taxa": 
+#       [
 #         {
-#              "1972577 (controlled taxid)": 
+#            "1972577 (controlled taxid)": 
 #               {
 #                   “Display name”: , (of parent / controlled taxid)
 #                   "genus": "Vesiculovirus",
 #                   "species": "Vesiculovirus indiana",
-#                        targets_hit: [
+#                   "targets_hit": [
 #                           {
 #                           "evalue": 7.87e-23,
 #                           "percent_identity": 100.0,
@@ -432,25 +499,68 @@ def create_hit_result_for_cluster(
 #                           "target_hit": "MN164438",
 #                           "target_description": "Vesiculovirus indiana strain Mudd-Summers, complete genome",
 #                           },
-#                       ],
+#                   ],
 #       	        controlled_by_lists: [
 #       		        {
 #                      	"name": "EU Dual-Use Export Control Regime",
 #                       “Entry”: Vesicular stomatitis virus;"
 #                       }
-#       	]
-#            }, 
-#         }
+#       	        ]
+#               },
+#   }
 
+def create_hit_result_from_annotations(
+    regulated_annotations,
+    non_regulated_annotations,
+    compliances,
+    mode, step, match_range):
 
+    status = ScreenStatus.ERROR
+    control_text = "controlled"
+
+    if mode == ListMode.COMPLIANCE:
+        status = ScreenStatus.FLAG
+    if mode == ListMode.CONDITIONAL_NUM:
+        status = ScreenStatus.WARN
+        control_text = "non-regionally controlled"
+
+    if mode == ListMode.COMPLIANCE_WARN:
+        status = ScreenStatus.WARN
+        control_text = "observed"
+
+    display_names = [compliance.name for compliance in compliances]
+    display_name = max(display_names, key=len)
+    categories = list(set([compliance.category for compliance in compliances]))
+
+    domains_text = ", ".join(categories) or "sequence"
+
+    hit_description = f"{control_text} {domains_text} - {display_name}"
+
+    if len(non_regulated_annotations) > 0:
+        logger.debug(
+            "Mixed result: %d regulated, %d non-regulated annotations.",
+            len(reg_annotations), len(non_reg_annotations),
+        )
+        hit_description =  (
+                f"Mix of {len(reg_annotations)} {control_text} {domains_text}"
+                f" and {len(non_reg_annotations)} non-controlled {domains_text}"
+            )
+
+    reg_species = list(set([ra["species"] for ra in regulated_annotations]))
+    reg_taxids = list(set([str(ra["taxid"]) for ra in regulated_annotations]))
+    non_reg_taxids = list(set([str(ra["taxid"]) for ra in non_regulated_annotations]))
+
+    # Compile per-domain counts for regulation_dict
+    n_virus = sum(1 for d in categories if d == "Viruses")
+    n_bacteria = sum(1 for d in categories if d == "Bacteria")
+    n_fungi = sum(1 for d in categories if d == "Fungi")
+    # Note Other is non-virus/bacteria/fungi/human parasite. Which typically means a non-human parasite
+    n_parasite = sum(1 for d in categories if (d == "Human parasite" or d == "Other"))
 
     # Generate the Taxonomy Annotation dict for adding to HitResult
     taxonomy_annotations = {
-        "name" : display_name,
-        #"genus" : display_name,
-        #"species" : display_name,
-        "controlled_taxa" : [],
-        "non-controlled_taxa" : [],
+        "controlled_taxa" : regulated_annotations,
+        "non-controlled_taxa" : non_regulated_annotations,
         "statistics" : {
             "number_of_controlled_taxids" : len(reg_taxids),
             "number_of_non-controlled_taxids" : len(non_reg_taxids),
@@ -461,39 +571,18 @@ def create_hit_result_for_cluster(
         }
     }
 
-    taxonomy_annotations["controlled_taxa"] = regulated_annotations
-
-    non_regulated_annotations = []
-    for i, row in non_regulated_for_region.iterrows():
-        non_regulated_annotations.append({
-            "evalue" : row["evalue"],
-            "percent_identity" : row["% identity"],
-            "taxid" : row["subject tax ids"],
-            "start" : row["q. start"],
-            "end" : row["q. end"],
-            "target_hit" : row["subject acc."],
-            "target_description" : row["subject title"],
-        })
-    taxonomy_annotations["non-controlled_taxa"] = non_regulated_annotations
-
-
-    screen_status = ScreenStatus.WARN
-    hit_description = "No description yet."
-
-    screen_status, hit_description, domains_text = _determine_screen_outcome(regulated_annotations, non_regulated_annotations, domains, display_name)
-
     log_message = _build_log_message(
-        screen_status, domains_text, [match_range],
+        status, domains_text, [match_range],
         reg_taxids, non_reg_taxids, reg_species,
     )
     logger.info(log_message)
 
     new_hit = HitResult(
-        HitScreenStatus(screen_status, step),
-        hit_name,
+        HitScreenStatus(status, step),
+        display_name,
         hit_description,
         match_range,
-        {   "domain": unique_domains,
+        {   "category": categories,
             "controlled_taxonomy": taxonomy_annotations},
     )
     return new_hit
