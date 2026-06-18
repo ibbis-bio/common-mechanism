@@ -24,5 +24,6 @@ dependencies:
   - pip
   - pytest
   - matplotlib
+  - ruff
   - pip:
       - -e .
