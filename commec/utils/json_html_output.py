@@ -212,8 +212,8 @@ def update_layout(fig, query_to_draw: QueryResult, stacks):
     figure_base_height = 180
     figure_stack_height = 30
 
-    r, g, b = color_from_status(query_to_draw.status.screen_status)
-    css_color = f"rgb({r},{g},{b})"
+    # r, g, b = color_from_status(query_to_draw.status.screen_status)
+    # css_color = f"rgb({r},{g},{b})"
 
     fig.update_layout(showlegend=False)
     # Update layout to display X-axis on top and hide Y-axis labels for specified subplot

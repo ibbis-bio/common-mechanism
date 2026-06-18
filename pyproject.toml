@@ -39,3 +39,9 @@ Repository = "https://github.com/ibbis-screening/common-mechanism.git"
 [tool.setuptools]
 packages = { find = { "include" = ["commec", "commec.*"] } }
 package-data = { "commec" = ["utils/template.html", "screen-default-config.yaml"] }
+
+[tool.ruff]
+exclude = ["commec/tests/**/*.py", "dev_scripts/**/*.py"]
+
+[tool.ruff.lint]
+ignore = ["E712"]
