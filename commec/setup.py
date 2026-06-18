@@ -40,6 +40,9 @@ def parallel_decompress(directory, jobs=None):
     so we extract them in parallel across ``jobs`` cores (default: all cores).
     """
     jobs = jobs or os.cpu_count() or 1
+    # Resolve to an absolute path so the ``tar`` calls below (run with
+    # ``cwd=directory``) cannot double-prefix a relative directory.
+    directory = os.path.abspath(directory)
     tarballs = glob.glob(os.path.join(directory, "*.tar.gz"))
     if not tarballs:
         return
@@ -100,7 +103,10 @@ class CliSetup:
         Once Start is successfully returned, the setup process can begin.
     """
 
-    def __init__(self, automate: bool = False):
+    def __init__(self, automate: bool = False, jobs: int | None = None):
+
+        # Parallelism for decompressing downloaded BLAST volumes.
+        self.n_jobs = jobs or os.cpu_count() or 1
 
         self.latest_version = get_latest_commec_database_release_tag()[0]
 
@@ -647,10 +653,9 @@ class CliSetup:
             print(nr_directory)
             # Download volumes without --decompress, then decompress in
             # parallel: update_blastdb.pl decompresses serially on one core.
-            command = ["update_blastdb.pl", "--num_threads",
-                       str(os.cpu_count() or 1), self.blastnr_database]
+            command = ["update_blastdb.pl", self.blastnr_database]
             subprocess.run(command, cwd=nr_directory, check=True)
-            parallel_decompress(nr_directory)
+            parallel_decompress(nr_directory, self.n_jobs)
 
         if self.download_blastnt:
             print(
@@ -661,10 +666,9 @@ class CliSetup:
             nt_directory = os.path.join(self.database_directory, "nt_blast")
             os.makedirs(nt_directory, exist_ok=True)
             print(nt_directory)
-            command = ["update_blastdb.pl", "--num_threads",
-                       str(os.cpu_count() or 1), self.blastnt_database]
+            command = ["update_blastdb.pl", self.blastnt_database]
             subprocess.run(command, cwd=nt_directory, check=True)
-            parallel_decompress(nt_directory)
+            parallel_decompress(nt_directory, self.n_jobs)
 
         if self.download_taxonomy:
             print("Downloading Taxonomy databases from NCBI \n")
@@ -872,12 +876,21 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         action="store_true",
         help="Don't ask for user input, and use default options for everything.",
     )
+    parser_obj.add_argument(
+        "-j",
+        "--jobs",
+        dest="jobs",
+        type=int,
+        default=None,
+        help="Number of parallel jobs used to decompress downloaded BLAST "
+        "volumes. Defaults to the number of available CPU cores.",
+    )
     return parser_obj
 
 
 def run(arguments):
     """Run CLI with an parsed argument parser input."""
-    CliSetup(arguments.automated)
+    CliSetup(arguments.automated, arguments.jobs)
 
 
 if __name__ == "__main__":
