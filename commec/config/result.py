@@ -31,7 +31,6 @@ import logging
 from dataclasses import dataclass, asdict, field
 from typing import List, Iterator, Tuple
 from enum import StrEnum
-from importlib.metadata import version, PackageNotFoundError
 import pandas as pd
 from commec.tools.search_handler import SearchToolVersion
 from commec.config.constants import MINIMUM_QUERY_LENGTH, MAXIMUM_QUERY_LENGTH

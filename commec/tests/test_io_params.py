@@ -6,7 +6,6 @@ import yaml
 from commec.config.screen_io import ScreenIO
 from commec.cli import ScreenArgumentParser
 from commec.screen import add_args
-from commec.utils.file_utils import expand_and_normalize
 
 INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.fasta")
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")

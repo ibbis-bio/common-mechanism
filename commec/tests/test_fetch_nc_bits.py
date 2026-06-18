@@ -1,9 +1,7 @@
-from io import StringIO
 import os
 import pandas as pd
 import pytest
 import textwrap
-from Bio import SeqIO
 from unittest.mock import patch
 
 from commec.tools.fetch_nc_bits import (

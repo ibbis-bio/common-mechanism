@@ -6,12 +6,8 @@ Fetch parts of a query that had no high-quality protein matches for use in nuclo
 Usage:
     fetch_nc_bits.py query_name fasta_file_path
 """
-import argparse
 import logging
-import shutil
-import re
 import pandas as pd
-from Bio import SeqIO
 from commec.config.query import Query
 from commec.tools.blast_tools import get_high_identity_hits
 from commec.tools.search_handler import SearchHandler

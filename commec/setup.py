@@ -674,7 +674,7 @@ class CliSetup:
             except error.URLError as e:
                 # Handle URL errors (like unreachable server, etc.)
                 print(f"URL Error: {e.reason}")
-            except ValueError as e:
+            except ValueError:
                 print(
                     "URL Value Error. It is likely the URL input"
                     " is not a recognized URL format."
