@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 # Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
 """
-Module for CLI setup of Commec, such that required 
+Module for CLI setup of Commec, such that required
 databases are downloaded in a desired database directory.
 """
-import sys
+
+import argparse
+import ftplib
+import json
 import os
 import shutil
-import argparse
 import subprocess
-from pathlib import Path
-import ftplib
-from urllib import request, error, parse
-import zipfile
+import sys
 import tarfile
+import zipfile
+from pathlib import Path
+from urllib import error, parse, request
+
 import yaml
-import json
 from yaml.parser import ParserError
 
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
@@ -23,11 +25,12 @@ from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 DESCRIPTION = """Helper script for downloading the databases
  required for running the Common Mechanism Screen"""
 
-C_F_ORANGE = "\033[38;5;202m" # Colour Foreground Orange.
-C_F_GRAY = "\033[38;5;242m" # Colour Foreground Gray
-C_F_BLUE = "\033[38;5;17m" # Colour Foreground Blue
-C_B_BLUE = "\033[48;5;17m" # Colour Background Blue
-C_RESET = "\033[0m" # Reset Console Formatting.
+C_F_ORANGE = "\033[38;5;202m"  # Colour Foreground Orange.
+C_F_GRAY = "\033[38;5;242m"  # Colour Foreground Gray
+C_F_BLUE = "\033[38;5;17m"  # Colour Foreground Blue
+C_B_BLUE = "\033[48;5;17m"  # Colour Background Blue
+C_RESET = "\033[0m"  # Reset Console Formatting.
+
 
 class CliSetup:
     """
@@ -64,9 +67,13 @@ class CliSetup:
 
         self.download_biorisk: bool = True
         self.default_biorisk_download_url: str = (
-            "https://github.com/ibbis-bio/commec-databases/releases"
-            f"/download/{self.latest_version}/commec-dbs.zip"
-        ) if self.latest_version else ""
+            (
+                "https://github.com/ibbis-bio/commec-databases/releases"
+                f"/download/{self.latest_version}/commec-dbs.zip"
+            )
+            if self.latest_version
+            else ""
+        )
         self.biorisk_download_url: str = self.default_biorisk_download_url
 
         self.download_blastnr: bool = False
@@ -122,7 +129,7 @@ class CliSetup:
             "\n\nThis setup is split over 3 steps:",
             "\n 1. Specify download location.",
             "\n 2. Choose which databases to download.",
-            "\n 3. Confirm and start downloads."
+            "\n 3. Confirm and start downloads.",
         )
         self.print_help_info()
         print()
@@ -141,7 +148,9 @@ class CliSetup:
             " Instructions: "
             '\n -> You can exit this setup at any time with "exit"'
             '\n -> You can return to a previous step with "back"'
-            '\n -> You can get additional help at each step with "help"' + add_help_str + C_RESET
+            '\n -> You can get additional help at each step with "help"'
+            + add_help_str
+            + C_RESET
         )
 
     def check_requirements(self):
@@ -164,14 +173,17 @@ class CliSetup:
         if missing_deps:
             print(
                 f"{C_F_ORANGE}Required dependencies missing: "
-                + ", ".join(missing_deps) + C_RESET
+                + ", ".join(missing_deps)
+                + C_RESET
             )
-            print(f"{C_F_ORANGE}Check these are installed in your environment.{C_RESET}")
+            print(
+                f"{C_F_ORANGE}Check these are installed in your environment.{C_RESET}"
+            )
             self.stop()
 
     def check_directory_is_writable(self, input_directory: str) -> str:
         """
-        Checks a directory is viable by 
+        Checks a directory is viable by
         * Expanding terminal variables, user, and resolving the full path and
         * Checking if it exists or
         * Creating it and destroying it.
@@ -184,30 +196,34 @@ class CliSetup:
         # Catches accidental ~/commec-dbs/ vs ~commec-dbs/ when theres no commec-dbs username.
         try:
             path = path.expanduser()
-        except(RuntimeError):
-            print("User expansion for path failed, ensure you are using"
-                  " \"~/\" for self, or a valid user with \"~username/\".")
+        except RuntimeError:
+            print(
+                "User expansion for path failed, ensure you are using"
+                ' "~/" for self, or a valid user with "~username/".'
+            )
             return ""
 
         try:
             path = path.resolve()
-        except(RuntimeError):
+        except RuntimeError:
             return ""
 
         print(path)
         if path.exists():
             return path
-        
+
         if path.is_reserved():
             print("This path contains reserved characters for this Operating System.")
             return ""
-        
+
         # Handily, all sorts of special characters are identified with a %XX, within posix, and are replaced
         # by similar characters during mkdir, whilst technically legal, lets recommend against cursed dir names.
-        if '%' in path.as_posix():
-            print("Please avoid using special characters (\"|}{\":?><*&\" etc) in filepath names.")
+        if "%" in path.as_posix():
+            print(
+                'Please avoid using special characters ("|}{":?><*&" etc) in filepath names.'
+            )
             return ""
-    
+
         # If the path doesn't exist, the best way to know if user input is valid, is to try make it.
         # Find the part of the directory which is new, so we can delete only it after.
         path_to_remove_dirs = Path(path.parts[0])
@@ -265,9 +281,9 @@ class CliSetup:
 
     def decide_commec_dbs(self):
         """Decide whether the Commec Biorisks and low-concern databases need to be downloaded."""
-        self.print_step_header(2,1)
+        self.print_step_header(2, 1)
         print(
-            "Do you want to download the " "mandatory Commec databases? (~1.2 GB)",
+            "Do you want to download the mandatory Commec databases? (~1.2 GB)",
             '\n"y" or "n", for yes or no.',
         )
         while True:
@@ -327,8 +343,7 @@ class CliSetup:
             if not self.check_url_exists(self.biorisk_download_url):
                 print(
                     self.biorisk_download_url,
-                    " is not a valid URL! "
-                    "(or you are not connected to the internet)",
+                    " is not a valid URL! (or you are not connected to the internet)",
                 )
                 continue
 
@@ -338,7 +353,7 @@ class CliSetup:
 
     def decide_blastnr(self):
         """Decide whether a Protein database needs to be downloaded."""
-        self.print_step_header(2,3)
+        self.print_step_header(2, 3)
         print(
             "Do you want to download the"
             " protein NR database for protein screening? (~530 GB)",
@@ -374,7 +389,7 @@ class CliSetup:
 
     def decide_blastnt(self):
         """Decide what Nucleotide database needs to be downloaded."""
-        self.print_step_header(2,4)
+        self.print_step_header(2, 4)
         print(
             "Do you want to download the Nucleotide NT databases for non-coding"
             " region nucleotide screening? (~580 GB)",
@@ -387,7 +402,7 @@ class CliSetup:
                     [
                         "\n -> type yes,y or no,n to indicate decision.",
                         "\n   (The Blast Nucleotide database is used to screen",
-                        '\n   non-coding regions of queries, unless the user specifies to skip taxonomy or nt search,'
+                        "\n   non-coding regions of queries, unless the user specifies to skip taxonomy or nt search,"
                         "\n   and is around 580 GB in size.)",
                     ]
                 )
@@ -407,7 +422,7 @@ class CliSetup:
 
     def decide_taxonomy(self):
         """Decide whether taxonomy database need to be downloaded."""
-        self.print_step_header(2,5)
+        self.print_step_header(2, 5)
         print(
             "Do you want to download the Taxonomy databases? ( less than ~500 MB)",
             '\n"y" or "n", for yes or no.',
@@ -471,8 +486,7 @@ class CliSetup:
             if not self.check_url_exists(self.taxonomy_download_url):
                 print(
                     self.taxonomy_download_url,
-                    " is not a valid URL! "
-                    "(or you are not connected to the internet)",
+                    " is not a valid URL! (or you are not connected to the internet)",
                 )
                 continue
 
@@ -500,7 +514,7 @@ class CliSetup:
             print(" -> Nucleotide database will be downloaded.")
         if self.download_taxonomy:
             print(
-                " -> Taxonomy database will be downloaded," "\n    from URL: ",
+                " -> Taxonomy database will be downloaded,\n    from URL: ",
                 self.taxonomy_download_url,
             )
 
@@ -648,7 +662,9 @@ class CliSetup:
 
         # Default config file installed with commec package should by point to the newly
         # installed databases
-        self.update_default_db_base_path(DEFAULT_CONFIG_YAML_PATH, self.database_directory)
+        self.update_default_db_base_path(
+            DEFAULT_CONFIG_YAML_PATH, self.database_directory
+        )
 
         print(
             "\n\nThe common mechanism setup has completed!"
@@ -721,20 +737,22 @@ class CliSetup:
         where the databases were installed.
         """
         try:
-            with open(config_file, 'r', encoding = "utf-8") as file:
+            with open(config_file, "r", encoding="utf-8") as file:
                 config_data = yaml.safe_load(file)
 
             # Update the default path under 'base_paths'
-            if 'base_paths' in config_data and 'default' in config_data['base_paths']:
-                config_data['base_paths']['default'] = new_path
+            if "base_paths" in config_data and "default" in config_data["base_paths"]:
+                config_data["base_paths"]["default"] = new_path
             else:
                 # For some reason this didn't exist, so lets just silently make it, and throw a warning.
-                print(f"{C_F_ORANGE}WARNING: base paths weren't defined in the default configuration file "
-                      f"{config_file}, the correct data will be added, however we recommend you double "
-                      "check that the default config yaml is correct. {C_RESET}")
-                config_data['base_paths'] = {'default' : new_path}
+                print(
+                    f"{C_F_ORANGE}WARNING: base paths weren't defined in the default configuration file "
+                    f"{config_file}, the correct data will be added, however we recommend you double "
+                    "check that the default config yaml is correct. {C_RESET}"
+                )
+                config_data["base_paths"] = {"default": new_path}
 
-            with open(config_file, 'w', encoding = "utf-8") as file:
+            with open(config_file, "w", encoding="utf-8") as file:
                 yaml.safe_dump(config_data, file)
 
         except FileNotFoundError:
@@ -769,7 +787,10 @@ class CliSetup:
         print(f"{C_RESET}\nExiting setup for The Common Mechanism.")
         sys.exit()
 
-def get_latest_commec_database_release_tag(repo="ibbis-bio/commec-databases") -> tuple[str | None, str]:
+
+def get_latest_commec_database_release_tag(
+    repo="ibbis-bio/commec-databases",
+) -> tuple[str | None, str]:
     """
     Contacts GitHub for the latest tagged release of the commec databases.
     This can be used to compare to a local commec-db-version.txt file,
@@ -799,7 +820,7 @@ def get_latest_commec_database_release_tag(repo="ibbis-bio/commec-databases") ->
                 return None, f"GitHub API error: HTTP {response.status}"
             data = json.loads(response.read().decode())
         if "tag_name" in data:
-            return data.get("tag_name"), "Success" 
+            return data.get("tag_name"), "Success"
         else:
             return None, "Unexpected response structure: 'tag_name' not found."
     except error.HTTPError as e:

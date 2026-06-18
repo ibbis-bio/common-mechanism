@@ -31,9 +31,9 @@ from unittest.mock import patch
 import pytest
 import yaml
 
-from commec.screen import ScreenArgumentParser, add_args, run
 from commec.config.json_io import get_screen_data_from_json
-from commec.config.result import ScreenResult, ScreenStatus, QueryResult
+from commec.config.result import QueryResult, ScreenResult, ScreenStatus
+from commec.screen import ScreenArgumentParser, add_args, run
 
 # Root directory under which each subfolder is one evaluation case.
 EVAL_DIR = Path(__file__).parent / "test_data" / "eval"
@@ -90,9 +90,7 @@ else:
         pytest.param(
             None,
             id="no-eval-cases",
-            marks=pytest.mark.skip(
-                reason=f"No evaluation cases found in {EVAL_DIR}"
-            ),
+            marks=pytest.mark.skip(reason=f"No evaluation cases found in {EVAL_DIR}"),
         )
     ]
 
@@ -235,13 +233,17 @@ def _find_query(result: ScreenResult, query_id) -> QueryResult:
     return resolved
 
 
-def _run_screen(fasta: Path, db_dir: Path, output_dir: Path, screen_args: list[str]) -> ScreenResult:
+def _run_screen(
+    fasta: Path, db_dir: Path, output_dir: Path, screen_args: list[str]
+) -> ScreenResult:
     """Run a real ``commec screen`` and return the parsed ScreenResult."""
     arguments = [
         "commec-screen",
         str(fasta),
-        "-d", str(db_dir),
-        "-o", str(output_dir),
+        "-d",
+        str(db_dir),
+        "-o",
+        str(output_dir),
         "-F",  # force a fresh run into the (empty) tmp output dir
     ]
     arguments.extend(screen_args)

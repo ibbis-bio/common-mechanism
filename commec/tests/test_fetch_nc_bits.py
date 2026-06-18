@@ -1,20 +1,21 @@
 import os
-import pandas as pd
-import pytest
 import textwrap
 from unittest.mock import patch
 
+import pandas as pd
+import pytest
+
+from commec.config.result import QueryResult, ScreenStatus
+from commec.config.screen_io import ScreenIO
+from commec.screen import ScreenArgumentParser, add_args
+from commec.tools.blastx import BlastXHandler
 from commec.tools.fetch_nc_bits import (
     _get_ranges_with_no_hits,
     calculate_noncoding_regions_per_query,
 )
 
-from commec.config.screen_io import ScreenIO
-from commec.config.result import QueryResult, ScreenStatus
-from commec.screen import add_args, ScreenArgumentParser
-from commec.tools.blastx import BlastXHandler
-
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs")
+
 
 @pytest.mark.parametrize(
     "hits, query_length, nc_ranges",
@@ -118,7 +119,15 @@ def test_fetch_nocoding_regions(tmp_path):
     # Create Dictionary of queries for funciton input.
     with patch(
         "sys.argv",
-        ["test.py", "--skip-tx", str(input_fasta), "-d", str(DATABASE_DIRECTORY), "-o", str(tmp_path)],
+        [
+            "test.py",
+            "--skip-tx",
+            str(input_fasta),
+            "-d",
+            str(DATABASE_DIRECTORY),
+            "-o",
+            str(tmp_path),
+        ],
     ):
         parser = ScreenArgumentParser()
         add_args(parser)

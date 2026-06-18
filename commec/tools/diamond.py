@@ -6,17 +6,19 @@ Instantiate a DiamondHnadler, with input local database, input fasta, and output
 Alter member variables after instantiation to change behaviour, before calling search().
 Throws if inputs are invalid. Creates a temporary log file, which is deleted on completion.
 """
-import os
+
 import glob
-import subprocess
 import logging
+import os
+import subprocess
 from math import gcd as greatest_common_denominator
 from multiprocessing import Pool
 
 from commec.tools.blast_tools import BlastHandler
-from commec.tools.search_handler import SearchToolVersion, DatabaseValidationError
+from commec.tools.search_handler import DatabaseValidationError, SearchToolVersion
 
 logger = logging.getLogger(__name__)
+
 
 class DiamondHandler(BlastHandler):
     """
@@ -65,10 +67,7 @@ class DiamondHandler(BlastHandler):
                 " Directory path can be set via --databases option or --config yaml."
             )
         prefix = self.db_file[:-5] if self.db_file.endswith(".dmnd") else self.db_file
-        if not (
-            os.path.isfile(f"{prefix}.dmnd")
-            or glob.glob(f"{prefix}.[0-9]*.dmnd")
-        ):
+        if not (os.path.isfile(f"{prefix}.dmnd") or glob.glob(f"{prefix}.[0-9]*.dmnd")):
             raise DatabaseValidationError(
                 f"No Diamond database files found for prefix '{prefix}'."
                 " Expected <prefix>.dmnd or <prefix>.<N>.dmnd in the database directory."
@@ -88,7 +87,6 @@ class DiamondHandler(BlastHandler):
                 f"Screening database directory {self.db_directory} "
                 f"contains no databases matching the pattern: {db_suffix}"
                 " Screening directory path can be set via --databases option or --config yaml."
-
             )
 
     def run_diamond_search(self, args):
@@ -98,14 +96,22 @@ class DiamondHandler(BlastHandler):
         log_file = f"{self.temp_log_file}_{db_index}"
 
         command = [
-            "diamond", "blastx", "--quiet",
-            "-d", db_file,
-            "--threads", str(self.threads_per_run),
-            "-q", self.input_file,
-            "-o", output_file,
-            "--frameshift", str(self.frameshift),
-            "--outfmt", self.output_format,
-            *self.output_format_tokens
+            "diamond",
+            "blastx",
+            "--quiet",
+            "-d",
+            db_file,
+            "--threads",
+            str(self.threads_per_run),
+            "-q",
+            self.input_file,
+            "-o",
+            output_file,
+            "--frameshift",
+            str(self.frameshift),
+            "--outfmt",
+            self.output_format,
+            *self.output_format_tokens,
         ]
         if self.do_range_culling:
             command.append("--range-culling")
@@ -124,9 +130,8 @@ class DiamondHandler(BlastHandler):
             n_concurrent_runs = self.jobs
         else:
             n_concurrent_runs = greatest_common_denominator(
-                number_of_databases,
-                max_threads
-                )
+                number_of_databases, max_threads
+            )
 
         if number_of_databases < n_concurrent_runs:
             logger.warning(
@@ -191,9 +196,13 @@ class DiamondHandler(BlastHandler):
             pool.map(self.run_diamond_search, enumerate(self.db_files, 1))
 
         # Concatenate all output files, and remove the temporary ones.
-        temp_outfiles = (f"{self.out_file}.{i}.tsv" for i in range(1, len(self.db_files) + 1))
+        temp_outfiles = (
+            f"{self.out_file}.{i}.tsv" for i in range(1, len(self.db_files) + 1)
+        )
         self.concatenate_concurrent_outputs(self.out_file, temp_outfiles)
-        temp_logfiles = (f"{self.temp_log_file}_{i}" for i in range(1, len(self.db_files) + 1))
+        temp_logfiles = (
+            f"{self.temp_log_file}_{i}" for i in range(1, len(self.db_files) + 1)
+        )
         self.concatenate_concurrent_outputs(self.temp_log_file, temp_logfiles)
 
     def warn_if_nonoptimal_cpu_utilization(self, n_diamond_dbs):
@@ -228,7 +237,7 @@ class DiamondHandler(BlastHandler):
                 self.concurrent_runs,
                 self.threads_per_run,
                 n_diamond_dbs,
-                self.concurrent_runs
+                self.concurrent_runs,
             )
 
     def concatenate_concurrent_outputs(self, base_filename, temp_files):

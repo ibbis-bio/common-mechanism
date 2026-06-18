@@ -6,18 +6,22 @@ Useful for reading any blast related outputs, for example from Blastx, Blastn, o
 
 Also contains the abstract base class for blastX/N/Diamond database search handlers.
 """
-import os
+
 import logging
+import os
 from typing import BinaryIO, TextIO
-import pytaxonkit
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+import pytaxonkit
+
 from commec.tools.search_handler import SearchHandler
 
 TAXID_SYNTHETIC_CONSTRUCTS = 32630
 TAXID_VECTORS = 29278
 
 logger = logging.getLogger(__name__)
+
 
 class BlastHandler(SearchHandler):
     """
@@ -30,6 +34,7 @@ class BlastHandler(SearchHandler):
         if self.has_hits():
             output_dataframe = read_blast(self.out_file)
         return output_dataframe
+
 
 def _split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
     """
@@ -63,7 +68,9 @@ def get_lineages(taxids: pd.Series, db_path: str | os.PathLike, threads: int):
     any regulated pathogen, since pathogens might be regulated at various points in the lineage
     (i.e. not just species or genus).
     """
-    lin = pytaxonkit.lineage(taxids.drop_duplicates(), data_dir=db_path, threads=threads)
+    lin = pytaxonkit.lineage(
+        taxids.drop_duplicates(), data_dir=db_path, threads=threads
+    )
 
     # Warn about error codes from lineage search
     taxids_not_found = lin[lin["Code"] == -1]["TaxID"]
@@ -196,8 +203,12 @@ def read_blast(blast_file: str | os.PathLike | BinaryIO | TextIO) -> pd.DataFram
     blast.columns = columns
     blast = blast.sort_values(by=["% identity"], ascending=False)
     blast["log evalue"] = -np.log10(pd.to_numeric(blast["evalue"]) + 1e-300)
-    blast["q. coverage"] = abs(blast["q. end"] - blast["q. start"]) / blast["query length"].max()
-    blast["s. coverage"] = abs(blast["s. end"] - blast["s. start"]) / blast["subject length"]
+    blast["q. coverage"] = (
+        abs(blast["q. end"] - blast["q. start"]) / blast["query length"].max()
+    )
+    blast["s. coverage"] = (
+        abs(blast["s. end"] - blast["s. start"]) / blast["subject length"]
+    )
     blast["query acc."] = blast["query acc."].astype(str)
 
     blast = blast[blast["subject tax ids"].notna()]
@@ -245,6 +256,7 @@ def _trim_overlapping(blast: pd.DataFrame):
 
     return blast2
 
+
 def shift_hits_pos_strand(blast):
     for j in blast.index:
         if blast.loc[j, "q. start"] > blast.loc[j, "q. end"]:
@@ -254,7 +266,8 @@ def shift_hits_pos_strand(blast):
             blast.loc[j, "q. end"] = end
     return blast
 
-def _trim_edges(df : pd.DataFrame) -> tuple[pd.DataFrame, int]:
+
+def _trim_edges(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
     """
     Function for filtering a Blast derived dataframe, removes weaker hits
     (based on % identity) that have extents within that of stronger hits.
@@ -269,22 +282,24 @@ def _trim_edges(df : pd.DataFrame) -> tuple[pd.DataFrame, int]:
     """
 
     assert "q. start" in df.columns, (
-        "Expected column \"q. start\" does not exist for _trim_edges().\n"
+        'Expected column "q. start" does not exist for _trim_edges().\n'
         f"Existing columns: {', '.join(df.columns)}"
     )
 
     assert "q. end" in df.columns, (
-        "Expected column \"q. end\" does not exist for _trim_edges().\n"
+        'Expected column "q. end" does not exist for _trim_edges().\n'
         f"Existing columns: {', '.join(df.columns)}"
     )
 
     assert "% identity" in df.columns, (
-        "Expected column \"query length\" does not exist for _trim_edges().\n"
+        'Expected column "query length" does not exist for _trim_edges().\n'
         f"Existing columns: {', '.join(df.columns)}"
     )
 
     for top, i in enumerate(df.index):  # run through each hit from the top
-        for _, j in enumerate(df.index[top + 1:], start=top + 1):  # compare to each below
+        for _, j in enumerate(
+            df.index[top + 1 :], start=top + 1
+        ):  # compare to each below
             i_start = df.loc[i, "q. start"]
             i_end = df.loc[i, "q. end"]
             j_start = df.loc[j, "q. start"]
@@ -298,7 +313,10 @@ def _trim_edges(df : pd.DataFrame) -> tuple[pd.DataFrame, int]:
                 # if the hit extends past the end of the earlier one
                 elif i_end + 1 < j_end:
                     df.loc[j, "q. start"] = i_end + 1
-                elif i_end == j_end and df.loc[j, "% identity"] == df.loc[i, "% identity"]:
+                elif (
+                    i_end == j_end
+                    and df.loc[j, "% identity"] == df.loc[i, "% identity"]
+                ):
                     pass
                 # remove if the hit is contained in the earlier one
                 else:
@@ -312,7 +330,10 @@ def _trim_edges(df : pd.DataFrame) -> tuple[pd.DataFrame, int]:
                     pass
                 elif i_start - 1 > j_start:
                     df.loc[j, "q. end"] = i_start - 1
-                elif i_start == j_start and df.loc[j, "% identity"] == df.loc[i, "% identity"]:
+                elif (
+                    i_start == j_start
+                    and df.loc[j, "% identity"] == df.loc[i, "% identity"]
+                ):
                     pass
                 else:
                     df.loc[j, "q. start"] = 0
@@ -345,7 +366,9 @@ def get_top_hits(blast: pd.DataFrame):
     Trim BLAST results down to the top hit for each base.
     """
 
-    assert isinstance(blast, pd.DataFrame), "get_top_hits expects a pandas dataframe object."
+    assert isinstance(blast, pd.DataFrame), (
+        "get_top_hits expects a pandas dataframe object."
+    )
 
     if blast.empty:
         logger.debug("Empty dataframe passed to Get Top Hits.")

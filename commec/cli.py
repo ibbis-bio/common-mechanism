@@ -10,34 +10,45 @@ The subcommands:
 
 Command-line usage:
     - commec screen -d /path/to/databases input.fasta
-    - commec flag /path/to/directory/with/output.screen 
+    - commec flag /path/to/directory/with/output.screen
     - commec split input.fasta
     - commec -h, --help
     - commec -v, --version
 """
+
+from commec import __version__ as COMMEC_VERSION
 from commec.flag import (
     DESCRIPTION as flag_DESCRIPTION,
+)
+from commec.flag import (
     add_args as flag_add_args,
+)
+from commec.flag import (
     run as flag_run,
 )
-from commec.screen import (
-    DESCRIPTION as screen_DESCRIPTION,
-    add_args as screen_add_args,
-    run as screen_run,
-    ScreenArgumentParser
+from commec.screen import DESCRIPTION as screen_DESCRIPTION
+from commec.screen import ScreenArgumentParser
+from commec.screen import add_args as screen_add_args
+from commec.screen import run as screen_run
+from commec.setup import (
+    DESCRIPTION as setup_DESCRIPTION,
+)
+from commec.setup import (
+    add_args as setup_add_args,
+)
+from commec.setup import (
+    run as setup_run,
 )
 from commec.split import (
     DESCRIPTION as split_DESCRIPTION,
+)
+from commec.split import (
     add_args as split_add_args,
+)
+from commec.split import (
     run as split_run,
 )
-from commec.setup import (
-    DESCRIPTION as setup_DESCRIPTION,
-    add_args as setup_add_args,
-    run as setup_run,
-)
 
-from commec import __version__ as COMMEC_VERSION
 
 def main():
     """
@@ -86,10 +97,12 @@ def main():
     elif args.command == "setup":
         setup_run(args)
     elif args.version:
-        print( "Commec  : The Common Mechanism\n"
-              f"Version : {COMMEC_VERSION}\n"
-              "Copyright IBBIS (c) 2021-2025\n"
-              "International Biosecurity and Biosafety Initiative for Science")
+        print(
+            "Commec  : The Common Mechanism\n"
+            f"Version : {COMMEC_VERSION}\n"
+            "Copyright IBBIS (c) 2021-2025\n"
+            "International Biosecurity and Biosafety Initiative for Science"
+        )
     else:
         parser.print_help()
 

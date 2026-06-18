@@ -1,14 +1,17 @@
-""" 
+"""
 Unit test for ensuring that the databases are being called without errors.
 Will fail if databases have not been installed as expected, with correct versions.
 """
+
 import os
+
 import pytest
-from commec.tools.diamond import DiamondHandler
+
 from commec.tools.blastn import BlastNHandler
 from commec.tools.blastx import BlastXHandler
-from commec.tools.hmmer import HmmerHandler
 from commec.tools.cmscan import CmscanHandler
+from commec.tools.diamond import DiamondHandler
+from commec.tools.hmmer import HmmerHandler
 from commec.tools.search_handler import DatabaseValidationError
 
 INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.fasta")
@@ -22,10 +25,12 @@ databases_to_implement = [
     [CmscanHandler, "low_concern/rna", "benign.cm"],
 ]
 
+
 def print_tmp_path_contents(tmp_path):
     print(f"Contents of {tmp_path}:")
     for path in tmp_path.rglob("*"):  # Recursively list all files and directories
         print(path.relative_to(tmp_path), "->", "DIR" if path.is_dir() else "FILE")
+
 
 @pytest.mark.parametrize("input_db", databases_to_implement)
 def test_database_can_run(input_db):
@@ -88,9 +93,9 @@ def test_database_no_file(input_db):
     except DatabaseValidationError:
         assert True
 
-n_jobs = [
-    None, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-]
+
+n_jobs = [None, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
 
 @pytest.mark.parametrize("input_jobs", n_jobs)
 def test_diamond_job_and_threads_calculations(input_jobs):
@@ -122,8 +127,9 @@ def test_diamond_job_and_threads_calculations(input_jobs):
             # We should ALWAYS use all available threads.
             # We may use less than Max Threads if the remainder is 0 for the no. of database files
             if input_jobs is None:
-                assert ((concurrent_runs * threads_per_run == max_threads) or
-                        (concurrent_runs * threads_per_run % n_database_files == 0)), f"""
+                assert (concurrent_runs * threads_per_run == max_threads) or (
+                    concurrent_runs * threads_per_run % n_database_files == 0
+                ), f"""
                 {concurrent_runs} runs with {threads_per_run} threads. Input settings:
                 {max_threads} max threads, {n_database_files} dbs, {input_jobs} input jobs no.
                 """
@@ -132,13 +138,13 @@ def test_diamond_job_and_threads_calculations(input_jobs):
 @pytest.mark.parametrize(
     "input_jobs, max_threads, n_database_files, expected_runs, expected_threads",
     [
-        (None, 20, 6, 2, 10), # jobs capped by db count, using all threads
-        (None, 8, 5, 1, 5),   # jobs capped by db count, not using all threads
-        (3, 12, 6, 3, 4),     # jobs=3 --> 3 runs with 4 threads each
-        (10, 20, 5, 5, 4),    # jobs=10 > db=5, capped to 5 runs with 4 threads each
-        (20, 10, 5, 5, 2),    # jobs=20 > threads=10, capped to 5 runs with 2 threads each
-        (10, 4, 5, 4, 1),     # jobs=10 > db, threads, cappted to 4 runs with 1 thread each
-    ]
+        (None, 20, 6, 2, 10),  # jobs capped by db count, using all threads
+        (None, 8, 5, 1, 5),  # jobs capped by db count, not using all threads
+        (3, 12, 6, 3, 4),  # jobs=3 --> 3 runs with 4 threads each
+        (10, 20, 5, 5, 4),  # jobs=10 > db=5, capped to 5 runs with 4 threads each
+        (20, 10, 5, 5, 2),  # jobs=20 > threads=10, capped to 5 runs with 2 threads each
+        (10, 4, 5, 4, 1),  # jobs=10 > db, threads, cappted to 4 runs with 1 thread each
+    ],
 )
 def test_diamond_job_and_threads_calculations_parametrized(
     input_jobs, max_threads, n_database_files, expected_runs, expected_threads
@@ -153,8 +159,8 @@ def test_diamond_job_and_threads_calculations_parametrized(
     )
     handler.jobs = input_jobs
     concurrent_runs, threads_per_run = handler.determine_runs_and_threads(
-                max_threads, n_database_files
-            )
+        max_threads, n_database_files
+    )
 
     assert concurrent_runs == expected_runs, f"""
         {input_jobs} jobs, {max_threads} threads failed

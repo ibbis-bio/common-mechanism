@@ -26,18 +26,20 @@ Set of containers for storing information important to screen
          [HitResult]:
              recommendation (per hit)
 """
-import re
+
 import logging
-from dataclasses import dataclass, asdict, field
-from typing import List, Iterator, Tuple
+import re
+from dataclasses import asdict, dataclass, field
 from enum import StrEnum
+from typing import Iterator, List, Tuple
+
 import pandas as pd
-from commec.tools.search_handler import SearchToolVersion
-from commec.config.constants import MINIMUM_QUERY_LENGTH, MAXIMUM_QUERY_LENGTH
+
 from commec import __version__ as COMMEC_VERSION
+from commec.config.constants import MAXIMUM_QUERY_LENGTH, MINIMUM_QUERY_LENGTH
+from commec.tools.search_handler import SearchToolVersion
 
 logger = logging.getLogger(__name__)
-
 
 
 # Seperate versioning for the output JSON.
@@ -83,10 +85,12 @@ class ScreenStatus(StrEnum):
             ScreenStatus.PASS: "Query was not flagged in this screening step; biosecurity review may not be needed",
             ScreenStatus.CLEARED_WARN: (
                 "Warning was cleared, since query region was identified as low-concern"
-                " (e.g. housekeeping gene, common synbio part)"),
+                " (e.g. housekeeping gene, common synbio part)"
+            ),
             ScreenStatus.CLEARED_FLAG: (
                 "Flag was cleared, since query region was identified as low-concern"
-                " (e.g. housekeeping gene, common synbio part)"),
+                " (e.g. housekeeping gene, common synbio part)"
+            ),
             ScreenStatus.WARN: (
                 "Possible sequence of concern identified, but with low confidence"
                 "(e.g. virulence factors or proteins shared among regulated and non-regulated organisms)"
@@ -130,7 +134,7 @@ class ScreenStatus(StrEnum):
         if self == ScreenStatus.CLEARED_FLAG:
             return ScreenStatus.FLAG
         return self
-    
+
     def __gt__(self, value):
         return self.importance > value.importance
 
@@ -142,6 +146,7 @@ class ScreenStatus(StrEnum):
 
     def __le__(self, value):
         return self.importance <= value.importance
+
 
 def compare(a: ScreenStatus, b: ScreenStatus):
     """
@@ -181,7 +186,7 @@ class MatchRange:
     Container for coordinate information of where hits match to a query.
     """
 
-    e_value: float = float('nan')
+    e_value: float = float("nan")
     # percent identity?
     match_start: int = 0
     match_end: int = 0
@@ -192,7 +197,7 @@ class MatchRange:
 
     def length(self):
         """
-        Returns the length in Nucleotides of 
+        Returns the length in Nucleotides of
         this range for the query coordinates.
         """
         return abs(self.query_end - self.query_start)
@@ -218,9 +223,10 @@ class MatchRange:
             and self.query_start == other.query_start
             and self.query_end == other.query_end
         )
-    
+
     def __str__(self):
         return f"{self.query_start}-{self.query_end}"
+
 
 @dataclass(frozen=True)
 class TaxonomyAnnotation:
@@ -228,13 +234,15 @@ class TaxonomyAnnotation:
     Contains basic taxonomy information for the annotations
     dict of a HitResult when determined by a taxonomy step.
     """
-    evalue : float = 0.0
-    taxid : str = ""
+
+    evalue: float = 0.0
+    taxid: str = ""
     species: str = ""
-    genus : str = ""
+    genus: str = ""
     superkingdom: str = ""
-    target_hit : str = ""
-    target_description : str = ""
+    target_hit: str = ""
+    target_description: str = ""
+
 
 @dataclass
 class HitResult:
@@ -260,13 +268,14 @@ class HitResult:
         output = (
             f"{self.name}: {self.description}.\n{self.recommendation.from_step}"
             f", {self.recommendation.status}. Ranges (#{len(self.ranges)})\n"
-            )
+        )
         match_string = ""
         for r in self.ranges:
             match_string += f"{r.query_start}-{r.query_end}, "
         match_string = match_string[:-2]
 
         return output + "[" + match_string + "]"
+
 
 class Rationale(StrEnum):
     """
@@ -276,6 +285,7 @@ class Rationale(StrEnum):
     status is always reported first. After this, secondary less important statuses
     (usually warnings) are added to the rationale.
     """
+
     NULL = "-"
     ERROR = "There was an error during "
 
@@ -299,9 +309,13 @@ class Rationale(StrEnum):
     TAX_WARN = " equally-good matches to regulated and non-regulated organisms"
 
     # Outcomes:
-    NO_HITS = ("No matches found during any stage of analysis. "
-                "Sequence risk is unknown, possibly generated in silico. ")
-    NO_HITS_SKIP_NOTE = NO_HITS + "Matches may be found if re-run without skipping steps."
+    NO_HITS = (
+        "No matches found during any stage of analysis. "
+        "Sequence risk is unknown, possibly generated in silico. "
+    )
+    NO_HITS_SKIP_NOTE = (
+        NO_HITS + "Matches may be found if re-run without skipping steps."
+    )
     SKIPPED = "Query was skipped."
     TOO_LONG = f"Sequence is too long (must be at most {MAXIMUM_QUERY_LENGTH} bp)."
     TOO_SHORT = f"Sequence is too short (must be at least {MINIMUM_QUERY_LENGTH} bp)."
@@ -312,6 +326,7 @@ class Rationale(StrEnum):
     CLEARED = " cleared as common or non-hazardous"
 
     INCOMPLETE = "Screening was not run to completion."
+
 
 @dataclass
 class QueryScreenStatus:
@@ -324,19 +339,21 @@ class QueryScreenStatus:
     protein_taxonomy: ScreenStatus = ScreenStatus.NULL
     nucleotide_taxonomy: ScreenStatus = ScreenStatus.NULL
     low_concern: ScreenStatus = ScreenStatus.NULL
-    rationale : str = Rationale.NULL
+    rationale: str = Rationale.NULL
 
     # Mapping between screen steps and the fields above
     STEP_TO_STATUS_FIELD = {
-        ScreenStep.BIORISK: 'biorisk',
-        ScreenStep.TAXONOMY_NT: 'nucleotide_taxonomy', 
-        ScreenStep.TAXONOMY_AA: 'protein_taxonomy',
-        ScreenStep.LOW_CONCERN_PROTEIN: 'low_concern',
-        ScreenStep.LOW_CONCERN_RNA: 'low_concern',
-        ScreenStep.LOW_CONCERN_DNA: 'low_concern',
+        ScreenStep.BIORISK: "biorisk",
+        ScreenStep.TAXONOMY_NT: "nucleotide_taxonomy",
+        ScreenStep.TAXONOMY_AA: "protein_taxonomy",
+        ScreenStep.LOW_CONCERN_PROTEIN: "low_concern",
+        ScreenStep.LOW_CONCERN_RNA: "low_concern",
+        ScreenStep.LOW_CONCERN_DNA: "low_concern",
     }
 
-    def update_step_status(self, step: ScreenStep, status: ScreenStatus, override_skip: bool = False) -> None:
+    def update_step_status(
+        self, step: ScreenStep, status: ScreenStatus, override_skip: bool = False
+    ) -> None:
         """
         Update the query screen status for a particular step if the proposed status is more
         important than the current one.
@@ -345,7 +362,9 @@ class QueryScreenStatus:
         if status.importance > current_status.importance:
             self.set_step_status(step, status, override_skip)
 
-    def set_step_status(self, step: ScreenStep, status: ScreenStatus, override_skip: bool = False) -> None:
+    def set_step_status(
+        self, step: ScreenStep, status: ScreenStatus, override_skip: bool = False
+    ) -> None:
         """
         Set the query screen status for a particular step.
         In most cases, query steps that have already been skipped should not be updated.
@@ -372,10 +391,12 @@ class QueryScreenStatus:
         # Never override an Error.
         if self.screen_status == ScreenStatus.ERROR:
             return
-        
+
         # This is decided early enough to warrant never overriding.
-        if (self.screen_status == ScreenStatus.SKIP_LONG or 
-            self.screen_status == ScreenStatus.SKIP_SHORT):
+        if (
+            self.screen_status == ScreenStatus.SKIP_LONG
+            or self.screen_status == ScreenStatus.SKIP_SHORT
+        ):
             return
 
         # Derive from the most important step statuses.
@@ -383,22 +404,23 @@ class QueryScreenStatus:
             self.biorisk,
             self.protein_taxonomy,
             self.nucleotide_taxonomy,
-            self.low_concern
+            self.low_concern,
         )
 
         # If a step wasn't completed, then mark screen status as Null.
-        if (ScreenStatus.NULL in {self.biorisk,
-                                  self.protein_taxonomy,
-                                  self.nucleotide_taxonomy,
-                                  self.low_concern}):
+        if ScreenStatus.NULL in {
+            self.biorisk,
+            self.protein_taxonomy,
+            self.nucleotide_taxonomy,
+            self.low_concern,
+        }:
             self.screen_status = ScreenStatus.STOP
             return
 
         # If everything is happy, but we haven't hit anything, time to be suspicious...
-        if (self.screen_status == ScreenStatus.PASS and query_data.no_hits_warning):
+        if self.screen_status == ScreenStatus.PASS and query_data.no_hits_warning:
             self.screen_status = ScreenStatus.WARN
             return
-
 
     def __str__(self) -> str:
         output = f"""
@@ -424,7 +446,7 @@ class QueryScreenStatus:
         if self.low_concern == ScreenStatus.ERROR:
             return "Low concern Screening"
 
-        return "Screening" # General Error at some stage.
+        return "Screening"  # General Error at some stage.
 
 
 @dataclass
@@ -432,6 +454,7 @@ class QueryResult:
     """
     Container to hold screening result data pertinant to a single Query
     """
+
     query: str = ""
     description: str = ""
     length: int = 0
@@ -441,8 +464,8 @@ class QueryResult:
     def get_hit(self, match_name: str) -> HitResult:
         """Wrapper for get logic."""
         return self.hits.get(match_name)
-    
-    def check_hit_range(self, input_region : MatchRange):
+
+    def check_hit_range(self, input_region: MatchRange):
         """
         Checks all existing hits for whether there is an similar query coordinate region.
         Returns the relevant hit, or None.
@@ -475,7 +498,9 @@ class QueryResult:
                     new_region.query_start == existing_region.query_start
                     and new_region.query_end == existing_region.query_end
                 ):
-                    logger.debug(f"[{new_region.query_start}-{new_region.query_end}] Region already exists...")
+                    logger.debug(
+                        f"[{new_region.query_start}-{new_region.query_end}] Region already exists..."
+                    )
                     is_unique_region = False
 
             if is_unique_region:
@@ -504,9 +529,9 @@ class QueryResult:
         """
         logger.debug("Updating step status flags for query %s", self.query)
         logger.debug("Current status %s", self.status)
-        
+
         ignored_status = {ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.PASS}
-        
+
         if self.status.biorisk not in ignored_status:
             self.status.biorisk = ScreenStatus.NULL
         if self.status.protein_taxonomy not in ignored_status:
@@ -527,57 +552,69 @@ class QueryResult:
         for hit in self.hits.values():
             step = hit.recommendation.from_step
             hit_status = hit.recommendation.status
-        
+
             self.status.update_step_status(step, hit_status, override_skip=True)
 
             if step in status_sets:
                 status_sets[step].add(hit_status)
 
         # Update Benign outcome based on the worst step, or NULL if unfinished.
-        if ScreenStatus.NULL in {self.status.biorisk,
-                                self.status.protein_taxonomy,
-                                self.status.nucleotide_taxonomy}:
+        if ScreenStatus.NULL in {
+            self.status.biorisk,
+            self.status.protein_taxonomy,
+            self.status.nucleotide_taxonomy,
+        }:
             self.status.low_concern = ScreenStatus.NULL
         else:
             self.status.low_concern = max(
                 self.status.low_concern,
                 self.status.biorisk,
                 self.status.protein_taxonomy,
-                self.status.nucleotide_taxonomy
+                self.status.nucleotide_taxonomy,
             )
 
         self.status.update(query_data)
-        self._update_rationale(status_sets[ScreenStep.BIORISK],
-                               status_sets[ScreenStep.TAXONOMY_AA],
-                               status_sets[ScreenStep.TAXONOMY_NT])
+        self._update_rationale(
+            status_sets[ScreenStep.BIORISK],
+            status_sets[ScreenStep.TAXONOMY_AA],
+            status_sets[ScreenStep.TAXONOMY_NT],
+        )
 
         logger.debug("Updated status %s", self.status)
 
-    def _update_rationale(self,
-                          biorisks : set[ScreenStatus],
-                          tax_aa : set[ScreenStatus],
-                          tax_nt : set[ScreenStatus]):
-        """ 
+    def _update_rationale(
+        self,
+        biorisks: set[ScreenStatus],
+        tax_aa: set[ScreenStatus],
+        tax_nt: set[ScreenStatus],
+    ):
+        """
         Check existing statuses, and updates rationale accordingly.
         Requires sets containing unique statuses from each step, as
-        each step is the primary status only. Passing all options 
+        each step is the primary status only. Passing all options
         allows for more depth in rationale texts.
         """
 
         logger.debug("Biorisk set (%d items): %s", len(biorisks), biorisks)
         logger.debug("TAX AA set (%d items): %s", len(tax_aa), tax_aa)
-        logger.debug("TAX NT set (%d items): %s",  len(tax_nt), tax_nt)
+        logger.debug("TAX NT set (%d items): %s", len(tax_nt), tax_nt)
 
-        state = self.status # Shorthand, accessor to be updated
-        tax_all = tax_aa | tax_nt # Check both Taxonomy steps at once
+        state = self.status  # Shorthand, accessor to be updated
+        tax_all = tax_aa | tax_nt  # Check both Taxonomy steps at once
 
         has_flags = state.screen_status == ScreenStatus.FLAG
         has_warns = ScreenStatus.WARN in biorisks | tax_aa | tax_nt
-        has_clears = (ScreenStatus.CLEARED_FLAG in tax_all or
-                      ScreenStatus.CLEARED_WARN in tax_all)
+        has_clears = (
+            ScreenStatus.CLEARED_FLAG in tax_all or ScreenStatus.CLEARED_WARN in tax_all
+        )
 
-        logger.debug("%s has flags [%s], and has warnings [%s], and has clears [%s]",
-                     self.query, has_flags, has_warns, has_clears)
+        logger.debug(
+            "%s has flags [%s], and has warnings [%s], and has clears [%s]",
+            self.query,
+            has_flags,
+            has_warns,
+            has_clears,
+        )
 
         if state.screen_status in {ScreenStatus.ERROR, ScreenStatus.NULL}:
             state.rationale = Rationale.ERROR + state.get_error_stepname()
@@ -603,11 +640,13 @@ class QueryResult:
 
         # Handle no hits warnings
         # --------------------------------------------------------------------
-        if (state.screen_status == ScreenStatus.WARN and
-            state.biorisk == ScreenStatus.PASS and
-            state.protein_taxonomy in [ScreenStatus.PASS, ScreenStatus.SKIP]  and
-            state.nucleotide_taxonomy in [ScreenStatus.PASS, ScreenStatus.SKIP] and
-            state.low_concern in [ScreenStatus.PASS, ScreenStatus.SKIP]):
+        if (
+            state.screen_status == ScreenStatus.WARN
+            and state.biorisk == ScreenStatus.PASS
+            and state.protein_taxonomy in [ScreenStatus.PASS, ScreenStatus.SKIP]
+            and state.nucleotide_taxonomy in [ScreenStatus.PASS, ScreenStatus.SKIP]
+            and state.low_concern in [ScreenStatus.PASS, ScreenStatus.SKIP]
+        ):
             # Add an extra caveat if the taxonomy search was skipped
             if ScreenStatus.SKIP in [state.protein_taxonomy, state.nucleotide_taxonomy]:
                 state.rationale = Rationale.NO_HITS_SKIP_NOTE
@@ -625,8 +664,10 @@ class QueryResult:
         # --------------------------------------------------------------------
         # Calculate any cleared outputs:
         rationales_cleared = ""
-        if (ScreenStatus.CLEARED_FLAG in tax_all and
-            ScreenStatus.CLEARED_WARN in tax_all):
+        if (
+            ScreenStatus.CLEARED_FLAG in tax_all
+            and ScreenStatus.CLEARED_WARN in tax_all
+        ):
             rationales_cleared = Rationale.FLAGWARN
         elif ScreenStatus.CLEARED_FLAG in tax_all:
             rationales_cleared = Rationale.FLAG
@@ -634,16 +675,18 @@ class QueryResult:
             rationales_cleared = Rationale.WARN
         cleared_sentence = rationales_cleared + Rationale.CLEARED
 
-        if state.screen_status in [ScreenStatus.CLEARED_FLAG,
-                                   ScreenStatus.CLEARED_WARN]:
+        if state.screen_status in [
+            ScreenStatus.CLEARED_FLAG,
+            ScreenStatus.CLEARED_WARN,
+        ]:
             state.rationale = Rationale.START_PASS + cleared_sentence
             return
-        
+
         # Handle complex outputs:
         # --------------------------------------------------------------------
         # Start creating rationale message:
         output = Rationale.START_PRIMARY
-    
+
         types = []
         tax_types = []
 
@@ -664,7 +707,7 @@ class QueryResult:
 
             if ScreenStatus.FLAG in tax_all:
                 types.append(tax_types + " " + Rationale.BODY + Rationale.TAX_FLAG)
-            
+
             output += prebody + oxford_comma(types)
 
             if has_warns:
@@ -680,7 +723,6 @@ class QueryResult:
                 types.append(Rationale.BIORISK_WARN)
                 prebody = Rationale.BODY + " "
 
-
             if ScreenStatus.WARN in tax_aa:
                 tax_types.append(Rationale.PR)
             if ScreenStatus.WARN in tax_nt:
@@ -694,22 +736,21 @@ class QueryResult:
                 prebody = ""
 
             output += prebody + oxford_comma(types)
-        
+
         if has_clears:
             output += Rationale.START_SECONDARY[:-1] + cleared_sentence
 
         state.rationale = output + "."
         return
 
-    
     def update(self, query_data):
         """
         Call this before exporting to file.
-        Ensures 
+        Ensures
         Sorts the hits based on E-values,
         Updates the commec recommendation based on all hits recommendations.
         """
-        
+
         assert hasattr(query_data, "no_hits_warning")
 
         # A rare instance where we want our dictionary to be sorted
@@ -751,38 +792,51 @@ class QueryResult:
         self.status.low_concern = ScreenStatus.NULL
         logger.debug("Query %s has screen status assigned to ERROR.", self.query)
 
+
 @dataclass
 class SearchToolInfo:
-    """ Container to hold version info for search tools and databases used. """
-    biorisk_search_info:        SearchToolVersion = field(default_factory=SearchToolVersion)
-    protein_search_info:        SearchToolVersion = field(default_factory=SearchToolVersion)
-    nucleotide_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
-    low_concern_protein_search_info: SearchToolVersion = field(default_factory=SearchToolVersion)
-    low_concern_rna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
-    low_concern_dna_search_info:     SearchToolVersion = field(default_factory=SearchToolVersion)
+    """Container to hold version info for search tools and databases used."""
+
+    biorisk_search_info: SearchToolVersion = field(default_factory=SearchToolVersion)
+    protein_search_info: SearchToolVersion = field(default_factory=SearchToolVersion)
+    nucleotide_search_info: SearchToolVersion = field(default_factory=SearchToolVersion)
+    low_concern_protein_search_info: SearchToolVersion = field(
+        default_factory=SearchToolVersion
+    )
+    low_concern_rna_search_info: SearchToolVersion = field(
+        default_factory=SearchToolVersion
+    )
+    low_concern_dna_search_info: SearchToolVersion = field(
+        default_factory=SearchToolVersion
+    )
 
 
 @dataclass
 class ScreenRunInfo:
     """Container dataclass to hold general run information for a commec screen"""
+
     commec_version: str = str(COMMEC_VERSION)
     json_output_version: str = JSON_COMMEC_FORMAT_VERSION
     time_taken: str = ""
     date_run: str = ""
     search_tool_info: SearchToolInfo = field(default_factory=SearchToolInfo)
 
+
 @dataclass
 class ScreenQueryInfo:
-    """ Container for summarising the query input data """
+    """Container for summarising the query input data"""
+
     file: str = ""
     number_of_queries: int = 0
     total_query_length: int = 0
+
 
 @dataclass
 class ScreenResult:
     """
     Root dataclass to hold all data related to the screening of an individual query by commec.
     """
+
     commec_info: ScreenRunInfo = field(default_factory=ScreenRunInfo)
     query_info: ScreenQueryInfo = field(default_factory=ScreenQueryInfo)
     queries: dict[str, QueryResult] = field(default_factory=dict)
@@ -792,7 +846,7 @@ class ScreenResult:
         Wrapper for Query get logic.
         """
         search_term = query_name
-        if re.search(r'_[1-6]$', query_name):  # Check if string ends with _1 to _6
+        if re.search(r"_[1-6]$", query_name):  # Check if string ends with _1 to _6
             search_term = query_name[:-2]  # Remove last two characters
 
         return self.queries.get(search_term)
@@ -830,16 +884,18 @@ class ScreenResult:
         """
         data = []
         for query in self.queries.values():
-            data.append({
-                "query": query.query[:25],
-                "overall": query.status.screen_status,
-                "biorisk": query.status.biorisk,
-                "taxonomy_aa": query.status.protein_taxonomy,
-                "taxonomy_nt": query.status.nucleotide_taxonomy,
-                "cleared": query.status.low_concern
-            })
+            data.append(
+                {
+                    "query": query.query[:25],
+                    "overall": query.status.screen_status,
+                    "biorisk": query.status.biorisk,
+                    "taxonomy_aa": query.status.protein_taxonomy,
+                    "taxonomy_nt": query.status.nucleotide_taxonomy,
+                    "cleared": query.status.low_concern,
+                }
+            )
 
-        output_data : pd.DataFrame = pd.DataFrame(data)
+        output_data: pd.DataFrame = pd.DataFrame(data)
         return output_data
 
     def get_rationale_data(self) -> pd.DataFrame:
@@ -850,25 +906,29 @@ class ScreenResult:
         """
         data = []
         for query in self.queries.values():
-            data.append({
-                "query": query.query[:25],
-                "overall": query.status.screen_status,
-                "rationale": query.status.rationale,
-            })
+            data.append(
+                {
+                    "query": query.query[:25],
+                    "overall": query.status.screen_status,
+                    "rationale": query.status.rationale,
+                }
+            )
 
-        output_data : pd.DataFrame = pd.DataFrame(data)
+        output_data: pd.DataFrame = pd.DataFrame(data)
         return output_data
-    
+
     def rationale_text(self) -> str:
-        """ Outputs the rationale data as formatted text. """
+        """Outputs the rationale data as formatted text."""
         output = ""
         for row in self.get_rationale_data().itertuples(index=False):
             output += f"{row.query:<26}: {row.overall:<12} --> {row.rationale}\n"
         return output
 
     def flag_text(self) -> str:
-        """ Outputs the flag table data as formatted text."""
-        return self.get_flag_data().to_string(index=False, col_space = 12, line_width=2048)
+        """Outputs the flag table data as formatted text."""
+        return self.get_flag_data().to_string(
+            index=False, col_space=12, line_width=2048
+        )
 
     def __str__(self):
         return self.flag_text()
@@ -876,10 +936,11 @@ class ScreenResult:
     def __repr__(self):
         return str(asdict(self))
 
-def oxford_comma(inputs : list[str]) -> str:
+
+def oxford_comma(inputs: list[str]) -> str:
     """
-    Takes a list of strings: 
-        * `[a,b,c]`, 
+    Takes a list of strings:
+        * `[a,b,c]`,
     and outputs a single formatted string:
         * `\"a, b, and c\"`
     """

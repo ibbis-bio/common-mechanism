@@ -6,10 +6,13 @@ Additional methods for reading hmmscan output, readhmmer, which returns a pandas
 Instantiate a HmmerHandler, with input local database, input fasta, and output file.
 Throws if inputs are invalid. Creates a temporary log file, which is deleted on completion.
 """
+
+import itertools
 import re
 import subprocess
+
 import pandas as pd
-import itertools
+
 from commec.config.constants import HMMSCAN_MAX_THREAD_LIMIT
 from commec.config.query import Query
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
@@ -36,16 +39,18 @@ class HmmerHandler(SearchHandler):
     def read_output(self):
         output_dataframe = readhmmer(self.out_file)
         # Standardize the output column names to be like blast:
-        output_dataframe = output_dataframe.rename(columns={
-            #"ali from": "q. start", # These are no re-calculated to Query NT coordinates.
-            #"ali to": "q. end",
-            "coverage": "q. coverage",
-            "target name": "subject title",
-            "qlen":"query length",
-            "hmm from":"s. start",
-            "hmm to":"s. end",
-            'E-value': "evalue",
-        })
+        output_dataframe = output_dataframe.rename(
+            columns={
+                # "ali from": "q. start", # These are no re-calculated to Query NT coordinates.
+                # "ali to": "q. end",
+                "coverage": "q. coverage",
+                "target name": "subject title",
+                "qlen": "query length",
+                "hmm from": "s. start",
+                "hmm to": "s. end",
+                "E-value": "evalue",
+            }
+        )
         return output_dataframe
 
     def get_version_information(self) -> SearchToolVersion:
@@ -125,49 +130,59 @@ def readhmmer(fileh):
     hmmer["qlen"] = pd.to_numeric(hmmer["qlen"])
     hmmer["query name"] = hmmer["query name"].astype(str)
     # Extract the frame information.
-    hmmer["frame"] = hmmer["query name"].str.split('_').str[-1].astype(int)
+    hmmer["frame"] = hmmer["query name"].str.split("_").str[-1].astype(int)
     return hmmer
 
-def remove_overlaps(hmmer : pd.DataFrame) -> pd.DataFrame:
+
+def remove_overlaps(hmmer: pd.DataFrame) -> pd.DataFrame:
     """
-    Trims verbosity of a HMMER output, 
-    by removing weaker hits which are 
+    Trims verbosity of a HMMER output,
+    by removing weaker hits which are
     encompassed in their extent by higher scoring hits.
 
-    Note, works to trim nucleotide coordinates relative to the query, 
+    Note, works to trim nucleotide coordinates relative to the query,
     not ali from and ali to from the HMMER itself.
 
     This means it can be used on any DataFrame with the q. start and q. end NT headings.
     (Consider moving to a general coordinates tool function?)
     """
-    assert "q. start" in hmmer.columns, ("No \"q. start\" heading in HMMER output dataframe being "
-                                         "passed to remove overlaps, ensure that the dataframe has "
-                                         "been processed for converstion to nucleotide coordinates.")
+    assert "q. start" in hmmer.columns, (
+        'No "q. start" heading in HMMER output dataframe being '
+        "passed to remove overlaps, ensure that the dataframe has "
+        "been processed for converstion to nucleotide coordinates."
+    )
 
-    assert "q. end" in hmmer.columns, ("No \"q. end\" heading in HMMER output dataframe being "
-                                         "passed to remove overlaps, ensure that the dataframe has "
-                                         "been processed for converstion to nucleotide coordinates.")
+    assert "q. end" in hmmer.columns, (
+        'No "q. end" heading in HMMER output dataframe being '
+        "passed to remove overlaps, ensure that the dataframe has "
+        "been processed for converstion to nucleotide coordinates."
+    )
 
-    trimmed_hmmer = hmmer # Direct Assignment, reassigned later with .drop() for deep-copy.
+    trimmed_hmmer = (
+        hmmer  # Direct Assignment, reassigned later with .drop() for deep-copy.
+    )
 
     # Ensure all logic is performed per unique Query name.
     for query in hmmer["query name"].unique():
-
         hmmer_for_query = hmmer[hmmer["query name"] == query]
-        sorted_values = hmmer_for_query.sort_values(by=["score"], ascending = False)
+        sorted_values = hmmer_for_query.sort_values(by=["score"], ascending=False)
 
         for i, j in itertools.combinations(sorted_values.index, 2):
             # If J is encapsulated:
-            if (sorted_values.loc[i, "q. start"] <= sorted_values.loc[j, "q. start"]
+            if (
+                sorted_values.loc[i, "q. start"] <= sorted_values.loc[j, "q. start"]
                 and sorted_values.loc[i, "q. end"] >= sorted_values.loc[j, "q. end"]
-                and sorted_values.loc[i, "score"] >= sorted_values.loc[j, "score"]):
+                and sorted_values.loc[i, "score"] >= sorted_values.loc[j, "score"]
+            ):
                 if j in trimmed_hmmer.index:
                     trimmed_hmmer = trimmed_hmmer.drop([j])
                     continue
             # If I is encapsulated:
-            if (sorted_values.loc[i, "q. start"] >= sorted_values.loc[j, "q. start"]
+            if (
+                sorted_values.loc[i, "q. start"] >= sorted_values.loc[j, "q. start"]
                 and sorted_values.loc[i, "q. end"] <= sorted_values.loc[j, "q. end"]
-                and sorted_values.loc[i, "score"] <= sorted_values.loc[j, "score"]):
+                and sorted_values.loc[i, "score"] <= sorted_values.loc[j, "score"]
+            ):
                 if i in trimmed_hmmer.index:
                     trimmed_hmmer = trimmed_hmmer.drop([i])
 
@@ -176,23 +191,28 @@ def remove_overlaps(hmmer : pd.DataFrame) -> pd.DataFrame:
 
     return trimmed_hmmer
 
-def recalculate_hmmer_query_coordinates(hmmer : pd.DataFrame):
+
+def recalculate_hmmer_query_coordinates(hmmer: pd.DataFrame):
     """
     Recalculate the coordinates of the hmmer database , such that each translated frame
     reverts to original nucleotide coordinates.
     """
-    assert "nt_qlen" in hmmer.columns, ("No \"nt_qlen\" heading in HMMER output dataframe being "
-                                         "passed to calculate nt coordinates, ensure that the dataframe has "
-                                         "been processed to include nucleotide query length data.")
+    assert "nt_qlen" in hmmer.columns, (
+        'No "nt_qlen" heading in HMMER output dataframe being '
+        "passed to calculate nt coordinates, ensure that the dataframe has "
+        "been processed to include nucleotide query length data."
+    )
     hmmer["q. start"], hmmer["q. end"] = convert_protein_to_nucleotide_coords(
         hmmer["frame"].to_numpy(),
         hmmer["ali from"].to_numpy(),
         hmmer["ali to"].to_numpy(),
-        hmmer["nt_qlen"].to_numpy())
+        hmmer["nt_qlen"].to_numpy(),
+    )
 
-def append_nt_querylength_info(hmmer : pd.DataFrame, queries : dict[str, Query]):
-    """ 
-    Take the hmmer output, and add a series (nt_qlen) 
+
+def append_nt_querylength_info(hmmer: pd.DataFrame, queries: dict[str, Query]):
+    """
+    Take the hmmer output, and add a series (nt_qlen)
     of the true nt length based on query name.
     """
     hmmer["nt_qlen"] = [queries[q[:-2]].length for q in hmmer["query name"]]

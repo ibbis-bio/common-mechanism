@@ -1,7 +1,9 @@
 import os
 from unittest.mock import mock_open, patch
+
 import pytest
 from Bio import SeqIO
+
 from commec.split import clean_description, write_split_fasta
 
 

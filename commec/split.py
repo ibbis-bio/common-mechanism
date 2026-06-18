@@ -4,12 +4,15 @@
 Split a multi-record FASTA file into individual files, one for each record.
 
 Command-line usage:
-    split.py input.fasta 
+    split.py input.fasta
 """
+
 import argparse
 import os
 import string
+
 from Bio import SeqIO
+
 from commec.utils.file_utils import file_arg
 
 VALID_FILENAME_CHARS = f"-._{string.ascii_letters}{string.digits}"

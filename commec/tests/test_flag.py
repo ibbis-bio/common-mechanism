@@ -1,10 +1,11 @@
-import os
 import argparse
+import os
 import textwrap
 
 from commec.flag import add_args, run
 
 SCREEN_DIR = os.path.join(os.path.dirname(__file__), "test_data")
+
 
 def test_flag(tmp_path):
     """We are lazily writing tests for a full run of flag instead of unit tests."""
@@ -57,4 +58,4 @@ def test_evalportal_format(tmp_path):
         """
     )
     actual_status = status_output.read_text()
-    assert expected_status.strip() == actual_status.strip()    
+    assert expected_status.strip() == actual_status.strip()
