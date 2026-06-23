@@ -43,11 +43,11 @@ def test_functional_screen(tmp_path, request):
     functional_test.add_query("FCTEST1", 600)
 
     #Biorisk
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 7, 95, "Toxin1a", "ShouldntClear", 11111, description="LargeAreaFlag", score = 500, regulated = True, superkingdom = "Viruses", species = "horriblus", genus = "horribluses", evalue = 1e-21)
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 34, 65, "Toxin1b", "ShouldntClear", 22222, description="SmallImportantFlag", score = 1000, regulated = True, superkingdom = "Viruses", species = "extra-horriblus", genus = "horribluses", evalue = 1e-22)
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 49, 80, "Toxin1c", "ShouldTrim", 33333, description="SmallUnimportantTRIM", score = 100, regulated = True, superkingdom = "Viruses", species = "unimporticus", genus = "pseudohorribluses", evalue = 1e-23)
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 7, 95, "Toxin1a", "ShouldntClear", 11111, description="ShouldntClear LargeAreaFlag", score = 500, regulated = True, superkingdom = "Viruses", species = "horriblus", genus = "horribluses", evalue = 1e-21)
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 34, 65, "Toxin1b", "ShouldntClearSmall", 22222, description="ShouldntClear SmallImportantFlag", score = 1000, regulated = True, superkingdom = "Viruses", species = "extra-horriblus", genus = "horribluses", evalue = 1e-22)
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 49, 80, "Toxin1c", "ShouldTrim", 33333, description="ShouldTrim SmallUnimportantTRIM", score = 100, regulated = True, superkingdom = "Viruses", species = "unimporticus", genus = "pseudohorribluses", evalue = 1e-23)
     functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 109, 191, "Toxin2", "ShouldWarn", 22222, description="WarningExample",score = 1000, regulated = False, superkingdom = "Viruses", species = "extra-horriblus-factor", genus = "horribluses", evalue = 1e-24)
-    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 593, 505, "Toxin3", "ShouldWarn", 11111, description="ReverseExample", score = 500, regulated = False, superkingdom = "Viruses", species = "horriblus-factor", genus = "horribluses", evalue = 1e-25)
+    functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 593, 505, "Toxin3", "ShouldWarn2", 11111, description="ReverseExample", score = 500, regulated = False, superkingdom = "Viruses", species = "horriblus-factor", genus = "horribluses", evalue = 1e-25)
     # Protein Taxonomy
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 320, 380, "NR_HIT_ShouldntClear", "NR_HIT_FLAG1", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus", genus = "orthoregulatidae", evalue = 0.06)
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 490, "ShouldClearBySynBio", "NR_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus", genus = "orthoregulatidae", evalue = 0.07)
@@ -64,7 +64,7 @@ def test_functional_screen(tmp_path, request):
     functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 310, 390, "NonRegMixedWithMain", "NT_HIT_MIXED2", "12348", regulated = False, superkingdom = "Bacteria", species = "SafetyGreenius Virus",genus = "Greenocollii", evalue = 0.17)
     # Low Concern
     functional_test.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "FCTEST1", 202, 370, "BENIGNPROT", "Benign1", description = "BenignHMMClear", evalue = 1e-26)
-    functional_test.add_hit(ScreenStep.LOW_CONCERN_RNA, "FCTEST1", 50, 150, "BENIGNRNA", "12346", description = "BenignCMTestOutput", evalue = 1e-27)
+    functional_test.add_hit(ScreenStep.LOW_CONCERN_RNA, "FCTEST1", 50, 150, "BENIGNRNA", "211", description = "BenignCMTestOutput", evalue = 1e-27)
     functional_test.add_hit(ScreenStep.LOW_CONCERN_DNA, "FCTEST1", 410, 480, "BENIGNSYNBIO", "210", description = "BenignBlastClear", evalue = 1e-28)
 
     result = functional_test.run()
