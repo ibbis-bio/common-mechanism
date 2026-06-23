@@ -50,7 +50,7 @@ def test_functional_screen(tmp_path, request):
     functional_test.add_hit(ScreenStep.BIORISK, "FCTEST1", 593, 505, "Toxin3", "ShouldWarn2", 11111, description="ReverseExample", score = 500, regulated = False, superkingdom = "Viruses", species = "horriblus-factor", genus = "horribluses", evalue = 1e-25)
     # Protein Taxonomy
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 320, 380, "NR_HIT_ShouldntClear", "NR_HIT_FLAG1", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus", genus = "orthoregulatidae", evalue = 0.06)
-    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 490, "ShouldClearBySynBio", "NR_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus", genus = "orthoregulatidae", evalue = 0.07)
+    functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 490, "ShouldClearBySynBio", "NR_HIT_FLAG2", "12347", regulated = True, superkingdom = "Viruses", species = "regulaticus", genus = "orthoregulatidae", evalue = 0.07)
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 410, 500, "NR_HIT2_ShouldntClear", "NR_HIT_FLAG3", "12345", regulated = True, superkingdom = "Viruses", species = "regulaticus", genus = "orthoregulatidae", evalue = 0.08)
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 310, 370, "ShouldClear", "NR_HIT_FLAG4", "12346", regulated = True, superkingdom = "Viruses", species = "fine-icus", genus = "orthoderegulatidae", evalue = 0.09)
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedReg1", "NR_HIT_MIXED1", "12347", regulated = True, superkingdom = "Viruses", species = "danger-poop", genus = "faecia", evalue = 0.10)

@@ -39,7 +39,7 @@ def find_clusters(
 
         if current_cluster == -1 or start >= current_max_end:
             current_cluster += 1
-            clusters.append((start, end))
+            clusters.append((row[start_heading], row[end_heading]))
             current_max_end = end
         else:
             current_max_end = max(current_max_end, end)
