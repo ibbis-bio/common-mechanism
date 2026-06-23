@@ -92,25 +92,24 @@ def _get_hit_result_from_data(unique_query_data : pd.DataFrame, step : ScreenSte
     # Filter data to the top hits only.
     top_hits = get_top_hits(unique_query_data)
 
-    # Merge top_hits based on only unique "subject title"
-    top_hits = top_hits.drop_duplicates(subset=["subject title"], keep="first")
-
     top_hits = get_controlled_labels(top_hits)
     regulated_only = top_hits[top_hits["regulated"]]
     non_regulated_only = top_hits[~top_hits["regulated"]]
-    unique_controlled_parents = regulated_only["subject tax ids"].unique()
+    unique_controlled_taxids = regulated_only["subject tax ids"].unique()
 
     logger.debug("%s: %s query has %i unique control hits:\n%s",
-                step, query_acc, len(unique_controlled_parents), unique_controlled_parents)
+                step, query_acc, len(unique_controlled_taxids), unique_controlled_taxids)
 
     log_messages = []
-    for controlled_parent in unique_controlled_parents:
-        cluster_data, clusters = find_clusters(regulated_only[regulated_only["subject tax ids"] == controlled_parent])
+    for controlled_taxid in unique_controlled_taxids:
+        cluster_data, clusters = find_clusters(
+            regulated_only[regulated_only["subject tax ids"] == controlled_taxid]
+            )
         logger.debug("%s: query %s has %i regulated clusters", step, query_acc, len(clusters))
         for i, cluster in enumerate(clusters):
             logger.debug("Processing cluster[%i]: %s",i, cluster)
             new_hit_result, log_message = _create_hit_result_for_cluster(cluster_data[cluster_data["cluster"] == i],
-                                                            non_regulated_only, cluster[0], cluster[1], controlled_parent, step)
+                                                            non_regulated_only, cluster[0], cluster[1], controlled_taxid, step)
             
             if new_hit_result:
                 output_hit_results.append(new_hit_result)
@@ -155,11 +154,16 @@ def _create_hit_result_for_cluster(
     Find overlapping non-regulated hits, and generate a HitResult, to describe
     the data for commec screen output.
     """
+    logger.debug("Retrieving Control Information for Cluster: ")
     cluster_regulation = get_regulation(controlled_cluster_taxid)
     species = cluster_regulation[0].species
     genus = cluster_regulation[0].genus
     display_name = cluster_regulation[0].name
     hit_name = f"{controlled_cluster_taxid}_{cluster_start}_{cluster_end}"
+    return_hit = None
+
+    # We get rid of the rare, but sometimes present duplicate subject titles within a cluster.
+    cluster_data = cluster_data.drop_duplicates(subset=["subject title"], keep="first")
 
     best_evalue = min(cluster_data["evalue"])
     match_range = MatchRange(
@@ -168,20 +172,23 @@ def _create_hit_result_for_cluster(
             int(cluster_start), int(cluster_end),
         )
 
-    # Get the top 10 non-controlled hits for reporting.
-    shared_site = non_regulated_only[
-        (non_regulated_only["q. start"] == cluster_start)
-        | (non_regulated_only["q. end"] == cluster_end)
-    ]
-    
     regulated_for_region = cluster_data
-    non_regulated_for_region = (
-        shared_site[~shared_site["regulated"]]
-        .drop_duplicates(subset="subject tax ids")
-        .drop_duplicates(subset="subject acc.")
-        .sort_values(by="evalue", ascending=True)
-        .head(10)
-    )
+
+    # Get the top 10 non-controlled hits for reporting.
+    if non_regulated_only.empty:
+        non_regulated_for_region = non_regulated_only
+    else:
+        shared_site = non_regulated_only[
+            (non_regulated_only["q. start"] == cluster_start)
+            | (non_regulated_only["q. end"] == cluster_end)
+        ]
+        non_regulated_for_region = (
+            shared_site[~shared_site["regulated"]]
+            .drop_duplicates(subset="subject tax ids")
+            .drop_duplicates(subset="subject acc.")
+            .sort_values(by="evalue", ascending=True)
+            .head(10)
+        )
 
     regulated_annotations = []
     regionally_regulated_annotations = []
@@ -205,6 +212,9 @@ def _create_hit_result_for_cluster(
         warn_compliances.extend([output for output in control_output 
             if get_control_lists(output.list).status == ListMode.COMPLIANCE_WARN])
 
+        logger.debug("Parsed %s: [%i Control outputs, %i Compliances, %i Conditional, %i Warns]",
+            candidate_taxid, len(control_output), len(compliances), len(conditional_compliances), len(warn_compliances))
+
         if len(compliances) > 0:
             regulated_annotations.extend(
                 [_create_hit_info(row, compliances) for i, row in data.iterrows()])
@@ -220,9 +230,9 @@ def _create_hit_result_for_cluster(
                 [_create_hit_info(row, conditional_compliances) for i, row in data.iterrows()])
 
     # Create the list of non-controlled taxids.
-    for i, row in non_regulated_for_region.iterrows():
-        non_regulated_annotations.extend(
-            [_create_hit_info(row) for i, row in data.iterrows()])
+    non_regulated_annotations = [
+        _create_hit_info(row) for _, row in non_regulated_for_region.iterrows()
+    ]
 
     # update controlled and non-controlled taxids list depending on control list mode annotations.
     is_controlled = len(compliances) > 0
@@ -232,27 +242,32 @@ def _create_hit_result_for_cluster(
     if is_controlled:
         non_regulated_annotations = non_regulated_annotations + warn_regulated_annotations + regionally_regulated_annotations
         return _create_hit_result_from_annotations(
+            controlled_cluster_taxid,
             regulated_annotations,
             non_regulated_annotations,
             compliances, ListMode.COMPLIANCE, step, match_range)
 
     if is_warning_controlled:
         return _create_hit_result_from_annotations(
+            controlled_cluster_taxid,
             warn_regulated_annotations,
             non_regulated_annotations,
             warn_compliances, ListMode.COMPLIANCE_WARN, step, match_range)
 
     if is_conditionally_controlled:
         return _create_hit_result_from_annotations(
+            controlled_cluster_taxid,
             regionally_regulated_annotations,
             non_regulated_annotations,
             conditional_compliances, ListMode.CONDITIONAL_NUM, step, match_range)
 
     logger.debug("No controlled entities following parsing of cluster %s", controlled_cluster_taxid)
+
     return None, ""
 
 
 def _create_hit_result_from_annotations(
+    controlled_cluster_taxid,
     regulated_annotations,
     non_regulated_annotations,
     compliances,
@@ -285,11 +300,11 @@ def _create_hit_result_from_annotations(
         status = ScreenStatus.WARN
         logger.debug(
             "Mixed result: %d regulated, %d non-regulated annotations.",
-            len(reg_annotations), len(non_reg_annotations),
+            len(regulated_annotations), len(non_regulated_annotations),
         )
         hit_description =  (
-                f"Mix of {len(reg_annotations)} {control_text} {domains_text}"
-                f" and {len(non_reg_annotations)} non-controlled {domains_text}"
+                f"Mix of {len(regulated_annotations)} {control_text} {domains_text}"
+                f" and {len(non_regulated_annotations)} non-controlled {domains_text}"
             )
 
     reg_species = list(set([ra["species"] for ra in regulated_annotations]))
@@ -323,9 +338,10 @@ def _create_hit_result_from_annotations(
     )
     logger.info(log_message)
 
+    hit_name = f"{controlled_cluster_taxid}_{match_range.query_start}_{match_range.query_end}"
     new_hit = HitResult(
         HitScreenStatus(status, step),
-        display_name,
+        hit_name,
         hit_description,
         match_range,
         {   "category": categories,
@@ -462,9 +478,8 @@ def parse_taxonomy_hits(
     # Label data with parent hash taxids.
     logger.info("    Identifying controlled taxa ...")
 
-    # Build a mapping {taxid: truthiness}
+    # Build a mapping {taxid: truthiness} and Map back to the dataframe
     taxid_to_regulated = {taxid: is_regulated(taxid) for taxid in blast["subject tax ids"].unique()}
-    # Map back to the dataframe
     blast["regulated"] = blast["subject tax ids"].map(taxid_to_regulated)
 
     # Early exit if no regulated hits.

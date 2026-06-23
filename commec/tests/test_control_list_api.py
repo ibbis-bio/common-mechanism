@@ -179,7 +179,8 @@ def test_is_regulated_false():
 def test_is_regulated_via_child_mapping():
     """A child TaxID should be regulated through its parent mapping."""
     _setup_regulated_state()
-    assert is_regulated("99999") is True
+    #assert is_regulated(99999) is True, "TaxID passed as number not working."
+    assert is_regulated("99999") is True, "TaxID passed as string not working."
 
 # ---------------------------------------------------------------------------
 # get_regulation
@@ -187,25 +188,25 @@ def test_is_regulated_via_child_mapping():
 
 def test_get_regulation_direct_hit():
     _setup_regulated_state()
-    outputs, contexts = get_regulation("11320")
+    outputs = get_regulation("11320")
     assert len(outputs) == 1
     assert outputs[0].name == "Flu A"
     assert outputs[0].list == "L1"
-    assert contexts[0].is_child is False
+    assert outputs[0].is_child is False
 
 
 def test_get_regulation_child_hit():
     _setup_regulated_state()
-    outputs, contexts = get_regulation("99999")
+    outputs = get_regulation("99999")
     assert len(outputs) == 1
-    assert contexts[0].is_child is True
+    assert outputs[0].is_child is True
 
 
 def test_get_regulation_no_hit():
     _setup_regulated_state()
-    outputs, contexts = get_regulation("77777")
+    outputs = get_regulation("77777")
     assert len(outputs) == 0
-    assert len(contexts) == 0
+    assert len(outputs) == 0
 
 
 def test_get_regulation_multiple_lists():
@@ -225,7 +226,7 @@ def test_get_regulation_multiple_lists():
 
     tidy_control_list_data()
 
-    outputs, _ = get_regulation("100")
+    outputs = get_regulation("100")
     assert len(outputs) == 2
     assert {o.list for o in outputs} == {"L1", "L2"}
 

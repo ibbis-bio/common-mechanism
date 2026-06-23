@@ -40,15 +40,12 @@ def test_screendata():
                         recommendation=HitScreenStatus(ScreenStatus.WARN, ScreenStep.BIORISK),
                         name="ImportantProtein1",
                         annotations = {"domain" : ["Bacteria"]},
-                        ranges = [
-                            MatchRange(
-                                e_value = 0.0,
-                                match_start = 0,
-                                match_end = 10,
-                                query_start = 0,
-                                query_end = 10
-                            )
-                        ]
+                        region = MatchRange(
+                            e_value = 0.0,
+                            match_start = 0,
+                            match_end = 10,
+                            query_start = 0,
+                            query_end = 10)
                     )
                 }
             )
@@ -98,8 +95,6 @@ def test_erroneous_info(tmp_path, test_screendata):
     test_data_dict = asdict(test_data_retrieved)
     test_data_dict["ExtraStuff1"] = "ExtraBitStuff1"
     test_data_dict["queries"]["Query1"]["ExtraStuff2"] = "ExtraBitStuff2"
-    test_data_dict["queries"]["Query1"]["hits"]["ImportantProtein1"]["ranges"].append("ExtraStuff3")
-    test_data_dict["queries"]["Query1"]["hits"]["ImportantProtein1"]["ranges"].append({"ExtraDictStuff4" : 9999})
     test_data_dict2 = encode_dict_to_screen_data(test_data_dict)
     encode_screen_data_to_json(test_data_dict2, json_filename4)
     test_data_retrieved = get_screen_data_from_json(json_filename4)

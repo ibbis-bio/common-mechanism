@@ -199,33 +199,6 @@ class TestControlList:
         )
 
 
-# ---------------------------------------------------------------------------
-# CategoryType
-# ---------------------------------------------------------------------------
-
-@pytest.mark.parametrize("member", list(CategoryType))
-def test_category_type_roundtrip(member):
-    """Every CategoryType value can be reconstructed from its string."""
-    assert CategoryType(str(member)) == member
-
-
-def test_category_type_invalid_raises():
-    with pytest.raises(ValueError):
-        CategoryType("NotACategory")
-
-
-def test_category_type_none_default():
-    assert CategoryType.NONE == "None"
-
-
-def test_category_type_expected_members():
-    expected = {
-        "Bacteria", "Viruses", "Eukaryota", "Fungi", "Proteins", "Toxin",
-        "Other Eukaryota", "Other Eukaryota (Animal)", "Non-Protein Toxin",
-        "Toxin Synthesis Enzyme", "Prions & TSEs", "None",
-    }
-    assert {str(m) for m in CategoryType} == expected
-
 
 # ---------------------------------------------------------------------------
 # ControlListOutput

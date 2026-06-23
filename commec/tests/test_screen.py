@@ -5,6 +5,7 @@ Functional tests for commec screen.
 """
 
 import os
+import json
 from dataclasses import asdict
 from commec.config.json_io import get_screen_data_from_json, encode_screen_data_to_json
 from commec.utils.json_html_output import generate_html_from_screen_data
@@ -134,21 +135,18 @@ def test_different_regions(tmp_path):
     """
     screen_test = ScreenTesterFactory("repeating_taxonomy", tmp_path)
     screen_test.add_query("query1",1000)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 30, 90, "RegRepeat", "RR55", 500, regulated=True)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 100, 170, "RegRepeat", "RR55", 500, regulated=True)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 190, 260, "RegRepeat", "RR55", 500, regulated=True)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 300, 390, "RegRepeat", "RR55", 500, regulated=True)
-    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 400, 750, "RegRepeat", "RR55", 500, regulated=True)
-    screen_test.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "query1", 400, 750, "ClearProtein", "RR55CLEAR", 500)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 30, 90, "RegRepeat", "12345", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 100, 189, "RegRepeat", "12345", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 190, 260, "RegRepeat", "12345", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 200, 380, "RegRepeat", "12345", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 400, 750, "RegRepeat", "12345", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "query1", 400, 750, "ClearProtein", "12346", 500)
     result = screen_test.run()
 
     #encode_screen_data_to_json(result, "../test_output.json")
 
     num_hits = len(result.queries["query1"].hits)
-    num_regions = len(result.queries["query1"].hits["RegRepeat"].ranges)
     status = result.queries["query1"].status.screen_status
-    assert  num_hits == 2, f"Expected two hits, got {num_hits}."
-    assert  num_regions == 5, (f"Number of ranges [{num_regions}] in hit `RegRepeat` for "
-                            " `query1` not equal to expected number (5).")
+    assert num_hits == 4, f"Got {num_hits}, instead of 4 hits. Expected 3 Clusters for tax_id 500, and 1 benign hit...\n{json.dumps(asdict(result.queries["query1"]), indent = 2)}"
     assert status == ScreenStatus.FLAG, ("Expected status is to FLAG, current status"
                                         f" is {status}, likely multiple region clearing issue.")

@@ -111,9 +111,8 @@ def test_format_control_lists_verbose_empty():
 
 def test_format_control_list_annotation_single():
     data = [ControlListOutput("Flu A", "Viruses", "EC", "flu_species", "flu_genus")]
-    context = [ControlListContext()]
-    output = format_control_list_annotation(data, context)
-    assert "Viruses" in output
+    output = format_control_list_annotation(data)
+    assert "viruses" in output # Its lowered in the string output.
     assert "Flu A" in output
     assert "EC" in output
     # Single entry should NOT have the plural header
@@ -125,26 +124,17 @@ def test_format_control_list_annotation_multiple():
         ControlListOutput("Flu A", "Viruses", "EC"),
         ControlListOutput("Flu A", "Viruses", "PL"),
     ]
-    context = [ControlListContext(), ControlListContext()]
-    output = format_control_list_annotation(data, context)
+    output = format_control_list_annotation(data)
     assert "Controlled by the following lists" in output
     assert "EC" in output
     assert "PL" in output
 
 
 def test_format_control_list_annotation_with_derived_from():
-    data = [ControlListOutput("Flu A", "Viruses", "EC")]
-    context = [ControlListContext(derived_from="Parent Organism")]
-    output = format_control_list_annotation(data, context)
+    data = [ControlListOutput("Flu A", "Viruses", "EC","","","Parent Organism",False,"Child Name")]
+    output = format_control_list_annotation(data)
     assert "Parent Organism" in output
-
-
-def test_format_control_list_annotation_no_derived_from():
-    """When derived_from is None the output should not contain 'None'."""
-    data = [ControlListOutput("Flu A", "Viruses", "EC")]
-    context = [ControlListContext(derived_from=None)]
-    output = format_control_list_annotation(data, context)
-    assert "None" not in output
+    assert "Child Name" not in output
 
 
 # ---------------------------------------------------------------------------

@@ -108,6 +108,9 @@ class ScreenTesterFactory:
         arguments.extend(args)
 
         print("Using the following Taxonomy Information:\n", TAXONOMY.to_string())
+
+        print("Using the following Control Lists: ", ld.CONTROL_LISTS)
+        print("Using the following control list annotations: ", ld.CONTROL_LIST_ANNOTATIONS)
         # We patch taxonomic labels to avoid having to make a mini-taxonomy database.
         # We also patch in the desired CLI arguments to avoid an input yaml, and control output.
         with (patch("commec.screeners.check_biorisk.read_biorisk_annotations", new=skip_biorisk_annotations),
@@ -136,7 +139,7 @@ class ScreenTesterFactory:
         start,                      # Start Nucleotide in Query coords.
         stop,                       # End Nucleotide in Query Coords...
         title = "untitled",
-        accession = "",
+        accession = "12345",
         taxid = 0,
         species = "unclassified",
         genus = "unclassified",

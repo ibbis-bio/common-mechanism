@@ -112,7 +112,7 @@ def is_regulated(accession : str) -> bool:
     index_values = __data.CONTROL_LIST_ANNOTATIONS.index
 
     # Early exit if not present in control lists.
-    in_map = accession_hash in __data.ACCESSION_MAP["child_taxid"].values
+    in_map = accession_hash.code in __data.ACCESSION_MAP["child_taxid"].values
     in_index = accession_hash in index_values
     if not in_map and not in_index:
         return False

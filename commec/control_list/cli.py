@@ -116,12 +116,10 @@ def format_control_list_annotation(input_data : list[ControlListOutput]):
     output = "Controlled by the following lists:\n" if plural else ""
     offset = "       > " if plural else ""
     for i, output_info in enumerate(input_data):
-        derived_string = output_info.source_text or ""
+        derived_string = f"Controlled {output_info.category.lower()}"
         if output_info.is_child:
-            derived_string = "Child of "
-        output += (offset + output_info.category + " "
-                    + output_info.name
-                    + f" controlled {derived_string}by {output_info.list}" + "\n")
+            derived_string += f" {output_info.child_name}"
+        output += f"{offset}{derived_string}, {output_info.name}: {output_info.list} : {output_info.source_text}\n"
     return output
 
 def generate_output_summary_csv(output_filepath : str | os.PathLike):
