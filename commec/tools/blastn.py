@@ -29,7 +29,7 @@ class BlastNHandler(BlastHandler):
             "-template_type": "optimal",
             "-template_length": 16,
             "-num_threads": self.threads,
-            "-mt_mode": 1,
+            "-mt_mode": 0,
             "-evalue": 1e-5,
             "-max_target_seqs": 500,
             "-culling_limit": 1,

@@ -27,7 +27,7 @@ class BlastXHandler(BlastHandler):
         self.arguments_dictionary = {
             "-task": "blastx-fast",
             "-num_threads": self.threads,
-            "-mt_mode": 1,
+            "-mt_mode": 0,
             "-evalue": 1e-10,
             "-max_target_seqs": 500,
             "-culling_limit": 1,
