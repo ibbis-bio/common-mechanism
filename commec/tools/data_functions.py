@@ -6,10 +6,6 @@ Script for clustering a pandas dataframe based on ranges.
 from commec.tools.blast_tools import _trim_edges, shift_hits_pos_strand
 import pandas as pd
 
-
-TAXID_SYNTHETIC_CONSTRUCTS = 32630
-TAXID_VECTORS = 29278
-
 def find_clusters(
     input_data: pd.DataFrame,
     start_heading: str = "q. start",
@@ -23,6 +19,7 @@ def find_clusters(
     Returns a copy of input_data with a new integer cluster-ID column, and a list
     of (min_start, max_end) tuples — one per cluster.
     """
+    assert not input_data.empty, "Empty dataframe given to find_clusters()"
     assert start_heading in input_data.columns
     assert end_heading in input_data.columns
 
@@ -107,21 +104,20 @@ def get_top_hits(blast: pd.DataFrame):
     top_hits = top_hits.sort_values("% identity", ascending=False)
 
     # only keep coordinates of each hit that are not already covered by a better hit
-    for query in top_hits["query acc."].unique():
-        df = top_hits[top_hits["query acc."] == query]
+    df = top_hits
 
-        rerun = 1
-        while (
-            rerun == 1
-        ):  # edges of hits can be moved within a higher scoring hit in the first pass
-            df, rerun = _trim_edges(df)
+    rerun = 1
+    while (
+        rerun == 1
+    ):  # edges of hits can be moved within a higher scoring hit in the first pass
+        df, rerun = _trim_edges(df)
 
-        for j in df.index:
-            top_hits.loc[j, "subject length"] = max(
-                [df.loc[j, "q. start"], df.loc[j, "q. end"]]
-            ) - min([df.loc[j, "q. start"], df.loc[j, "q. end"]])
-            top_hits.loc[j, "q. start"] = df.loc[j, "q. start"]
-            top_hits.loc[j, "q. end"] = df.loc[j, "q. end"]
+    for j in df.index:
+        top_hits.loc[j, "subject length"] = max(
+            [df.loc[j, "q. start"], df.loc[j, "q. end"]]
+        ) - min([df.loc[j, "q. start"], df.loc[j, "q. end"]])
+        top_hits.loc[j, "q. start"] = df.loc[j, "q. start"]
+        top_hits.loc[j, "q. end"] = df.loc[j, "q. end"]
 
     top_hits = top_hits.sort_values("q. start")
     top_hits = top_hits[top_hits["q. start"] != 0]
@@ -130,15 +126,3 @@ def get_top_hits(blast: pd.DataFrame):
     top_hits = top_hits[top_hits["subject length"] >= 50]
     top_hits = top_hits.reset_index(drop=True)
     return top_hits
-
-
-def remove_synthetic_and_vaccine_taxids(blast : pd.DataFrame):
-    """
-    Removes vaccine and synthetic taxids from the provided database.
-    """
-    # TODO: Update to filter out ignored_taxids.csv from control lists in future.
-    blast = blast[
-        (blast[taxids_column_name] != TAXID_SYNTHETIC_CONSTRUCTS)
-        & (blast[taxids_column_name] != TAXID_VECTORS)
-    ]
-    return blast

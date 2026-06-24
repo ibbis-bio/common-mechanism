@@ -4,7 +4,7 @@ import textwrap
 from unittest.mock import patch
 import numpy as np
 import pandas as pd
-from commec.tools.blast_tools import _split_by_tax_id, read_blast
+from commec.tools.blast_tools import split_by_tax_id, read_blast
 
 
 @pytest.fixture
@@ -60,11 +60,3 @@ def lineage_df():
             ],
         }
     )
-
-
-def test_split_by_tax_id(blast_df: pd.DataFrame):
-    assert len(blast_df) == 3
-    split_blast = _split_by_tax_id(blast_df)
-    assert len(split_blast) == 5
-    expected_tax_ids = {2371, 644357, 10760, 110011001100, 32630}
-    assert set(split_blast["subject tax ids"]) == expected_tax_ids

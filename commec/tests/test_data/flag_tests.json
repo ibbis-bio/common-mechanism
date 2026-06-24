@@ -65,7 +65,7 @@
                         }
                     ],
                     "annotations": {
-                        "domain": [
+                        "category": [
                             "not assigned"
                         ],
                         "regulated": [
@@ -103,25 +103,19 @@
                         }
                     ],
                     "annotations": {
-                        "domain": [
+                        "category": [
                             "Viruses"
                         ],
-                        "regulated_taxonomy": [
-                            {
-                                "number_of_regulated_taxids": "1",
-                                "number_of_unregulated_taxids": "0",
-                                "regulated_eukaryotes": "0",
-                                "regulated_bacteria": "0",
-                                "regulated_viruses": "1",
-                                "regulated_taxa": [
-                                    "12345"
-                                ],
-                                "non_regulated_taxa": [],
-                                "regulated_species": [
-                                    "species"
-                                ]
+                        "controlled_taxonomy": {
+                            "statistics" : {
+                                "number_of_non-controlled_taxids" : 0,
+                                "number_of_controlled_taxids" : 1,
+                                "controlled_bacteria" : 0,
+                                "controlled_viruses" : 1,
+                                "controlled_parasites" : 0,
+                                "controlled_fungi" : 0
                             }
-                        ]
+                        }
                     }
                 }
             }
@@ -154,25 +148,19 @@
                         }
                     ],
                     "annotations": {
-                        "domain": [
+                        "category": [
                             "Bacteria"
                         ],
-                        "regulated_taxonomy": [
-                            {
-                                "number_of_regulated_taxids": "1",
-                                "number_of_unregulated_taxids": "0",
-                                "regulated_eukaryotes": "0",
-                                "regulated_bacteria": "1",
-                                "regulated_viruses": "0",
-                                "regulated_taxa": [
-                                    "12345"
-                                ],
-                                "non_regulated_taxa": [],
-                                "regulated_species": [
-                                    "species"
-                                ]
+                        "controlled_taxonomy": {
+                            "statistics" : {
+                                "number_of_non-controlled_taxids" : 0,
+                                "number_of_controlled_taxids" : 1,
+                                "controlled_bacteria" : 1,
+                                "controlled_viruses" : 0,
+                                "controlled_parasites" : 0,
+                                "controlled_fungi" : 0
                             }
-                        ]
+                        }
                     }
                 }
             }
@@ -205,25 +193,19 @@
                         }
                     ],
                     "annotations": {
-                        "domain": [
+                        "category": [
                             "Eukaryote"
                         ],
-                        "regulated_taxonomy": [
-                            {
-                                "number_of_regulated_taxids": "1",
-                                "number_of_unregulated_taxids": "0",
-                                "regulated_eukaryotes": "1",
-                                "regulated_bacteria": "0",
-                                "regulated_viruses": "0",
-                                "regulated_taxa": [
-                                    "12345"
-                                ],
-                                "non_regulated_taxa": [],
-                                "regulated_species": [
-                                    "species"
-                                ]
+                        "controlled_taxonomy": {
+                            "statistics" : {
+                                "number_of_non-controlled_taxids" : 0,
+                                "number_of_controlled_taxids" : 1,
+                                "controlled_bacteria" : 0,
+                                "controlled_viruses" : 0,
+                                "controlled_parasites" : 1,
+                                "controlled_fungi" : 0
                             }
-                        ]
+                        }
                     }
                 }
             }
@@ -256,27 +238,21 @@
                         }
                     ],
                     "annotations": {
-                        "domain": [
+                        "category": [
                             "Viruses",
                             "Eukaryote",
                             "Bacteria"
                         ],
-                        "regulated_taxonomy": [
-                            {
-                                "number_of_regulated_taxids": "3",
-                                "number_of_unregulated_taxids": "0",
-                                "regulated_eukaryotes": "1",
-                                "regulated_bacteria": "1",
-                                "regulated_viruses": "1",
-                                "regulated_taxa": [
-                                    "12345"
-                                ],
-                                "non_regulated_taxa": [],
-                                "regulated_species": [
-                                    "species"
-                                ]
+                        "controlled_taxonomy": {
+                            "statistics" : {
+                                "number_of_non-controlled_taxids" : 0,
+                                "number_of_controlled_taxids" : 3,
+                                "controlled_bacteria" : 1,
+                                "controlled_viruses" : 1,
+                                "controlled_parasites" : 1,
+                                "controlled_fungi" : 0
                             }
-                        ]
+                        }
                     }
                 }
             }
@@ -309,27 +285,19 @@
                         }
                     ],
                     "annotations": {
-                        "domain": [
+                        "category": [
                             "Viruses"
                         ],
-                        "regulated_taxonomy": [
-                            {
-                                "number_of_regulated_taxids": "1",
-                                "number_of_unregulated_taxids": "1",
-                                "regulated_eukaryotes": "0",
-                                "regulated_bacteria": "0",
-                                "regulated_viruses": "1",
-                                "regulated_taxa": [
-                                    "12345"
-                                ],
-                                "non_regulated_taxa": [
-                                    "11111"
-                                ],
-                                "regulated_species": [
-                                    "species"
-                                ]
+                        "controlled_taxonomy": {
+                            "statistics" : {
+                                "number_of_non-controlled_taxids" : 1,
+                                "number_of_controlled_taxids" : 1,
+                                "controlled_bacteria" : 1,
+                                "controlled_viruses" : 1,
+                                "controlled_parasites" : 0,
+                                "controlled_fungi" : 0
                             }
-                        ]
+                        }
                     }
                 }
             }

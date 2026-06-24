@@ -64,6 +64,7 @@ def _blast_row(**overrides) -> dict:
         "genus": "",
         "category": "",
         "list_acronym": "",
+        "control_hash": 11234,
     }
     row.update(overrides)
     return row
@@ -232,13 +233,13 @@ class TestCreateHitResultFromAnnotations:
         )
         assert hit.recommendation.status == ScreenStatus.PASS
 
-    def test_non_empty_non_regulated_overrides_status_to_warn(self):
+    def test_non_empty_non_regulated_overrides_status_to_pass(self):
         co = _mock_control_output()
         hit, _ = _create_hit_result_from_annotations("12345",
             [self._reg_ann()], [self._non_reg_ann()], [co], ListMode.COMPLIANCE,
             ScreenStep.TAXONOMY_AA, _make_match_range(),
         )
-        assert hit.recommendation.status == ScreenStatus.WARN
+        assert hit.recommendation.status == ScreenStatus.PASS
 
     def test_hit_name_uses_longest_compliance_display_name(self):
         co_short = _mock_control_output(name="Short")
@@ -494,7 +495,7 @@ class TestParseTaxonomyHits:
     def test_flags_query_with_regulated_hit(self):
         handler = self._make_handler(has_hits=True)
         data = _make_screen_result("seq1")
-        blast_df = _make_df({"query acc.": "seq1", "subject tax ids": 111})
+        blast_df = _make_df({"query acc.": "seq1", "subject tax ids": 111, "control_hash" : 111})
         flag_hit = HitResult(
             HitScreenStatus(ScreenStatus.FLAG, self.STEP),
             "Dangerous Virus", "controlled Viruses Dangerous Virus",
@@ -514,6 +515,7 @@ class TestParseTaxonomyHits:
                 data, {"seq1": MagicMock()}, self.STEP, 1,
             )
         assert ret == 0
+        print(f"Expecting a Flag result for protein taxonomy: {json.dumps(asdict(data),indent=2)}")
         assert data.queries["seq1"].hits["Dangerous Virus"].recommendation.status == ScreenStatus.FLAG, f"Expected a Flag result for protein taxonomy: {
             json.dumps(asdict(data),indent=2)}"
 

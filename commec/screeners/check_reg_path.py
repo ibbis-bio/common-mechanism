@@ -31,16 +31,17 @@ from commec.config.result import (
 )
 from commec.control_list import (
     get_control_lists,
+    should_ignore,
     get_regulation,
     is_regulated,
     ListMode,
     ControlList,
+    get_cluster_hash,
 )
 
 from commec.tools.data_functions import (
     find_clusters,
     get_top_hits,
-    remove_synthetic_and_vaccine_taxids,
 )
 
 from commec.config.constants import N_NON_REGIONAL_HITS_TO_WARN
@@ -92,25 +93,42 @@ def _get_hit_result_from_data(unique_query_data : pd.DataFrame, step : ScreenSte
     # Filter data to the top hits only.
     top_hits = get_top_hits(unique_query_data)
 
-    top_hits = get_controlled_labels(top_hits)
-    regulated_only = top_hits[top_hits["regulated"]]
-    non_regulated_only = top_hits[~top_hits["regulated"]]
-    unique_controlled_taxids = regulated_only["subject tax ids"].unique()
+    #top_hits = get_controlled_labels(top_hits)
+    
 
-    logger.debug("%s: %s query has %i unique control hits:\n%s",
-                step, query_acc, len(unique_controlled_taxids), unique_controlled_taxids)
+    regulated_only = top_hits[top_hits["regulated"]]
+    unique_hash_taxids = regulated_only["control_hash"].unique()
+
+    bad_cluster_hashes = regulated_only[regulated_only["control_hash"] == None]
+    #logger.error("BAD CLUSTERS DETECTED: %s", regulated_only.to_string(index = False))
+
+    non_regulated_only = top_hits[~top_hits["regulated"]]
+
+
+    #logger.info("%s: %s query has %i unique control hash hits:\n%s",
+    #            step, query_acc, len(unique_hash_taxids), unique_hash_taxids)
+
+
+    #unique_taxids = regulated_only["subject tax ids"].unique()
+    #logger.info("%s: query %s has %i regulated taxids.", step, query_acc, len(unique_taxids))
+
+    #hash_taxids = list(set([get_cluster_hash(taxid) for taxid in unique_taxids]))
+
+    #logger.debug("%s: query %s has %i regulated hash_taxids.", step, query_acc, len(hash_taxids))
+
 
     log_messages = []
-    for controlled_taxid in unique_controlled_taxids:
-        cluster_data, clusters = find_clusters(
-            regulated_only[regulated_only["subject tax ids"] == controlled_taxid]
-            )
-        logger.debug("%s: query %s has %i regulated clusters", step, query_acc, len(clusters))
+    for hash_taxid in unique_hash_taxids:
+        __regulated = regulated_only[regulated_only["control_hash"] == hash_taxid]
+        if __regulated.empty:
+            logger.error("Empty dataframe being sent to find_clusters... for hash taxid %s", hash_taxid)
+        cluster_data, clusters = find_clusters(__regulated) #[regulated_only["control_hash"] == hash_taxid]
+        logger.debug("%s: query %s has %i regulated clusters.", step, query_acc, len(clusters))
         for i, cluster in enumerate(clusters):
             logger.debug("Processing cluster[%i]: %s",i, cluster)
             new_hit_result, log_message = _create_hit_result_for_cluster(cluster_data[cluster_data["cluster"] == i],
-                                                            non_regulated_only, cluster[0], cluster[1], controlled_taxid, step)
-            
+                                                        non_regulated_only, cluster[0], cluster[1], hash_taxid, step)
+                
             if new_hit_result:
                 output_hit_results.append(new_hit_result)
                 log_messages.append(log_message)
@@ -156,6 +174,20 @@ def _create_hit_result_for_cluster(
     """
     logger.debug("Retrieving Control Information for Cluster: ")
     cluster_regulation = get_regulation(controlled_cluster_taxid)
+
+    if not cluster_regulation:
+        logger.error("Tried to create a cluster from %s, but returned no control information. raw data: %s", controlled_cluster_taxid, cluster_data["subject tax ids"].unique())
+        check = is_regulated(controlled_cluster_taxid)
+        if check: 
+            logger.error("Note: Status from is_regulated is %s", check)
+            logger.error("Setting loglevel to debug. And recalling get_regulation....")
+            level_original = logger.level
+            logger.setLevel(logging.DEBUG)
+            cluster_regulation = get_regulation(controlled_cluster_taxid)
+            logger.setLevel(level_original)
+
+        return HitResult(HitScreenStatus(ScreenStatus.ERROR,step),f"Bad_Cluster_{controlled_cluster_taxid}"), "Error creating hit from cluster ID"
+
     species = cluster_regulation[0].species
     genus = cluster_regulation[0].genus
     display_name = cluster_regulation[0].name
@@ -297,7 +329,7 @@ def _create_hit_result_from_annotations(
     hit_description = f"{control_text} {domains_text} {display_name}"
 
     if len(non_regulated_annotations) > 0:
-        status = ScreenStatus.WARN
+        status = ScreenStatus.PASS
         logger.debug(
             "Mixed result: %d regulated, %d non-regulated annotations.",
             len(regulated_annotations), len(non_regulated_annotations),
@@ -425,8 +457,8 @@ def parse_taxonomy_hits(
 
     Process:
         1. Load in the dataframe from provided SearchHandler.db_directory
-        2. Remove Synthetic and Vaccine hits.
         2. Annotation the dataframe with control list annotations based on Accession (TaxID)
+            Includes removing synthetic or vaccine hits.
         3. Split the dataframe into per Query processing.
          per Query: (Point of Threading)
         4. Filter to Top Hits and Trim Edges.
@@ -475,24 +507,21 @@ def parse_taxonomy_hits(
     blast = read_blast(search_handler.out_file)    
     logger.debug("%s Blast Import: shape %s\n%s", step, blast.shape, blast.head())
 
-    # Label data with parent hash taxids.
+    # Label data initial control information.
     logger.info("    Identifying controlled taxa ...")
-
-    # Build a mapping {taxid: truthiness} and Map back to the dataframe
-    taxid_to_regulated = {taxid: is_regulated(taxid) for taxid in blast["subject tax ids"].unique()}
-    blast["regulated"] = blast["subject tax ids"].map(taxid_to_regulated)
+    blast = get_controlled_labels(blast)
 
     # Early exit if no regulated hits.
     #if sum(1 for ch in blast["control_hash"] if ch is not None) == 0:
     if blast["regulated"].sum() == 0:
-        logger.info("\t...no regulated hits\n")
+        logger.info("\t...no controlled hits\n")
         return 0
 
     logger.debug("%s Controlled Labels applied: shape %s\n%s", step, blast.shape, blast.head())
 
     # Step 2: Per-query analysis
     unique_query_accs = blast["query acc."].unique()
-    logger.debug("%s: %d unique queries with regulated hits", step, len(unique_query_accs))
+    logger.debug("%s: %d unique queries with controlled hits", step, len(unique_query_accs))
 
     for query_acc in unique_query_accs:
         # From here should be Threaded:

@@ -88,17 +88,17 @@ def _import_data(import_path : str | os.PathLike,
             _import_data(entry, regional_context)
     return
 
+"""
+Developers note:
+It is tempting to mix should_ignore, and is_regulated, as they share some taxid
+splitting logic and occur one after the other.
+"""
+
 def should_ignore(accession : str) -> bool:
     """
     Check whether this accession should simple be ignored by commec screen.
     """
-    test_accession = str(accession).strip()
-    result = test_accession in __data.IGNORED_ACCESSION
-    logger.debug("Checking whether \"%s\" is in ignored taxids (%i): %s",
-                test_accession,
-                len(__data.IGNORED_ACCESSION),
-                result)
-    return result
+    return str(accession) in __data.IGNORED_ACCESSION
 
 def is_regulated(accession : str) -> bool:
     """
@@ -106,9 +106,7 @@ def is_regulated(accession : str) -> bool:
     for whether there is any control list data for the given accession.
     """
 
-
     accession_hash = Accession(accession)
-    accession_to_check = {accession_hash}
     index_values = __data.CONTROL_LIST_ANNOTATIONS.index
 
     # Early exit if not present in control lists.
@@ -118,16 +116,6 @@ def is_regulated(accession : str) -> bool:
         return False
     return True
 
-    # Collect parent TaxIDs, if any
-    #taxid_parents = __data.ACCESSION_MAP.loc[
-    #    __data.ACCESSION_MAP["child_taxid"] == accession, "controlled_taxid"
-    #]
-    #accession_to_check.update(Accession(taxid) for taxid in taxid_parents)
-
-    # Check for intersection between sets of indexes vs accessions to check.
-    #index_values = __data.CONTROL_LIST_ANNOTATIONS.index
-    #return not accession_to_check.isdisjoint(index_values)
-
 def get_cluster_hash(taxid: str) -> str | None:
     """
     Returns the highest parent, given the input accession.
@@ -135,16 +123,16 @@ def get_cluster_hash(taxid: str) -> str | None:
     maps to another taxid, whilst also being in the control list annotation index.
     Returns None if no regulated top-level ancestor exists.
     """
-    accession_hash = Accession(taxid)
-    index_values = __data.CONTROL_LIST_ANNOTATIONS.index
 
     # Early exit if not present in control lists.
-    in_map = accession_hash in __data.ACCESSION_MAP["child_taxid"].values
-    in_index = accession_hash in index_values
-    if not in_map and not in_index:
+    #in_map = accession_hash.code in __data.ACCESSION_MAP["child_taxid"].values
+    #in_index = accession_hash in index_values
+    if not is_regulated(taxid):
         return None
 
     # Figure out the most parenty parent.
+    index_values = __data.CONTROL_LIST_ANNOTATIONS.index
+    accession_hash = Accession(taxid)
     accessions_to_check = {accession_hash}
 
     promote_child_to_parents = True
@@ -154,7 +142,7 @@ def get_cluster_hash(taxid: str) -> str | None:
         for accession in accessions_to_check:
             # Collect parent TaxIDs, if any
             taxid_parents = __data.ACCESSION_MAP.loc[
-                __data.ACCESSION_MAP["child_taxid"] == accession, "controlled_taxid"
+                __data.ACCESSION_MAP["child_taxid"] == accession.code, "controlled_taxid"
             ]
             if not taxid_parents.empty:
                 new_accession_set.update(Accession(t) for t in taxid_parents)
@@ -162,9 +150,13 @@ def get_cluster_hash(taxid: str) -> str | None:
                 continue
             # No further parent — this is a top-level node, keep it
             new_accession_set.add(accession)
-        accessions_to_check = new_accession_set
-        if len(accessions_to_check) == 1:
+        
+        if accessions_to_check == new_accession_set:
             break
+        accessions_to_check = new_accession_set
+        promote_child_to_parents = True
+        #if len(accessions_to_check) == 1:
+        #    break
 
     if len(accessions_to_check) == 0:
         raise RuntimeError(
@@ -175,7 +167,17 @@ def get_cluster_hash(taxid: str) -> str | None:
         logger.warning("More than 1 highest parent for %s: %s", taxid, accessions_to_check)
 
     accession_to_check = next(iter(accessions_to_check))
-    return accession_to_check if accession_to_check in index_values else None
+
+    if not accession_to_check in index_values:
+        logger.warning("Accession parent (derived from %s) is apparently not in Control Lists %s",taxid, accession_to_check)
+        parent_accession = __data.ACCESSION_MAP.loc[
+            __data.ACCESSION_MAP["child_taxid"] == accession_to_check.code, "controlled_taxid"
+        ]
+        logger.warning("Derived a parent: %s",parent_accession)
+
+        return None
+
+    return accession_to_check
 
 
 def are_regulated_test(accessions) -> dict[str, bool]:
@@ -233,9 +235,9 @@ def get_regulation(accession : str) -> list[ControlListOutput]:
     # Modify based on input accession format:
     accession_hash = Accession(accession)
     accession_to_check = [accession_hash]
-    logger.debug("Fetching parents of '%s'", accession)
+    logger.debug("Fetching parents of '%s' [%s]", accession, type(accession))
     taxid_parents_to_check = __data.ACCESSION_MAP[
-        __data.ACCESSION_MAP["child_taxid"] == accession]["controlled_taxid"].to_list()
+        __data.ACCESSION_MAP["child_taxid"] == accession_hash.code]["controlled_taxid"].to_list()
     logger.debug("Found taxid parents: %s", str(taxid_parents_to_check))
     taxid_parents_to_check = [Accession(taxid) for taxid in taxid_parents_to_check]
     accession_to_check.extend(taxid_parents_to_check)
