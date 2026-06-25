@@ -199,6 +199,13 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         type=int,
         help="Diamond-only: number of runs to do in parallel on split Diamond databases",
     )
+    parallel_group.add_argument(
+        "--mt-mode",
+        dest="mt_mode",
+        type=int,
+        choices=[0, 1, 2],
+        help="BLAST multithreading mode for blastx/blastn: see NCBI documentation.",
+    )
     output_handling_group = parser.add_argument_group("Output file handling")
     output_exclusive_group = output_handling_group.add_mutually_exclusive_group()
     output_handling_group.add_argument(

@@ -24,6 +24,7 @@ databases:
   taxonomy:
       path: "{default}taxonomy/"
 threads: 1
+mt_mode: 1
 diamond_jobs: null
 do_cleanup: False
 force: False

@@ -59,6 +59,7 @@ class ScreenTools:
                     input_file=params.nt_path,
                     out_file=f"{params.output_prefix}.nr.blastx",
                     threads=params.config["threads"],
+                    mt_mode=params.config["mt_mode"],
                     force=params.config["force"],
                 )
             elif params.config["protein_search_tool"] in ("nr.dmnd", "diamond"):
@@ -84,6 +85,7 @@ class ScreenTools:
                 input_file=params.nc_path,
                 out_file=f"{params.output_prefix}.nt.blastn",
                 threads=params.config["threads"],
+                mt_mode=params.config["mt_mode"],
                 force=params.config["force"],
             )
 
@@ -100,6 +102,7 @@ class ScreenTools:
                 input_file=params.nt_path,
                 out_file=f"{params.output_prefix}.low_concern.blastn",
                 threads=params.config["threads"],
+                mt_mode=params.config["mt_mode"],
                 force=params.config["force"],
             )
             self.low_concern_cmscan = CmscanHandler(
