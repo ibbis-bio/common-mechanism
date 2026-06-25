@@ -179,12 +179,12 @@ def test_is_regulated_false():
 def test_is_regulated_via_child_mapping():
     """A child TaxID should be regulated through its parent mapping."""
     _setup_regulated_state()
-    #assert is_regulated(99999) is True, "TaxID passed as number not working."
+    assert is_regulated(99999) is True, "TaxID passed as number not working."
     assert is_regulated("99999") is True, "TaxID passed as string not working."
 
 # ---------------------------------------------------------------------------
 # get_regulation
-# ---------------------------------------------------------------------------
+# ---------------------the------------------------------------------------------
 
 def test_get_regulation_direct_hit():
     _setup_regulated_state()

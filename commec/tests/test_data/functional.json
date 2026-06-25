@@ -2,8 +2,8 @@
   "commec_info": {
     "commec_version": "1.1.0",
     "json_output_version": "0.4",
-    "time_taken": "00:00:03",
-    "date_run": "2026-06-23 23:01:09",
+    "time_taken": "00:00:01",
+    "date_run": "2026-06-25 15:51:59",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -36,7 +36,7 @@
     ]
   },
   "query_info": {
-    "file": "/tmp/pytest-of-michael/pytest-71/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-michael/pytest-93/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -50,12 +50,12 @@
         "protein_taxonomy": "Flag",
         "nucleotide_taxonomy": "Flag",
         "low_concern": "Flag",
-        "rationale": "Matches sequence with pathogenic or toxin function, and protein and nucleotide sequence with regulated organisms; as well as virulence factor, and protein and nucleotide sequence with equally-good matches to regulated and non-regulated organisms; as well as flags cleared as common or non-hazardous."
+        "rationale": "Matches sequence with pathogenic or toxin function, and protein and nucleotide sequence with regulated organisms; as well as virulence factor; as well as flags cleared as common or non-hazardous."
       },
       "hits": {
         "12345_501_581": {
           "recommendation": {
-            "status": "Warning",
+            "status": "Pass",
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "12345_501_581",
@@ -265,7 +265,7 @@
         },
         "12347_340_390": {
           "recommendation": {
-            "status": "Warning",
+            "status": "Pass",
             "from_step": "Protein Taxonomy Search"
           },
           "name": "12347_340_390",

@@ -292,7 +292,7 @@
                             "statistics" : {
                                 "number_of_non-controlled_taxids" : 1,
                                 "number_of_controlled_taxids" : 1,
-                                "controlled_bacteria" : 1,
+                                "controlled_bacteria" : 0,
                                 "controlled_viruses" : 1,
                                 "controlled_parasites" : 0,
                                 "controlled_fungi" : 0
