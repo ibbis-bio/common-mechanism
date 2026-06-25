@@ -1,0 +1,26 @@
+# Presets for the commec screen GUI. Each entry becomes a choice in the UI.
+#
+# `config` uses the same keys as commec's screen-default-config.yaml. At run
+# time the chosen preset's config is written into the run directory and passed
+# to `commec screen -y`. The database directory is injected separately (from
+# COMMEC_DB_DIR / --databases), so presets stay portable across machines.
+#
+# NOTE: do not set `do_cleanup: true` -- it crashes commec at the end of a run
+# (bug in screen_io.py: it does self.config.do_cleanup on a dict).
+
+presets:
+  - id: biorisk
+    label: Biorisk only (fast)
+    recommended: false
+    config:
+      skip_taxonomy_search: true
+      skip_nt_search: true
+      protein_search_tool: blastx
+
+  - id: full
+    label: Full screen
+    recommended: true
+    config:
+      skip_taxonomy_search: false
+      skip_nt_search: false
+      protein_search_tool: blastx

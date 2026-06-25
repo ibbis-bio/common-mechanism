@@ -1,0 +1,214 @@
+# Deployment / image-minting notes
+
+Notes for the image-minting pipeline that will provision the kiosk image and
+write the GUI's `.env`. Keep this in sync with `server.py` / `kiosk.sh` /
+`lan.sh`.
+
+## Runtime environment requirement (important)
+
+The GUI server (`server.py`) does **not** import commec; it shells out to the
+`commec` binary. But commec only works when its whole toolchain resolves on
+`PATH`, so the server process must run in an environment that has **all** of:
+
+- `commec`
+- search tools: `blastx`, `blastn`, `diamond`, `hmmscan`, `cmscan`, `transeq`,
+  `makeblastdb`
+- `taxonkit` -- commec imports `pytaxonkit`, which runs `taxonkit version` at
+  **import time**. If `taxonkit` is not on `PATH`, commec dies before doing
+  anything (FileNotFoundError), even for the biorisk-only preset.
+
+`kiosk.sh` / `lan.sh` achieve this by `conda activate "$COMMEC_CONDA_ENV"`
+before launching, which puts that env's `bin/` on `PATH`. The image must point
+`COMMEC_CONDA_ENV` at the env that actually contains commec + the tools above.
+
+The server itself additionally needs `flask` and `pyyaml` installed in that
+same env.
+
+## `.env` values the image should set
+
+`kiosk.sh` / `lan.sh` source `.env`. The image should write:
+
+| Variable | Value on the Debian prototype | Notes |
+|---|---|---|
+| `COMMEC_CONDA_ENV` | `commec-env` | NOT the script default `commec-dev`. Must be the env with commec + tools + taxonkit + flask + pyyaml. |
+| `COMMEC_DB_DIR` | `/home/<user>/commec-dbs` | Database dir. Must contain `biorisk/`, `low_concern/`, `nr_blast/` (or `nr_dmnd/`), `nt_blast/`, `taxonomy/` with the filenames commec's `screen-default-config.yaml` expects. |
+| `COMMEC_GUI_PORT` | `8765` | |
+| `COMMEC_GUI_THREADS` | unset | CPU threads for commec's search tools (`-t`). Unset = all logical cores. Only set to cap usage (e.g. shared host). |
+| `COMMEC_GUI_FULLSCREEN` | `1` (kiosk) | Planned (see below). When set, the page auto-enters fullscreen on first interaction. |
+| TLS | (see below) | |
+
+## Fullscreen display
+
+Two pieces, by design:
+
+- **In-app toggle button** (DOM Fullscreen API) -- a Fullscreen/Exit button in
+  the page. Works everywhere; reversible. No image config needed.
+  **Implemented** (header button in `index.html`).
+- **"Soft" launch-into-fullscreen for the kiosk** (planned -- not yet wired) --
+  this is the part the image pipeline configures:
+  - Set `COMMEC_GUI_FULLSCREEN=1` in `.env`. The server surfaces this to the
+    page, which then calls `requestFullscreen()` on the **first** user gesture
+    (the operator's first touch/click). The browser blocks auto-fullscreen on
+    load without a gesture, so this is the robust way to "boot into fullscreen"
+    while keeping the toggle button functional.
+  - Launch the browser **maximized/normal -- do NOT use `firefox-esr --kiosk`**.
+    `--kiosk` is a window-level lock that the in-app Exit button can't undo;
+    it's only for a fully locked-down public terminal (a separate, "hard"
+    option we're not using here).
+
+## Removable media (USB) auto-mount
+
+The GUI auto-detects removable drives so users get the Windows/Mac "plug it in
+and it's just there" behaviour. A background thread polls `lsblk` for removable
+partitions (`RM=1`) and mounts any unmounted one **read-only** via
+`udisksctl mount -o ro`; mounted volumes then appear as a tab in the page. The
+server only ever READS the media -- it never writes to or executes from it.
+
+`udisksctl mount` must be **authorized for the server process**. On the
+prototype (server launched over ssh, outside the graphical session) polkit
+denies it by default (`NotAuthorizedCanObtain`). The packaging workflow must
+grant it, by EITHER:
+
+- **Launching the GUI from the kiosk's graphical session** (autostart in the
+  logged-in seat) -- udisks2 mounts are then authorized for the active local
+  session with no extra rule (the GUI user should be in `plugdev`); OR
+- **Installing a polkit rule** allowing `plugdev` to mount removable media,
+  which works regardless of how the server is launched:
+
+  `/etc/polkit-1/rules.d/50-commec-usb.rules`
+  ```
+  polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.freedesktop.udisks2.filesystem-mount") == 0 &&
+        subject.isInGroup("plugdev")) { return polkit.Result.YES; }
+  });
+  ```
+
+Mounts are read-only. For extra hardening against hostile filesystems, also
+apply `nodev,nosuid,noexec` to removable mounts (udisks2/mount config). If you
+prefer, a system-level auto-mount (udev+systemd / usbmount) works too -- then
+the server just reads `/media` and the server-side mount step is a no-op.
+
+## TLS for production
+
+LAN mode serves HTTPS. `--tls-auto` (via `gen-cert.sh`) issues a **per-kiosk**
+cert generated **on the device** at first boot -- so **no private key is ever
+baked into the image** (we assume the image leaks). It needs no network, so it
+works on fully-offline kiosks.
+
+Decision: we are **not** using certbot / a public CA. Offline kiosks can't do
+ACME issuance or 90-day renewals, and DNS-01 credentials would be a baked
+secret -- both disqualifying. The chosen approach:
+
+- Install `mkcert` (+ `libnss3-tools` so Firefox's NSS store is updated) in the
+  image, and at first boot run `mkcert -install` as the kiosk user. `gen-cert.sh`
+  then issues an mkcert-signed cert. The kiosk's **own** browser trusts it ->
+  no warning on the walk-up screen, fully automated, offline, nothing baked.
+- **Remote LAN clients (laptops) still get a warning** until that kiosk's root
+  CA (`$(mkcert -CAROOT)/rootCA.pem`) is installed in their trust store. That's
+  a local-IT task we deliberately do not automate from the kiosk; if a site
+  dislikes the warning, their IT installs the CA.
+- Without mkcert, `gen-cert.sh` **errors out** (set `COMMEC_TLS=0` for plain
+  HTTP) -- there is no self-signed openssl fallback, so a missing mkcert is a
+  loud provisioning failure rather than a silently-shipped warning-cert. The
+  image must also install `libnss3-tools` so `mkcert -install` can populate
+  Firefox's NSS trust store (otherwise the cert is mkcert-signed but the
+  kiosk's own Firefox still warns).
+
+Each kiosk having its own CA means a compromised device exposes only its own
+CA -- no shared key to leak across the fleet.
+
+## Authentication (GUI password)
+
+The GUI has no login of its own; access control reuses the **kiosk password**.
+The first-boot setup that sets the kiosk user-account password must ALSO write
+a **hash** of that same password to a fixed location the GUI reads:
+
+    /etc/commec-gui/password.hash     # one line; mode 0640, readable by the GUI user
+
+(You can't read the account password back out of shadow, so capture it once at
+setup and write to both `passwd` and this file.) Use the GUI env's werkzeug to
+hash it, so the server can verify it:
+
+    printf '%s' "$KIOSK_PASSWORD" | python -c \
+      'import sys; from werkzeug.security import generate_password_hash; \
+       print(generate_password_hash(sys.stdin.read()))' \
+      > /etc/commec-gui/password.hash
+
+Intended server behaviour (small feature, not yet implemented): when that file
+exists, require the password for any **non-localhost** request (LAN / Tailscale
+/ remote), while the walk-up kiosk on `127.0.0.1` is exempt -- physical presence
+is the trust. No file -> no auth (current prototype). Nothing is baked into the
+base image; the hash is written per-device at setup. Auth is only meaningful
+over HTTPS.
+
+## Network hardening (inbound)
+
+Clients want the kiosk on the internet for **outbound** fetches (e.g. pulling
+sequences from Google Drive). Outbound is fine; the thing to control is
+**inbound** reach to the GUI port.
+
+- **Outbound: unrestricted** (kiosk browser -> Drive, etc.).
+- **Inbound to the GUI port (`COMMEC_GUI_PORT`, default 8765): allow only**
+  localhost, private LAN ranges, and Tailscale; DROP everything else (the
+  public internet). NAT usually blocks inbound already, but don't rely on it --
+  enforce a host firewall so a public IP or an accidental port-forward can't
+  expose the GUI.
+  - Allowed sources: `127.0.0.0/8`, `::1`, `10.0.0.0/8`, `172.16.0.0/12`,
+    `192.168.0.0/16`, and **Tailscale** (`100.64.0.0/10`, or the `tailscale0`
+    interface). Tailscale inbound is OK -- it's an authenticated overlay.
+  - Example (nftables):
+    ```
+    table inet commec {
+      chain input {
+        type filter hook input priority 0; policy accept;
+        iifname "tailscale0" tcp dport 8765 accept
+        tcp dport 8765 ip saddr { 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, \
+          192.168.0.0/16, 100.64.0.0/10 } accept
+        tcp dport 8765 drop
+      }
+    }
+    ```
+
+This pairs with the GUI password: the firewall keeps the public internet from
+reaching the port at all, and allowed LAN/Tailscale clients still authenticate.
+
+## Third-party licensing
+
+The GUI bundles one vendored asset: `gui/vendor/plotly-3.0.1.min.js`
+(plotly.js, **MIT**, (c) Plotly Inc.) so the report renders offline. It ships
+unmodified with its MIT notice in the file header -- see `gui/vendor/NOTICE.md`.
+commec-gui is itself MIT, so this is compatible. **Carry this into the image's
+and the upstream project's third-party / NOTICES accounting.**
+
+## Storage & retention
+
+Implemented in `server.py` (`--work-dir` / `--results-dir` / `--results-keep`,
+the end-of-run finalize+wipe, and the periodic orphan sweep). What the image
+pipeline still owns is the **tmpfs mount and swap-off** below; the server does
+the rest.
+
+Sequences are sensitive, results are not. The two live in different places:
+
+- **Work dir (sensitive, ephemeral): a tmpfs mount.** Point `--work-dir` at a
+  tmpfs path (e.g. a dedicated mount, or `/dev/shm`). Commec runs there, so the
+  submitted FASTA plus its derived copies (`input_<prefix>/*.cleaned.fasta`,
+  `.faa`, `.noncoding.fasta`) and raw search outputs never touch persistent
+  disk and vanish on power-off. The GUI also deletes the sensitive inputs at
+  end-of-run; a periodic sweep removes orphans from crashed/killed runs.
+  - **Do NOT assume `/tmp` is tmpfs.** Mount one explicitly, or use `/dev/shm`.
+  - **Disable swap on the image.** tmpfs is swap-backed, so in theory sequence
+    pages could spill to disk under memory pressure. In practice that won't
+    happen here (see sizing below), but disabling swap is cheap belt-and-
+    suspenders for the no-disk guarantee. Prefer disabling swap over `ramfs`
+    (no size cap -> OOM risk).
+  - **Sizing is comfortable.** Default tmpfs is half of RAM (7.5G of 15G on the
+    prototype). Observed peak usage on big runs is ~2G system-wide, so there's
+    ample headroom and no real memory-pressure (hence no swap spill) risk.
+- **Results dir (retained): persistent disk.** Only the named, polished result
+  artifacts are persisted off tmpfs and retained (default: forever; set
+  `--results-keep N` for a rolling cap): `<prefix>.output.json`, `<prefix>_summary.html`,
+  `<prefix>.screen.log`, `config.used.yaml`. These are self-contained and
+  contain no raw query sequence, so they're safe to keep. The raw
+  `output_<prefix>/` search files (`.blastn`/`.blastx`/`.hmmscan`...) are
+  **not** retained -- they're bulky and their alignments can expose query
+  content, and the findings are already captured in the JSON/HTML.

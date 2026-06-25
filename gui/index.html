@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Common Mechanism - Sequence Screening</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* IBBIS brand tokens (from ibbis.bio) */
+    --navy: #232A58;
+    --teal: #419BB9;
+    --orange: #F05023;
+    /* neutrals */
+    --paper: #F4F6F9;
+    --panel: #ffffff;
+    --line: #E4E8EF;
+    --ink: #1B2030;
+    --muted: #5B6577;
+    --faint: #8a93a3;
+    --ok: #2f8f5b;
+    /* type */
+    --display: "Archivo", system-ui, sans-serif;
+    --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(35,42,88,.04), 0 6px 20px rgba(35,42,88,.05);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font: 15px/1.55 var(--ui);
+    background: var(--paper); color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--teal); }
+
+  /* ---- Header ---------------------------------------------------------- */
+  .topbar {
+    background: var(--navy); color: #fff;
+    border-bottom: 3px solid var(--orange);
+  }
+  .topbar-in {
+    max-width: 880px; margin: 0 auto; padding: 16px 24px;
+    display: flex; align-items: center; gap: 18px;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .brand img { height: 34px; width: auto; display: block; }
+  .brand .div { width: 1px; height: 30px; background: rgba(255,255,255,.22); }
+  .brand .title { min-width: 0; }
+  .brand .title .k {
+    font: 600 11px/1 var(--display); letter-spacing: .14em;
+    text-transform: uppercase; color: var(--teal);
+  }
+  .brand .title .p {
+    font: 700 17px/1.2 var(--display); margin-top: 4px; white-space: nowrap;
+  }
+  /* Right-side status cluster: screener state, then IPs, then CPU/RAM. */
+  .hstatus {
+    margin-left: auto; display: flex; flex-direction: column;
+    align-items: flex-end; gap: 7px; min-width: 0;
+  }
+  .hstatus .queue {
+    margin: 0; display: flex; align-items: center; gap: 7px;
+    font-size: 12px; color: #cfe0ea; max-width: 320px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .hstatus .queue .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
+  .hstatus .queue.busy { color: #fff; }
+  .hstatus .queue.busy .dot { background: var(--orange); animation: pulse 1.2s ease-in-out infinite; }
+  .net { display: flex; gap: 16px; }
+  .chip {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    font: 500 11px/1 var(--mono); color: #cfe0ea; white-space: nowrap;
+  }
+  .chip .lab { color: #8fa6b6; text-transform: uppercase; letter-spacing: .08em; font-size: 9px; }
+  .hmeters { display: flex; gap: 16px; }
+  .hmeter {
+    display: flex; align-items: center; gap: 7px; color: #8fa6b6;
+    font: 500 9px/1 var(--mono); text-transform: uppercase; letter-spacing: .08em;
+  }
+  .hmeter .hbar { width: 48px; height: 5px; background: rgba(255,255,255,.16); border-radius: 999px; overflow: hidden; }
+  .hmeter .hbar > i { display: block; height: 100%; width: 0; background: var(--teal); border-radius: 999px; }
+  .hmeter.cpu .hbar > i { background: var(--orange); }
+  .hmeter b { color: #cfe0ea; font: 600 10px/1 var(--mono); letter-spacing: 0; text-transform: none; }
+
+  /* ---- Sequence ribbon (signature) ------------------------------------ */
+  .ribbon {
+    overflow: hidden; background: var(--navy);
+    font: 500 11px/1 var(--mono); letter-spacing: .42em;
+    color: rgba(255,255,255,.10); padding: 5px 0; white-space: nowrap;
+    user-select: none;
+  }
+
+  /* ---- Layout ---------------------------------------------------------- */
+  .wrap { max-width: 880px; margin: 0 auto; padding: 28px 24px 64px; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 22px 24px; margin-bottom: 18px;
+  }
+  .step-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+  .step-no {
+    font: 800 13px/1 var(--display); color: var(--orange);
+    letter-spacing: .02em;
+  }
+  .step-title { font: 700 16px/1 var(--display); color: var(--navy); }
+  .step-sub { color: var(--muted); font-size: 13px; margin-left: auto; }
+
+  /* soon = sketched, not yet wired */
+  .soon {
+    font: 600 9px/1 var(--display); text-transform: uppercase; letter-spacing: .1em;
+    color: var(--teal); border: 1px solid #cfe2ea; background: #eef6f9;
+    border-radius: 999px; padding: 4px 8px; vertical-align: middle;
+  }
+  .sketch { position: relative; }
+
+  /* ---- Tabs ------------------------------------------------------------ */
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+  .tab {
+    appearance: none; background: none; border: none; cursor: pointer;
+    font: 600 13px var(--ui); color: var(--muted);
+    padding: 9px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--navy); border-bottom-color: var(--orange); }
+  .tab.usb { color: var(--orange); }
+  @keyframes tabflash { 0%, 100% { background: transparent; } 50% { background: #fde4d8; } }
+  .tab.flash { animation: tabflash 0.9s ease-in-out 5; }
+  .pane { display: none; }
+  .pane.active { display: block; }
+
+  /* ---- Inputs ---------------------------------------------------------- */
+  label.lbl { display: block; font-size: 13px; color: var(--muted); margin-bottom: 7px; }
+  input[type=text] {
+    width: 100%; background: #fbfcfd; border: 1px solid var(--line);
+    color: var(--ink); border-radius: 8px; padding: 11px 12px;
+    font: 14px var(--mono);
+  }
+  textarea {
+    width: 100%; min-height: 150px; resize: vertical;
+    background: #fbfcfd; border: 1px solid var(--line); color: var(--ink);
+    border-radius: 8px; padding: 12px 13px; font: 13px/1.5 var(--mono);
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(65,155,185,.14); }
+  .field-foot { display: flex; align-items: center; gap: 14px; margin-top: 9px; font-size: 12px; color: var(--faint); }
+  .bp { font: 500 12px var(--mono); color: var(--muted); }
+  .bp b { color: var(--navy); }
+  .hint { color: var(--faint); }
+
+  /* upload dropzone (sketch) */
+  .drop {
+    display: block; border: 1.5px dashed #c4ccd8; border-radius: 8px; padding: 30px;
+    text-align: center; color: var(--muted); background: #fbfcfd; cursor: pointer;
+    transition: border-color .12s, background .12s;
+  }
+  .drop:hover { border-color: var(--teal); }
+  .drop.drag { border-color: var(--teal); background: #f3f9fb; }
+  .drop b { color: var(--ink); }
+
+  /* Server-side file browser */
+  .browser { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fbfcfd; }
+  .browser-path {
+    font: 12px var(--mono); color: var(--muted); padding: 8px 12px;
+    border-bottom: 1px solid var(--line); white-space: nowrap; overflow-x: auto;
+  }
+  .browser-list { max-height: 240px; overflow-y: auto; }
+  .browser-list .row {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    cursor: pointer; border-bottom: 1px solid #eef1f5;
+  }
+  .browser-list .row:last-child { border-bottom: none; }
+  .browser-list .row:hover { background: #eef6f9; }
+  .browser-list .row.sel { background: #e7f2f7; }
+  .browser-list .row .nm { font: 13px var(--mono); color: var(--ink); word-break: break-all; }
+  .browser-list .row.dir .nm { color: var(--teal); font-weight: 600; }
+  .browser-list .row .sz { margin-left: auto; color: var(--faint); font-size: 12px; white-space: nowrap; }
+  .browser-sel b, #browse-sel b { color: var(--navy); }
+
+  /* skip-50 toggle */
+  .opt { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 13px; color: var(--ink); }
+  .opt input { width: 16px; height: 16px; accent-color: var(--teal); }
+
+  /* ---- Presets --------------------------------------------------------- */
+  .presets { display: flex; flex-direction: column; gap: 10px; }
+  .preset {
+    display: flex; gap: 12px; align-items: flex-start; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 9px; padding: 13px 15px;
+    transition: border-color .12s, background .12s;
+  }
+  .preset:hover { border-color: var(--teal); }
+  .preset.sel { border-color: var(--teal); background: #f3f9fb; box-shadow: inset 3px 0 0 var(--teal); }
+  .preset input { margin-top: 3px; accent-color: var(--teal); }
+  .preset .pl { font-weight: 600; color: var(--navy); }
+  .preset .pd { color: var(--muted); font-size: 13px; margin-top: 3px; }
+  .preset.unavail { opacity: .55; cursor: not-allowed; }
+  .preset.unavail:hover { border-color: var(--line); }
+  .preset .pd.warn { color: var(--orange); margin-top: 5px; }
+  /* Recommendation badge + raw config args (debugging-oriented preset display) */
+  .rec {
+    font: 600 10px var(--display); text-transform: uppercase; letter-spacing: .06em;
+    padding: 2px 7px; border-radius: 999px; color: #1f6e44; background: #eaf6ef;
+    white-space: nowrap;
+  }
+  .rec.no { color: #b1310f; background: #fdeee9; }
+  .args { display: block; margin-top: 5px; font: 12px var(--mono); color: var(--muted); word-break: break-word; }
+
+  /* selected-preset summary + advanced disclosure */
+  .preset-summary { display: flex; gap: 12px; align-items: flex-start; }
+  .preset-summary .pl { display: block; font-weight: 600; color: var(--navy); }
+  .preset-summary .pd { display: block; color: var(--muted); font-size: 13px; margin-top: 3px; }
+  .preset-summary .pd.warn { color: var(--orange); }
+  .legend {
+    font: 600 11px var(--display); text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); margin: 14px 0 10px;
+  }
+
+  /* Global "Advanced options" master toggle: gates the screening-depth card
+     and the terminal log. */
+  /* Header controls (fullscreen + advanced), styled for the navy bar. */
+  .hcontrols { display: flex; align-items: center; gap: 14px; }
+  .hbtn {
+    appearance: none; background: none; cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, .28); color: #dce7ef;
+    border-radius: 6px; padding: 4px 11px; font: 500 12px var(--ui);
+  }
+  .hbtn:hover { border-color: rgba(255, 255, 255, .6); color: #fff; }
+  .hswitch {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    color: #cfe0ea; font-size: 12px; user-select: none;
+  }
+  .hswitch input { width: 15px; height: 15px; accent-color: var(--teal); }
+  .adv-only { display: none; }
+  body.advanced .adv-only { display: block; }
+
+  /* ---- Run bar --------------------------------------------------------- */
+  .runbar { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  button.run {
+    background: var(--orange); color: #fff; border: none; border-radius: 8px;
+    padding: 13px 28px; font: 700 15px var(--display); cursor: pointer;
+    transition: filter .12s;
+  }
+  button.run:hover { filter: brightness(.94); }
+  button.run:disabled { opacity: .45; cursor: not-allowed; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+  .err-msg { color: var(--orange); margin-top: 12px; min-height: 18px; font-size: 13px; text-align: center; }
+
+  /* ---- Run / progress panel ------------------------------------------- */
+  #resultcard { display: none; }
+  /* The Run card is always visible (it holds the button); the progress bar
+     and terminal appear only once a run has started (#runpanel.active). */
+  .progress-row { display: none; align-items: center; gap: 14px; margin: 16px 0 0; }
+  #runpanel.active .progress-row { display: flex; }
+  body.advanced #runpanel.active #log { display: block; }
+  .pbar { flex: 1; height: 8px; background: #eaeef3; border-radius: 999px; overflow: hidden; }
+  .pbar > i {
+    display: block; height: 100%; width: 0; border-radius: 999px;
+    background: linear-gradient(90deg, var(--teal), #6bbcd6);
+  }
+  /* Indeterminate only while running; fill + stop once finished. */
+  .pbar.running > i { width: 40%; animation: indet 1.3s ease-in-out infinite; }
+  .pbar.done > i { width: 100%; margin-left: 0; animation: none; background: var(--ok); }
+  .pbar.error > i { width: 100%; margin-left: 0; animation: none; background: var(--orange); }
+  @keyframes indet { 0% { margin-left: -42%; } 100% { margin-left: 100%; } }
+
+  #log {
+    background: #0f1320; border: 1px solid #1d2333; border-radius: 8px;
+    padding: 13px 14px; height: 300px; overflow-y: auto;
+    font: 12px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word;
+    color: #c7d2e0; display: none; margin-top: 4px;
+  }
+
+  /* ---- Verdict summary ------------------------------------------------- */
+  #summary { display: none; margin: 4px 0 18px; }
+  .verdict {
+    display: flex; align-items: center; gap: 10px;
+    font: 700 15px var(--display); padding: 12px 16px;
+    border: 1px solid; border-radius: 9px; margin-bottom: 12px;
+  }
+  .verdict .vc { font: 500 12px var(--ui); opacity: .85; }
+  .v-flag { color: #b1310f; background: #fdeee9; border-color: #f6c4b5; }
+  .v-warn { color: #9a6a12; background: #fbf3e3; border-color: #eed9ad; }
+  .v-pass { color: #1f6e44; background: #eaf6ef; border-color: #bfe3cd; }
+  .v-skip { color: var(--muted); background: #f1f3f6; border-color: var(--line); }
+  .qtable { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .qrow {
+    display: grid; grid-template-columns: 88px minmax(120px, 1fr) 2fr; gap: 12px;
+    align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .qrow:last-child { border-bottom: none; }
+  .qpill {
+    justify-self: start; font: 600 11px var(--display); text-transform: uppercase;
+    letter-spacing: .05em; padding: 3px 9px; border-radius: 999px;
+  }
+  .q-flag { color: #b1310f; background: #fdeee9; }
+  .q-warn { color: #9a6a12; background: #fbf3e3; }
+  .q-pass { color: #1f6e44; background: #eaf6ef; }
+  .q-skip { color: var(--muted); background: #f1f3f6; }
+  .qn { font: 13px var(--mono); color: var(--navy); word-break: break-all; }
+  .qr { color: var(--muted); }
+
+  /* ---- Report / results ------------------------------------------------ */
+  .report-cta {
+    display: flex; align-items: center; gap: 16px; padding: 16px 18px;
+    border: 1px solid #cfe2ea; background: #f3f9fb; border-radius: 9px;
+    margin-bottom: 16px;
+  }
+  .report-cta .rt { font-weight: 700; color: var(--navy); }
+  .report-cta .rd { font-size: 13px; color: var(--muted); }
+  .report-cta a.btn {
+    margin-left: auto; background: var(--navy); color: #fff; text-decoration: none;
+    padding: 10px 18px; border-radius: 8px; font: 600 14px var(--ui); white-space: nowrap;
+  }
+  .files h3 { font: 600 12px var(--display); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; }
+  .file-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .file-row a { text-decoration: none; }
+  .file-row a:hover { text-decoration: underline; }
+  .file-row .nm { font: 13px var(--mono); }
+  .file-row .sz { color: var(--faint); font-size: 12px; }
+  .file-row .dl { margin-left: auto; }
+
+  /* ---- Recent results ------------------------------------------------- */
+  .run-row {
+    display: flex; align-items: center; gap: 12px; padding: 10px 0;
+    border-bottom: 1px solid var(--line); cursor: pointer;
+  }
+  .run-row:last-child { border-bottom: none; }
+  .run-row:hover .rl { text-decoration: underline; }
+  .run-row .rl { font-weight: 600; color: var(--navy); word-break: break-all; }
+  .run-row .rm { color: var(--faint); font-size: 12px; margin-left: auto; white-space: nowrap; padding-left: 10px; }
+  .run-row .del {
+    appearance: none; background: none; border: none; cursor: pointer;
+    color: var(--faint); font: 500 12px var(--ui); padding: 2px 4px; margin-left: 12px;
+  }
+  .run-row .del:hover { color: var(--orange); text-decoration: underline; }
+  .recent .empty { color: var(--faint); font-size: 13px; padding: 6px 0; }
+
+  @media (max-width: 620px) {
+    .brand .title .p { font-size: 15px; white-space: normal; }
+    .net, .hmeters { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <img src="/assets/ibbis_logo.png" alt="IBBIS">
+      <div class="div"></div>
+      <div class="title">
+        <div class="k">Common Mechanism</div>
+        <div class="p">Sequence Screening</div>
+      </div>
+    </div>
+    <!-- Right-side status: controls, screener state, network addresses, CPU/RAM. -->
+    <div class="hstatus">
+      <div class="hcontrols">
+        <button type="button" id="fs" class="hbtn">Fullscreen</button>
+        <label class="hswitch"><input type="checkbox" id="adv-toggle"><span>Advanced options</span></label>
+      </div>
+      <span class="queue" id="queue" title="Whether a screen is running on this server">
+        <span class="dot"></span> Screener idle
+      </span>
+      <div class="net" id="net" title="Addresses this machine can be reached on"></div>
+      <div class="hmeters">
+        <div class="hmeter cpu">CPU<div class="hbar"><i id="cpu-bar"></i></div><b id="cpu-val">-- %</b></div>
+        <div class="hmeter">RAM<div class="hbar"><i id="ram-bar"></i></div><b id="ram-val">-- %</b></div>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="ribbon" id="ribbon" aria-hidden="true"></div>
+
+<div class="wrap">
+  <!-- Run label (names the output files) -->
+  <section class="card">
+    <div class="step-head">
+      <span class="step-title">Run label</span>
+    </div>
+    <input type="text" id="run-label" placeholder="e.g. vendor-order-114"
+           autocomplete="off" maxlength="80" aria-label="Run label" required>
+  </section>
+
+  <form id="form">
+
+    <!-- ============ 01 Sequence ============ -->
+    <section class="card">
+      <div class="step-head">
+        <span class="step-title">Sequence</span>
+      </div>
+
+      <div class="tabs">
+        <button type="button" class="tab active" data-tab="paste">Paste sequence</button>
+        <button type="button" class="tab" data-tab="path">Server file path</button>
+        <button type="button" class="tab" data-tab="upload">Upload file</button>
+      </div>
+
+      <!-- Paste (sketch: parses FASTA + spreadsheet paste later) -->
+      <div class="pane active" data-pane="paste">
+        <label class="lbl" for="seq-paste">Paste FASTA, or rows copied from a spreadsheet</label>
+        <textarea id="seq-paste" spellcheck="false"
+          placeholder=">sequence_1&#10;ATGAGTGAACGGCTGGACATT...&#10;&#10;Excel/Sheets paste also accepted (name &amp; sequence columns)."></textarea>
+        <div class="field-foot">
+          <span class="bp"><b id="bp-count">0</b> bp &middot; <span id="rec-count">0</span> records</span>
+          <span class="hint" id="paste-note"></span>
+        </div>
+      </div>
+
+      <!-- Server path: interactive file browser -->
+      <div class="pane" data-pane="path">
+        <label class="lbl">Browse for a FASTA file on the server</label>
+        <div class="browser">
+          <div class="browser-path" id="browse-path"></div>
+          <div class="browser-list" id="browse-list"></div>
+        </div>
+        <div class="field-foot"><span class="bp" id="browse-sel">No file selected.</span></div>
+      </div>
+
+      <!-- Upload a FASTA file from the browser -->
+      <div class="pane" data-pane="upload">
+        <label class="drop" id="dropzone" for="upload-file">
+          <b>Choose a FASTA file</b><br>or drag &amp; drop it here
+          <input type="file" id="upload-file"
+                 accept=".fasta,.fa,.fna,.ffn,.frn,.txt,.csv,.tsv" hidden>
+        </label>
+        <div class="field-foot"><span class="bp" id="upload-info"></span></div>
+      </div>
+
+      <!-- Feature 8: skip short sequences (default on) -->
+      <label class="opt">
+        <input type="checkbox" id="skip50" checked>
+        <span>Skip sequences shorter than 50 bp</span>
+      </label>
+    </section>
+
+    <!-- ============ 02 Screening depth (Advanced options only) ======== -->
+    <section class="card adv-only" id="depth-card">
+      <div class="step-head">
+        <span class="step-title">Screening depth</span>
+      </div>
+      <div class="preset-summary" id="preset-summary"></div>
+      <p class="legend">Choose a screening preset</p>
+      <div class="presets" id="presets"></div>
+    </section>
+
+    <!-- ============ Run (button + live progress) ============ -->
+    <section class="card" id="runpanel">
+      <div class="runbar">
+        <button type="submit" class="run" id="run" disabled>Run</button>
+      </div>
+      <div class="err-msg" id="errmsg"></div>
+
+      <!-- Activity bar (system CPU/RAM meters live in the header). -->
+      <div class="progress-row">
+        <div class="pbar" id="pbar"><i></i></div>
+      </div>
+      <div id="log"></div>
+    </section>
+  </form>
+
+  <!-- ============ Results list (Feature 7) ============ -->
+  <section class="card recent" id="recent">
+    <div class="step-head">
+      <span class="step-title">Results</span>
+      <span class="step-sub" id="recent-sub"></span>
+    </div>
+    <div id="recent-list"></div>
+  </section>
+
+  <!-- ============ Detail for the current run or a clicked past run ==== -->
+  <section class="card" id="resultcard">
+    <div class="step-head">
+      <span class="step-title" id="result-title">Result</span>
+    </div>
+    <!-- Feature 6/9: verdict summary + embedded report + output files -->
+    <div id="summary"></div>
+    <div id="report"></div>
+    <div class="files" id="files"></div>
+  </section>
+</div>
+
+<script>
+const form = document.getElementById("form");
+const runBtn = document.getElementById("run");
+const logEl = document.getElementById("log");
+const filesEl = document.getElementById("files");
+const reportEl = document.getElementById("report");
+const summaryDiv = document.getElementById("summary");
+const errEl = document.getElementById("errmsg");
+const presetsEl = document.getElementById("presets");
+const runPanel = document.getElementById("runpanel");
+const queueEl = document.getElementById("queue");
+const runLabel = document.getElementById("run-label");
+const pbarEl = document.getElementById("pbar");
+const recentList = document.getElementById("recent-list");
+const recentSub = document.getElementById("recent-sub");
+const uploadInput = document.getElementById("upload-file");
+const uploadInfo = document.getElementById("upload-info");
+const dropzone = document.getElementById("dropzone");
+const resultCard = document.getElementById("resultcard");
+const resultTitle = document.getElementById("result-title");
+const advToggle = document.getElementById("adv-toggle");
+let viewingJobId = null;  // run currently shown in the detail card
+
+// Shared/synced state across clients.
+let streamingJobId = null;     // job we're attached to via SSE (the live run)
+let mySubmitInFlight = false;  // suppress the poller re-enabling Run mid-submit
+let noPresetAvailable = true;  // set once /config loads
+
+/* ---- Advanced options master toggle (gates depth card + terminal) ---- */
+(function () {
+  const on = localStorage.getItem("commec-adv") === "1";
+  advToggle.checked = on;
+  document.body.classList.toggle("advanced", on);
+  advToggle.addEventListener("change", () => {
+    document.body.classList.toggle("advanced", advToggle.checked);
+    localStorage.setItem("commec-adv", advToggle.checked ? "1" : "0");
+  });
+})();
+
+/* ---- Fullscreen toggle (DOM Fullscreen API) -------------------------- */
+(function () {
+  const fsBtn = document.getElementById("fs");
+  fsBtn.addEventListener("click", () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen().catch(() => {});
+  });
+  document.addEventListener("fullscreenchange", () => {
+    fsBtn.textContent = document.fullscreenElement ? "Exit fullscreen" : "Fullscreen";
+  });
+})();
+
+function escapeHtml(s) {
+  return (s || "").replace(/[&<>"]/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+/* ---- Network addresses (how to reach this machine) ------------------- */
+const netEl = document.getElementById("net");
+const NET_LABEL = { ethernet: "eth", wifi: "wifi", tailscale: "vpn" };
+function loadNet() {
+  fetch("/net").then(r => r.json()).then(d => {
+    const addrs = (d.addresses || []);
+    netEl.innerHTML = addrs.map(a =>
+      `<span class="chip" title="${escapeHtml(a.iface)}">` +
+      `<span class="lab">${escapeHtml(NET_LABEL[a.kind] || a.kind)}</span>` +
+      `${escapeHtml(a.ip)}</span>`).join("");
+  }).catch(() => { netEl.innerHTML = ""; });
+}
+loadNet();
+setInterval(loadNet, 60000);  // pick up DHCP / link changes
+
+/* ---- Signature: scrolling base ribbon -------------------------------- */
+(function () {
+  const bases = "ATGC";
+  let s = "";
+  for (let i = 0; i < 400; i++) s += bases[(i * 7 + (i >> 1)) % 4];
+  document.getElementById("ribbon").textContent = s;
+})();
+
+/* ---- Tabs (delegated, so dynamically-added USB tabs work too) -------- */
+const tabsEl = document.querySelector(".tabs");
+let activeTab = "paste";
+tabsEl.addEventListener("click", (e) => {
+  const t = e.target.closest(".tab");
+  if (!t) return;
+  activeTab = t.dataset.tab;
+  tabsEl.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
+  document.querySelectorAll(".pane").forEach(p =>
+    p.classList.toggle("active", p.dataset.pane === activeTab));
+  if (activeTab === "path") {            // the server-path tab OR a USB tab
+    selectedPath = null; browseSel.textContent = "No file selected.";
+    browseTo(t.dataset.mount || null);   // re-root at the USB mount, or home
+  }
+});
+
+/* ---- Removable media (USB): mounted volumes appear as tabs, flash new */
+let mediaMounts = [];
+async function loadMedia() {
+  try {
+    const vols = (await (await fetch("/media")).json()).volumes || [];
+    const now = vols.map(v => v.mountpoint);
+    tabsEl.querySelectorAll(".tab.usb").forEach(t => {
+      if (!now.includes(t.dataset.mount)) {           // volume removed
+        const wasActive = t.classList.contains("active");
+        t.remove();
+        if (wasActive) tabsEl.querySelector('.tab[data-tab="paste"]').click();
+      }
+    });
+    for (const v of vols) {                            // new volume(s)
+      if (mediaMounts.includes(v.mountpoint)) continue;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tab usb flash";
+      btn.dataset.tab = "path";
+      btn.dataset.mount = v.mountpoint;
+      btn.textContent = "USB: " + (v.label || "drive");
+      tabsEl.appendChild(btn);
+      setTimeout(() => btn.classList.remove("flash"), 6000);
+    }
+    mediaMounts = now;
+  } catch (e) { /* ignore */ }
+}
+loadMedia();
+setInterval(loadMedia, 2500);
+
+/* ---- Server-side file browser ("Server file path" tab) --------------- */
+const browseList = document.getElementById("browse-list");
+const browsePathEl = document.getElementById("browse-path");
+const browseSel = document.getElementById("browse-sel");
+let selectedPath = null;
+let browseLoaded = false;
+
+async function browseTo(path) {
+  try {
+    const d = await (await fetch("/browse" + (path ? "?path=" + encodeURIComponent(path) : ""))).json();
+    browseLoaded = true;
+    if (d.error) { browseList.innerHTML = `<div class="row"><span class="nm">${escapeHtml(d.error)}</span></div>`; return; }
+    browsePathEl.textContent = d.path;
+    let rows = "";
+    if (d.parent) rows += `<div class="row dir" data-path="${escapeHtml(d.parent)}"><span class="nm">../</span></div>`;
+    for (const e of d.entries) {
+      if (e.dir) {
+        rows += `<div class="row dir" data-path="${escapeHtml(e.path)}"><span class="nm">${escapeHtml(e.name)}/</span></div>`;
+      } else {
+        rows += `<div class="row file" data-path="${escapeHtml(e.path)}"><span class="nm">${escapeHtml(e.name)}</span>`
+              + `<span class="sz">${(e.size || 0).toLocaleString()} B</span></div>`;
+      }
+    }
+    browseList.innerHTML = rows || `<div class="row"><span class="nm">(empty)</span></div>`;
+    browseList.querySelectorAll(".row.dir").forEach(r =>
+      r.addEventListener("click", () => browseTo(r.dataset.path)));
+    browseList.querySelectorAll(".row.file").forEach(r =>
+      r.addEventListener("click", () => {
+        selectedPath = r.dataset.path;
+        browseList.querySelectorAll(".row").forEach(x => x.classList.remove("sel"));
+        r.classList.add("sel");
+        browseSel.innerHTML = `Selected: <b>${escapeHtml(selectedPath)}</b>`;
+      }));
+  } catch (e) { /* ignore */ }
+}
+
+/* ---- Live bp counter on the paste box (signature interaction) -------- */
+const seqPaste = document.getElementById("seq-paste");
+const bpCount = document.getElementById("bp-count");
+const recCount = document.getElementById("rec-count");
+seqPaste.addEventListener("input", () => {
+  const text = seqPaste.value;
+  let bp = 0, records = 0;
+  for (const line of text.split(/\r?\n/)) {
+    if (line.startsWith(">")) { records++; continue; }
+    bp += line.replace(/[^A-Za-z]/g, "").length;
+  }
+  if (records === 0 && bp > 0) records = 1;
+  bpCount.textContent = bp.toLocaleString();
+  recCount.textContent = records;
+});
+
+/* ---- Upload tab: file picker + drag-and-drop ------------------------- */
+function showUpload() {
+  const f = uploadInput.files[0];
+  uploadInfo.textContent = f ? `${f.name} — ${f.size.toLocaleString()} B` : "";
+}
+uploadInput.addEventListener("change", showUpload);
+["dragover", "dragenter"].forEach(ev => dropzone.addEventListener(ev, e => {
+  e.preventDefault(); dropzone.classList.add("drag");
+}));
+["dragleave", "dragend", "drop"].forEach(ev => dropzone.addEventListener(ev, e => {
+  e.preventDefault(); dropzone.classList.remove("drag");
+}));
+dropzone.addEventListener("drop", e => {
+  if (e.dataTransfer.files.length) { uploadInput.files = e.dataTransfer.files; showUpload(); }
+});
+
+/* ---- Presets (functional) -------------------------------------------- */
+const summaryEl = document.getElementById("preset-summary");
+let PRESETS = [];
+
+// Recommendation badge: green "recommended" / red "NOT RECOMMENDED".
+function recBadge(p) {
+  if (p.recommended === true) return ` <span class="rec">recommended</span>`;
+  if (p.recommended === false) return ` <span class="rec no">NOT RECOMMENDED</span>`;
+  return "";
+}
+// The actual config commec receives (via -y), shown instead of prose -- for debugging.
+function presetArgs(p) {
+  const c = p.config || {};
+  return Object.keys(c).map(k => `${k}: ${c[k]}`).join("   ");
+}
+
+function updateSummary() {
+  const r = form.querySelector("input[name=preset]:checked");
+  const p = r && PRESETS.find(x => x.id === r.value);
+  if (!p) { summaryEl.innerHTML = ""; return; }
+  summaryEl.innerHTML =
+    `<span><span class="pl">${escapeHtml(p.label)}${recBadge(p)}</span>` +
+    `<span class="args">${escapeHtml(presetArgs(p))}</span></span>`;
+}
+
+fetch("/config").then(r => r.json()).then(c => {
+  PRESETS = c.presets || [];
+  // Default to a full screen for real use; fall back to the first available
+  // preset (e.g. when the full-screen databases aren't installed).
+  const isAvail = p => p.available !== false;
+  let defaultIdx = PRESETS.findIndex(p => p.id === "full" && isAvail(p));
+  if (defaultIdx < 0) defaultIdx = PRESETS.findIndex(isAvail);
+
+  presetsEl.innerHTML = PRESETS.map((p, i) => {
+    const avail = isAvail(p);
+    const sel = i === defaultIdx;
+    const warn = (p.missing && p.missing.length)
+      ? `<span class="pd warn">Unavailable here - missing databases: ${escapeHtml(p.missing.join(", "))}</span>`
+      : "";
+    return `
+    <label class="preset${avail ? "" : " unavail"}${sel ? " sel" : ""}">
+      <input type="radio" name="preset" value="${escapeHtml(p.id)}" ${sel ? "checked" : ""} ${avail ? "" : "disabled"}>
+      <span>
+        <span class="pl">${escapeHtml(p.label)}${recBadge(p)}</span>
+        <span class="args">${escapeHtml(presetArgs(p))}</span>
+        ${warn}
+      </span>
+    </label>`;
+  }).join("");
+  presetsEl.querySelectorAll("input[name=preset]:not([disabled])").forEach(r => {
+    r.addEventListener("change", () => {
+      presetsEl.querySelectorAll(".preset").forEach(el => el.classList.remove("sel"));
+      r.closest(".preset").classList.add("sel");
+      updateSummary();
+    });
+  });
+  noPresetAvailable = defaultIdx < 0;
+  if (noPresetAvailable) {
+    errEl.textContent = "No preset can run: required databases are not installed.";
+    summaryEl.innerHTML = `<span class="pd warn">No screening preset is available - install the databases with \`commec setup\`.</span>`;
+  } else {
+    updateSummary();
+  }
+  refreshStatus();
+}).catch(() => { errEl.textContent = "Could not load presets."; });
+
+/* ---- Helpers --------------------------------------------------------- */
+function appendLog(line) {
+  const atBottom = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 4;
+  logEl.textContent += line + "\n";
+  if (atBottom) logEl.scrollTop = logEl.scrollHeight;
+}
+
+/* ---- Submit (only the server-path tab is wired so far) --------------- */
+function statusClass(s) {
+  return { Flag: "flag", Warning: "warn", Pass: "pass", Skip: "skip" }[s] || "skip";
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errEl.textContent = "";
+
+  if (!runLabel.value.trim()) {
+    errEl.textContent = "Enter a run label.";
+    runLabel.focus();
+    return;
+  }
+
+  const data = new FormData();
+  data.append("input_mode", activeTab);
+  data.append("skip_short", document.getElementById("skip50").checked ? "1" : "0");
+  if (activeTab === "upload") {
+    const f = uploadInput.files[0];
+    if (!f) { errEl.textContent = "Choose a FASTA file to upload."; return; }
+    data.append("upload_file", f);
+  } else if (activeTab === "paste") {
+    const text = seqPaste.value.trim();
+    if (!text) { errEl.textContent = "Paste a sequence to screen."; return; }
+    data.append("sequence_text", text);
+  } else {
+    if (!selectedPath) { errEl.textContent = "Choose a FASTA file from the server browser."; return; }
+    data.append("fasta_file", selectedPath);
+  }
+  const preset = form.querySelector("input[name=preset]:checked");
+  if (preset) data.append("preset", preset.value);
+  data.append("label", runLabel.value.trim());
+
+  runPanel.classList.add("active");
+  runPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  runBtn.disabled = true;
+  runBtn.textContent = "Running...";
+  mySubmitInFlight = true;
+
+  try {
+    const res = await fetch("/screen", { method: "POST", body: data });
+    const body = await res.json();
+    if (!res.ok) {
+      errEl.textContent = body.error || "Failed to start.";
+      mySubmitInFlight = false;
+      refreshStatus();
+      return;
+    }
+    attach(body.job_id);
+    clearInputs();   // a run started -> clear the form so it can't be resubmitted as-is
+  } catch (err) {
+    errEl.textContent = "Request failed: " + err;
+    mySubmitInFlight = false;
+    refreshStatus();
+  }
+});
+
+// Empty the input fields once a run has started (label, paste, upload, picked path).
+function clearInputs() {
+  runLabel.value = "";
+  seqPaste.value = ""; bpCount.textContent = "0"; recCount.textContent = "0";
+  uploadInput.value = ""; uploadInfo.textContent = "";
+  selectedPath = null; browseSel.textContent = "No file selected.";
+  browseList.querySelectorAll(".row.sel").forEach(x => x.classList.remove("sel"));
+}
+
+// Attach to the LIVE run's log via SSE (replays from the start, so a late join
+// or a second browser sees the full history). Drives only the Run card; the
+// Results card fills in when the run ends.
+function attach(jobId) {
+  if (streamingJobId === jobId) return;
+  streamingJobId = jobId;
+  // Clear the separate Results card; it populates when this run finishes.
+  resultCard.style.display = "none";
+  summaryDiv.innerHTML = ""; reportEl.innerHTML = ""; filesEl.innerHTML = ""; resultTitle.textContent = "Result";
+  logEl.textContent = "";
+  runPanel.classList.add("active");
+  pbarEl.className = "pbar running";
+  const es = new EventSource("/events/" + jobId);
+  es.addEventListener("log", (e) => appendLog(JSON.parse(e.data).line));
+  es.addEventListener("end", (e) => {
+    const d = JSON.parse(e.data);
+    es.close();
+    mySubmitInFlight = false;
+    pbarEl.className = "pbar " + (d.status === "done" ? "done" : "error");
+    if (d.status !== "done") errEl.textContent = `Screen failed (exit ${d.returncode}) - see the log.`;
+    showResults(jobId);
+    refreshStatus();
+    loadRecent();
+  });
+  es.onerror = () => {
+    es.close();
+    if (streamingJobId === jobId) streamingJobId = null;
+  };
+}
+
+// Clicking a recent run shows its results in the Results card only -- it does
+// NOT touch the live Run card, so a run in progress still reads as in progress.
+function viewRun(id) {
+  showResults(id);
+  resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+async function loadRecent() {
+  try {
+    const runs = (await (await fetch("/runs")).json()).runs || [];
+    recentSub.textContent = runs.length ? `${runs.length} run${runs.length === 1 ? "" : "s"}` : "";
+    if (!runs.length) {
+      recentList.innerHTML = `<div class="empty">No runs yet.</div>`;
+      return;
+    }
+    recentList.innerHTML = runs.map(r => {
+      const pill = r.overall
+        ? `<span class="qpill q-${statusClass(r.overall)}">${escapeHtml(r.overall)}</span>`
+        : `<span class="qpill q-skip">${r.status === "error" ? "Error" : "Done"}</span>`;
+      const when = r.finished ? new Date(r.finished * 1000).toLocaleString() : "";
+      const nq = r.n ? `${r.n} quer${r.n === 1 ? "y" : "ies"}` : (r.status === "error" ? "failed" : "");
+      const meta = [nq, when].filter(Boolean).join(" · ");
+      return `<div class="run-row" data-id="${escapeHtml(r.id)}">
+        ${pill}<span class="rl">${escapeHtml(r.label)}</span>
+        <span class="rm">${escapeHtml(meta)}</span>
+        <button type="button" class="del" data-id="${escapeHtml(r.id)}" title="Delete this result">delete</button>
+      </div>`;
+    }).join("");
+    recentList.querySelectorAll(".run-row").forEach(row =>
+      row.addEventListener("click", () => viewRun(row.dataset.id)));
+    recentList.querySelectorAll(".del").forEach(btn =>
+      btn.addEventListener("click", (e) => { e.stopPropagation(); deleteRun(btn.dataset.id); }));
+  } catch (e) { /* ignore */ }
+}
+
+async function deleteRun(id) {
+  if (!confirm("Delete this result? Its saved report and outputs are removed.")) return;
+  try {
+    await fetch("/runs/" + id, { method: "DELETE" });
+    if (viewingJobId === id) { resultCard.style.display = "none"; viewingJobId = null; }
+    loadRecent();
+  } catch (e) { /* ignore */ }
+}
+
+// Poll the shared screener state so any browser reflects the busy/idle status
+// and auto-joins an in-progress run started elsewhere.
+let wasBusy = false;
+async function refreshStatus() {
+  try {
+    const s = await (await fetch("/status")).json();
+    if (s.busy) {
+      const lbl = (s.active && s.active.label) ? ": " + s.active.label : "";
+      queueEl.classList.add("busy");
+      queueEl.innerHTML = `<span class="dot"></span> Screening${escapeHtml(lbl)}`;
+    } else {
+      queueEl.classList.remove("busy");
+      queueEl.innerHTML = `<span class="dot"></span> Screener idle`;
+    }
+    if (!mySubmitInFlight) runBtn.disabled = s.busy || noPresetAvailable;
+    runBtn.textContent = (s.busy || mySubmitInFlight) ? "Running..." : "Run";
+    if (s.active && s.active.status === "running" && streamingJobId !== s.active.job_id) {
+      attach(s.active.job_id);
+    }
+    if (wasBusy && !s.busy) loadRecent();  // a run just finished (here or elsewhere)
+    wasBusy = s.busy;
+  } catch (e) { /* ignore */ }
+}
+refreshStatus();
+setInterval(refreshStatus, 3000);
+loadRecent();
+
+/* ---- Live system meters (CPU / RAM) ---------------------------------- */
+async function loadMetrics() {
+  try {
+    const m = await (await fetch("/metrics")).json();
+    const cpuVal = document.getElementById("cpu-val"), cpuBar = document.getElementById("cpu-bar");
+    if (m.cpu == null) { cpuVal.textContent = "-- %"; cpuBar.style.width = "0"; }
+    else { cpuVal.textContent = Math.round(m.cpu) + " %"; cpuBar.style.width = Math.round(m.cpu) + "%"; }
+    const ramVal = document.getElementById("ram-val"), ramBar = document.getElementById("ram-bar");
+    if (m.ram && m.ram.pct != null) {
+      const gb = x => (x / 1073741824).toFixed(1);
+      ramVal.textContent = `${gb(m.ram.used)}/${gb(m.ram.total)} GB`;
+      ramBar.style.width = Math.round(m.ram.pct) + "%";
+    } else { ramVal.textContent = "-- %"; ramBar.style.width = "0"; }
+  } catch (e) { /* ignore */ }
+}
+loadMetrics();
+setInterval(loadMetrics, 2000);
+
+// Deep-link: /?job=<id> shows that run's results in the Results card.
+(function () {
+  const jobId = new URLSearchParams(location.search).get("job");
+  if (jobId) viewRun(jobId);
+})();
+
+// Populate the Results card for a run (the just-finished live run, or a clicked
+// past run). Never touches the Run card / progress bar / live status text.
+async function showResults(jobId) {
+  try {
+    const body = await (await fetch("/results/" + jobId)).json();
+    viewingJobId = jobId;
+    resultTitle.textContent = body.label || "Result";
+    summaryDiv.innerHTML = ""; summaryDiv.style.display = "none";
+    reportEl.innerHTML = "";
+    filesEl.innerHTML = "";
+
+    // Verdict summary, parsed from commec's output JSON.
+    const sm = body.summary;
+    if (sm && sm.n) {
+      let h = `<div class="verdict v-${statusClass(sm.overall)}">`
+            + `Overall: ${escapeHtml(sm.overall)}`
+            + `<span class="vc">${sm.n} quer${sm.n === 1 ? "y" : "ies"}</span></div>`;
+      h += '<div class="qtable">';
+      for (const q of sm.queries) {
+        h += `<div class="qrow">
+          <span class="qpill q-${statusClass(q.status)}">${escapeHtml(q.status)}</span>
+          <span class="qn">${escapeHtml(q.name)}</span>
+          <span class="qr">${escapeHtml(q.rationale)}</span>
+        </div>`;
+      }
+      h += '</div>';
+      summaryDiv.innerHTML = h;
+      summaryDiv.style.display = "block";
+    }
+
+    const files = body.files || [];
+    const report = files.find(f => /_summary\.html?$/i.test(f.name));
+    if (report) {
+      const url = `/results/${jobId}/file/${encodeURIComponent(report.name)}?view=1`;
+      reportEl.innerHTML = `
+        <div class="report-cta">
+          <div class="rt">Screening report</div>
+          <a class="btn" href="${url}" target="_blank" rel="noopener">Open full report</a>
+        </div>`;
+    }
+    if (files.length) {
+      let html = "<h3>Output files</h3>";
+      for (const f of files) {
+        const base = `/results/${jobId}/file/${encodeURIComponent(f.name)}`;
+        html += `<div class="file-row">
+          <a class="nm" href="${base}?view=1" target="_blank" rel="noopener">${escapeHtml(f.name)}</a>
+          <span class="sz">${(f.size).toLocaleString()} B</span>
+          <a class="dl" href="${base}">download</a>
+        </div>`;
+      }
+      filesEl.innerHTML = html;
+    }
+    resultCard.style.display = "block";
+  } catch (err) { /* ignore */ }
+}
+</script>
+</body>
+</html>
