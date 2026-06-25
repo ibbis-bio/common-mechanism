@@ -210,12 +210,12 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
             # THIS NEEDS UPDATING, Biorisks should be unique no matter what after collapsing hits
             # with remove_overlaps()
 
-            hit_data : HitResult = query_data.get_hit(affected_target)
-            if hit_data:
-                logger.debug("\t\tHit already existed! Extending hit data ranges only...")
-                hit_data.region = match_ranges[0]
-                logger.debug("Updated hit: %s", hit_data)
-                continue
+            #hit_data : HitResult = query_data.get_hit(affected_target)
+            #if hit_data:
+            #    logger.debug("\t\tHit already existed! Extending hit data ranges only...")
+            #    hit_data.region = match_ranges[0]
+            #    logger.debug("Updated hit: %s", hit_data)
+            #    continue
 
             domain : str = _guess_domain(""+str(affected_target)+target_description)
 
@@ -230,7 +230,8 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
                 {"domain" : [domain],"regulated":[regulation_str]},
             )
             logger.debug("\t\tHit was unique, creating new hit result information...\n%s", new_hit)
-            query_data.hits[affected_target] = new_hit
+            query_data.add_new_hit_information(new_hit)
+            #hits[affected_target] = new_hit
 
 
         # Update the recommendation for this query for biorisk.

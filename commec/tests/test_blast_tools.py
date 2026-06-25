@@ -4,7 +4,7 @@ import textwrap
 from unittest.mock import patch
 import numpy as np
 import pandas as pd
-from commec.tools.blast_tools import split_by_tax_id, read_blast
+from commec.tools.blast_tools import read_blast
 
 
 @pytest.fixture

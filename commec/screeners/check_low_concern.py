@@ -263,7 +263,7 @@ def _update_low_concern_data_for_query(query : Query,
     new_low_concern_dna_hits = []
 
     # Check every region, of every hit that is a FLAG or WARN, against the Benign screen outcomes.
-    for hit in query.result.hits.values():
+    for hit in query.result.hits:
         # Ignore regions that don't require clearing...
         if (hit.recommendation.status not in {
             ScreenStatus.FLAG,
@@ -372,7 +372,7 @@ def parse_low_concern_hits(protein_handler : HmmerHandler,
     for query in queries.values():
 
         skip = True
-        for hit in query.result.hits.values():
+        for hit in query.result.hits:
             if hit.recommendation.status in {
                 ScreenStatus.FLAG,
                 ScreenStatus.WARN

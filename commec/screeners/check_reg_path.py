@@ -17,11 +17,11 @@ from commec.tools.search_handler import SearchHandler
 from commec.config.query import Query
 from commec.tools.blast_tools import (
     read_blast,
+    split_by_tax_id,
     get_controlled_labels,
 )
 from commec.config.result import (
     ScreenResult,
-    TaxonomyAnnotation,
     HitResult,
     ScreenStep,
     ScreenStatus,
@@ -92,30 +92,11 @@ def _get_hit_result_from_data(unique_query_data : pd.DataFrame, step : ScreenSte
 
     # Filter data to the top hits only.
     top_hits = get_top_hits(unique_query_data)
-
-    #top_hits = get_controlled_labels(top_hits)
+    top_hits = get_controlled_labels(top_hits)
     
-
     regulated_only = top_hits[top_hits["regulated"]]
-    unique_hash_taxids = regulated_only["control_hash"].unique()
-
-    bad_cluster_hashes = regulated_only[regulated_only["control_hash"] == None]
-    #logger.error("BAD CLUSTERS DETECTED: %s", regulated_only.to_string(index = False))
-
     non_regulated_only = top_hits[~top_hits["regulated"]]
-
-
-    #logger.info("%s: %s query has %i unique control hash hits:\n%s",
-    #            step, query_acc, len(unique_hash_taxids), unique_hash_taxids)
-
-
-    #unique_taxids = regulated_only["subject tax ids"].unique()
-    #logger.info("%s: query %s has %i regulated taxids.", step, query_acc, len(unique_taxids))
-
-    #hash_taxids = list(set([get_cluster_hash(taxid) for taxid in unique_taxids]))
-
-    #logger.debug("%s: query %s has %i regulated hash_taxids.", step, query_acc, len(hash_taxids))
-
+    unique_hash_taxids = regulated_only["control_hash"].unique()
 
     log_messages = []
     for hash_taxid in unique_hash_taxids:
@@ -137,8 +118,8 @@ def _get_hit_result_from_data(unique_query_data : pd.DataFrame, step : ScreenSte
 
 def _create_hit_info(row : pd.Series, control_output = None) -> dict:
     """
-    Return the formated TaxonomyAnnotation Output. Optionally, if 
-    it is an item of a control list, we can add that info.
+    Return the a formated taxonomy annotation output. Optionally, if 
+    it is an item of a control list, we add that info.
     """
     output_dict =  {
         "evalue" : row["evalue"],
@@ -176,22 +157,16 @@ def _create_hit_result_for_cluster(
     cluster_regulation = get_regulation(controlled_cluster_taxid)
 
     if not cluster_regulation:
-        logger.error("Tried to create a cluster from %s, but returned no control information. raw data: %s", controlled_cluster_taxid, cluster_data["subject tax ids"].unique())
-        check = is_regulated(controlled_cluster_taxid)
-        if check: 
-            logger.error("Note: Status from is_regulated is %s", check)
-            logger.error("Setting loglevel to debug. And recalling get_regulation....")
-            level_original = logger.level
-            logger.setLevel(logging.DEBUG)
-            cluster_regulation = get_regulation(controlled_cluster_taxid)
-            logger.setLevel(level_original)
-
+        logger.error("Tried to create a cluster from %s, but returned no control information. raw data: %s", 
+                    controlled_cluster_taxid, cluster_data["subject tax ids"].unique())
+        if is_regulated(controlled_cluster_taxid):
+            logger.error("Note: Status from is_regulated() is correctly identified as %s", check)
         return HitResult(HitScreenStatus(ScreenStatus.ERROR,step),f"Bad_Cluster_{controlled_cluster_taxid}"), "Error creating hit from cluster ID"
 
     species = cluster_regulation[0].species
     genus = cluster_regulation[0].genus
     display_name = cluster_regulation[0].name
-    hit_name = f"{controlled_cluster_taxid}_{cluster_start}_{cluster_end}"
+    hit_name = f"{display_name}_{cluster_start}_{cluster_end}"
     return_hit = None
 
     # We get rid of the rare, but sometimes present duplicate subject titles within a cluster.
@@ -274,21 +249,21 @@ def _create_hit_result_for_cluster(
     if is_controlled:
         non_regulated_annotations = non_regulated_annotations + warn_regulated_annotations + regionally_regulated_annotations
         return _create_hit_result_from_annotations(
-            controlled_cluster_taxid,
+            display_name,
             regulated_annotations,
             non_regulated_annotations,
             compliances, ListMode.COMPLIANCE, step, match_range)
 
     if is_warning_controlled:
         return _create_hit_result_from_annotations(
-            controlled_cluster_taxid,
+            display_name,
             warn_regulated_annotations,
             non_regulated_annotations,
             warn_compliances, ListMode.COMPLIANCE_WARN, step, match_range)
 
     if is_conditionally_controlled:
         return _create_hit_result_from_annotations(
-            controlled_cluster_taxid,
+            display_name,
             regionally_regulated_annotations,
             non_regulated_annotations,
             conditional_compliances, ListMode.CONDITIONAL_NUM, step, match_range)
@@ -299,7 +274,7 @@ def _create_hit_result_for_cluster(
 
 
 def _create_hit_result_from_annotations(
-    controlled_cluster_taxid,
+    controlled_cluster_label,
     regulated_annotations,
     non_regulated_annotations,
     compliances,
@@ -370,7 +345,7 @@ def _create_hit_result_from_annotations(
     )
     logger.info(log_message)
 
-    hit_name = f"{controlled_cluster_taxid}_{match_range.query_start}_{match_range.query_end}"
+    hit_name = f"{controlled_cluster_label}_{match_range.query_start}_{match_range.query_end}"
     new_hit = HitResult(
         HitScreenStatus(status, step),
         hit_name,
@@ -457,22 +432,21 @@ def parse_taxonomy_hits(
 
     Process:
         1. Load in the dataframe from provided SearchHandler.db_directory
-        2. Annotation the dataframe with control list annotations based on Accession (TaxID)
+        2. Annotate the dataframe with control list annotations based on Accession (TaxID)
             Includes removing synthetic or vaccine hits.
+            Parsing multi-species records via label, or multiple TaxID entries.
+            Provides a cluster ID for each hit based on its Control List connections
         3. Split the dataframe into per Query processing.
          per Query: (Point of Threading)
         4. Filter to Top Hits and Trim Edges.
         4. Split into Controlled vs non-controlled.
-        6. Identify unique list of controlled parents.
-         per UCP:
-        5. Find regional clusters.
-        6. Identify top 10 non-regulated hits + clustered hits.
+        5. Assess each cluster by non-overlapping regions.
+        6. Remove identically described hits based on subject title.
         7. Generate a HitResults containing
-            > ID by "hash_parent"_"start"_"stop"
+            > ID by "cluster_name"_"start"_"stop"
             > Longest description for control hit.
             > ScreenResult
-            > List of Control Lists Hit
-            > List of Hits regulated (Those inside cluster)
+            > List of Hits Controlled
             > List of Hits non-regulated (Top 10 non-regulated hits).
     Args:
         search_handler: Handle of the search tool used for the taxonomic screen.
@@ -507,7 +481,7 @@ def parse_taxonomy_hits(
     blast = read_blast(search_handler.out_file)    
     logger.debug("%s Blast Import: shape %s\n%s", step, blast.shape, blast.head())
 
-    # Label data initial control information.
+    # Label data with control information.
     logger.info("    Identifying controlled taxa ...")
     blast = get_controlled_labels(blast)
 
@@ -523,8 +497,10 @@ def parse_taxonomy_hits(
     unique_query_accs = blast["query acc."].unique()
     logger.debug("%s: %d unique queries with controlled hits", step, len(unique_query_accs))
 
+
+    # Each Query should be threaded:
     for query_acc in unique_query_accs:
-        # From here should be Threaded:
+
         logger.info("    Processing query: %s", query_acc)
         query_write = data.get_query(query_acc)
         if not query_write:

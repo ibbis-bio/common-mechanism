@@ -213,23 +213,6 @@ class MatchRange:
     def __str__(self):
         return f"{self.query_start}-{self.query_end}"
 
-@dataclass(frozen=True)
-class TaxonomyAnnotation:
-    """
-    Contains basic taxonomy information for the annotations
-    dict of a HitResult when determined by a taxonomy step.
-    """
-    evalue : float = 0.0
-    percent_identity : float = 0.0
-    taxid : str = ""
-    start : str = ""
-    end : str = ""
-    genus : str = ""
-    species: str = ""
-    target_hit : str = ""
-    target_description : str = ""
-    control_lists : list[tuple[str, str]] = field(default_factory=list[tuple[str, str]])
-
 @dataclass
 class HitResult:
     """
@@ -418,7 +401,7 @@ class QueryResult:
     query: str = ""
     length: int = 0
     status: QueryScreenStatus = field(default_factory=QueryScreenStatus)
-    hits: dict[str, HitResult] = field(default_factory=dict)
+    hits: list[HitResult] = field(default_factory=list)
 
     def get_hit(self, match_name: str) -> HitResult:
         """Wrapper for get logic."""
@@ -429,7 +412,7 @@ class QueryResult:
         Checks all existing hits for whether there is an similar query coordinate region.
         Returns the relevant hit, or None.
         """
-        for hit in self.hits.values():
+        for hit in self.hits:
             if (
                 input_region.query_start == hit.region.query_start
                 and input_region.query_end == hit.region.query_end
@@ -439,15 +422,17 @@ class QueryResult:
 
     def add_new_hit_information(self, new_hit: HitResult) -> bool:
         """
-        Adds a Hit Description to this query, but only adds if the hit is unique, or has a new range.
-        Returns True if the hit was not unique, but added unique info to the hit.
+        Adds a Hit to this query, always use this to add hits, rather
+        than directly, so that duplicate hits may be chosen to be identified here.
         """
-        existing_hit = self.hits.get(new_hit.name)
-        hits_is_updated: bool = False
+        hits.append(new_hit)
+        return False
+        #existing_hit = self.hits.get(new_hit.name)
+        #hits_is_updated: bool = False
 
-        if not existing_hit:
-            self.hits[new_hit.name] = new_hit
-            return False
+        #if not existing_hit:
+        #    self.hits[new_hit.name] = new_hit
+        #    return False
 
         #for new_region in new_hit.ranges:
         #    is_unique_region = True
@@ -463,7 +448,7 @@ class QueryResult:
         #        hits_is_updated = True
         #        existing_hit.ranges.append(new_region)
 
-        return hits_is_updated
+        #return hits_is_updated
 
     def get_flagged_hits(self) -> List[HitResult]:
         """
@@ -472,7 +457,7 @@ class QueryResult:
         """
         flagged_and_warnings_data = [
             flagged_hit
-            for flagged_hit in self.hits.values()
+            for flagged_hit in self.hits
             if flagged_hit.recommendation.status
             in {ScreenStatus.WARN, ScreenStatus.FLAG}
         ]
@@ -505,7 +490,7 @@ class QueryResult:
         }
 
         # Collapse data from all hits:
-        for hit in self.hits.values():
+        for hit in self.hits:
             step = hit.recommendation.from_step
             hit_status = hit.recommendation.status
         
@@ -795,7 +780,7 @@ class ScreenResult:
         Yields tuples of (query, hit, region).
         """
         for query in self.queries.values():
-            for hit in query.hits.values():
+            for hit in query.hits:
                 yield query, hit, hit.region
 
     def hits(self) -> Iterator[Tuple[QueryResult, HitResult]]:
@@ -804,7 +789,7 @@ class ScreenResult:
         Yields tuples of (query, hit).
         """
         for query in self.queries.values():
-            for hit in query.hits.values():
+            for hit in query.hits:
                 yield query, hit
 
     def get_flag_data(self) -> pd.DataFrame:

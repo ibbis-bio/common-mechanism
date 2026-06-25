@@ -10,7 +10,7 @@ def find_clusters(
     input_data: pd.DataFrame,
     start_heading: str = "q. start",
     end_heading: str = "q. end",
-    label_heading: str = "cluster",
+    output_label_heading: str = "cluster",
 ) -> tuple[pd.DataFrame, list[tuple]]:
     """
     Groups rows into clusters where any set of rows with collectively overlapping
@@ -45,7 +45,7 @@ def find_clusters(
         row_cluster_ids[idx] = current_cluster
 
     output_data = input_data.copy()
-    output_data[label_heading] = output_data.index.map(row_cluster_ids)
+    output_data[output_label_heading] = output_data.index.map(row_cluster_ids)
 
     return output_data, clusters
 
@@ -66,25 +66,22 @@ def trim_overlapping(blast: pd.DataFrame):
     blast = blast.reset_index(drop=True)
 
     blast2 = blast
-    # only keep top-ranked hits that don't overlap
-    #df = blast[blast["query acc."] == query]
 
+    # only keep top-ranked hits that don't overlap
     for i in blast.index:  # run through each hit from the top
         for j in blast.index[(i + 1) :]:  # compare to each below
             if j in blast2.index:
-                # if beginning and end of the higher-rank hit both overlap or extend further
-                # than the beginning and end of lower-ranked hit, discard the lower-ranked hit
-                if (
-                    blast.loc[i, "q. start"] <= blast.loc[j, "q. start"]
-                    and blast.loc[i, "q. end"] >= blast.loc[j, "q. end"]
-                ):
-                    # Unless the hits have the same coordinates and % identity
-                    if (
+                i_envelopes_j = (blast.loc[i, "q. start"] <= blast.loc[j, "q. start"]
+                                and blast.loc[i, "q. end"] >= blast.loc[j, "q. end"])
+                not_shared_coords_or_identity = (
                         blast.loc[i, "q. start"] < blast.loc[j, "q. start"]
                         or blast.loc[i, "q. end"] > blast.loc[j, "q. end"]
                         or blast.loc[i, "% identity"] > blast.loc[j, "% identity"]
-                    ):
-                        blast2 = blast2.drop([j])
+                    )
+                
+                if i_envelopes_j and not_shared_coords_or_identity:
+                    blast2 = blast2.drop([j])
+
     blast2 = blast2.reset_index(drop=True)
 
     return blast2

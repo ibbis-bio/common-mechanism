@@ -19,7 +19,6 @@ from commec.config.result import (
     HitResult,
     ScreenStep,
     ScreenStatus,
-    TaxonomyAnnotation,
 )
 import commec.control_list as cl
 
@@ -269,8 +268,6 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
             non_regulated_taxids.extend(reg["non-controlled_taxa"])
             
             for anno_data in regulated_taxids:
-                if isinstance(anno_data, TaxonomyAnnotation):
-                    anno_data = asdict(anno_data)
                 regulated_species.append(anno_data["species"])
                 controlled_lists.extend([a["list"] for a in anno_data["controlled_by_lists"]])
                 regulated_names.extend([a["list"] + ":" + a["source"] for a in anno_data["controlled_by_lists"]])
@@ -344,7 +341,7 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
     # Keep track of how many vertical stacks this image has.
     n_stacks = 1
 
-    for hit in query_to_draw.hits.values():
+    for hit in query_to_draw.hits:
         # Find the best vertical position to reduce collisions, and fill all space.
         collision_free = False
         stack_write = 1 # 1 gives a bit of space between the query and the data.

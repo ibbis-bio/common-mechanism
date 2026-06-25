@@ -60,97 +60,6 @@ class BlastHandler(SearchHandler):
         if len(files) == 0:
             raise DatabaseValidationError(f"Mandatory screening files with {filename}* not found.")
 
-def split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
-    """
-    Some results will have multiple tax ids listed in a semicolon-separated list.
-    These are handled depending on context:
-    * If any of the taxids should be ignored, we ignore that entire row.
-    * If the row is labelled as MULTISPECIES, we substitute the taxid with that information.
-    * If the row has more than 100 taxids, we treat as MULTISPECIES.
-    * The row is split into many rows for any remaining valid taxids.
-    """
-
-    # Create a list to hold all rows, including split ones
-    new_rows = []
-    for _, row in blast.iterrows():
-
-        tax_ids = str(row[taxids_col_name]).split(";")
-
-        # We don't care for any multiple taxid entry that hits an ignored taxid.
-        if any(cl.should_ignore(taxid) for taxid in tax_ids):
-            continue
-
-        if str(row["subject title"]).startswith("MULTISPECIES:"):
-            logger.debug("     Treating labelled MULTISPECIES:, %i multi-taxid entry, as MULTISPECIES", len(tax_ids))
-            new_row = row.copy()
-            new_row[taxids_col_name] = "MULTISPECIES"
-            new_rows.append(new_row)
-            continue
-
-        if len(tax_ids) > 100:
-            logger.debug("     Treating %i multi-taxid entry as MULTISPECIES", len(tax_ids))
-            new_row = row.copy()
-            new_row[taxids_col_name] = "MULTISPECIES"
-            new_rows.append(new_row)
-            continue
-
-        if len(tax_ids) > 1:
-            logger.debug("     Splitting %i multi-taxid entry", len(tax_ids))
-            # If there are multiple tax IDs, create a new row for each controlled one
-            for tax_id in tax_ids:
-                new_row = row.copy()
-                new_row[taxids_col_name] = tax_id
-                new_rows.append(new_row)
-            continue
-
-        # If there's only one tax ID, keep the original row
-        new_rows.append(row)
-    
-    # Create a new DataFrame from the list of rows
-    split = pd.DataFrame(new_rows)
-    #split[taxids_col_name] = split[taxids_col_name].astype("int")
-    return split
-
-
-def get_controlled_labels(
-        blast : pd.DataFrame,
-        taxids_column_name = "subject tax ids"
-        ) -> pd.DataFrame:
-    """
-    Uses the Control Lists to label each taxid/accession supplied from imported
-    blast outputs to label as regulated True/False, depending on its existance
-    in the regulated lists.
-    Ignores synthetic constructs.
-    Returns the mutated blast dataframe to contain the following headings:
-    cluster_hash - the TaxID of the "most parent" in the context of a controlled taxid hierarchy.
-    species - the species of the subject taxid
-    genus - genus of subject taxid.
-    control_list - list of all controlled outputs.
-    """
-    logger.debug("Dealing with multi-taxid entries... ")
-
-    # Deal with multiple taxids entries, including removing ignored taxids.
-    blast = split_by_tax_id(blast, taxids_column_name)
-
-    # Build a mapping {taxid: ignoriness} and Map back to the dataframe
-    taxids_to_ignore = {taxid: cl.should_ignore(taxid) for taxid in blast[taxids_column_name].unique()}
-    logger.debug("Removing %s ignored taxids: \n%s", len(taxids_to_ignore), taxids_to_ignore)
-    ignored_mask = blast[taxids_column_name].map(taxids_to_ignore)
-    blast = blast[~ignored_mask]
-
-    # Build a mapping {taxid: truthiness} and Map back to the dataframe
-    taxid_to_regulated = {taxid: cl.is_regulated(taxid) for taxid in blast[taxids_column_name].unique()}
-    blast["regulated"] = blast[taxids_column_name].map(taxid_to_regulated)
-
-    # Get unique taxids
-    unique_taxids = blast[taxids_column_name].dropna().unique()
-    logger.debug("Checking %s unique taxids: \n%s", len(unique_taxids), unique_taxids)    
-    taxid_to_controlhash = {taxid: cl.get_cluster_hash(taxid) for taxid in unique_taxids}
-
-    # Map control status hash to the dataframe
-    blast["control_hash"] = blast[taxids_column_name].map(taxid_to_controlhash)
-
-    return blast
 
 def get_taxonomic_labels(
     blast: pd.DataFrame,
@@ -280,6 +189,95 @@ def read_blast(blast_file: str | os.PathLike | BinaryIO | TextIO) -> pd.DataFram
     blast = blast.reset_index(drop=True)
 
     return blast
+
+def get_controlled_labels(
+        blast : pd.DataFrame,
+        taxids_column_name = "subject tax ids"
+        ) -> pd.DataFrame:
+    """
+    Uses the Control Lists to label each taxid/accession supplied from imported
+    blast outputs to label as regulated True/False, depending on its existance
+    in the regulated lists.
+    Ignores synthetic constructs.
+    Returns the mutated blast dataframe to contain the following headings:
+    cluster_hash - the TaxID of the "most parent" in the context of a controlled taxid hierarchy.
+    species - the species of the subject taxid
+    genus - genus of subject taxid.
+    control_list - list of all controlled outputs.
+    """
+    logger.debug("Dealing with multi-taxid entries... ")
+
+    # Deal with multiple taxids entries, including removing ignored taxids.
+    blast = split_by_tax_id(blast, taxids_column_name)
+
+    # Build a mapping {taxid: ignoriness} and Map back to the dataframe
+    taxids_to_ignore = {taxid: cl.should_ignore(taxid) for taxid in blast[taxids_column_name].unique()}
+    logger.debug("Removing %s ignored taxids: \n%s", len(taxids_to_ignore), taxids_to_ignore)
+    ignored_mask = blast[taxids_column_name].map(taxids_to_ignore)
+    blast = blast[~ignored_mask]
+
+    # Build a mapping {taxid: truthiness} and Map back to the dataframe
+    taxid_to_regulated = {taxid: cl.is_regulated(taxid) for taxid in blast[taxids_column_name].unique()}
+    blast["regulated"] = blast[taxids_column_name].map(taxid_to_regulated)
+
+    # Get unique taxids
+    unique_taxids = blast[taxids_column_name].dropna().unique()
+    logger.debug("Checking %s unique taxids: \n%s", len(unique_taxids), unique_taxids)    
+    taxid_to_controlhash = {taxid: cl.get_cluster_hash(taxid) for taxid in unique_taxids}
+
+    # Map control status hash to the dataframe
+    blast["control_hash"] = blast[taxids_column_name].map(taxid_to_controlhash)
+
+    return blast
+
+def split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
+    """
+    Some results will have multiple tax ids listed in a semicolon-separated list.
+    These are handled depending on context:
+    * If any of the taxids should be ignored, we ignore that entire row.
+    * If the row is labelled as MULTISPECIES, we substitute the taxid with that information.
+    * If the row has more than 100 taxids, we treat as MULTISPECIES.
+    * The row is split into many rows for any remaining valid taxids.
+    """
+    # Create a list to hold all rows, including split ones
+    new_rows = []
+    for _, row in blast.iterrows():
+
+        tax_ids = str(row[taxids_col_name]).split(";")
+
+        # We don't care for any multiple taxid entry that hits an ignored taxid.
+        if any(cl.should_ignore(taxid) for taxid in tax_ids):
+            continue
+
+        if str(row["subject title"]).startswith("MULTISPECIES:"):
+            logger.debug("     Treating labelled MULTISPECIES:, %i multi-taxid entry, as MULTISPECIES", len(tax_ids))
+            new_row = row.copy()
+            new_row[taxids_col_name] = "MULTISPECIES"
+            new_rows.append(new_row)
+            continue
+
+        if len(tax_ids) > 100:
+            logger.debug("     Treating %i multi-taxid entry as MULTISPECIES", len(tax_ids))
+            new_row = row.copy()
+            new_row[taxids_col_name] = "MULTISPECIES"
+            new_rows.append(new_row)
+            continue
+
+        if len(tax_ids) > 1:
+            logger.debug("     Splitting %i multi-taxid entry", len(tax_ids))
+            # If there are multiple tax IDs, create a new row for each controlled one
+            for tax_id in tax_ids:
+                new_row = row.copy()
+                new_row[taxids_col_name] = tax_id
+                new_rows.append(new_row)
+            continue
+
+        # If there's only one tax ID, keep the original row
+        new_rows.append(row)
+    
+    # Create a new DataFrame from the list of rows
+    split = pd.DataFrame(new_rows)
+    return split
 
 
 def _trim_overlapping(blast: pd.DataFrame):
@@ -418,7 +416,9 @@ def _trim_edges(df : pd.DataFrame) -> tuple[pd.DataFrame, int]:
 
 def get_top_hits(blast: pd.DataFrame):
     """
-    Trim BLAST results down to the top hit for each base.
+    Filters BLAST results down to top hits only:
+        * At least 1 top hit for each base.
+        * Above 
     """
 
     assert isinstance(blast, pd.DataFrame), "get_top_hits expects a pandas dataframe object."
@@ -457,7 +457,11 @@ def get_top_hits(blast: pd.DataFrame):
 
 
 def get_high_identity_hits(blast_output_file, threshold=90):
-    """Read all hits with high sequence identity from a BLAST results file."""
+    """
+    Read all hits with high sequence identity above a given threshold from a 
+    BLAST results file. This is current used to quickly grab candidates from the
+    Protein Taxonomy search to identify non-coding regions of a query.
+    """
     hits = read_blast(blast_output_file)
     hits = _trim_overlapping(hits)
     return hits[hits["% identity"] >= threshold]

@@ -479,11 +479,12 @@ class TestParseTaxonomyHits:
     def test_returns_0_and_pass_when_no_regulated_hits(self):
         handler = self._make_handler(has_hits=True)
         data = _make_screen_result("seq1")
-        blast_df = _make_df({"query acc.": "seq1", "subject tax ids": 99999})
+        blast_df = _make_df({"query acc.": "seq1", "subject tax ids": 99999, "control_hash" : 12345, "regulated" : False})
         with (
             patch("os.path.exists", return_value=True),
             patch("commec.screeners.check_reg_path.read_blast", return_value=blast_df),
             patch("commec.screeners.check_reg_path.is_regulated", return_value=False),
+            patch("commec.screeners.check_reg_path.get_controlled_labels", return_value=blast_df),
         ):
             ret = parse_taxonomy_hits(
                 handler, "/lc.csv", "/br.csv", "/taxdir",
@@ -493,9 +494,10 @@ class TestParseTaxonomyHits:
         assert data.queries["seq1"].status.protein_taxonomy == ScreenStatus.PASS
 
     def test_flags_query_with_regulated_hit(self):
+        setup_console_logging(logging.DEBUG)
         handler = self._make_handler(has_hits=True)
         data = _make_screen_result("seq1")
-        blast_df = _make_df({"query acc.": "seq1", "subject tax ids": 111, "control_hash" : 111})
+        blast_df = _make_df({"query acc.": "seq1", "subject tax ids": 12345, "control_hash" : 12345})
         flag_hit = HitResult(
             HitScreenStatus(ScreenStatus.FLAG, self.STEP),
             "Dangerous Virus", "controlled Viruses Dangerous Virus",
@@ -505,6 +507,7 @@ class TestParseTaxonomyHits:
             patch("os.path.exists", return_value=True),
             patch("commec.screeners.check_reg_path.read_blast", return_value=blast_df),
             patch("commec.screeners.check_reg_path.is_regulated", return_value=True),
+            patch("commec.screeners.check_reg_path.get_controlled_labels", return_value=blast_df),
             patch(
                 "commec.screeners.check_reg_path._get_hit_result_from_data",
                 return_value=([flag_hit], ["log"]),
