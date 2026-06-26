@@ -21,12 +21,23 @@
     --muted: #5B6577;
     --faint: #8a93a3;
     --ok: #2f8f5b;
+    /* themed surfaces (overridden by body.dark) */
+    --heading: #232A58; --field: #fbfcfd; --track: #eaeef3; --hover: #eef6f9; --tint: #f3f9fb;
     /* type */
     --display: "Archivo", system-ui, sans-serif;
     --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
     --radius: 10px;
     --shadow: 0 1px 2px rgba(35,42,88,.04), 0 6px 20px rgba(35,42,88,.05);
+  }
+  /* Dark mode: re-point the neutral/surface tokens. Brand colors (navy header,
+     teal, orange, ok-green) and the always-dark terminal log stay as-is. */
+  body.dark {
+    --paper: #0f1419; --panel: #171d26; --line: #2a3441;
+    --ink: #e6edf3; --muted: #97a3b4; --faint: #6b7686;
+    --heading: #e6edf3; --field: #0d1117; --track: #2a3441;
+    --hover: #1d2632; --tint: #16242e;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.4);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -107,13 +118,13 @@
     font: 800 13px/1 var(--display); color: var(--orange);
     letter-spacing: .02em;
   }
-  .step-title { font: 700 16px/1 var(--display); color: var(--navy); }
+  .step-title { font: 700 16px/1 var(--display); color: var(--heading); }
   .step-sub { color: var(--muted); font-size: 13px; margin-left: auto; }
 
   /* soon = sketched, not yet wired */
   .soon {
     font: 600 9px/1 var(--display); text-transform: uppercase; letter-spacing: .1em;
-    color: var(--teal); border: 1px solid #cfe2ea; background: #eef6f9;
+    color: var(--teal); border: 1px solid #cfe2ea; background: var(--hover);
     border-radius: 999px; padding: 4px 8px; vertical-align: middle;
   }
   .sketch { position: relative; }
@@ -127,7 +138,7 @@
     display: flex; align-items: center; gap: 8px;
   }
   .tab:hover { color: var(--ink); }
-  .tab.active { color: var(--navy); border-bottom-color: var(--orange); }
+  .tab.active { color: var(--heading); border-bottom-color: var(--orange); }
   .tab.usb { color: var(--orange); }
   @keyframes tabflash { 0%, 100% { background: transparent; } 50% { background: #fde4d8; } }
   .tab.flash { animation: tabflash 0.9s ease-in-out 5; }
@@ -137,33 +148,33 @@
   /* ---- Inputs ---------------------------------------------------------- */
   label.lbl { display: block; font-size: 13px; color: var(--muted); margin-bottom: 7px; }
   input[type=text] {
-    width: 100%; background: #fbfcfd; border: 1px solid var(--line);
+    width: 100%; background: var(--field); border: 1px solid var(--line);
     color: var(--ink); border-radius: 8px; padding: 11px 12px;
     font: 14px var(--mono);
   }
   textarea {
     width: 100%; min-height: 150px; resize: vertical;
-    background: #fbfcfd; border: 1px solid var(--line); color: var(--ink);
+    background: var(--field); border: 1px solid var(--line); color: var(--ink);
     border-radius: 8px; padding: 12px 13px; font: 13px/1.5 var(--mono);
   }
   input:focus, textarea:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(65,155,185,.14); }
   .field-foot { display: flex; align-items: center; gap: 14px; margin-top: 9px; font-size: 12px; color: var(--faint); }
   .bp { font: 500 12px var(--mono); color: var(--muted); }
-  .bp b { color: var(--navy); }
+  .bp b { color: var(--heading); }
   .hint { color: var(--faint); }
 
   /* upload dropzone (sketch) */
   .drop {
     display: block; border: 1.5px dashed #c4ccd8; border-radius: 8px; padding: 30px;
-    text-align: center; color: var(--muted); background: #fbfcfd; cursor: pointer;
+    text-align: center; color: var(--muted); background: var(--field); cursor: pointer;
     transition: border-color .12s, background .12s;
   }
   .drop:hover { border-color: var(--teal); }
-  .drop.drag { border-color: var(--teal); background: #f3f9fb; }
+  .drop.drag { border-color: var(--teal); background: var(--tint); }
   .drop b { color: var(--ink); }
 
   /* Server-side file browser */
-  .browser { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fbfcfd; }
+  .browser { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--field); }
   .browser-path {
     font: 12px var(--mono); color: var(--muted); padding: 8px 12px;
     border-bottom: 1px solid var(--line); white-space: nowrap; overflow-x: auto;
@@ -171,15 +182,15 @@
   .browser-list { max-height: 240px; overflow-y: auto; }
   .browser-list .row {
     display: flex; align-items: center; gap: 10px; padding: 8px 12px;
-    cursor: pointer; border-bottom: 1px solid #eef1f5;
+    cursor: pointer; border-bottom: 1px solid var(--line);
   }
   .browser-list .row:last-child { border-bottom: none; }
-  .browser-list .row:hover { background: #eef6f9; }
-  .browser-list .row.sel { background: #e7f2f7; }
+  .browser-list .row:hover { background: var(--hover); }
+  .browser-list .row.sel { background: var(--tint); }
   .browser-list .row .nm { font: 13px var(--mono); color: var(--ink); word-break: break-all; }
   .browser-list .row.dir .nm { color: var(--teal); font-weight: 600; }
   .browser-list .row .sz { margin-left: auto; color: var(--faint); font-size: 12px; white-space: nowrap; }
-  .browser-sel b, #browse-sel b { color: var(--navy); }
+  .browser-sel b, #browse-sel b { color: var(--heading); }
 
   /* skip-50 toggle */
   .opt { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 13px; color: var(--ink); }
@@ -193,9 +204,9 @@
     transition: border-color .12s, background .12s;
   }
   .preset:hover { border-color: var(--teal); }
-  .preset.sel { border-color: var(--teal); background: #f3f9fb; box-shadow: inset 3px 0 0 var(--teal); }
+  .preset.sel { border-color: var(--teal); background: var(--tint); box-shadow: inset 3px 0 0 var(--teal); }
   .preset input { margin-top: 3px; accent-color: var(--teal); }
-  .preset .pl { font-weight: 600; color: var(--navy); }
+  .preset .pl { font-weight: 600; color: var(--heading); }
   .preset .pd { color: var(--muted); font-size: 13px; margin-top: 3px; }
   .preset.unavail { opacity: .55; cursor: not-allowed; }
   .preset.unavail:hover { border-color: var(--line); }
@@ -211,7 +222,7 @@
 
   /* selected-preset summary + advanced disclosure */
   .preset-summary { display: flex; gap: 12px; align-items: flex-start; }
-  .preset-summary .pl { display: block; font-weight: 600; color: var(--navy); }
+  .preset-summary .pl { display: block; font-weight: 600; color: var(--heading); }
   .preset-summary .pd { display: block; color: var(--muted); font-size: 13px; margin-top: 3px; }
   .preset-summary .pd.warn { color: var(--orange); }
   .legend {
@@ -256,7 +267,7 @@
   .progress-row { display: none; align-items: center; gap: 14px; margin: 16px 0 0; }
   #runpanel.active .progress-row { display: flex; }
   body.advanced #runpanel.active #log { display: block; }
-  .pbar { flex: 1; height: 8px; background: #eaeef3; border-radius: 999px; overflow: hidden; }
+  .pbar { flex: 1; height: 8px; background: var(--track); border-radius: 999px; overflow: hidden; }
   .pbar > i {
     display: block; height: 100%; width: 0; border-radius: 999px;
     background: linear-gradient(90deg, var(--teal), #6bbcd6);
@@ -301,16 +312,16 @@
   .q-warn { color: #9a6a12; background: #fbf3e3; }
   .q-pass { color: #1f6e44; background: #eaf6ef; }
   .q-skip { color: var(--muted); background: #f1f3f6; }
-  .qn { font: 13px var(--mono); color: var(--navy); word-break: break-all; }
+  .qn { font: 13px var(--mono); color: var(--heading); word-break: break-all; }
   .qr { color: var(--muted); }
 
   /* ---- Report / results ------------------------------------------------ */
   .report-cta {
     display: flex; align-items: center; gap: 16px; padding: 16px 18px;
-    border: 1px solid #cfe2ea; background: #f3f9fb; border-radius: 9px;
+    border: 1px solid #cfe2ea; background: var(--tint); border-radius: 9px;
     margin-bottom: 16px;
   }
-  .report-cta .rt { font-weight: 700; color: var(--navy); }
+  .report-cta .rt { font-weight: 700; color: var(--heading); }
   .report-cta .rd { font-size: 13px; color: var(--muted); }
   .report-cta a.btn {
     margin-left: auto; background: var(--navy); color: #fff; text-decoration: none;
@@ -331,7 +342,7 @@
   }
   .run-row:last-child { border-bottom: none; }
   .run-row:hover .rl { text-decoration: underline; }
-  .run-row .rl { font-weight: 600; color: var(--navy); word-break: break-all; }
+  .run-row .rl { font-weight: 600; color: var(--heading); word-break: break-all; }
   .run-row .rm { color: var(--faint); font-size: 12px; margin-left: auto; white-space: nowrap; padding-left: 10px; }
   .run-row .del {
     appearance: none; background: none; border: none; cursor: pointer;
@@ -361,6 +372,7 @@
     <!-- Right-side status: controls, screener state, network addresses, CPU/RAM. -->
     <div class="hstatus">
       <div class="hcontrols">
+        <button type="button" id="theme" class="hbtn">Dark</button>
         <button type="button" id="fs" class="hbtn">Fullscreen</button>
         <label class="hswitch"><input type="checkbox" id="adv-toggle"><span>Advanced options</span></label>
       </div>
@@ -521,6 +533,21 @@ let noPresetAvailable = true;  // set once /config loads
   advToggle.addEventListener("change", () => {
     document.body.classList.toggle("advanced", advToggle.checked);
     localStorage.setItem("commec-adv", advToggle.checked ? "1" : "0");
+  });
+})();
+
+/* ---- Dark-mode toggle (persisted) ------------------------------------ */
+(function () {
+  const btn = document.getElementById("theme");
+  const apply = (dark) => {
+    document.body.classList.toggle("dark", dark);
+    btn.textContent = dark ? "Light" : "Dark";
+  };
+  apply(localStorage.getItem("commec-dark") === "1");
+  btn.addEventListener("click", () => {
+    const dark = !document.body.classList.contains("dark");
+    apply(dark);
+    localStorage.setItem("commec-dark", dark ? "1" : "0");
   });
 })();
 
