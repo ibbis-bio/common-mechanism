@@ -38,6 +38,9 @@ fi
 if [[ -n "${COMMEC_GUI_THREADS:-}" ]]; then
   ARGS+=(--threads "$COMMEC_GUI_THREADS")
 fi
+if [[ -n "${COMMEC_GUI_PASSWORD_FILE:-}" ]]; then
+  ARGS+=(--password-file "$COMMEC_GUI_PASSWORD_FILE")
+fi
 
 # TLS: use an explicit cert/key pair if configured, otherwise --tls-auto
 # generates one on first startup. Set COMMEC_TLS=0 to force plain HTTP.

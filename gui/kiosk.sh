@@ -38,5 +38,8 @@ fi
 if [[ -n "${COMMEC_GUI_THREADS:-}" ]]; then
   ARGS+=(--threads "$COMMEC_GUI_THREADS")
 fi
+if [[ -n "${COMMEC_GUI_PASSWORD_FILE:-}" ]]; then
+  ARGS+=(--password-file "$COMMEC_GUI_PASSWORD_FILE")
+fi
 
 exec python "$HERE/server.py" "${ARGS[@]}"

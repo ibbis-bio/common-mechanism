@@ -28,10 +28,14 @@ import webbrowser
 from pathlib import Path
 
 import yaml
-from flask import Flask, Response, jsonify, request, send_file
+from flask import (Flask, Response, jsonify, redirect, request, send_file,
+                   session, url_for)
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024  # 200 MB upload cap
+app.secret_key = os.urandom(32)  # per-process; a restart invalidates sessions
+app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
 
 
 @app.errorhandler(413)
@@ -52,6 +56,8 @@ CFG = {
     "default_databases": "",
     "threads": None,        # CPU threads passed to commec (-t); None = don't set
     "browse_root": Path.home(),  # file browser is confined to this directory
+    "password_hash": None,  # set from --password-file; None = no auth
+    "require_local_auth": False,  # also require the password from localhost
     "presets": [],          # list of {id, label, description, config}
 }
 
@@ -483,7 +489,8 @@ def _normalise_records(records):
         seq = _clean_seq(seq)
         if not seq:
             continue
-        name = re.sub(r"\s+", "_", (name or "").strip()) or f"sequence_{i + 1}"
+        name = re.sub(r"\s+", "_", (name or "").strip())
+        name = re.sub(r"[<>&\"'`]", "", name) or f"sequence_{i + 1}"  # keep names HTML-safe
         base, n = name, 2
         while name in used:
             name, n = f"{base}_{n}", n + 1
@@ -655,6 +662,65 @@ def _kill_running_jobs():
                 pass
 
 
+# ---------------------------------------------------------------------------
+# Authentication. When a password hash is configured, every NON-localhost
+# request needs a valid session. The walk-up kiosk (127.0.0.1) is exempt --
+# physical presence is the trust -- unless --require-local-auth is set.
+# Only meaningful over HTTPS (login/cookie would otherwise be cleartext).
+# ---------------------------------------------------------------------------
+_LOCAL_ADDRS = {"127.0.0.1", "::1", "localhost"}
+# Endpoints reachable without a session (login itself + brand assets it shows).
+_AUTH_EXEMPT = {"login", "logout", "asset"}
+
+
+def _auth_required():
+    if not CFG["password_hash"]:
+        return False
+    if not CFG["require_local_auth"] and request.remote_addr in _LOCAL_ADDRS:
+        return False
+    return True
+
+
+def _safe_next(target):
+    """Only allow same-site relative redirects (no open-redirect)."""
+    if target and target.startswith("/") and not target.startswith("//"):
+        return target
+    return "/"
+
+
+@app.before_request
+def _gate():
+    if request.endpoint in _AUTH_EXEMPT:
+        return
+    if _auth_required() and not session.get("authed"):
+        if request.method == "GET" and "text/html" in request.headers.get("Accept", ""):
+            return redirect(url_for("login", next=request.full_path.rstrip("?")))
+        return jsonify({"error": "Authentication required."}), 401
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        password = request.form.get("password") or ""
+        nxt = _safe_next(request.form.get("next"))
+        if CFG["password_hash"] and check_password_hash(CFG["password_hash"], password):
+            session["authed"] = True
+            return redirect(nxt)
+        return redirect(url_for("login", next=nxt, error=1))
+    # Already authed (or auth off) -> no reason to show the login screen.
+    if not _auth_required() or session.get("authed"):
+        return redirect(_safe_next(request.args.get("next")))
+    resp = send_file(Path(__file__).parent / "login.html")
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
 @app.route("/")
 def index():
     # no-store so kiosks/clients always fetch the current page (no stale UI).
@@ -742,6 +808,13 @@ def screen():
         fasta = (request.form.get("fasta_file") or "").strip()
         if not fasta:
             return jsonify({"error": "A FASTA file path is required."}), 400
+        # Confine to the same roots the browser exposes (home + USB mounts), so
+        # a hand-crafted POST can't screen arbitrary server files. Resolve first
+        # to defeat symlink/.. escapes, matching /browse and /results/file.
+        target = Path(fasta).resolve()
+        if not any(target == r or r in target.parents for r in _allowed_roots()):
+            return jsonify({"error": "That file is outside the allowed directory."}), 400
+        fasta = str(target)
         if not os.path.isfile(fasta):
             return jsonify({"error": f"FASTA path not found on server: {fasta}"}), 400
         if skip_short:
@@ -1030,6 +1103,15 @@ def main():
     ap.add_argument("--browse-root", default=str(Path.home()),
                     help="Root directory the file browser is confined to "
                          "(default: the user's home directory).")
+    ap.add_argument("--password-file",
+                    default=str(Path.home() / ".config" / "commec-gui" / "password.hash"),
+                    help="File holding the access-password hash (werkzeug "
+                         "format). If present + non-empty, non-localhost "
+                         "requests must log in. Default: "
+                         "~/.config/commec-gui/password.hash")
+    ap.add_argument("--require-local-auth", action="store_true",
+                    help="Also require the password from localhost (the walk-up "
+                         "kiosk), not just remote clients.")
     ap.add_argument("--threads", type=int, default=0,
                     help="CPU threads passed to commec search tools (-t). "
                          "0 (default) uses all logical cores: one screen runs "
@@ -1057,6 +1139,15 @@ def main():
     CFG["results_keep"] = args.results_keep
     CFG["default_databases"] = args.databases
     CFG["browse_root"] = Path(args.browse_root).resolve()
+    CFG["require_local_auth"] = args.require_local_auth
+    try:
+        CFG["password_hash"] = (Path(args.password_file)
+                                .read_text(encoding="utf-8").strip()) or None
+    except OSError:
+        CFG["password_hash"] = None
+    print("Auth: " + ("ON (password required for "
+          + ("all clients" if args.require_local_auth else "non-localhost")
+          + ")" if CFG["password_hash"] else "off (no password file)"))
     # 0 => all logical cores (one screen at a time, so dedicate the box to it).
     CFG["threads"] = args.threads or (os.cpu_count() or 1)
     CFG["presets"] = load_presets(args.presets)
@@ -1105,6 +1196,12 @@ def main():
         ssl_context = (cert, key)
 
     scheme = "https" if ssl_context else "http"
+    # Session cookie only over HTTPS when we're serving it. Warn if auth is on
+    # but transport is cleartext (login + cookie would be exposed).
+    app.config["SESSION_COOKIE_SECURE"] = bool(ssl_context)
+    if CFG["password_hash"] and not ssl_context:
+        print("WARNING: auth password is set but TLS is OFF -- credentials "
+              "would be sent in cleartext. Serve HTTPS in production.")
     host = args.host or ("0.0.0.0" if args.lan else "127.0.0.1")
     url = f"{scheme}://127.0.0.1:{args.port}/"
     print(f"commec-gui serving on {scheme}://{host}:{args.port}/  "

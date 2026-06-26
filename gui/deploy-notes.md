@@ -120,26 +120,31 @@ CA -- no shared key to leak across the fleet.
 ## Authentication (GUI password)
 
 The GUI has no login of its own; access control reuses the **kiosk password**.
+**Implemented** in `server.py`: when a password-hash file exists and is
+non-empty, every **non-localhost** request (LAN / Tailscale / remote) must log
+in via `/login`; the walk-up kiosk on `127.0.0.1` is exempt -- physical presence
+is the trust (override with `--require-local-auth`). No file -> no auth.
+
+The hash file location is configurable -- `COMMEC_GUI_PASSWORD_FILE` (or
+`--password-file`), **default `~/.config/commec-gui/password.hash`** so a
+standalone (non-image) install needs no root. The box image can point it at a
+system path (e.g. `/etc/commec-gui/password.hash`) if preferred. (A bad actor
+who can rewrite that path/env is already inside the box, so the configurability
+isn't a meaningful weakening.)
+
 The first-boot setup that sets the kiosk user-account password must ALSO write
-a **hash** of that same password to a fixed location the GUI reads:
-
-    /etc/commec-gui/password.hash     # one line; mode 0640, readable by the GUI user
-
-(You can't read the account password back out of shadow, so capture it once at
-setup and write to both `passwd` and this file.) Use the GUI env's werkzeug to
-hash it, so the server can verify it:
+a **hash** of that same password to that file (you can't read the account
+password back out of shadow, so capture it once and write both `passwd` and the
+hash). Use the GUI env's werkzeug so the server can verify it:
 
     printf '%s' "$KIOSK_PASSWORD" | python -c \
       'import sys; from werkzeug.security import generate_password_hash; \
        print(generate_password_hash(sys.stdin.read()))' \
-      > /etc/commec-gui/password.hash
+      > "$COMMEC_GUI_PASSWORD_FILE"    # mode 0600/0640, readable by the GUI user
 
-Intended server behaviour (small feature, not yet implemented): when that file
-exists, require the password for any **non-localhost** request (LAN / Tailscale
-/ remote), while the walk-up kiosk on `127.0.0.1` is exempt -- physical presence
-is the trust. No file -> no auth (current prototype). Nothing is baked into the
-base image; the hash is written per-device at setup. Auth is only meaningful
-over HTTPS.
+Nothing is baked into the base image; the hash is written per-device at setup.
+Auth is only meaningful over HTTPS (the server warns if a password is set but
+TLS is off; the session cookie is marked Secure when serving HTTPS).
 
 ## Network hardening (inbound)
 
