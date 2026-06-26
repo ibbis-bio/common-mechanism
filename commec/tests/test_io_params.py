@@ -42,6 +42,7 @@ def expected_defaults():
             }
         },
         "threads": 1,
+        "mt_mode": 1,
         "protein_search_tool": "blastx",
         "skip_taxonomy_search": False,
         "skip_nt_search": False,
@@ -96,6 +97,7 @@ def expected_updated_from_custom_yaml():
             }
         },
         "threads": 8,
+        "mt_mode": 1,
         "protein_search_tool": "blastx",
         "skip_taxonomy_search": True,
         "skip_nt_search": False,
