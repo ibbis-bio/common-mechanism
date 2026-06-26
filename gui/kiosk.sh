@@ -18,7 +18,7 @@ else
 fi
 
 COMMEC_CONDA_ENV="${COMMEC_CONDA_ENV:-commec-dev}"
-COMMEC_GUI_PORT="${COMMEC_GUI_PORT:-8765}"
+COMMEC_GUI_PORT="${COMMEC_GUI_PORT:-443}"
 
 # Activate the conda env that has commec + flask, unless already active.
 if [[ "${CONDA_DEFAULT_ENV:-}" != "$COMMEC_CONDA_ENV" ]]; then

@@ -455,11 +455,9 @@ def _parse_fasta_text(text):
 
 
 def _parse_spreadsheet_text(text):
-    """Parse tab/comma-delimited rows (e.g. an Excel paste) into records.
-
-    Each row's most DNA-like field is the sequence; another field, if present,
-    names it. Rows with no DNA-like field (e.g. a header row) are skipped.
-    """
+    """Tab/comma-delimited rows (Excel/CSV paste): the most DNA-like field is
+    the sequence; another field, if present, names it. Rows with no DNA-like
+    field (e.g. a header row) are skipped."""
     records = []
     for i, line in enumerate(text.splitlines()):
         fields = [f.strip() for f in re.split(r"[\t,]", line) if f.strip()]
@@ -472,14 +470,28 @@ def _parse_spreadsheet_text(text):
     return records
 
 
+def _parse_blocks_text(text):
+    """Header-less raw sequences: blocks separated by a blank line, each block's
+    lines joined into one sequence (so a single sequence may wrap over lines)."""
+    records = []
+    for i, block in enumerate(re.split(r"\n\s*\n", text.strip())):
+        seq = _clean_seq(block)
+        if seq:
+            records.append((f"sequence_{i + 1}", seq))
+    return records
+
+
 def parse_pasted_sequences(text):
-    """Turn pasted text into FASTA records, accepting FASTA or spreadsheet."""
+    """Turn pasted text into FASTA records, accepting FASTA, raw sequences
+    (separated by blank lines), or spreadsheet rows."""
     text = text.strip()
     if not text:
         return []
     if re.search(r"^\s*>", text, re.M):
         return _parse_fasta_text(text)
-    return _parse_spreadsheet_text(text)
+    if "\t" in text or "," in text:
+        return _parse_spreadsheet_text(text)
+    return _parse_blocks_text(text)
 
 
 def _normalise_records(records):
@@ -1079,7 +1091,10 @@ def main():
     ap = argparse.ArgumentParser(description="Tiny web GUI for `commec screen`.")
     ap.add_argument("--host", default=None,
                     help="Bind address. Default: 127.0.0.1, or 0.0.0.0 if --lan.")
-    ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--port", type=int, default=443,
+                    help="Port to serve on (default: 443). Binding <1024 needs "
+                         "a privilege grant for the unprivileged server -- see "
+                         "deploy-notes.md. Use a high port (e.g. 8765) without one.")
     ap.add_argument("--lan", action="store_true",
                     help="Bind 0.0.0.0 so other machines on the LAN can connect.")
     ap.add_argument("--kiosk", action="store_true",
@@ -1203,7 +1218,10 @@ def main():
         print("WARNING: auth password is set but TLS is OFF -- credentials "
               "would be sent in cleartext. Serve HTTPS in production.")
     host = args.host or ("0.0.0.0" if args.lan else "127.0.0.1")
-    url = f"{scheme}://127.0.0.1:{args.port}/"
+    # Omit the port from the opened URL when it's the scheme default.
+    default_port = 443 if ssl_context else 80
+    portpart = "" if args.port == default_port else f":{args.port}"
+    url = f"{scheme}://127.0.0.1{portpart}/"
     print(f"commec-gui serving on {scheme}://{host}:{args.port}/  "
           f"(work dir: {CFG['work_dir']})")
 
