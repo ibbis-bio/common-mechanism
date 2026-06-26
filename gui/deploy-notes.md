@@ -56,6 +56,28 @@ Two pieces, by design:
     it's only for a fully locked-down public terminal (a separate, "hard"
     option we're not using here).
 
+## Privileged port (443)
+
+The GUI now defaults to **port 443** so clients get a clean `https://<host>/`
+URL with no port to type. 443 is a privileged port (<1024), and the server
+runs as the unprivileged GUI user, so the host must grant the bind. Pick one
+(the image controls this):
+
+- **systemd service unit (recommended):** run the GUI as a service with
+  `User=<kiosk-user>` and `AmbientCapabilities=CAP_NET_BIND_SERVICE`. Grants
+  exactly the bind to just this service; nothing else gains privilege.
+- **Lower the unprivileged-port floor (simple, dedicated box):**
+  `sysctl -w net.ipv4.ip_unprivileged_port_start=443` (persist in
+  `/etc/sysctl.d/`). Any process may then bind 443+. Fine for a single-purpose
+  appliance.
+- **setcap on the interpreter (blunter):**
+  `setcap cap_net_bind_service=+ep "$(readlink -f .../bin/python3)"` -- grants
+  the cap to that interpreter for all scripts it runs.
+
+Without any grant, set `COMMEC_GUI_PORT`/`--port` to a high port (e.g. 8765).
+Optional nicety: redirect 80 -> 443 (nft/iptables) so the bare hostname
+upgrades to HTTPS.
+
 ## Removable media (USB) auto-mount
 
 The GUI auto-detects removable drives so users get the Windows/Mac "plug it in

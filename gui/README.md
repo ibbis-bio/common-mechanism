@@ -53,7 +53,7 @@ Read by `kiosk.sh` / `lan.sh`. Copy `.env.example` to `.env` (gitignored):
 |---|---|
 | `COMMEC_DB_DIR` | Database directory passed to every screen |
 | `COMMEC_CONDA_ENV` | Conda env with commec + flask (default `commec-dev`) |
-| `COMMEC_GUI_PORT` | Port to listen on (default `8765`) |
+| `COMMEC_GUI_PORT` | Port to listen on (default `443`; privileged — see TLS/deploy notes. Use a high port like `8765` without a bind grant) |
 | `COMMEC_GUI_THREADS` | CPU threads for commec's search tools (`-t`); unset = all cores |
 | `COMMEC_GUI_PASSWORD_FILE` | Path to the access-password hash file (default `~/.config/commec-gui/password.hash`); if present, non-localhost clients must log in |
 | `COMMEC_TLS` | Set to `0` to force plain HTTP in `lan.sh` |
@@ -80,7 +80,7 @@ LAN can still reach the GUI.
 | Flag | Default | Purpose |
 |---|---|---|
 | `--host` | `127.0.0.1` (or `0.0.0.0` with `--lan`) | Bind address |
-| `--port` | `8765` | Port |
+| `--port` | `443` | Port (privileged; needs a bind grant for the unprivileged server, or use a high port) |
 | `--lan` | off | Bind `0.0.0.0` for LAN access |
 | `--kiosk` | off | Auto-open a local browser |
 | `--tls-auto` | off | Serve HTTPS, generating a cert on first startup if absent |
