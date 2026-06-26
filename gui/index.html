@@ -403,9 +403,9 @@
 
       <!-- Paste (sketch: parses FASTA + spreadsheet paste later) -->
       <div class="pane active" data-pane="paste">
-        <label class="lbl" for="seq-paste">Paste FASTA, or rows copied from a spreadsheet</label>
+        <label class="lbl" for="seq-paste">Paste FASTA, sequences separated by a blank line, or spreadsheet rows</label>
         <textarea id="seq-paste" spellcheck="false"
-          placeholder=">sequence_1&#10;ATGAGTGAACGGCTGGACATT...&#10;&#10;Excel/Sheets paste also accepted (name &amp; sequence columns)."></textarea>
+          placeholder=">sequence_1&#10;ATGAGTGAACGGCTGGACATT...&#10;&#10;No headers? Separate raw sequences with a blank line (a sequence may wrap across lines). Spreadsheet (name &amp; sequence) paste also works."></textarea>
         <div class="field-foot">
           <span class="bp"><b id="bp-count">0</b> bp &middot; <span id="rec-count">0</span> records</span>
           <span class="hint" id="paste-note"></span>
@@ -652,12 +652,19 @@ const bpCount = document.getElementById("bp-count");
 const recCount = document.getElementById("rec-count");
 seqPaste.addEventListener("input", () => {
   const text = seqPaste.value;
-  let bp = 0, records = 0;
-  for (const line of text.split(/\r?\n/)) {
-    if (line.startsWith(">")) { records++; continue; }
-    bp += line.replace(/[^A-Za-z]/g, "").length;
+  const lines = text.split(/\r?\n/);
+  // bp = sequence letters (exclude FASTA header lines).
+  let bp = 0;
+  for (const line of lines) if (!line.startsWith(">")) bp += line.replace(/[^A-Za-z]/g, "").length;
+  let records = 0;
+  if (lines.some(l => l.startsWith(">"))) {
+    records = lines.filter(l => l.startsWith(">")).length;       // FASTA: per header
+  } else if (text.includes("\t") || text.includes(",")) {
+    records = lines.filter(l => l.trim()).length;                // spreadsheet: per row
+  } else if (text.trim()) {
+    records = text.trim().split(/\n\s*\n/)                        // raw: per blank-line block
+                  .filter(b => /[A-Za-z]/.test(b)).length;
   }
-  if (records === 0 && bp > 0) records = 1;
   bpCount.textContent = bp.toLocaleString();
   recCount.textContent = records;
 });

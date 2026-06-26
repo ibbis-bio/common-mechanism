@@ -19,7 +19,7 @@ else
 fi
 
 COMMEC_CONDA_ENV="${COMMEC_CONDA_ENV:-commec-dev}"
-COMMEC_GUI_PORT="${COMMEC_GUI_PORT:-8765}"
+COMMEC_GUI_PORT="${COMMEC_GUI_PORT:-443}"
 
 if [[ "${CONDA_DEFAULT_ENV:-}" != "$COMMEC_CONDA_ENV" ]]; then
   if ! CONDA_BASE="$(conda info --base 2>/dev/null)"; then
