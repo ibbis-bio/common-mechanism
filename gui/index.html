@@ -368,6 +368,11 @@
     color: var(--teal); font: 600 12px var(--ui); padding: 2px 4px; margin-left: 12px;
   }
   .run-row .resume:hover { text-decoration: underline; }
+  .delall {
+    appearance: none; background: none; border: none; cursor: pointer;
+    color: var(--faint); font: 500 12px var(--ui); padding: 2px 4px;
+  }
+  .delall:hover { color: var(--orange); text-decoration: underline; }
   .recent .empty { color: var(--faint); font-size: 13px; padding: 6px 0; }
 
   @media (max-width: 620px) {
@@ -402,6 +407,7 @@
       <div class="hmeters">
         <div class="hmeter cpu">CPU<div class="hbar"><i id="cpu-bar"></i></div><b id="cpu-val">-- %</b></div>
         <div class="hmeter">RAM<div class="hbar"><i id="ram-bar"></i></div><b id="ram-val">-- %</b></div>
+        <div class="hmeter" title="Free space on the runs disk">DISK<b id="disk-val">--</b></div>
       </div>
     </div>
   </div>
@@ -501,6 +507,7 @@
     <div class="step-head">
       <span class="step-title">Results</span>
       <span class="step-sub" id="recent-sub"></span>
+      <button type="button" class="delall" id="delall" hidden>delete all</button>
     </div>
     <div id="recent-list"></div>
   </section>
@@ -533,6 +540,7 @@ const pbarEl = document.getElementById("pbar");
 const stopBtn = document.getElementById("stop");
 const recentList = document.getElementById("recent-list");
 const recentSub = document.getElementById("recent-sub");
+const delallBtn = document.getElementById("delall");
 const uploadInput = document.getElementById("upload-file");
 const uploadInfo = document.getElementById("upload-info");
 const dropzone = document.getElementById("dropzone");
@@ -920,6 +928,7 @@ async function loadRecent() {
   try {
     const runs = (await (await fetch("/runs")).json()).runs || [];
     recentSub.textContent = runs.length ? `${runs.length} run${runs.length === 1 ? "" : "s"}` : "";
+    delallBtn.hidden = !runs.length;
     if (!runs.length) {
       recentList.innerHTML = `<div class="empty">No runs yet.</div>`;
       return;
@@ -932,7 +941,8 @@ async function loadRecent() {
       const when = r.finished ? new Date(r.finished * 1000).toLocaleString() : "";
       const nq = r.status === "interrupted" ? "interrupted"
         : (r.n ? `${r.n} quer${r.n === 1 ? "y" : "ies"}` : (r.status === "error" ? "failed" : ""));
-      const meta = [nq, when].filter(Boolean).join(" · ");
+      const sz = r.size != null ? humanBytes(r.size) : "";
+      const meta = [nq, sz, when].filter(Boolean).join(" · ");
       const resume = r.resumable
         ? `<button type="button" class="resume" data-id="${escapeHtml(r.id)}" title="Re-run the interrupted step and continue">resume</button>`
         : "";
@@ -1011,6 +1021,20 @@ async function deleteRun(id) {
   } catch (e) { /* ignore */ }
 }
 
+async function deleteAllRuns() {
+  if (!confirm("Delete ALL results? Every saved run and its outputs are "
+             + "removed (a run still in progress is kept).")) return;
+  try {
+    const res = await fetch("/runs", { method: "DELETE" });
+    const b = await res.json().catch(() => ({}));
+    if (b && b.skipped) errEl.textContent = "Deleted all finished runs; the "
+      + "in-progress run was kept.";
+    resultCard.style.display = "none"; viewingJobId = null;
+    loadRecent();
+  } catch (e) { /* ignore */ }
+}
+delallBtn.addEventListener("click", deleteAllRuns);
+
 // Poll the shared screener state so any browser reflects the busy/idle status
 // and auto-joins an in-progress run started elsewhere.
 let wasBusy = false;
@@ -1044,6 +1068,14 @@ setInterval(refreshStatus, 3000);
 loadRecent();
 
 /* ---- Live system meters (CPU / RAM) ---------------------------------- */
+// Bytes -> compact human string (e.g. 1.4 GB). Used for disk + per-run sizes.
+function humanBytes(n) {
+  if (n == null) return "--";
+  const u = ["B", "KB", "MB", "GB", "TB"];
+  let i = 0;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return (i === 0 ? n : n.toFixed(1)) + " " + u[i];
+}
 async function loadMetrics() {
   try {
     const m = await (await fetch("/metrics")).json();
@@ -1056,6 +1088,9 @@ async function loadMetrics() {
       ramVal.textContent = `${gb(m.ram.used)}/${gb(m.ram.total)} GB`;
       ramBar.style.width = Math.round(m.ram.pct) + "%";
     } else { ramVal.textContent = "-- %"; ramBar.style.width = "0"; }
+    const diskVal = document.getElementById("disk-val");
+    diskVal.textContent = (m.disk && m.disk.free != null)
+      ? humanBytes(m.disk.free) + " free" : "--";
   } catch (e) { /* ignore */ }
 }
 loadMetrics();

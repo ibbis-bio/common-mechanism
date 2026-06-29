@@ -279,6 +279,29 @@ def _mem_info():
     return (100.0 * used / total, used, total)
 
 
+def _disk_info():
+    """Disk usage of the filesystem holding the runs dir, or None. This is the
+    disk that fills up as runs accumulate, so it's the one worth showing."""
+    try:
+        u = shutil.disk_usage(CFG["runs_dir"])
+    except OSError:
+        return None
+    pct = (100.0 * u.used / u.total) if u.total else None
+    return {"pct": pct, "free": u.free, "used": u.used, "total": u.total}
+
+
+def _dir_size(d):
+    """Total bytes of all files under a run dir (intermediates included)."""
+    total = 0
+    for p in d.rglob("*"):
+        try:
+            if p.is_file():
+                total += p.stat().st_size
+        except OSError:
+            pass
+    return total
+
+
 @app.route("/metrics")
 def metrics():
     cpu = _cpu_percent()
@@ -286,6 +309,7 @@ def metrics():
     return jsonify({
         "cpu": cpu,
         "ram": ({"pct": mem[0], "used": mem[1], "total": mem[2]} if mem else None),
+        "disk": _disk_info(),
     })
 
 
@@ -1090,7 +1114,11 @@ def results(job_id):
         status = _effective_status(meta, False)
         returncode = meta.get("returncode")
         label = meta.get("label")
-    resumable = (not job and status == "interrupted"
+    # Resumable whenever the run is interrupted and still has its config -- same
+    # rule as /runs. (A live or finished job has status running/done, so this
+    # naturally excludes them; being in JOBS is irrelevant -- a stopped run
+    # stays in JOBS as 'interrupted' and is very much resumable.)
+    resumable = (status == "interrupted"
                  and d is not None and (d / "config.used.yaml").is_file())
     return jsonify({
         "status": status,
@@ -1172,6 +1200,7 @@ def runs():
                 "finished": finished,
                 "overall": summary.get("overall"),
                 "n": summary.get("n"),
+                "size": _dir_size(d),  # bytes on disk (intermediates included)
                 # Resumable only if we still have what -R needs (the config; the
                 # input is re-checked at resume time, since it may be external).
                 "resumable": (status == "interrupted"
@@ -1193,6 +1222,23 @@ def delete_run(job_id):
     shutil.rmtree(d, ignore_errors=True)
     JOBS.pop(job_id, None)
     return jsonify({"ok": True})
+
+
+@app.route("/runs", methods=["DELETE"])
+def delete_all_runs():
+    """Delete every finished run dir. Any run still in progress is skipped."""
+    rdir = CFG["runs_dir"]
+    with JOB_LOCK:
+        live = {j["dir"].name for j in JOBS.values() if not j["done"]}
+    deleted = 0
+    if rdir.is_dir():
+        for d in list(rdir.iterdir()):
+            if not d.is_dir() or d.name in live:
+                continue
+            shutil.rmtree(d, ignore_errors=True)
+            JOBS.pop(d.name, None)
+            deleted += 1
+    return jsonify({"ok": True, "deleted": deleted, "skipped": len(live)})
 
 
 @app.route("/runs/<job_id>/stop", methods=["POST"])
