@@ -988,6 +988,7 @@ async function resumeRun(id) {
       return;
     }
     attach(body.job_id);
+    loadRecent();  // drop the now-live run from the recent list (no stale buttons)
   } catch (err) {
     errEl.textContent = "Resume failed: " + err;
     mySubmitInFlight = false; refreshStatus();
@@ -997,7 +998,14 @@ async function resumeRun(id) {
 async function deleteRun(id) {
   if (!confirm("Delete this result? Its saved report and outputs are removed.")) return;
   try {
-    await fetch("/runs/" + id, { method: "DELETE" });
+    const res = await fetch("/runs/" + id, { method: "DELETE" });
+    if (!res.ok) {
+      // e.g. 409 while the run is still in progress -- don't pretend it's gone.
+      const b = await res.json().catch(() => ({}));
+      errEl.textContent = b.error || "Couldn't delete that run.";
+      loadRecent();
+      return;
+    }
     if (viewingJobId === id) { resultCard.style.display = "none"; viewingJobId = null; }
     loadRecent();
   } catch (e) { /* ignore */ }
