@@ -103,13 +103,20 @@ NOT-RECOMMENDED badge), an optional `description`, and a `config` block using
 commec's own config keys (`skip_taxonomy_search`, `skip_nt_search`,
 `protein_search_tool`, etc.).
 
+`presets.yaml` is **gitignored and deployment-specific**.
+The repo tracks `presets.yaml.example` as a template, and
+the server falls back to it when `presets.yaml` is absent,
+so a fresh checkout still runs.
+To customise: `cp presets.yaml.example presets.yaml`.
+
 At run time the chosen preset's `config` is written into the run directory as
 `config.used.yaml` (a reproducibility record) and passed via
 `commec screen -y`. The database directory is injected separately with `-d`
 (from `--databases` / `COMMEC_DB_DIR`), so presets stay portable across
 machines.
 
-To add or change presets, edit `presets.yaml` and restart the server.
+To add or change presets, edit `presets.yaml` (or the `.example`) and restart
+the server.
 
 > Caveat: do **not** set `do_cleanup: true` in a preset, as this crashes commec
 > at the end of a run (upstream bug in `screen_io.py`). Each job already gets

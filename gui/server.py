@@ -1391,7 +1391,13 @@ def main():
           + ")" if CFG["password_hash"] else "off (no password file)"))
     # 0 => all logical cores (one screen at a time, so dedicate the box to it).
     CFG["threads"] = args.threads or (os.cpu_count() or 1)
-    CFG["presets"] = load_presets(args.presets)
+    # presets.yaml is deployment-specific (gitignored; the kiosk image provisions
+    # it). Fall back to the tracked template so a fresh checkout still runs.
+    presets_path = args.presets
+    if not os.path.exists(presets_path) and os.path.exists(presets_path + ".example"):
+        presets_path += ".example"
+        print(f"No {args.presets}; using {presets_path}")
+    CFG["presets"] = load_presets(presets_path)
     print(f"Loaded {len(CFG['presets'])} preset(s): "
           + ", ".join(p["id"] for p in CFG["presets"]))
     print(f"commec search tools will use {CFG['threads']} thread(s).")

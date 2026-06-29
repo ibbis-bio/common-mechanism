@@ -37,6 +37,37 @@ same env.
 | `COMMEC_GUI_FULLSCREEN` | `1` (kiosk) | Planned (see below). When set, the page auto-enters fullscreen on first interaction. |
 | TLS | (see below) | |
 
+## Presets (`presets.yaml`) -- image-provisioned
+
+`presets.yaml` is **gitignored and deployment-specific**: the image pipeline
+(commec-in-a-box) writes it. The repo only ships `presets.yaml.example` (a
+generic template); the server falls back to that if `presets.yaml` is absent, so
+the GUI runs out of the box but a real kiosk should get its own.
+
+What the image should write to `presets.yaml` for this kiosk hardware:
+
+- The screening presets the operator should see (start from `presets.yaml.example`).
+- **`blast_mt_mode: 0` in each preset's `config`.** This kiosk uses fast local
+  disk, where BLAST's `-mt_mode 0` (auto) performs well across query sizes. Omit
+  it (commec defaults to `1`) on slow/networked storage like HPC/NFS.
+  - Requires a commec build that supports the key (the `blast_mt_mode` config +
+    handler wiring). Older builds **silently reject** an unknown config key, so
+    the run still succeeds but falls back to commec's hardcoded `-mt_mode` --
+    verify the deployed commec is new enough, or the setting is a no-op.
+
+Example preset block:
+```yaml
+presets:
+  - id: full
+    label: Full screen
+    recommended: true
+    config:
+      skip_taxonomy_search: false
+      skip_nt_search: false
+      protein_search_tool: blastx
+      blast_mt_mode: 0    # fast local disk; drop for HPC/NFS
+```
+
 ## Fullscreen display
 
 Two pieces, by design:
