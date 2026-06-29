@@ -209,33 +209,25 @@ and the upstream project's third-party / NOTICES accounting.**
 
 ## Storage & retention
 
-Implemented in `server.py` (`--work-dir` / `--results-dir` / `--results-keep`,
-the end-of-run finalize+wipe, and the periodic orphan sweep). What the image
-pipeline still owns is the **tmpfs mount and swap-off** below; the server does
-the rest.
+Implemented entirely in `server.py` (`--runs-dir` / `--runs-keep` and the
+periodic orphan-process sweep). There is **nothing for the image pipeline to do
+here** -- no tmpfs mount, no swap-off. (This reverses an earlier
+ephemeral/tmpfs design.)
 
-Sequences are sensitive, results are not. The two live in different places:
+Each run gets one persistent directory under `--runs-dir` (pointed at normal
+persistent disk, e.g. somewhere under the kiosk user's home) holding the whole
+run: `input.fasta`, `config.used.yaml`, commec's raw search intermediates
+(`input_<prefix>/*.cleaned.fasta`/`.faa`/..., `output_<prefix>/*.blastn`/
+`.blastx`/`.hmmscan`...), and the polished artifacts (`<prefix>.output.json`,
+`<prefix>_summary.html`, `<prefix>.screen.log`). Nothing is wiped at end-of-run.
 
-- **Work dir (sensitive, ephemeral): a tmpfs mount.** Point `--work-dir` at a
-  tmpfs path (e.g. a dedicated mount, or `/dev/shm`). Commec runs there, so the
-  submitted FASTA plus its derived copies (`input_<prefix>/*.cleaned.fasta`,
-  `.faa`, `.noncoding.fasta`) and raw search outputs never touch persistent
-  disk and vanish on power-off. The GUI also deletes the sensitive inputs at
-  end-of-run; a periodic sweep removes orphans from crashed/killed runs.
-  - **Do NOT assume `/tmp` is tmpfs.** Mount one explicitly, or use `/dev/shm`.
-  - **Disable swap on the image.** tmpfs is swap-backed, so in theory sequence
-    pages could spill to disk under memory pressure. In practice that won't
-    happen here (see sizing below), but disabling swap is cheap belt-and-
-    suspenders for the no-disk guarantee. Prefer disabling swap over `ramfs`
-    (no size cap -> OOM risk).
-  - **Sizing is comfortable.** Default tmpfs is half of RAM (7.5G of 15G on the
-    prototype). Observed peak usage on big runs is ~2G system-wide, so there's
-    ample headroom and no real memory-pressure (hence no swap spill) risk.
-- **Results dir (retained): persistent disk.** Only the named, polished result
-  artifacts are persisted off tmpfs and retained (default: forever; set
-  `--results-keep N` for a rolling cap): `<prefix>.output.json`, `<prefix>_summary.html`,
-  `<prefix>.screen.log`, `config.used.yaml`. These are self-contained and
-  contain no raw query sequence, so they're safe to keep. The raw
-  `output_<prefix>/` search files (`.blastn`/`.blastx`/`.hmmscan`...) are
-  **not** retained -- they're bulky and their alignments can expose query
-  content, and the findings are already captured in the JSON/HTML.
+- **Capacity.** Disk now grows by roughly the full size of each run (bulky BLAST
+  output included), so it accumulates rather than vanishing on power-off. Set
+  `--runs-keep N` for a rolling cap (oldest whole run dirs pruned past the cap),
+  or prune out of band. Sizing on the prototype is comfortable, but unbounded
+  retention on a small disk will eventually fill it.
+- **The sweep never deletes run dirs.** `--sweep-interval` reaps process groups
+  orphaned by a crash/restart (a run that was live when the server died) and
+  marks those runs **Interrupted** so the GUI can offer a one-click Resume
+  (re-runs the cut-off step, re-uses the rest). Cleanup of finished runs is
+  governed solely by `--runs-keep` and explicit deletes from the GUI.

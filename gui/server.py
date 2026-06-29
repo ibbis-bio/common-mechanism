@@ -47,12 +47,12 @@ def _too_large(_e):
 # ---------------------------------------------------------------------------
 CFG = {
     "commec_bin": "commec",
-    # work_dir holds the live run scratch (sensitive sequences + intermediates);
-    # put it on tmpfs in prod. results_dir holds the retained polished results
-    # (no raw sequence) and should be persistent disk.
-    "work_dir": Path("runs").resolve(),
-    "results_dir": Path("results").resolve(),
-    "results_keep": 0,      # max retained result dirs; 0 = unlimited (forever)
+    # runs_dir holds one persistent directory per run: the submitted sequence,
+    # commec's raw search intermediates, and the polished results all live
+    # together and are kept on disk (the box is treated as secured). This
+    # enables post-run debugging and future run-resume.
+    "runs_dir": Path("runs").resolve(),
+    "runs_keep": 0,         # max retained run dirs; 0 = unlimited (forever)
     "default_databases": "",
     "threads": None,        # CPU threads passed to commec (-t); None = don't set
     "browse_root": Path.home(),  # file browser is confined to this directory
@@ -61,10 +61,11 @@ CFG = {
     "presets": [],          # list of {id, label, description, config}
 }
 
-# Polished result artifacts we persist off the (tmpfs) scratch. Everything else
-# in a run dir is sensitive (query sequences) or bulky raw search output, and is
-# deleted at end-of-run. {prefix} is filled with the run's output prefix.
-RESULT_ARTIFACTS = (
+# The polished, self-contained artifacts. The GUI's Results panel shows these
+# by default; everything else in a run dir (input.fasta, raw search output) is
+# tagged "advanced" and revealed only under the Advanced-options toggle.
+# {prefix} is filled with the run's output prefix.
+PRIMARY_ARTIFACTS = (
     "{prefix}.output.json",
     "{prefix}_summary.html",
     "{prefix}.screen.log",
@@ -519,54 +520,59 @@ def _write_fasta(records, path):
                 fh.write(seq[j:j + 70] + "\n")
 
 
-def _build_command(preset, fasta, outdir, config_path, prefix):
-    """Build the commec screen argv list for a preset run.
+def _build_command(fasta, outdir, config_path, prefix, resume=False):
+    """Build the commec screen argv list for a run.
 
     Args are always passed as a list (never shell=True) so user-supplied
-    paths can never be interpreted as shell syntax. The preset's config is
+    paths can never be interpreted as shell syntax. The chosen config is
     passed via -y; the database directory is injected via -d so it overrides
-    whatever (if anything) the preset declares.
+    whatever (if anything) the config declares.
+
+    resume=True adds -R, telling commec to re-use pre-existing output in the
+    dir (used to continue an interrupted run -- see /runs/<id>/resume).
     """
     cmd = [CFG["commec_bin"], "screen", "-y", str(config_path)]
     if CFG["default_databases"]:
         cmd += ["-d", CFG["default_databases"]]
     if CFG["threads"]:
         cmd += ["-t", str(CFG["threads"])]
+    if resume:
+        cmd += ["-R"]
     # -o as a basename (outdir/prefix, no trailing sep) names the outputs after
-    # the run label, independent of the input filename. Each job gets its own
-    # fresh output directory, so no force/resume needed.
+    # the run label, independent of the input filename.
     cmd += ["-o", str(outdir / prefix), fasta]
     return cmd
 
 
-def _finalize_job(job):
-    """Persist the polished results off the scratch dir, then delete the
-    scratch dir entirely (removing the sensitive sequences + raw intermediates).
+def _job_meta(job, status, summary=None):
+    """The meta.json payload for a job at a given status (the durable marker
+    that survives a restart and drives the results/recent views)."""
+    return {
+        "id": job["id"], "label": job["label"], "prefix": job["prefix"],
+        "fasta": job.get("fasta"), "status": status,
+        "returncode": job["returncode"], "created": job["created"],
+        "finished": job.get("finished"), "summary": summary,
+    }
 
-    Writes meta.json (status/label/verdict) as a completion marker that the
-    sweep uses to tell a clean finish from an orphan, and that survives a Flask
-    restart for the results view.
-    """
-    scratch, resultdir, prefix = job["scratch"], job["resultdir"], job["prefix"]
+
+def _save_meta(rundir, meta):
     try:
-        resultdir.mkdir(parents=True, exist_ok=True)
-        for tmpl in RESULT_ARTIFACTS:
-            src = scratch / tmpl.format(prefix=prefix)
-            if src.is_file():
-                shutil.copy2(src, resultdir / src.name)
-        meta = {
-            "id": job["id"], "label": job["label"], "prefix": prefix,
-            "status": job["status"], "returncode": job["returncode"],
-            "created": job["created"], "finished": time.time(),
-            "summary": _summarize_output(resultdir),
-        }
-        (resultdir / "meta.json").write_text(json.dumps(meta), encoding="utf-8")
-    except OSError as exc:
-        job["log"].append(f"[gui] WARNING: could not persist results: {exc}")
-    # Delete the sensitive scratch (inputs, translations, raw search output).
-    shutil.rmtree(scratch, ignore_errors=True)
+        (rundir / "meta.json").write_text(json.dumps(meta), encoding="utf-8")
+        return True
+    except OSError:
+        return False
+
+
+def _finalize_job(job):
+    """Mark a run finished in place. The run dir (sequence + intermediates +
+    results) is kept; nothing is copied or wiped. Overwrites the start marker
+    with the terminal status + parsed verdict."""
+    rundir = job["dir"]
     job["finished"] = time.time()
-    _sweep_results()  # apply any rolling-retention cap
+    meta = _job_meta(job, job["status"], summary=_summarize_output(rundir))
+    if not _save_meta(rundir, meta):
+        job["log"].append("[gui] WARNING: could not write run marker.")
+    _sweep_runs()  # apply any rolling-retention cap
 
 
 def _run_job(job):
@@ -594,23 +600,32 @@ def _run_job(job):
     job["proc"] = proc
     job["pgid"] = proc.pid  # session leader: pgid == pid
     try:
-        (job["scratch"] / ".pgid").write_text(str(proc.pid), encoding="utf-8")
+        (job["dir"] / ".pgid").write_text(str(proc.pid), encoding="utf-8")
     except OSError:
         pass
     job["status"] = "running"
+    # Durable "running" marker: if the process is later killed (crash/restart)
+    # this is what the sweep promotes to "interrupted", flagging it resumable.
+    _save_meta(job["dir"], _job_meta(job, "running"))
     for line in proc.stdout:
         job["log"].append(line.rstrip("\n"))
     proc.wait()
     job["returncode"] = proc.returncode
-    job["status"] = "done" if proc.returncode == 0 else "error"
-    # Persist results + wipe scratch BEFORE marking done, so a client that loads
-    # results on the 'end' event reads the persisted copy.
+    if job.get("stopped"):
+        # Deliberately halted via /stop: treat like a crash -- resumable, not a
+        # dead-end error (the partial step is dropped on resume).
+        job["status"] = "interrupted"
+    else:
+        job["status"] = "done" if proc.returncode == 0 else "error"
+    # Write the completion marker BEFORE marking done, so a client that loads
+    # results on the 'end' event sees a finalized run.
     _finalize_job(job)
     job["done"] = True
 
 
 # ---------------------------------------------------------------------------
-# Cleanup: orphan sweep (crashed/killed runs) and process-group killing.
+# Cleanup: kill process groups orphaned by crashes/restarts, and apply the
+# optional rolling-retention cap. Run dirs are otherwise kept (never wiped).
 # ---------------------------------------------------------------------------
 def _kill_pgid(pgid):
     try:
@@ -619,40 +634,81 @@ def _kill_pgid(pgid):
         pass
 
 
-def _sweep_scratch():
-    """Delete scratch dirs not owned by a live run (orphans from crashes or a
-    server restart), killing any still-running process group first."""
-    work = CFG["work_dir"]
-    if not work.is_dir():
+_TERMINAL_STATUS = ("done", "error", "interrupted")
+
+
+def _sweep_orphans():
+    """Promote runs abandoned by a server crash/restart to 'interrupted' (which
+    flags them resumable), killing any process group still orphaned from the
+    dead run. Never deletes anything; runs with a terminal status (cleanly
+    finished, errored, or already flagged) are left untouched.
+
+    Note: a run killed while the server is still alive finalizes itself as
+    'error' through _run_job -- 'interrupted' only arises when the server
+    process itself died mid-run, so its marker is stuck at 'running'."""
+    runs = CFG["runs_dir"]
+    if not runs.is_dir():
         return
     with JOB_LOCK:
-        live = {j["scratch"].name for j in JOBS.values() if not j["done"]}
-    for d in work.iterdir():
+        live = {j["dir"].name for j in JOBS.values() if not j["done"]}
+    for d in runs.iterdir():
         if not d.is_dir() or d.name in live:
             continue
+        meta = _read_meta(d)
+        if meta.get("status") in _TERMINAL_STATUS:
+            continue
+        # Abandoned mid-run: reap any lingering process group, then flag it. We
+        # unlink .pgid so a recycled PID can't be re-killed on a later sweep.
         pgid_file = d / ".pgid"
         if pgid_file.is_file():
             try:
                 _kill_pgid(pgid_file.read_text(encoding="utf-8").strip())
+                pgid_file.unlink()
             except OSError:
                 pass
-        shutil.rmtree(d, ignore_errors=True)
+        meta.update(id=meta.get("id", d.name), label=meta.get("label", d.name),
+                    status="interrupted")
+        meta.setdefault("finished", d.stat().st_mtime)
+        _save_meta(d, meta)
 
 
-def _sweep_results():
-    """Apply the rolling-retention cap, if any (default: keep everything)."""
-    keep = CFG["results_keep"]
-    if not keep or keep <= 0 or not CFG["results_dir"].is_dir():
+def _drop_interrupted_artifact(d, prefix):
+    """Delete the newest file under input_<prefix>/ or output_<prefix>/ -- the
+    step commec was writing when it was killed. Steps run sequentially, so the
+    newest-mtime artifact is the interrupted (possibly truncated) one; removing
+    it forces just that step to re-run while -R reuses the older, complete ones.
+    (.screen.log is excluded by only scanning the two step subdirs.) Returns the
+    deleted file's path relative to the run dir, or None if there's nothing."""
+    cands = []
+    for sub in (d / f"input_{prefix}", d / f"output_{prefix}"):
+        if sub.is_dir():
+            cands += [p for p in sub.rglob("*") if p.is_file()]
+    if not cands:
+        return None
+    newest = max(cands, key=lambda p: p.stat().st_mtime)
+    try:
+        rel = newest.relative_to(d).as_posix()
+        newest.unlink()
+        return rel
+    except OSError:
+        return None
+
+
+def _sweep_runs():
+    """Apply the rolling-retention cap, if any (default: keep everything).
+    Deletes whole run dirs (intermediates included) oldest-first past the cap."""
+    keep = CFG["runs_keep"]
+    if not keep or keep <= 0 or not CFG["runs_dir"].is_dir():
         return
-    dirs = [d for d in CFG["results_dir"].iterdir() if d.is_dir()]
+    dirs = [d for d in CFG["runs_dir"].iterdir() if d.is_dir()]
     dirs.sort(key=lambda d: d.stat().st_mtime, reverse=True)
     for d in dirs[keep:]:
         shutil.rmtree(d, ignore_errors=True)
 
 
 def _sweep():
-    _sweep_scratch()
-    _sweep_results()
+    _sweep_orphans()
+    _sweep_runs()
 
 
 def _sweep_loop(interval):
@@ -760,7 +816,7 @@ def config():
 
 def _label_exists(label):
     """True if a retained run already uses this label (keeps labels unique)."""
-    rdir = CFG["results_dir"]
+    rdir = CFG["runs_dir"]
     if not rdir.is_dir():
         return False
     for d in rdir.iterdir():
@@ -796,11 +852,14 @@ def screen():
     if not prefix:
         prefix = time.strftime("run-%Y%m%d-%H%M%S")
 
-    # Resolve the input into either a pass-through path (server file, unchanged)
-    # or a set of records we materialise into the run dir.
+    # Every input mode is normalised into a set of records that we materialise
+    # as input.fasta INSIDE the run dir. This is required, not just tidy:
+    # commec writes its output next to the INPUT file (it ignores the directory
+    # part of -o; see screen_io._get_output_prefixes), so the input must live in
+    # the run dir or the output scatters into the browsed/source directory.
     mode = (request.form.get("input_mode") or "path").strip()
     skip_short = (request.form.get("skip_short") or "1") != "0"
-    records, passthrough = None, None
+    records = None
 
     if mode == "paste":
         records = parse_pasted_sequences(request.form.get("sequence_text") or "")
@@ -829,15 +888,12 @@ def screen():
         fasta = str(target)
         if not os.path.isfile(fasta):
             return jsonify({"error": f"FASTA path not found on server: {fasta}"}), 400
-        if skip_short:
-            try:
-                records = _parse_fasta_text(Path(fasta).read_text(encoding="utf-8"))
-            except OSError as exc:
-                return jsonify({"error": f"Could not read {fasta}: {exc}"}), 400
-            if not records:
-                return jsonify({"error": f"No FASTA records found in {fasta}."}), 400
-        else:
-            passthrough = fasta
+        try:
+            records = _parse_fasta_text(Path(fasta).read_text(encoding="utf-8"))
+        except OSError as exc:
+            return jsonify({"error": f"Could not read {fasta}: {exc}"}), 400
+        if not records:
+            return jsonify({"error": f"No FASTA records found in {fasta}."}), 400
     else:
         return jsonify({"error": f"Unknown input mode: {mode!r}"}), 400
 
@@ -861,37 +917,34 @@ def screen():
                                      "Wait for it to finish."}), 409
 
         job_id = uuid.uuid4().hex[:12]
-        scratch = CFG["work_dir"] / job_id      # tmpfs: sensitive, ephemeral
-        resultdir = CFG["results_dir"] / job_id  # persistent: retained results
-        scratch.mkdir(parents=True, exist_ok=True)
+        rundir = CFG["runs_dir"] / job_id  # persistent: sequence + intermediates + results
+        rundir.mkdir(parents=True, exist_ok=True)
 
-        # Write the preset's config into the scratch dir (also a reproducibility
-        # record, persisted with the results) and point commec at it.
-        config_path = scratch / "config.used.yaml"
+        # Write the preset's config into the run dir (also a reproducibility
+        # record, kept with the results) and point commec at it.
+        config_path = rundir / "config.used.yaml"
         with open(config_path, "w", encoding="utf-8") as fh:
             yaml.safe_dump(preset["config"], fh, default_flow_style=False)
 
-        if records is not None:
-            fasta = str(scratch / "input.fasta")
-            _write_fasta(records, fasta)
-            note.insert(0, f"Prepared {len(records)} sequence(s) for screening.")
-        else:
-            fasta = passthrough
+        fasta = str(rundir / "input.fasta")
+        _write_fasta(records, fasta)
+        note.insert(0, f"Prepared {len(records)} sequence(s) for screening.")
 
-        cmd = _build_command(preset, fasta, scratch, config_path, prefix)
+        cmd = _build_command(fasta, rundir, config_path, prefix)
         job = {
             "id": job_id,
             "label": label or prefix,
             "prefix": prefix,
+            "fasta": fasta,
             "created": time.time(),
             "finished": None,
             "cmd": cmd,
-            "scratch": scratch,
-            "resultdir": resultdir,
+            "dir": rundir,
             "log": [],
             "status": "starting",
             "returncode": None,
             "done": False,
+            "stopped": False,
             "proc": None,
             "pgid": None,
         }
@@ -983,16 +1036,44 @@ def _summarize_output(outdir):
 
 
 def _job_dir(job_id):
-    """The directory currently holding a run's files: the live (tmpfs) scratch
-    while running, the persisted results dir once finished, or -- when the job
-    isn't in memory (e.g. after a restart) -- the results dir on disk if it
-    exists. Returns None if nothing is found."""
-    job = JOBS.get(job_id)
-    if job:
-        d = job["resultdir"] if job["done"] else job["scratch"]
-        return d if d.is_dir() else None
-    d = CFG["results_dir"] / job_id
+    """The single persistent directory holding a run's files (same location
+    live or finished). Returns None if it doesn't exist."""
+    d = CFG["runs_dir"] / job_id
     return d if d.is_dir() else None
+
+
+def _is_primary(rel):
+    """True if a run-dir-relative path is one of the polished PRIMARY_ARTIFACTS
+    (matched at the top level, prefix-agnostic via the template suffix)."""
+    if rel.parent != Path("."):
+        return False  # anything in a subdir (output_*/...) is an intermediate
+    for tmpl in PRIMARY_ARTIFACTS:
+        if "{prefix}" in tmpl:
+            if rel.name.endswith(tmpl.replace("{prefix}", "")):
+                return True
+        elif rel.name == tmpl:
+            return True
+    return False
+
+
+def _list_run_files(d):
+    """All files under a run dir, recursively (intermediates included), tagged
+    primary vs advanced. Skips dotfiles and the meta.json marker. Names are
+    paths relative to the run dir (the file route accepts nested paths)."""
+    files = []
+    for p in sorted(d.rglob("*")):
+        if not p.is_file() or p.name == "meta.json":
+            continue
+        rel = p.relative_to(d)
+        if any(part.startswith(".") for part in rel.parts):
+            continue  # dotfiles (.pgid) and anything under a dotdir
+        files.append({
+            "name": rel.as_posix(),
+            "size": p.stat().st_size,
+            "advanced": not _is_primary(rel),
+        })
+    files.sort(key=lambda f: (f["advanced"], f["name"]))
+    return files
 
 
 @app.route("/results/<job_id>")
@@ -1001,24 +1082,23 @@ def results(job_id):
     d = _job_dir(job_id)
     if d is None and not job:
         return jsonify({"error": "unknown job"}), 404
-    files = []
-    if d is not None:
-        for p in sorted(d.iterdir()):
-            if p.is_file() and p.name != "meta.json":
-                files.append({"name": p.name, "size": p.stat().st_size})
+    files = _list_run_files(d) if d is not None else []
     if job:
         status, returncode, label = job["status"], job["returncode"], job["label"]
     else:
         meta = _read_meta(d)
-        status = meta.get("status", "done")
+        status = _effective_status(meta, False)
         returncode = meta.get("returncode")
         label = meta.get("label")
+    resumable = (not job and status == "interrupted"
+                 and d is not None and (d / "config.used.yaml").is_file())
     return jsonify({
         "status": status,
         "returncode": returncode,
         "label": label,
         "files": files,
         "summary": _summarize_output(d) if d is not None else None,
+        "resumable": resumable,
     })
 
 
@@ -1027,6 +1107,17 @@ def _read_meta(d):
         return json.loads((d / "meta.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
+
+
+def _effective_status(meta, is_live):
+    """Display status for a run on disk. A non-live run whose marker is still
+    non-terminal (no marker, 'starting', or 'running') was abandoned by a
+    crash/restart -> report it 'interrupted' immediately, without waiting for
+    the periodic sweep to rewrite the marker."""
+    s = meta.get("status")
+    if is_live:
+        return s or "running"
+    return s if s in _TERMINAL_STATUS else "interrupted"
 
 
 @app.route("/results/<job_id>/file/<path:name>")
@@ -1050,24 +1141,41 @@ def result_file(job_id, name):
 @app.route("/runs")
 def runs():
     """Finished runs (newest first) for the Recent results panel, read from the
-    persisted meta.json markers so the list survives restarts."""
-    rdir = CFG["results_dir"]
+    persisted meta.json markers so the list survives restarts. Currently-live
+    runs are shown by the live Run panel, so they're skipped here."""
+    rdir = CFG["runs_dir"]
+    with JOB_LOCK:
+        live = {j["dir"].name for j in JOBS.values() if not j["done"]}
     entries = []
     if rdir.is_dir():
         for d in rdir.iterdir():
-            if not d.is_dir():
+            if not d.is_dir() or d.name in live:
                 continue
             meta = _read_meta(d)
+            status = _effective_status(meta, False)
             finished = meta.get("finished") or d.stat().st_mtime
             summary = meta.get("summary") or {}
+            # The verdict is cached in the marker at finalize, but a run may have
+            # finished without it (e.g. a resume whose marker predates the new
+            # output.json). Fall back to deriving it live, and self-heal the
+            # marker so the list and the detail view never disagree.
+            if not summary and status in ("done", "error"):
+                summary = _summarize_output(d) or {}
+                if summary:
+                    meta["summary"] = summary
+                    _save_meta(d, meta)
             entries.append((finished, {
                 "id": meta.get("id", d.name),
                 "label": meta.get("label", d.name),
-                "status": meta.get("status", "done"),
+                "status": status,
                 "returncode": meta.get("returncode"),
                 "finished": finished,
                 "overall": summary.get("overall"),
                 "n": summary.get("n"),
+                # Resumable only if we still have what -R needs (the config; the
+                # input is re-checked at resume time, since it may be external).
+                "resumable": (status == "interrupted"
+                              and (d / "config.used.yaml").is_file()),
             }))
     entries.sort(key=lambda e: e[0], reverse=True)
     return jsonify({"runs": [e[1] for e in entries[:50]]})
@@ -1075,16 +1183,95 @@ def runs():
 
 @app.route("/runs/<job_id>", methods=["DELETE"])
 def delete_run(job_id):
-    """Delete a finished run's retained results. Refuses an in-progress run."""
+    """Delete a finished run's directory. Refuses an in-progress run."""
     job = JOBS.get(job_id)
     if job and not job["done"]:
         return jsonify({"error": "That run is still in progress."}), 409
-    d = (CFG["results_dir"] / job_id).resolve()
-    if d.parent != CFG["results_dir"].resolve() or not d.is_dir():
+    d = (CFG["runs_dir"] / job_id).resolve()
+    if d.parent != CFG["runs_dir"].resolve() or not d.is_dir():
         return jsonify({"error": "not found"}), 404
     shutil.rmtree(d, ignore_errors=True)
     JOBS.pop(job_id, None)
     return jsonify({"ok": True})
+
+
+@app.route("/runs/<job_id>/stop", methods=["POST"])
+def stop_run(job_id):
+    """Halt the live run by killing its process group. It finalizes as
+    'interrupted' (resumable) rather than 'error' -- see _run_job. Idempotent-ish:
+    returns 409 if the job isn't currently running."""
+    job = JOBS.get(job_id)
+    if not job or job["done"]:
+        return jsonify({"error": "That run isn't running."}), 409
+    job["stopped"] = True
+    job["log"].append("[gui] Stop requested -- halting the run.")
+    pgid = job.get("pgid")
+    if pgid:
+        # SIGTERM the whole group (commec + blast/hmmer children); _run_job then
+        # observes the exit and marks the run interrupted.
+        try:
+            os.killpg(pgid, signal.SIGTERM)
+        except OSError:
+            pass
+    return jsonify({"ok": True})
+
+
+@app.route("/runs/<job_id>/resume", methods=["POST"])
+def resume_run(job_id):
+    """Continue an interrupted run in place: drop the (possibly truncated)
+    output of the step it died on, then re-run commec with -R so the completed
+    steps are reused. Refuses if a screen is already running (one at a time)."""
+    with JOB_LOCK:
+        if any(not j["done"] for j in JOBS.values()):
+            return jsonify({"error": "A screen is already running. "
+                                     "Wait for it to finish."}), 409
+    d = (CFG["runs_dir"] / job_id).resolve()
+    if d.parent != CFG["runs_dir"].resolve() or not d.is_dir():
+        return jsonify({"error": "not found"}), 404
+    meta = _read_meta(d)
+    if _effective_status(meta, False) != "interrupted":
+        return jsonify({"error": "That run isn't interrupted; nothing to "
+                                 "resume."}), 400
+    prefix = meta.get("prefix")
+    config_path = d / "config.used.yaml"
+    if not prefix or not config_path.is_file():
+        return jsonify({"error": "Can't resume: the run's config is missing."}), 400
+    # The input must live in the run dir so commec writes output here (not next
+    # to the input). New runs always have input.fasta in-dir; for a legacy
+    # run whose input was external, copy it in.
+    indir = d / "input.fasta"
+    if indir.is_file():
+        fasta = str(indir)
+    elif meta.get("fasta") and os.path.isfile(meta["fasta"]):
+        try:
+            shutil.copy(meta["fasta"], indir)
+        except OSError as exc:
+            return jsonify({"error": f"Can't resume: {exc}"}), 400
+        fasta = str(indir)
+    else:
+        return jsonify({"error": "Can't resume: the original input is gone."}), 400
+
+    # Redo only the step that was mid-write when killed (commec's -R trusts any
+    # non-empty file, so a truncated one would silently corrupt the verdict).
+    killed = _drop_interrupted_artifact(d, prefix)
+    cmd = _build_command(fasta, d, config_path, prefix, resume=True)
+    job = {
+        "id": d.name, "label": meta.get("label", d.name), "prefix": prefix,
+        "fasta": fasta, "created": meta.get("created", time.time()),
+        "finished": None, "cmd": cmd, "dir": d, "log": [],
+        "status": "starting", "returncode": None, "done": False,
+        "stopped": False, "proc": None, "pgid": None,
+    }
+    with JOB_LOCK:
+        JOBS[d.name] = job
+    if killed:
+        job["log"].append(f"[gui] Resuming run; re-running the interrupted step "
+                          f"(dropped {killed}). Completed steps are reused.")
+    else:
+        job["log"].append("[gui] Resuming run with -R; existing output reused.")
+    job["log"].append("$ " + " ".join(shlex.quote(c) for c in cmd))
+    threading.Thread(target=_run_job, args=(job,), daemon=True).start()
+    return jsonify({"job_id": d.name})
 
 
 def main():
@@ -1101,18 +1288,16 @@ def main():
                     help="Auto-open a browser at the server (local kiosk mode).")
     ap.add_argument("--commec-bin", default="commec",
                     help="Path to the commec binary (default: commec on PATH).")
-    ap.add_argument("--work-dir", default="runs",
-                    help="Scratch dir for live runs; holds the submitted "
-                         "sequences and intermediates, deleted at end-of-run. "
-                         "Put it on tmpfs in prod (default: ./runs).")
-    ap.add_argument("--results-dir", default="results",
-                    help="Persistent dir for retained results (no raw sequence) "
-                         "(default: ./results).")
-    ap.add_argument("--results-keep", type=int, default=0,
-                    help="Max retained result dirs (oldest pruned). "
-                         "0 (default) keeps everything.")
+    ap.add_argument("--runs-dir", default="runs",
+                    help="Persistent dir holding one directory per run: the "
+                         "submitted sequence, commec's search intermediates, "
+                         "and the polished results, all kept on disk "
+                         "(default: ./runs).")
+    ap.add_argument("--runs-keep", type=int, default=0,
+                    help="Max retained run dirs (oldest pruned, intermediates "
+                         "included). 0 (default) keeps everything.")
     ap.add_argument("--sweep-interval", type=int, default=300,
-                    help="Seconds between orphan sweeps (default: 300).")
+                    help="Seconds between orphan-process sweeps (default: 300).")
     ap.add_argument("--databases", default="",
                     help="Database directory passed to every screen (via -d).")
     ap.add_argument("--browse-root", default=str(Path.home()),
@@ -1144,14 +1329,9 @@ def main():
     args = ap.parse_args()
 
     CFG["commec_bin"] = args.commec_bin
-    CFG["work_dir"] = Path(args.work_dir).resolve()
-    CFG["results_dir"] = Path(args.results_dir).resolve()
-    if CFG["work_dir"] == CFG["results_dir"]:
-        ap.error("--work-dir and --results-dir must differ (sensitive scratch "
-                 "vs retained results).")
-    CFG["work_dir"].mkdir(parents=True, exist_ok=True)
-    CFG["results_dir"].mkdir(parents=True, exist_ok=True)
-    CFG["results_keep"] = args.results_keep
+    CFG["runs_dir"] = Path(args.runs_dir).resolve()
+    CFG["runs_dir"].mkdir(parents=True, exist_ok=True)
+    CFG["runs_keep"] = args.runs_keep
     CFG["default_databases"] = args.databases
     CFG["browse_root"] = Path(args.browse_root).resolve()
     CFG["require_local_auth"] = args.require_local_auth
@@ -1169,12 +1349,11 @@ def main():
     print(f"Loaded {len(CFG['presets'])} preset(s): "
           + ", ".join(p["id"] for p in CFG["presets"]))
     print(f"commec search tools will use {CFG['threads']} thread(s).")
-    print(f"work dir (scratch): {CFG['work_dir']}")
-    print(f"results dir (kept): {CFG['results_dir']}"
-          + (f", max {CFG['results_keep']}" if CFG["results_keep"] else ""))
+    print(f"runs dir (kept): {CFG['runs_dir']}"
+          + (f", max {CFG['runs_keep']}" if CFG["runs_keep"] else ""))
 
-    # Clear any orphan scratch from a previous (crashed/killed) run, then sweep
-    # periodically. Kill in-flight children on shutdown so we don't orphan them.
+    # Kill any process group orphaned by a previous (crashed/killed) run, then
+    # sweep periodically. Kill in-flight children on shutdown too.
     _sweep()
     threading.Thread(target=_sweep_loop, args=(args.sweep_interval,),
                      daemon=True).start()
@@ -1223,7 +1402,7 @@ def main():
     portpart = "" if args.port == default_port else f":{args.port}"
     url = f"{scheme}://127.0.0.1{portpart}/"
     print(f"commec-gui serving on {scheme}://{host}:{args.port}/  "
-          f"(work dir: {CFG['work_dir']})")
+          f"(runs dir: {CFG['runs_dir']})")
 
     if args.kiosk:
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()

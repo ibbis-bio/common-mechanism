@@ -276,7 +276,16 @@
   .pbar.running > i { width: 40%; animation: indet 1.3s ease-in-out infinite; }
   .pbar.done > i { width: 100%; margin-left: 0; animation: none; background: var(--ok); }
   .pbar.error > i { width: 100%; margin-left: 0; animation: none; background: var(--orange); }
+  .pbar.interrupted > i { width: 100%; margin-left: 0; animation: none; background: #5a6b7a; }
   @keyframes indet { 0% { margin-left: -42%; } 100% { margin-left: 100%; } }
+  .progress-row { gap: 12px; align-items: center; }
+  button.stop {
+    appearance: none; cursor: pointer; white-space: nowrap; background: none;
+    color: var(--orange); border: 1px solid var(--orange); border-radius: 8px;
+    padding: 6px 14px; font: 600 13px var(--ui);
+  }
+  button.stop:hover:not(:disabled) { background: var(--orange); color: #fff; }
+  button.stop:disabled { opacity: .55; cursor: default; }
 
   #log {
     background: #0f1320; border: 1px solid #1d2333; border-radius: 8px;
@@ -312,6 +321,7 @@
   .q-warn { color: #9a6a12; background: #fbf3e3; }
   .q-pass { color: #1f6e44; background: #eaf6ef; }
   .q-skip { color: var(--muted); background: #f1f3f6; }
+  .q-int { color: #5a6b7a; background: #e8edf2; }  /* run state: interrupted */
   .qn { font: 13px var(--mono); color: var(--heading); word-break: break-all; }
   .qr { color: var(--muted); }
 
@@ -323,9 +333,10 @@
   }
   .report-cta .rt { font-weight: 700; color: var(--heading); }
   .report-cta .rd { font-size: 13px; color: var(--muted); }
-  .report-cta a.btn {
+  .report-cta .btn {
     margin-left: auto; background: var(--navy); color: #fff; text-decoration: none;
     padding: 10px 18px; border-radius: 8px; font: 600 14px var(--ui); white-space: nowrap;
+    appearance: none; border: none; cursor: pointer;
   }
   .files h3 { font: 600 12px var(--display); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; }
   .file-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
@@ -334,6 +345,9 @@
   .file-row .nm { font: 13px var(--mono); }
   .file-row .sz { color: var(--faint); font-size: 12px; }
   .file-row .dl { margin-left: auto; }
+  /* Intermediate files (raw search output, input): shown only under Advanced. */
+  .file-row.adv-file { display: none; }
+  body.advanced .file-row.adv-file { display: flex; }
 
   /* ---- Recent results ------------------------------------------------- */
   .run-row {
@@ -349,6 +363,11 @@
     color: var(--faint); font: 500 12px var(--ui); padding: 2px 4px; margin-left: 12px;
   }
   .run-row .del:hover { color: var(--orange); text-decoration: underline; }
+  .run-row .resume {
+    appearance: none; background: none; border: none; cursor: pointer;
+    color: var(--teal); font: 600 12px var(--ui); padding: 2px 4px; margin-left: 12px;
+  }
+  .run-row .resume:hover { text-decoration: underline; }
   .recent .empty { color: var(--faint); font-size: 13px; padding: 6px 0; }
 
   @media (max-width: 620px) {
@@ -471,6 +490,7 @@
       <!-- Activity bar (system CPU/RAM meters live in the header). -->
       <div class="progress-row">
         <div class="pbar" id="pbar"><i></i></div>
+        <button type="button" class="stop" id="stop" hidden>Stop</button>
       </div>
       <div id="log"></div>
     </section>
@@ -510,6 +530,7 @@ const runPanel = document.getElementById("runpanel");
 const queueEl = document.getElementById("queue");
 const runLabel = document.getElementById("run-label");
 const pbarEl = document.getElementById("pbar");
+const stopBtn = document.getElementById("stop");
 const recentList = document.getElementById("recent-list");
 const recentSub = document.getElementById("recent-sub");
 const uploadInput = document.getElementById("upload-file");
@@ -522,6 +543,7 @@ let viewingJobId = null;  // run currently shown in the detail card
 
 // Shared/synced state across clients.
 let streamingJobId = null;     // job we're attached to via SSE (the live run)
+let liveJobId = null;          // the currently-running job (from /status), Stop target
 let mySubmitInFlight = false;  // suppress the poller re-enabling Run mid-submit
 let noPresetAvailable = true;  // set once /config loads
 
@@ -864,14 +886,20 @@ function attach(jobId) {
   logEl.textContent = "";
   runPanel.classList.add("active");
   pbarEl.className = "pbar running";
+  stopBtn.hidden = false; stopBtn.disabled = false; stopBtn.textContent = "Stop";
   const es = new EventSource("/events/" + jobId);
   es.addEventListener("log", (e) => appendLog(JSON.parse(e.data).line));
   es.addEventListener("end", (e) => {
     const d = JSON.parse(e.data);
     es.close();
     mySubmitInFlight = false;
-    pbarEl.className = "pbar " + (d.status === "done" ? "done" : "error");
-    if (d.status !== "done") errEl.textContent = `Screen failed (exit ${d.returncode}) - see the log.`;
+    stopBtn.hidden = true;
+    pbarEl.className = "pbar " + (d.status === "done" ? "done"
+                                 : d.status === "interrupted" ? "interrupted" : "error");
+    if (d.status === "interrupted")
+      errEl.textContent = "Run stopped -- saved as Interrupted; resume it from Results.";
+    else if (d.status !== "done")
+      errEl.textContent = `Screen failed (exit ${d.returncode}) - see the log.`;
     showResults(jobId);
     refreshStatus();
     loadRecent();
@@ -897,23 +925,73 @@ async function loadRecent() {
       return;
     }
     recentList.innerHTML = runs.map(r => {
-      const pill = r.overall
-        ? `<span class="qpill q-${statusClass(r.overall)}">${escapeHtml(r.overall)}</span>`
-        : `<span class="qpill q-skip">${r.status === "error" ? "Error" : "Done"}</span>`;
+      let pill;
+      if (r.status === "interrupted") pill = `<span class="qpill q-int">Interrupted</span>`;
+      else if (r.overall) pill = `<span class="qpill q-${statusClass(r.overall)}">${escapeHtml(r.overall)}</span>`;
+      else pill = `<span class="qpill q-skip">${r.status === "error" ? "Error" : "Done"}</span>`;
       const when = r.finished ? new Date(r.finished * 1000).toLocaleString() : "";
-      const nq = r.n ? `${r.n} quer${r.n === 1 ? "y" : "ies"}` : (r.status === "error" ? "failed" : "");
+      const nq = r.status === "interrupted" ? "interrupted"
+        : (r.n ? `${r.n} quer${r.n === 1 ? "y" : "ies"}` : (r.status === "error" ? "failed" : ""));
       const meta = [nq, when].filter(Boolean).join(" · ");
+      const resume = r.resumable
+        ? `<button type="button" class="resume" data-id="${escapeHtml(r.id)}" title="Re-run the interrupted step and continue">resume</button>`
+        : "";
       return `<div class="run-row" data-id="${escapeHtml(r.id)}">
         ${pill}<span class="rl">${escapeHtml(r.label)}</span>
         <span class="rm">${escapeHtml(meta)}</span>
+        ${resume}
         <button type="button" class="del" data-id="${escapeHtml(r.id)}" title="Delete this result">delete</button>
       </div>`;
     }).join("");
     recentList.querySelectorAll(".run-row").forEach(row =>
       row.addEventListener("click", () => viewRun(row.dataset.id)));
+    recentList.querySelectorAll(".resume").forEach(btn =>
+      btn.addEventListener("click", (e) => { e.stopPropagation(); resumeRun(btn.dataset.id); }));
     recentList.querySelectorAll(".del").forEach(btn =>
       btn.addEventListener("click", (e) => { e.stopPropagation(); deleteRun(btn.dataset.id); }));
   } catch (e) { /* ignore */ }
+}
+
+// Stop the live run. The server kills it and finalizes it as Interrupted
+// (resumable); the SSE 'end' event then updates the UI.
+async function stopRun() {
+  if (!liveJobId) return;
+  if (!confirm("Stop this run? It will be saved as Interrupted and can be "
+             + "resumed (or deleted) from Results.")) return;
+  stopBtn.disabled = true; stopBtn.textContent = "Stopping...";
+  try {
+    const res = await fetch("/runs/" + liveJobId + "/stop", { method: "POST" });
+    if (!res.ok) {
+      const b = await res.json().catch(() => ({}));
+      errEl.textContent = b.error || "Couldn't stop the run.";
+      stopBtn.disabled = false; stopBtn.textContent = "Stop";
+    }
+  } catch (err) {
+    errEl.textContent = "Stop failed: " + err;
+    stopBtn.disabled = false; stopBtn.textContent = "Stop";
+  }
+}
+stopBtn.addEventListener("click", stopRun);
+
+// Continue an interrupted run: the server re-runs the step it died on and
+// reuses the rest, then we attach to the live log like a fresh submit.
+async function resumeRun(id) {
+  errEl.textContent = "";
+  runBtn.disabled = true; runBtn.textContent = "Running...";
+  mySubmitInFlight = true;
+  try {
+    const res = await fetch("/runs/" + id + "/resume", { method: "POST" });
+    const body = await res.json();
+    if (!res.ok) {
+      errEl.textContent = body.error || "Couldn't resume.";
+      mySubmitInFlight = false; refreshStatus(); loadRecent();
+      return;
+    }
+    attach(body.job_id);
+  } catch (err) {
+    errEl.textContent = "Resume failed: " + err;
+    mySubmitInFlight = false; refreshStatus();
+  }
 }
 
 async function deleteRun(id) {
@@ -941,6 +1019,11 @@ async function refreshStatus() {
     }
     if (!mySubmitInFlight) runBtn.disabled = s.busy || noPresetAvailable;
     runBtn.textContent = (s.busy || mySubmitInFlight) ? "Running..." : "Run";
+    // Track the live run as the Stop target; keep the button visible while busy
+    // (don't touch its disabled/label here, so a mid-stop "Stopping..." sticks).
+    liveJobId = (s.busy && s.active) ? s.active.job_id : null;
+    if (!s.busy) stopBtn.hidden = true;
+    else if (streamingJobId === (s.active && s.active.job_id)) stopBtn.hidden = false;
     if (s.active && s.active.status === "running" && streamingJobId !== s.active.job_id) {
       attach(s.active.job_id);
     }
@@ -987,6 +1070,21 @@ async function showResults(jobId) {
     reportEl.innerHTML = "";
     filesEl.innerHTML = "";
 
+    // Interrupted run: explain, and offer to continue it (re-runs the cut-off
+    // step and reuses the rest).
+    if (body.status === "interrupted") {
+      reportEl.innerHTML = `
+        <div class="report-cta">
+          <div>
+            <div class="rt">Run interrupted</div>
+            <div class="rd">This run was cut off before finishing${body.resumable ? "" : " (can't be resumed: input or config is missing)"}.</div>
+          </div>
+          ${body.resumable ? `<button type="button" class="btn" id="resume-result">Resume run</button>` : ""}
+        </div>`;
+      const rb = document.getElementById("resume-result");
+      if (rb) rb.addEventListener("click", () => resumeRun(jobId));
+    }
+
     // Verdict summary, parsed from commec's output JSON.
     const sm = body.summary;
     if (sm && sm.n) {
@@ -1010,7 +1108,7 @@ async function showResults(jobId) {
     const report = files.find(f => /_summary\.html?$/i.test(f.name));
     if (report) {
       const url = `/results/${jobId}/file/${encodeURIComponent(report.name)}?view=1`;
-      reportEl.innerHTML = `
+      reportEl.innerHTML += `
         <div class="report-cta">
           <div class="rt">Screening report</div>
           <a class="btn" href="${url}" target="_blank" rel="noopener">Open full report</a>
@@ -1019,8 +1117,11 @@ async function showResults(jobId) {
     if (files.length) {
       let html = "<h3>Output files</h3>";
       for (const f of files) {
-        const base = `/results/${jobId}/file/${encodeURIComponent(f.name)}`;
-        html += `<div class="file-row">
+        // Encode each path segment but keep the slashes (nested intermediates).
+        const enc = f.name.split("/").map(encodeURIComponent).join("/");
+        const base = `/results/${jobId}/file/${enc}`;
+        const cls = f.advanced ? "file-row adv-file" : "file-row";
+        html += `<div class="${cls}">
           <a class="nm" href="${base}?view=1" target="_blank" rel="noopener">${escapeHtml(f.name)}</a>
           <span class="sz">${(f.size).toLocaleString()} B</span>
           <a class="dl" href="${base}">download</a>

@@ -86,10 +86,9 @@ LAN can still reach the GUI.
 | `--tls-auto` | off | Serve HTTPS, generating a cert on first startup if absent |
 | `--tls-cert` / `--tls-key` | (none) | Use a specific cert/key pair (HTTPS) |
 | `--commec-bin` | `commec` | Path to the commec binary |
-| `--work-dir` | `./runs` | Scratch for live runs (submitted sequences + intermediates); deleted at end-of-run. Put it on tmpfs in prod. See [Storage & retention](#storage--retention) |
-| `--results-dir` | `./results` | Persistent dir for retained results (no raw sequence). Must differ from `--work-dir` |
-| `--results-keep` | `0` (unlimited) | Max retained result dirs; oldest pruned past the cap |
-| `--sweep-interval` | `300` | Seconds between orphan-scratch sweeps |
+| `--runs-dir` | `./runs` | Persistent dir holding one directory per run (sequence + intermediates + results), all kept on disk. See [Storage & retention](#storage--retention) |
+| `--runs-keep` | `0` (unlimited) | Max retained run dirs; oldest pruned past the cap (intermediates included) |
+| `--sweep-interval` | `300` | Seconds between orphan-process sweeps |
 | `--databases` | (none) | Database dir passed to every screen (via `-d`) |
 | `--browse-root` | home dir | Root the server-side file browser is confined to |
 | `--threads` | all logical cores | CPU threads passed to commec search tools (via `-t`) |
@@ -128,9 +127,11 @@ unique) and a sequence supplied one of three ways:
 - **Upload**: choose or drag-and-drop a FASTA/CSV/TSV file (200 MB cap).
 - **USB key**: Plugging in a flash-drive automatically pops up a tab, from which one can select files (requires some host config).
 
-Pasted/uploaded/spreadsheet input is normalised into a FASTA file in the run
-dir; a server-side file path is screened in place. A default-on **"skip
-sequences shorter than 50 bp"** toggle drops sub-threshold records.
+Every input (paste, upload, spreadsheet, or a picked server file) is normalised
+into an `input.fasta` **inside the run dir**. This is required: commec writes its
+output next to the input file, so the input must live in the run dir or the
+output would scatter into the source directory. A default-on **"skip sequences
+shorter than 50 bp"** toggle drops sub-threshold records.
 
 One screen runs at a time (screening is CPU-bound and `--threads` already
 saturates the box). The shared run state is polled by every connected browser,
@@ -145,22 +146,38 @@ the embedded HTML **report**, and the list of retained **output files**. The
 **Results** panel lists finished runs (newest first) and survives a server
 restart; each can be reopened or deleted.
 
+### Interrupted runs (resume)
+
+If the **server process** dies mid-run (crash, reboot, kill), that run's marker
+is stuck at `running`; on the next startup the orphan sweep promotes it to
+**Interrupted** (and reaps any still-running search process). Interrupted runs
+show an **Interrupted** badge and a **Resume** button. Resuming re-runs commec
+with `-R` in the same directory, re-using the completed search steps, but
+first it **deletes the newest step output** (`output_<prefix>/` or
+`input_<prefix>/`), because that's the step that could have been mid-write when the process
+died and commec's `-R` would otherwise trust a truncated file (a silent way to
+lose a hit). So the cut-off step is recomputed while everything before it is
+reused. (A run that commec itself *errors* on, or that the user *cancels*,
+finalizes as `error`, not `interrupted`: those aren't offered for resume.)
+
 ## Storage & retention
 
-Sequences are sensitive; results are not, so the two live in different places:
+Each run gets one persistent directory under `--runs-dir` (named by job id) that
+holds **everything**: the submitted sequence (`input.fasta`), `config.used.yaml`,
+commec's raw search intermediates (`output_<prefix>/`, `input_<prefix>/`), and the
+polished artifacts (`<prefix>.output.json`, `<prefix>_summary.html`,
+`<prefix>.screen.log`).
 
-- **Work dir (`--work-dir`, sensitive + ephemeral).** Holds the submitted
-  sequences and commec's raw search intermediates. Wiped at end-of-run, with a
-  periodic sweep (`--sweep-interval`) reaping orphans from crashed/killed runs.
-  **Put it on tmpfs in production** so raw sequence never touches persistent
-  disk (see `deploy-notes.md`).
-- **Results dir (`--results-dir`, retained).** Only the polished, self-
-  contained artifacts are copied off the work dir and kept:
-  `<prefix>.output.json`, `<prefix>_summary.html`, `<prefix>.screen.log`, and
-  `config.used.yaml` -- none contain raw query sequence. Retention is forever by
-  default; set `--results-keep N` for a rolling cap.
+Raw query sequences persist on disk. That is a deliberate
+trade-off: the kiosk box is treated as secured, so on-box debuggability is worth
+more than ephemerality (see `deploy-notes.md`). The GUI's Results panel shows the
+polished artifacts by default and reveals the intermediates (and `input.fasta`)
+under the **Advanced options** toggle.
 
-The two directories must differ (the server refuses to start otherwise).
+Retention is forever by default; set `--runs-keep N` for a rolling cap (oldest
+whole run dirs pruned past the cap). A periodic sweep (`--sweep-interval`) reaps
+process groups orphaned by a crash/restart and flags their runs **Interrupted**
+(resumable, see above).
 
 ## Planned
 
