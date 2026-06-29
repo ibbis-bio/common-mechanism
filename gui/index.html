@@ -273,17 +273,20 @@
   .progress-row { display: none; align-items: center; gap: 14px; margin: 16px 0 0; }
   #runpanel.active .progress-row { display: flex; }
   body.advanced #runpanel.active #log { display: block; }
-  .pbar { flex: 1; height: 8px; background: var(--track); border-radius: 999px; overflow: hidden; }
-  .pbar > i {
-    display: block; height: 100%; width: 0; border-radius: 999px;
-    background: linear-gradient(90deg, var(--teal), #6bbcd6);
+  /* Stage progress: one rectangle per commec step, width ~ its share of
+     runtime (from speedtest data). Empty -> flashing (active) -> filled (done). */
+  .stages { flex: 1; display: flex; gap: 5px; height: 10px; }
+  .stage {
+    min-width: 8px; background: var(--track); border-radius: 3px;
   }
-  /* Indeterminate only while running; fill + stop once finished. */
-  .pbar.running > i { width: 40%; animation: indet 1.3s ease-in-out infinite; }
-  .pbar.done > i { width: 100%; margin-left: 0; animation: none; background: var(--ok); }
-  .pbar.error > i { width: 100%; margin-left: 0; animation: none; background: var(--orange); }
-  .pbar.interrupted > i { width: 100%; margin-left: 0; animation: none; background: #5a6b7a; }
-  @keyframes indet { 0% { margin-left: -42%; } 100% { margin-left: 100%; } }
+  .stage.done { background: var(--teal); }
+  .stage.active { animation: stageflash 1.1s ease-in-out infinite; }
+  .stage.failed { background: var(--orange); animation: none; }
+  .stage.interrupted { background: #5a6b7a; animation: none; }
+  @keyframes stageflash {
+    0%, 100% { background: var(--track); }
+    50% { background: var(--teal); }
+  }
   .progress-row { gap: 12px; align-items: center; }
   button.stop {
     appearance: none; cursor: pointer; white-space: nowrap; background: none;
@@ -513,7 +516,12 @@
 
       <!-- Activity bar (system CPU/RAM meters live in the header). -->
       <div class="progress-row">
-        <div class="pbar" id="pbar"><i></i></div>
+        <div class="stages" id="stages" title="Screening stages: biorisk, protein, nucleotide, low-concern">
+          <span class="stage" data-step="1" style="flex-grow:2"></span>
+          <span class="stage" data-step="2" style="flex-grow:57"></span>
+          <span class="stage" data-step="3" style="flex-grow:39"></span>
+          <span class="stage" data-step="4" style="flex-grow:2"></span>
+        </div>
         <button type="button" class="stop" id="stop" hidden>Stop</button>
       </div>
       <div id="log"></div>
@@ -554,7 +562,42 @@ const presetsEl = document.getElementById("presets");
 const runPanel = document.getElementById("runpanel");
 const queueEl = document.getElementById("queue");
 const runLabel = document.getElementById("run-label");
-const pbarEl = document.getElementById("pbar");
+const stagesEl = document.getElementById("stages");
+
+/* ---- Stage progress bar (driven by commec's STEP log markers) -------- */
+function _stage(n) { return stagesEl.querySelector('.stage[data-step="' + n + '"]'); }
+function resetStages() {
+  stagesEl.querySelectorAll(".stage").forEach(s => s.className = "stage");
+}
+function setStageActive(n) {
+  stagesEl.querySelectorAll(".stage").forEach(s => {
+    const step = +s.dataset.step;
+    s.classList.remove("active", "failed", "interrupted");
+    s.classList.toggle("done", step < n);
+    if (step === n) s.classList.add("active");
+  });
+}
+function setStageDone(n) {
+  const s = _stage(n);
+  if (s) { s.classList.remove("active"); s.classList.add("done"); }
+}
+// commec logs ">> STEP N: Checking..." (start) and "STEP N completed at..." for
+// every step, even skipped ones (those just complete instantly).
+function parseStageLine(line) {
+  let m = line.match(/\bSTEP\s+(\d)\s+completed\b/i);
+  if (m) { setStageDone(+m[1]); return; }
+  m = line.match(/\bSTEP\s+(\d)\s*:/i);
+  if (m) setStageActive(+m[1]);
+}
+function finishStages(status) {
+  const active = stagesEl.querySelector(".stage.active");
+  stagesEl.querySelectorAll(".stage").forEach(s => s.classList.remove("active"));
+  if (status === "done") {
+    stagesEl.querySelectorAll(".stage").forEach(s => s.classList.add("done"));
+  } else if (active) {
+    active.classList.add(status === "interrupted" ? "interrupted" : "failed");
+  }
+}
 const stopBtn = document.getElementById("stop");
 const recentList = document.getElementById("recent-list");
 const recentSub = document.getElementById("recent-sub");
@@ -932,17 +975,22 @@ function attach(jobId) {
   summaryDiv.innerHTML = ""; reportEl.innerHTML = ""; filesEl.innerHTML = ""; resultTitle.textContent = "Result";
   logEl.textContent = "";
   runPanel.classList.add("active");
-  pbarEl.className = "pbar running";
+  resetStages();
+  setStageActive(1);  // commec's prep/biorisk phase; refined as STEP markers stream
   stopBtn.hidden = false; stopBtn.disabled = false; stopBtn.textContent = "Stop";
   const es = new EventSource("/events/" + jobId);
-  es.addEventListener("log", (e) => appendLog(JSON.parse(e.data).line));
+  es.addEventListener("log", (e) => {
+    const line = JSON.parse(e.data).line;
+    appendLog(line);
+    parseStageLine(line);
+  });
   es.addEventListener("end", (e) => {
     const d = JSON.parse(e.data);
     es.close();
+    streamingJobId = null;  // stream done -> allow re-attach (e.g. resuming this same job)
     mySubmitInFlight = false;
     stopBtn.hidden = true;
-    pbarEl.className = "pbar " + (d.status === "done" ? "done"
-                                 : d.status === "interrupted" ? "interrupted" : "error");
+    finishStages(d.status);
     if (d.status === "interrupted")
       errEl.textContent = "Run stopped -- saved as Interrupted; resume it from Results.";
     else if (d.status !== "done")
