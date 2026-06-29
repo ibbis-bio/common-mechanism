@@ -235,6 +235,19 @@ class HitResult:
             f", {self.recommendation.status}. Range({self.region.query_start}-{self.region.query_end})\n"
             )
         return output
+    
+    def __eq__(self, other) -> bool:
+        same_name = self.name == other.name
+        same_region = self.region == other.region
+        return same_name and same_region
+
+    def __hash__(self):
+        return hash(
+            (
+                self.name,
+                self.region,
+            )
+        )
 
 class Rationale(StrEnum):
     """

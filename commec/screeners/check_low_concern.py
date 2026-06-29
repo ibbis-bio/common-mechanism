@@ -326,6 +326,9 @@ def _update_low_concern_data_for_query(query : Query,
     new_low_concern_hits.extend(new_low_concern_rna_hits)
     new_low_concern_hits.extend(new_low_concern_dna_hits)
 
+    # Remove duplicates:
+    new_low_concern_hits=list(set(new_low_concern_hits))
+
     logger.debug("\tNew low-concern hits added: %i", len(new_low_concern_hits))
     for low_concern_addition in new_low_concern_hits:
         query.result.add_new_hit_information(low_concern_addition)
