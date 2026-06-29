@@ -45,7 +45,6 @@ def test_multiple_entrys():
         {
             "category": "Viruses",
             "display_name": "Influenza A virus",
-            "notes": "Seasonal pathogen",
             "derived_from": "",
             "preferred_taxonomy_name": "Influenza A virus",
             "other_taxonomy_name": "Flu A",
@@ -57,7 +56,6 @@ def test_multiple_entrys():
         {
             "category": "Viruses",
             "display_name": "Influenza B virus",
-            "notes": "Seasonal pathogen",
             "derived_from": "",
             "preferred_taxonomy_name": "Influenza B virus",
             "other_taxonomy_name": "Flu B",
@@ -72,7 +70,6 @@ def test_multiple_entrys():
         {
             "category": "Viruses",
             "display_name": "Influenza A virus",
-            "notes": "Seasonal pathogen",
             "derived_from": "",
             "preferred_taxonomy_name": "Influenza A virus",
             "other_taxonomy_name": "Flu A",
@@ -89,7 +86,6 @@ def test_multiple_entrys():
         {   # Fully Duplicate entry
             "category": "Viruses",
             "display_name": "Influenza B virus",
-            "notes": "Seasonal pathogen",
             "derived_from": "",
             "preferred_taxonomy_name": "Influenza B virus",
             "other_taxonomy_name": "Flu B",
@@ -118,7 +114,7 @@ def test_multiple_entrys():
 
     # Twelve headings, however should only have 3 entries from the above 5 entries.
     # There are 13 entries for a control_list/list_data/CONTROL_LIST_ANNOTATIONS
-    assert ld.CONTROL_LIST_ANNOTATIONS.shape == (3,10), "Incorrect shape of imported Regulation Annotations. Got {ld.CONTROL_LIST_ANNOTATIONS.shape}"
+    assert ld.CONTROL_LIST_ANNOTATIONS.shape == (3,9), f"Incorrect shape of imported Regulation Annotations. Got {ld.CONTROL_LIST_ANNOTATIONS.shape}"
 
     output = get_regulation("11320")
     assert len(output) == 2, f"Incorrect number of returned Regulations. Expected 2, got {output}"

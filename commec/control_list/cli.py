@@ -131,14 +131,6 @@ def generate_output_summary_csv(output_filepath : str | os.PathLike):
 
     output_data = data.CONTROL_LIST_ANNOTATIONS.copy(deep = True)
     
-    # Currently removed as display_name, and list_item are new ways of working...
-    #output_data["name"] = (
-    #    output_data["preferred_taxonomy_name"].replace("", pd.NA)
-    #    .combine_first(output_data["display_name"])
-    #    .combine_first(output_data["other_taxonomy_name"].replace("", pd.NA))
-    #)
-    # output_data.drop(columns = ["preferred_taxonomy_name"], inplace=True)
-    
     # Step 1: create dummy columns for list_acronym
     dummies = pd.get_dummies(output_data["list_acronym"], dtype = int)
 
@@ -146,15 +138,15 @@ def generate_output_summary_csv(output_filepath : str | os.PathLike):
     indicators = dummies.groupby(output_data.index, sort=False).max()
 
     # Step 3: merge back with the *deduplicated* original dataframe
-    # (dropping 'list_acronym' because it's now encoded)
-    base = output_data.drop(columns="list_acronym").groupby(output_data.index, sort=False).first()
+    # (dropping 'list_acronym' because it's now encoded, and 'list_item' because there's too many to encode per taxid)
+    base = output_data.drop(columns=["list_acronym", "list_item"]).groupby(output_data.index, sort=False).first()
     result = base.join(indicators, how="outer")
 
     # Export - ensure .csv suffix
     output_path = Path(output_filepath)
     if output_path.suffix != ".csv":
         output_path = output_path.with_suffix(".csv")
-    result.to_csv(output_path)
+    result.to_csv(output_path, index = False)
 
 def read_config_yaml_for_control_list_info(config_yaml_filepath : os.PathLike | str):
     """

@@ -100,7 +100,6 @@ def test_import_annotations_minimal_csv_fills_defaults(tmp_path):
     row = ld.CONTROL_LIST_ANNOTATIONS.iloc[0]
     assert row["tax_id"] == "100"
     # Columns absent from the CSV should be filled with empty strings
-    assert row["notes"] == ""
     assert row["species"] == ""
     assert row["genus"] == ""
 
