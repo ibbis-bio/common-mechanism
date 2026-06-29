@@ -124,11 +124,13 @@ def _create_hit_info(row : pd.Series, control_output = None) -> dict:
     output_dict =  {
         "evalue" : row["evalue"],
         "percent_identity" : row["% identity"],
-        "taxid" : row["subject tax ids"],
-        "start" : row["q. start"],
-        "end" : row["q. end"],
+        "query_start" : row["q. start"],
+        "query_end" : row["q. end"],
+        "match_start" : row["s. start"],
+        "match_end" : row["s. end"],
         "target_hit" : row["subject acc."],
         "target_description" : row["subject title"],
+        "taxid" : row["subject tax ids"],
     }
     if control_output:
         output_dict["genus"] = control_output[0].genus
@@ -175,7 +177,6 @@ def _create_hit_result_for_cluster(
     best_evalue = min(cluster_data["evalue"])
     match_range = MatchRange(
             best_evalue,
-            0, 0,
             int(cluster_start), int(cluster_end),
         )
 

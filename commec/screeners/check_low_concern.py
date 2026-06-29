@@ -85,7 +85,6 @@ def _filter_low_concern_proteins(query : Query,
     low_concern_hit_description = str(*low_concern_descriptions["Description"][low_concern_descriptions["ID"] == low_concern_hit])
     match_range = MatchRange(
         float(low_concern_protein_for_query_trimmed['evalue'].iloc[0]),
-        int(low_concern_protein_for_query_trimmed['s. start'].iloc[0]), int(low_concern_protein_for_query_trimmed['s. end'].iloc[0]),
         int(low_concern_protein_for_query_trimmed['q. start'].iloc[0]), int(low_concern_protein_for_query_trimmed['q. end'].iloc[0])
         )
     low_concern_hit_outcome = HitResult(
@@ -139,7 +138,6 @@ def _filter_low_concern_rna(query : Query,
         low_concern_hit_description =  low_concern_rna_for_query_trimmed["description of target"].iloc[0]
         match_range = MatchRange(
             float(low_concern_rna_for_query_trimmed['evalue'].iloc[0]),
-            int(low_concern_rna_for_query_trimmed['s. start'].iloc[0]), int(low_concern_rna_for_query_trimmed['s. end'].iloc[0]),
             int(low_concern_rna_for_query_trimmed['q. start'].iloc[0]), int(low_concern_rna_for_query_trimmed['q. end'].iloc[0])
             )
         low_concern_hit_outcome = HitResult(
@@ -198,7 +196,6 @@ def _filter_low_concern_dna(query : Query,
     low_concern_hit_description =  low_concern_dna_for_query_trimmed["subject title"].iloc[0]
     match_range = MatchRange(
         float(low_concern_dna_for_query_trimmed['evalue'].iloc[0]),
-        int(low_concern_dna_for_query_trimmed['s. start'].iloc[0]), int(low_concern_dna_for_query_trimmed['s. end'].iloc[0]),
         int(low_concern_dna_for_query_trimmed['q. start'].iloc[0]), int(low_concern_dna_for_query_trimmed['q. end'].iloc[0])
         )
 

@@ -110,7 +110,7 @@ def _make_screen_result(query_name: str = "seq1") -> ScreenResult:
 
 
 def _make_match_range() -> MatchRange:
-    return MatchRange(1e-10, 0, 0, 100, 300)
+    return MatchRange(1e-10, 100, 300)
 
 
 # ── _check_inputs ──────────────────────────────────────────────────────────────
@@ -158,8 +158,10 @@ class TestCreateHitInfo:
         assert result["taxid"] == row["subject tax ids"]
         assert result["target_hit"] == row["subject acc."]
         assert result["target_description"] == row["subject title"]
-        assert result["start"] == row["q. start"]
-        assert result["end"] == row["q. end"]
+        assert result["query_start"] == row["q. start"]
+        assert result["query_end"] == row["q. end"]
+        assert result["match_start"] == row["s. start"]
+        assert result["match_end"] == row["s. end"]
 
     def test_no_taxonomy_fields_without_control_output(self):
         result = _create_hit_info(self._row())
@@ -408,7 +410,7 @@ class TestBuildLogMessage:
     def test_output_contains_status_and_taxids(self):
         msg = _build_log_message(
             ScreenStatus.FLAG, "Viruses",
-            [MatchRange(1e-10, 0, 0, 100, 300)],
+            [MatchRange(1e-10, 100, 300)],
             "controlled Viruses",
             ["111", "222"], [], ["Virus sp."],
         )
@@ -419,7 +421,7 @@ class TestBuildLogMessage:
     def test_non_reg_taxids_appear_when_present(self):
         msg = _build_log_message(
             ScreenStatus.WARN, "Viruses",
-            [MatchRange(1e-10, 0, 0, 100, 300)],
+            [MatchRange(1e-10, 100, 300)],
             "mixed Viruses",
             ["111"], ["9999"], ["Virus sp."],
         )
@@ -428,7 +430,7 @@ class TestBuildLogMessage:
     def test_non_reg_taxids_absent_when_empty(self):
         msg = _build_log_message(
             ScreenStatus.FLAG, "Viruses",
-            [MatchRange(1e-10, 0, 0, 100, 300)],
+            [MatchRange(1e-10, 100, 300)],
             "controlled Viruses",
             ["111"], [], ["Virus sp."],
         )

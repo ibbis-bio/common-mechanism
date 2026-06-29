@@ -3,7 +3,7 @@
     "commec_version": "1.1.0",
     "json_output_version": "0.5",
     "time_taken": "00:00:01",
-    "date_run": "2026-06-29 12:40:19",
+    "date_run": "2026-06-29 15:13:20",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -36,7 +36,7 @@
     ]
   },
   "query_info": {
-    "file": "/tmp/pytest-of-michael/pytest-127/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-michael/pytest-142/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -62,8 +62,6 @@
           "description": "Mix of 1 controlled Viruses and 1 non-controlled Viruses",
           "region": {
             "e_value": 0.16,
-            "match_start": 0,
-            "match_end": 0,
             "query_start": 501,
             "query_end": 581
           },
@@ -76,11 +74,13 @@
                 {
                   "evalue": 0.16,
                   "percent_identity": 99.999,
-                  "taxid": 12345,
-                  "start": 501,
-                  "end": 581,
+                  "query_start": 501,
+                  "query_end": 581,
+                  "match_start": 1,
+                  "match_end": 80,
                   "target_hit": "NT_HIT_MIXED",
                   "target_description": "Main",
+                  "taxid": 12345,
                   "genus": "orthoregulatidae",
                   "species": "regulaticus",
                   "controlled_by_lists": [
@@ -95,11 +95,13 @@
                 {
                   "evalue": 0.17,
                   "percent_identity": 99.999,
-                  "taxid": 12348,
-                  "start": 501,
-                  "end": 581,
+                  "query_start": 501,
+                  "query_end": 581,
+                  "match_start": 1,
+                  "match_end": 80,
                   "target_hit": "NT_HIT_MIXED2",
-                  "target_description": "NonRegMixedWithMain"
+                  "target_description": "NonRegMixedWithMain",
+                  "taxid": 12348
                 }
               ],
               "statistics": {
@@ -122,8 +124,6 @@
           "description": "controlled Viruses SUBJECT_3",
           "region": {
             "e_value": 0.15,
-            "match_start": 0,
-            "match_end": 0,
             "query_start": 110,
             "query_end": 200
           },
@@ -136,11 +136,13 @@
                 {
                   "evalue": 0.15,
                   "percent_identity": 99.999,
-                  "taxid": 12350,
-                  "start": 110,
-                  "end": 200,
+                  "query_start": 110,
+                  "query_end": 200,
+                  "match_start": 1,
+                  "match_end": 90,
                   "target_hit": "NT_HIT_FLAG3",
                   "target_description": "SUBJECT_3",
+                  "taxid": 12350,
                   "genus": "orthonovaregulatidae",
                   "species": "Viria Novia blue beads",
                   "controlled_by_lists": [
@@ -172,8 +174,6 @@
           "description": "controlled Viruses NR_HIT_ShouldntClear",
           "region": {
             "e_value": 0.14,
-            "match_start": 0,
-            "match_end": 0,
             "query_start": 110,
             "query_end": 190
           },
@@ -186,11 +186,13 @@
                 {
                   "evalue": 0.14,
                   "percent_identity": 99.999,
-                  "taxid": 12345,
-                  "start": 110,
-                  "end": 190,
+                  "query_start": 110,
+                  "query_end": 190,
+                  "match_start": 1,
+                  "match_end": 80,
                   "target_hit": "NT_HIT_FLAG2",
                   "target_description": "SUBJECT_2",
+                  "taxid": 12345,
                   "genus": "orthoregulatidae",
                   "species": "regulaticus",
                   "controlled_by_lists": [
@@ -222,8 +224,6 @@
           "description": "controlled Viruses NR_HIT_ShouldntClear",
           "region": {
             "e_value": 0.13,
-            "match_start": 0,
-            "match_end": 0,
             "query_start": 220,
             "query_end": 280
           },
@@ -236,11 +236,13 @@
                 {
                   "evalue": 0.13,
                   "percent_identity": 99.999,
-                  "taxid": 12345,
-                  "start": 220,
-                  "end": 280,
+                  "query_start": 220,
+                  "query_end": 280,
+                  "match_start": 1,
+                  "match_end": 60,
                   "target_hit": "NT_HIT_FLAG1",
                   "target_description": "SUBJECT_1",
+                  "taxid": 12345,
                   "genus": "orthoregulatidae",
                   "species": "regulaticus",
                   "controlled_by_lists": [
@@ -272,8 +274,6 @@
           "description": "Mix of 1 controlled Viruses and 2 non-controlled Viruses",
           "region": {
             "e_value": 0.1,
-            "match_start": 0,
-            "match_end": 0,
             "query_start": 340,
             "query_end": 390
           },
@@ -286,11 +286,13 @@
                 {
                   "evalue": 0.1,
                   "percent_identity": 99.999,
-                  "taxid": 12347,
-                  "start": 340,
-                  "end": 390,
+                  "query_start": 340,
+                  "query_end": 390,
+                  "match_start": 1,
+                  "match_end": 50,
                   "target_hit": "NR_HIT_MIXED1",
                   "target_description": "ShouldMixedReg1",
+                  "taxid": 12347,
                   "genus": "orthoregulatidae",
                   "species": "regulaticus",
                   "controlled_by_lists": [
@@ -305,20 +307,24 @@
                 {
                   "evalue": 0.11,
                   "percent_identity": 99.999,
-                  "taxid": 12348,
-                  "start": 340,
-                  "end": 390,
+                  "query_start": 340,
+                  "query_end": 390,
+                  "match_start": 1,
+                  "match_end": 50,
                   "target_hit": "NR_HIT_MIXED2",
-                  "target_description": "ShouldMixednonReg2"
+                  "target_description": "ShouldMixednonReg2",
+                  "taxid": 12348
                 },
                 {
                   "evalue": 0.12,
                   "percent_identity": 99.999,
-                  "taxid": 12349,
-                  "start": 340,
-                  "end": 390,
+                  "query_start": 340,
+                  "query_end": 390,
+                  "match_start": 1,
+                  "match_end": 50,
                   "target_hit": "NR_HIT_MIXED3",
-                  "target_description": "ShouldMixedNonReg3"
+                  "target_description": "ShouldMixedNonReg3",
+                  "taxid": 12349
                 }
               ],
               "statistics": {
@@ -341,8 +347,6 @@
           "description": "controlled Viruses ShouldClear",
           "region": {
             "e_value": 0.09,
-            "match_start": 0,
-            "match_end": 0,
             "query_start": 310,
             "query_end": 370
           },
@@ -355,11 +359,13 @@
                 {
                   "evalue": 0.09,
                   "percent_identity": 99.999,
-                  "taxid": 12346,
-                  "start": 310,
-                  "end": 370,
+                  "query_start": 310,
+                  "query_end": 370,
+                  "match_start": 1,
+                  "match_end": 60,
                   "target_hit": "NR_HIT_FLAG4",
                   "target_description": "ShouldClear",
+                  "taxid": 12346,
                   "genus": "orthoderegulatidae",
                   "species": "fine-icus",
                   "controlled_by_lists": [
@@ -391,8 +397,6 @@
           "description": "controlled Viruses NR_HIT_ShouldntClear",
           "region": {
             "e_value": 0.08,
-            "match_start": 0,
-            "match_end": 0,
             "query_start": 410,
             "query_end": 500
           },
@@ -405,11 +409,13 @@
                 {
                   "evalue": 0.08,
                   "percent_identity": 99.999,
-                  "taxid": 12345,
-                  "start": 410,
-                  "end": 500,
+                  "query_start": 410,
+                  "query_end": 500,
+                  "match_start": 1,
+                  "match_end": 90,
                   "target_hit": "NR_HIT_FLAG3",
                   "target_description": "NR_HIT2_ShouldntClear",
+                  "taxid": 12345,
                   "genus": "orthoregulatidae",
                   "species": "regulaticus",
                   "controlled_by_lists": [
@@ -441,8 +447,6 @@
           "description": "controlled Viruses ShouldClearBySynBio",
           "region": {
             "e_value": 0.07,
-            "match_start": 0,
-            "match_end": 0,
             "query_start": 410,
             "query_end": 490
           },
@@ -455,11 +459,13 @@
                 {
                   "evalue": 0.07,
                   "percent_identity": 99.999,
-                  "taxid": 12347,
-                  "start": 410,
-                  "end": 490,
+                  "query_start": 410,
+                  "query_end": 490,
+                  "match_start": 1,
+                  "match_end": 80,
                   "target_hit": "NR_HIT_FLAG2",
                   "target_description": "ShouldClearBySynBio",
+                  "taxid": 12347,
                   "genus": "orthoregulatidae",
                   "species": "regulaticus",
                   "controlled_by_lists": [
@@ -491,8 +497,6 @@
           "description": "controlled Viruses NR_HIT_ShouldntClear",
           "region": {
             "e_value": 0.06,
-            "match_start": 0,
-            "match_end": 0,
             "query_start": 320,
             "query_end": 380
           },
@@ -505,11 +509,13 @@
                 {
                   "evalue": 0.06,
                   "percent_identity": 99.999,
-                  "taxid": 12345,
-                  "start": 320,
-                  "end": 380,
+                  "query_start": 320,
+                  "query_end": 380,
+                  "match_start": 1,
+                  "match_end": 60,
                   "target_hit": "NR_HIT_FLAG1",
                   "target_description": "NR_HIT_ShouldntClear",
+                  "taxid": 12345,
                   "genus": "orthoregulatidae",
                   "species": "regulaticus",
                   "controlled_by_lists": [
@@ -541,8 +547,6 @@
           "description": "ShouldntClear LargeAreaFlag",
           "region": {
             "e_value": 1e-21,
-            "match_start": 1,
-            "match_end": 29,
             "query_start": 4,
             "query_end": 93
           },
@@ -564,8 +568,6 @@
           "description": "ShouldntClear SmallImportantFlag",
           "region": {
             "e_value": 1e-22,
-            "match_start": 1,
-            "match_end": 10,
             "query_start": 31,
             "query_end": 63
           },
@@ -587,8 +589,6 @@
           "description": "WarningExample",
           "region": {
             "e_value": 1.0000000000000001e-24,
-            "match_start": 1,
-            "match_end": 27,
             "query_start": 106,
             "query_end": 189
           },
@@ -610,8 +610,6 @@
           "description": "ReverseExample",
           "region": {
             "e_value": 9.999999999999999e-26,
-            "match_start": 1,
-            "match_end": 29,
             "query_start": 507,
             "query_end": 596
           },
@@ -633,8 +631,6 @@
           "description": "",
           "region": {
             "e_value": 9.999999999999999e-27,
-            "match_start": 1,
-            "match_end": 56,
             "query_start": 199,
             "query_end": 369
           },
@@ -651,8 +647,6 @@
           "description": "BenignCMTestOutput",
           "region": {
             "e_value": 1e-27,
-            "match_start": 1,
-            "match_end": 100,
             "query_start": 50,
             "query_end": 150
           },
@@ -667,8 +661,6 @@
           "description": "BENIGNSYNBIO",
           "region": {
             "e_value": 1.0000000000000001e-28,
-            "match_start": 1,
-            "match_end": 70,
             "query_start": 410,
             "query_end": 480
           },

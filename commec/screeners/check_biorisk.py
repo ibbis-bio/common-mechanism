@@ -185,7 +185,6 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
             for _, region in unique_target_data.iterrows():
                 match_range = MatchRange(
                     float(region['E-value']),
-                    int(region['hmm from']), int(region['hmm to']),
                     int(region['q. start']), int(region['q. end'])
                 )
                 match_ranges.append(match_range)

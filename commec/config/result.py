@@ -173,13 +173,8 @@ class MatchRange:
     """
 
     e_value: float = float('nan')
-    # percent identity?
-    match_start: int = 0
-    match_end: int = 0
     query_start: int = 0
     query_end: int = 0
-
-    # TODO: Add frame, as QueryStart and QueryEnd should be in Frame0 NT coords.
 
     def length(self):
         """
@@ -192,8 +187,6 @@ class MatchRange:
         return hash(
             (
                 self.e_value,
-                self.match_start,
-                self.match_end,
                 self.query_start,
                 self.query_end,
             )
@@ -204,8 +197,6 @@ class MatchRange:
             return NotImplemented
         return (
             self.e_value == other.e_value
-            and self.match_start == other.match_start
-            and self.match_end == other.match_end
             and self.query_start == other.query_start
             and self.query_end == other.query_end
         )
@@ -416,52 +407,18 @@ class QueryResult:
     status: QueryScreenStatus = field(default_factory=QueryScreenStatus)
     hits: list[HitResult] = field(default_factory=list)
 
-    def get_hit(self, match_name: str) -> HitResult:
-        """Wrapper for get logic."""
-        return self.hits.get(match_name)
-    
-    def check_hit_range(self, input_region : MatchRange):
-        """
-        Checks all existing hits for whether there is an similar query coordinate region.
-        Returns the relevant hit, or None.
-        """
-        for hit in self.hits:
-            if (
-                input_region.query_start == hit.region.query_start
-                and input_region.query_end == hit.region.query_end
-            ):
-                return hit
-        return None
-
     def add_new_hit_information(self, new_hit: HitResult) -> bool:
         """
-        Adds a Hit to this query, always use this to add hits, rather
+        Adds a Hit to this query, we always use this to add hits, rather
         than directly, so that duplicate hits may be chosen to be identified here.
         """
+        # Hits are hashable, we can detect whether a hit should likely of been
+        # deduplicated before adding it in. For now, we will show a debug message.
+        if new_hit in self.hits:
+            logger.debug("Newly added hit [%s] is very similar to an already identified hit.", new_hit)
+
         self.hits.append(new_hit)
         return False
-        #existing_hit = self.hits.get(new_hit.name)
-        #hits_is_updated: bool = False
-
-        #if not existing_hit:
-        #    self.hits[new_hit.name] = new_hit
-        #    return False
-
-        #for new_region in new_hit.ranges:
-        #    is_unique_region = True
-        #    for existing_region in existing_hit.ranges:
-        #        if (
-        #            new_region.query_start == existing_region.query_start
-        #            and new_region.query_end == existing_region.query_end
-        #        ):
-        #            logger.debug(f"[{new_region.query_start}-{new_region.query_end}] Region already exists...")
-        #            is_unique_region = False
-        #
-        #    if is_unique_region:
-        #        hits_is_updated = True
-        #        existing_hit.ranges.append(new_region)
-
-        #return hits_is_updated
 
     def get_flagged_hits(self) -> List[HitResult]:
         """

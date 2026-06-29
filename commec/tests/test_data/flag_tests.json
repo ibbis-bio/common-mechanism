@@ -55,15 +55,11 @@
                     },
                     "name": "Toxin1",
                     "description": " TestBioriskToxinFlag",
-                    "ranges": [
-                        {
+                    "region": {
                             "e_value": 0.0,
-                            "match_start": 1,
-                            "match_end": 30,
                             "query_start": 4,
                             "query_end": 93
-                        }
-                    ],
+                    },
                     "annotations": {
                         "category": [
                             "not assigned"
@@ -93,15 +89,11 @@
                     },
                     "name": "RegulatedGeneExample",
                     "description": "This is a regulated gene that requires regulating.",
-                    "ranges": [
-                        {
+                    "region": {
                             "e_value": 0.0,
-                            "match_start": 1,
-                            "match_end": 30,
                             "query_start": 4,
                             "query_end": 93
-                        }
-                    ],
+                    },
                     "annotations": {
                         "category": [
                             "Viruses"
@@ -138,15 +130,11 @@
                     },
                     "name": "RegulatedGeneExample",
                     "description": "and another, regulated gene!",
-                    "ranges": [
-                        {
+                    "region": {
                             "e_value": 0.0,
-                            "match_start": 1,
-                            "match_end": 30,
                             "query_start": 4,
                             "query_end": 93
-                        }
-                    ],
+                    },
                     "annotations": {
                         "category": [
                             "Bacteria"
@@ -183,15 +171,11 @@
                     },
                     "name": "RegulatedGeneExample",
                     "description": "Some inane description.",
-                    "ranges": [
-                        {
+                    "region": {
                             "e_value": 0.0,
-                            "match_start": 1,
-                            "match_end": 30,
                             "query_start": 4,
                             "query_end": 93
-                        }
-                    ],
+                    },
                     "annotations": {
                         "category": [
                             "Eukaryote"
@@ -228,15 +212,11 @@
                     },
                     "name": "RegulatedGeneExample",
                     "description": " TestRegulatedNT",
-                    "ranges": [
-                        {
+                    "region": {
                             "e_value": 0.0,
-                            "match_start": 1,
-                            "match_end": 30,
                             "query_start": 4,
                             "query_end": 93
-                        }
-                    ],
+                    },
                     "annotations": {
                         "category": [
                             "Viruses",
@@ -275,15 +255,11 @@
                     },
                     "name": "MixedRegulatedAndNonExample",
                     "description": " TestRegulatedNT",
-                    "ranges": [
-                        {
+                    "region": {
                             "e_value": 0.0,
-                            "match_start": 1,
-                            "match_end": 30,
                             "query_start": 4,
                             "query_end": 93
-                        }
-                    ],
+                    },
                     "annotations": {
                         "category": [
                             "Viruses"

@@ -42,8 +42,6 @@ def test_screendata():
                         annotations = {"domain" : ["Bacteria"]},
                         region = MatchRange(
                             e_value = 0.0,
-                            match_start = 0,
-                            match_end = 10,
                             query_start = 0,
                             query_end = 10)
                     )
