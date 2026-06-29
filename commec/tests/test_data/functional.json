@@ -1,9 +1,9 @@
 {
   "commec_info": {
     "commec_version": "1.1.0",
-    "json_output_version": "0.4",
+    "json_output_version": "0.5",
     "time_taken": "00:00:01",
-    "date_run": "2026-06-29 12:19:09",
+    "date_run": "2026-06-29 12:40:19",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -36,7 +36,7 @@
     ]
   },
   "query_info": {
-    "file": "/tmp/pytest-of-michael/pytest-120/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-michael/pytest-127/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -640,24 +640,6 @@
           },
           "annotations": {
             "Coverage: ": 0.9833333333333333
-          }
-        },
-        {
-          "recommendation": {
-            "status": "Flag (Cleared)",
-            "from_step": "Low Concern Protein Search"
-          },
-          "name": "BENIGNPROT",
-          "description": "",
-          "region": {
-            "e_value": 9.999999999999999e-27,
-            "match_start": 1,
-            "match_end": 56,
-            "query_start": 199,
-            "query_end": 369
-          },
-          "annotations": {
-            "Coverage: ": 1.0
           }
         },
         {

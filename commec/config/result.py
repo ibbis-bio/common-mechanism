@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 # Seperate versioning for the output JSON.
-JSON_COMMEC_FORMAT_VERSION = "0.4"
+JSON_COMMEC_FORMAT_VERSION = "0.5"
 
 
 class ScreenStatus(StrEnum):
