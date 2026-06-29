@@ -101,6 +101,24 @@ def _preset(preset_id):
     return None
 
 
+def _custom_preset(text):
+    """Build a throwaway preset from a raw user-supplied commec config (YAML).
+    Returns (preset, None) or (None, error). This is a debug escape hatch: we
+    don't validate keys (commec's config merge ignores unknown ones), but we
+    block do_cleanup, which crashes commec at end-of-run."""
+    if not text.strip():
+        return None, "Custom config is empty."
+    try:
+        cfg = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        return None, f"Custom config isn't valid YAML: {exc}"
+    if not isinstance(cfg, dict):
+        return None, "Custom config must be YAML key: value pairs (a mapping)."
+    if cfg.get("do_cleanup"):
+        return None, "Remove do_cleanup -- it crashes commec at end-of-run."
+    return {"id": "custom", "label": "custom", "config": cfg}, None
+
+
 # Top-level database subdirectories under the database dir, with friendly
 # labels for messages. Mirrors commec's screen-default-config.yaml layout.
 DB_LABELS = {
@@ -852,9 +870,14 @@ def _label_exists(label):
 @app.route("/screen", methods=["POST"])
 def screen():
     preset_id = (request.form.get("preset") or "").strip()
-    preset = _preset(preset_id)
-    if preset is None:
-        return jsonify({"error": f"Unknown preset: {preset_id!r}"}), 400
+    if preset_id == "__custom__":
+        preset, err = _custom_preset(request.form.get("custom_config") or "")
+        if err:
+            return jsonify({"error": err}), 400
+    else:
+        preset = _preset(preset_id)
+        if preset is None:
+            return jsonify({"error": f"Unknown preset: {preset_id!r}"}), 400
 
     missing = _missing_databases(preset)
     if missing:
