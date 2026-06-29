@@ -503,11 +503,13 @@ def parse_taxonomy_hits(
             logger.error("Query '%s' not found in ScreenResult during %s.", query_acc, step)
             continue
 
-        logger.info("    Processing query: %s", query_name)
         query_info = queries[query_name]
+        logger.info("    Processing query: %s", query_name)
 
         # Filter to just top hits, correct for NT coords, trim the edges, sort and Clean up
         unique_query_data = blast[blast["query acc."] == query_acc]
+
+        # If NT Taxonomy, we have some additional parsing to consider...
         if step == ScreenStep.TAXONOMY_NT:
             unique_query_data["q. start"] = [query_info.nc_to_nt_query_coords(
                                                 row["q. start"],
@@ -517,12 +519,17 @@ def parse_taxonomy_hits(
                                             row["q. end"],
                                             int(row["query acc."].split("_")[-1])
                                         ) for _, row in unique_query_data.iterrows()]
+            nc_id = int(query_acc.split("_")[-1])
+            start, stop = query_info.non_coding_regions[nc_id]
+            logger.info("    for the non-coding region: %s-%s", start, stop)
+
         unique_query_data = unique_query_data.sort_values(by=["% identity"], ascending=False)
         unique_query_data = unique_query_data.reset_index(drop=True)
 
         hit_results_for_query, logs = _get_hit_result_from_data(unique_query_data, step)
 
         # After thread is finished:
+
         for new_hit in hit_results_for_query:
             logger.debug("Adding hit for query %s : %s", query_acc, new_hit)
             query_write.add_new_hit_information(new_hit)
