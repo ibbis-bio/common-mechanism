@@ -345,10 +345,10 @@ def _create_hit_result_from_annotations(
     )
     logger.info(log_message)
 
-    hit_name = f"{controlled_cluster_label}_{match_range.query_start}_{match_range.query_end}"
+    hit_name = f"{controlled_cluster_label}"#_{match_range.query_start}_{match_range.query_end}"
     new_hit = HitResult(
         HitScreenStatus(status, step),
-        hit_name,
+        display_name,
         hit_description,
         match_range,
         {   "category": categories,

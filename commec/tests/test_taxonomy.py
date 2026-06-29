@@ -248,7 +248,7 @@ class TestCreateHitResultFromAnnotations:
             [self._reg_ann()], [], [co_short, co_long], ListMode.COMPLIANCE,
             ScreenStep.TAXONOMY_AA, _make_match_range(),
         )
-        assert hit.name == "12345_100_300"
+        assert hit.name == "A Much Longer Name"
 
     def test_log_message_is_non_empty_string(self):
         co = _mock_control_output()
@@ -519,7 +519,7 @@ class TestParseTaxonomyHits:
             )
         assert ret == 0
         print(f"Expecting a Flag result for protein taxonomy: {json.dumps(asdict(data),indent=2)}")
-        assert data.queries["seq1"].hits["Dangerous Virus"].recommendation.status == ScreenStatus.FLAG, f"Expected a Flag result for protein taxonomy: {
+        assert data.queries["seq1"].hits[0].recommendation.status == ScreenStatus.FLAG, f"Expected a Flag result for protein taxonomy: {
             json.dumps(asdict(data),indent=2)}"
 
     def test_unknown_query_acc_in_blast_is_skipped_gracefully(self):

@@ -425,7 +425,7 @@ class QueryResult:
         Adds a Hit to this query, always use this to add hits, rather
         than directly, so that duplicate hits may be chosen to be identified here.
         """
-        hits.append(new_hit)
+        self.hits.append(new_hit)
         return False
         #existing_hit = self.hits.get(new_hit.name)
         #hits_is_updated: bool = False
@@ -668,19 +668,15 @@ class QueryResult:
         
         assert hasattr(query_data, "no_hits_warning")
 
-        # A rare instance where we want our dictionary to be sorted
-        sorted_items_desc = sorted(
-            self.hits.items(), key=lambda item: item[1].get_e_value(), reverse=True
-        )
+        self.hits.sort(key = lambda x: x.get_e_value(), reverse=True)
 
         # Sort the annotations for each hit based on evalue
-        for _, hit in self.hits.items():
-            annotations = hit.annotations.get("controlled_taxa")
+        for hit in self.hits:
+            annotations = hit.annotations.get("controlled_taxonomy")
             if annotations:
-                for entry in hit.annotations["controlled_taxa"]:
-                    entry["controlled_taxa"].sort(key=lambda x: x["evalue"])
+                annotations["controlled_taxa"].sort(key=lambda x: x["percent_identity"])
 
-        self.hits = dict(sorted_items_desc)
+        #self.hits = dict(sorted_items_desc)
         self._update_step_flags(query_data)
 
     def skip(self):

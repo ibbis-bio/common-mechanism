@@ -86,7 +86,7 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
 
         if (qs.protein_taxonomy
             not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
-            for hit in query.hits.values():
+            for hit in query.hits:
                 if hit.recommendation.from_step in {ScreenStep.TAXONOMY_AA, ScreenStep.TAXONOMY_NT}:
                     info = hit.annotations["controlled_taxonomy"]["statistics"]
                     bacteria_flag  |= (int(info["controlled_bacteria"]) > 0)
@@ -97,7 +97,7 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         # Which forms of low_concern hits are present?
         if (qs.low_concern
             not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
-            for hit in query.hits.values():
+            for hit in query.hits:
                 match hit.recommendation.from_step:
                     case ScreenStep.LOW_CONCERN_PROTEIN:
                         low_concern_protein = True
@@ -112,7 +112,7 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         # Note, at the moment, Taxonomy is not WARN when there is a Mix.
         mixed_aa_taxonomy = False
         mixed_nt_taxonomy = False
-        for hit in query.hits.values():
+        for hit in query.hits:
             match hit.recommendation.from_step:
                 case ScreenStep.TAXONOMY_AA:
                     if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN, ScreenStatus.PASS]:

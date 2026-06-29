@@ -3,7 +3,7 @@
     "commec_version": "1.1.0",
     "json_output_version": "0.4",
     "time_taken": "00:00:01",
-    "date_run": "2026-06-25 15:51:59",
+    "date_run": "2026-06-29 12:19:09",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -36,7 +36,7 @@
     ]
   },
   "query_info": {
-    "file": "/tmp/pytest-of-michael/pytest-93/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-michael/pytest-120/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -52,13 +52,13 @@
         "low_concern": "Flag",
         "rationale": "Matches sequence with pathogenic or toxin function, and protein and nucleotide sequence with regulated organisms; as well as virulence factor; as well as flags cleared as common or non-hazardous."
       },
-      "hits": {
-        "12345_501_581": {
+      "hits": [
+        {
           "recommendation": {
             "status": "Pass",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "12345_501_581",
+          "name": "NR_HIT_ShouldntClear",
           "description": "Mix of 1 controlled Viruses and 1 non-controlled Viruses",
           "region": {
             "e_value": 0.16,
@@ -113,12 +113,12 @@
             }
           }
         },
-        "12350_110_200": {
+        {
           "recommendation": {
             "status": "Flag",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "12350_110_200",
+          "name": "SUBJECT_3",
           "description": "controlled Viruses SUBJECT_3",
           "region": {
             "e_value": 0.15,
@@ -163,12 +163,12 @@
             }
           }
         },
-        "12345_110_190": {
+        {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "12345_110_190",
+          "name": "NR_HIT_ShouldntClear",
           "description": "controlled Viruses NR_HIT_ShouldntClear",
           "region": {
             "e_value": 0.14,
@@ -213,12 +213,12 @@
             }
           }
         },
-        "12345_220_280": {
+        {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "12345_220_280",
+          "name": "NR_HIT_ShouldntClear",
           "description": "controlled Viruses NR_HIT_ShouldntClear",
           "region": {
             "e_value": 0.13,
@@ -263,12 +263,12 @@
             }
           }
         },
-        "12347_340_390": {
+        {
           "recommendation": {
             "status": "Pass",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "12347_340_390",
+          "name": "ShouldClearBySynBio",
           "description": "Mix of 1 controlled Viruses and 2 non-controlled Viruses",
           "region": {
             "e_value": 0.1,
@@ -332,12 +332,12 @@
             }
           }
         },
-        "12346_310_370": {
+        {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "12346_310_370",
+          "name": "ShouldClear",
           "description": "controlled Viruses ShouldClear",
           "region": {
             "e_value": 0.09,
@@ -382,12 +382,12 @@
             }
           }
         },
-        "12345_410_500": {
+        {
           "recommendation": {
             "status": "Flag",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "12345_410_500",
+          "name": "NR_HIT_ShouldntClear",
           "description": "controlled Viruses NR_HIT_ShouldntClear",
           "region": {
             "e_value": 0.08,
@@ -432,12 +432,12 @@
             }
           }
         },
-        "12347_410_490": {
+        {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "12347_410_490",
+          "name": "ShouldClearBySynBio",
           "description": "controlled Viruses ShouldClearBySynBio",
           "region": {
             "e_value": 0.07,
@@ -482,12 +482,12 @@
             }
           }
         },
-        "12345_320_380": {
+        {
           "recommendation": {
             "status": "Flag",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "12345_320_380",
+          "name": "NR_HIT_ShouldntClear",
           "description": "controlled Viruses NR_HIT_ShouldntClear",
           "region": {
             "e_value": 0.06,
@@ -532,7 +532,7 @@
             }
           }
         },
-        "Toxin1a": {
+        {
           "recommendation": {
             "status": "Flag",
             "from_step": "Biorisk Search"
@@ -555,7 +555,7 @@
             ]
           }
         },
-        "Toxin1b": {
+        {
           "recommendation": {
             "status": "Flag",
             "from_step": "Biorisk Search"
@@ -578,7 +578,7 @@
             ]
           }
         },
-        "Toxin2": {
+        {
           "recommendation": {
             "status": "Warning",
             "from_step": "Biorisk Search"
@@ -601,7 +601,7 @@
             ]
           }
         },
-        "Toxin3": {
+        {
           "recommendation": {
             "status": "Warning",
             "from_step": "Biorisk Search"
@@ -624,7 +624,7 @@
             ]
           }
         },
-        "BENIGNPROT": {
+        {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Low Concern Protein Search"
@@ -642,7 +642,25 @@
             "Coverage: ": 0.9833333333333333
           }
         },
-        "BENIGNRNA": {
+        {
+          "recommendation": {
+            "status": "Flag (Cleared)",
+            "from_step": "Low Concern Protein Search"
+          },
+          "name": "BENIGNPROT",
+          "description": "",
+          "region": {
+            "e_value": 9.999999999999999e-27,
+            "match_start": 1,
+            "match_end": 56,
+            "query_start": 199,
+            "query_end": 369
+          },
+          "annotations": {
+            "Coverage: ": 1.0
+          }
+        },
+        {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Low Concern RNA Search"
@@ -658,7 +676,7 @@
           },
           "annotations": {}
         },
-        "BENIGNSYNBIO": {
+        {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Low Concern DNA Search"
@@ -674,7 +692,7 @@
           },
           "annotations": {}
         }
-      }
+      ]
     }
   }
 }
