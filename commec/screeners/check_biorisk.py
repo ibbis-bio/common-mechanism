@@ -10,6 +10,11 @@ import logging
 import os
 import pandas as pd
 from commec.config.query import Query
+from commec.config.constants import (
+    BIORISK_SHORT_QUERY_NT_THRESHOLD,
+    BIORISK_SHORT_QUERY_EVALUE_EXPONENT,
+    BIORISK_LONG_QUERY_EVALUE_THRESHOLD,
+)
 from commec.tools.hmmer import (
     readhmmer,
     remove_overlaps,
@@ -64,6 +69,30 @@ def read_biorisk_annotations(hmm_folder_csv) -> pd.DataFrame:
     lookup.fillna(False, inplace=True)
     return lookup
 
+def biorisk_evalue_filter(hmmer: pd.DataFrame) -> pd.DataFrame:
+    """
+    Filter hmmscan hits by E-value, using a length-dependent threshold for short queries.
+
+    For queries shorter than BIORISK_SHORT_QUERY_NT_THRESHOLD nucleotides, the cutoff is:
+        E-value < 1 / (1 + nt_qlen ^ BIORISK_SHORT_QUERY_EVALUE_EXPONENT)
+    For all other queries the cutoff is BIORISK_LONG_QUERY_EVALUE_THRESHOLD.
+
+    Expects numeric 'E-value' and 'nt_qlen' columns; coerces them if needed.
+    Returns a filtered copy of the input DataFrame.
+    """
+    df = hmmer.copy()
+    df['E-value'] = pd.to_numeric(df['E-value'], errors='coerce')
+    df['nt_qlen'] = pd.to_numeric(df['nt_qlen'], errors='coerce')
+
+    short_query = df['nt_qlen'] < BIORISK_SHORT_QUERY_NT_THRESHOLD
+    short_cutoff = 1 / (1 + df['nt_qlen'] ** BIORISK_SHORT_QUERY_EVALUE_EXPONENT)
+
+    mask = (short_query & (df['E-value'] < short_cutoff)) | \
+           (~short_query & (df['E-value'] < BIORISK_LONG_QUERY_EVALUE_THRESHOLD))
+
+    return df[mask]
+
+
 def parse_biorisk_hits(search_handler : HmmerHandler,
                                       biorisk_annotations_file : str | os.PathLike,
                                       data : ScreenResult,
@@ -100,13 +129,12 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
     # Read in Output, and parse.
     hmmer : pd.DataFrame = readhmmer(search_handler.out_file)
     logger.debug("Biorisk Import: shape: %s preview:\n%s", hmmer.shape, hmmer.head())
-    keep1 = [i for i, x in enumerate(hmmer['E-value']) if x < 1e-20]
-    hmmer = hmmer.iloc[keep1,:]
-    logger.debug("Biorisk Filterd by E-Value: shape: %s preview:\n%s", 
-                 hmmer.shape, hmmer.head())
     append_nt_querylength_info(hmmer, queries)
     logger.debug("Appended Query NT length: shape: %s preview:\n%s", 
                  hmmer.shape, hmmer[["query name","nt_qlen"]].head())
+    hmmer = biorisk_evalue_filter(hmmer)
+    logger.debug("Biorisk Filterd by E-Value: shape: %s preview:\n%s", 
+                 hmmer.shape, hmmer.head())
     recalculate_hmmer_query_coordinates(hmmer)
     logger.debug("Recalculated AA to NT coords: shape: %s preview:\n%s", 
                  hmmer.shape, hmmer[["ali from","ali to","q. start","q. end"]].head())

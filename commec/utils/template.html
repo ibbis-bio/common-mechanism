@@ -292,7 +292,7 @@
                         %>
                         <tr>
                             <td><span class="status-badge ${status_class}">${query['status']}</span></td>
-                            <td><a href="#${query['name']}">${query['name']} (${query['length']} b.p.)</a></td>
+                            <td><a href="#${query['name']}">${query['name']} ${query['description']} (${query['length']} b.p.)</a></td>
                             <td>${query['rationale']}</td>
                         </tr>
                     % endfor
@@ -321,7 +321,7 @@
                     <div class="figure-title">
                         <div>
                             <span class="figure-title-status ${status_class}">${query['status']}</span>
-                            <span class="figure-title-query">${query['name']} (${query['length']} b.p.)</span>
+                            <span class="figure-title-query">${query['name']} ${query['description']} (${query['length']} b.p.)</span>
                         </div>
                         <div class="figure-title-rationale">${query['rationale']}</div>
                     </div>

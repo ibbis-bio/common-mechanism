@@ -35,7 +35,7 @@ The `commec` package is being actively developed by IBBIS staff. We welcome cont
 that [your channels are configured correctly](http://bioconda.github.io/). Then create the dev environment with:
 
 ```
-conda env create -f environment.yml
+conda env create -f environment.yaml
 conda activate commec-dev
 ```
 

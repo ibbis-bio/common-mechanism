@@ -8,11 +8,11 @@ databases:
   low_concern:
     annotations: /mnt/data/home/ec2-user/cm-dbs/low_concern/low_concern_annotations.tsv
     dna:
-      path: /mnt/data/home/ec2-user/cm-dbs/low_concern/dna/benign.fasta
+      path: /mnt/data/home/ec2-user/cm-dbs/low_concern/dna/low_concern.fasta
     protein:
-      path: /mnt/data/home/ec2-user/cm-dbs/low_concern/protein/benign.hmm
+      path: /mnt/data/home/ec2-user/cm-dbs/low_concern/protein/low_concern.hmm
     rna:
-      path: /mnt/data/home/ec2-user/cm-dbs/low_concern/rna/benign.cm
+      path: /mnt/data/home/ec2-user/cm-dbs/low_concern/rna/low_concern.cm
     taxids: /mnt/data/home/ec2-user/cm-dbs/low_concern/vax_taxids.txt
   regulated_nt:
     path: /mnt/data/home/ec2-user/cm-dbs/nt_blast/core_nt

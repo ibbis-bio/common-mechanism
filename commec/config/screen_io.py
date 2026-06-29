@@ -18,12 +18,15 @@ import yaml
 from yaml.parser import ParserError
 
 from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 
 from commec.config.query import Query
 from commec.config.constants import (
     DEFAULT_CONFIG_YAML_PATH,
     MINIMUM_QUERY_LENGTH,
+    MAXIMUM_QUERY_LENGTH,
     MAXIMUM_FILENAME_SIZE,
+    MAXIMUM_QUERY_NAME_LENGTH,
 )
 from commec.utils.file_utils import expand_and_normalize
 from commec.utils.dict_utils import deep_update
@@ -102,6 +105,7 @@ class ScreenIO:
         Parse queries from FASTA file.
         """
         records = []
+        updated_records = []
         queries = {}
 
         try:
@@ -120,20 +124,17 @@ class ScreenIO:
                 query = Query(record)
                 if query.name in queries:
                     raise ValueError(f"Duplicate sequence identifier generated: \"{query.name}\" from record: {record}\n"
-                                     "Ensure that the first 25 characters for each fasta record are unique.")
+                                     f"Ensure that the first {MAXIMUM_QUERY_NAME_LENGTH} characters for each fasta record are unique.")
                 queries[query.name] = query
-                # Override the original cleaned fasta, with updated names.
-                record.id = query.name
-                record.name = ""
-                record.description = ""
+                # Override the original cleaned fasta, with queries above a given length and updated names
+                if MINIMUM_QUERY_LENGTH < len(record.seq) <= MAXIMUM_QUERY_LENGTH:
+                    # Creating new SeqRecord to avoid overwriting the seq_record object inside query and preserve the original seq id
+                    updated_records.append(SeqRecord(record.seq, id=query.name, description=""))
             except Exception as e:
                 raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}, {e}") from e
-            
-        # Don't write a cleaned fasta for queries below a given length.
-        records = [record for record in records if len(record.seq) > MINIMUM_QUERY_LENGTH]
 
         with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
-            SeqIO.write(records, fasta_file, "fasta")
+            SeqIO.write(updated_records, fasta_file, "fasta")
 
         return queries
 
@@ -251,38 +252,41 @@ class ScreenIO:
         This script will update the dictionary to propagate these substitutions.
         If a database directory is provided, it will override the base_path provided in the yaml.
         """
-        if self.config.get("base_paths"):
-            try:
-                base_paths = self.config["base_paths"]
-                if db_dir_override is not None:
-                    logger.debug(f"Command line arguments updated base databases directory: {db_dir_override}")
-                    base_paths["default"] = db_dir_override
-                else:
-                    self.db_dir = base_paths["default"]
+        def recursive_format(nested_yaml, base_paths):
+            """
+            Recursively apply string formatting to read paths from nested yaml config dicts.
+            """
+            if isinstance(nested_yaml, dict):
+                return {key : recursive_format(value, base_paths) 
+                        for key, value in nested_yaml.items()}
+            if isinstance(nested_yaml, str):
+                try:
+                    return nested_yaml.format(**base_paths)
+                except KeyError as e:
+                    raise ValueError(
+                        f"Unknown base path key referenced in path: {nested_yaml}"
+                    ) from e
+            return nested_yaml
+            
+        try:
+            # Restores legacy behaviour with -d in commec screen CLI, with no yaml.
+            if db_dir_override is not None:
+                logger.debug("Command line arguments updated base databases directory: %s", db_dir_override)
+                self.config["base_paths"]["default"] = db_dir_override
+            else:
+                self.db_dir = self.config["base_paths"]["default"]
 
-                # Ensure all the base paths end with a separator
-                for key, value in base_paths.items():
-                    base_paths[key] = os.path.join(value,'')
+            # Ensure all the base paths end with a separator
+            for key, value in self.config["base_paths"].items():
+                self.config["base_paths"][key] = os.path.join(value,'')
+            
+            # Recursively format all paths
+            self.config["base_paths"] = recursive_format(self.config["base_paths"], self.config["base_paths"])
+            self.config = recursive_format(self.config, self.config["base_paths"])
 
-                def recursive_format(nested_yaml, base_paths):
-                    """
-                    Recursively apply string formatting to read paths from nested yaml config dicts.
-                    """
-                    if isinstance(nested_yaml, dict):
-                        return {key : recursive_format(value, base_paths) 
-                                for key, value in nested_yaml.items()}
-                    if isinstance(nested_yaml, str):
-                        try:
-                            return nested_yaml.format(**base_paths)
-                        except KeyError as e:
-                            raise ValueError(
-                                f"Unknown base path key referenced in path: {nested_yaml}"
-                            ) from e
-                    return nested_yaml
-
-                self.config = recursive_format(self.config, base_paths)
-            except TypeError:
-                pass
+        except TypeError as e:
+            logger.error("Encountered unexpected TypeError during yaml config base path substitution: %s", e)
+            pass
 
     @staticmethod
     def _get_output_prefixes(input_file: str | os.PathLike, prefix_arg=None) -> str:
@@ -340,7 +344,7 @@ class ScreenIO:
 
     def _write_clean_fasta(self) -> str:
         """
-        Write a FASTA in which whitespace (including non-breaking spaces) and 
+        Write a FASTA in which whitespace (excluding in header), including non-breaking spaces and 
         illegal characters are replaced with underscores.
         """
 
@@ -350,10 +354,15 @@ class ScreenIO:
         ):
             for line in fin:
                 line = line.strip()
-                modified_line = "".join(
-                    "_" if c.isspace() or c == "\xc2\xa0" or c == "#" else c
-                    for c in line
-                )
+                if line.startswith(">"):
+                    modified_line = "".join(
+                        "_" if c == "\xc2\xa0" or c == "#" else c for c in line
+                    )
+                else:
+                    modified_line = "".join(
+                        "_" if c.isspace() or c == "\xc2\xa0" or c == "#" else c
+                        for c in line
+                    )
                 fout.write(f"{modified_line}{os.linesep}")
 
     @property

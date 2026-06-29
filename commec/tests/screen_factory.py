@@ -42,6 +42,13 @@ def skip_biorisk_annotations(_input_file):
     """
     return BIORISK_ANNOTATIONS_DATA
 
+def skip_canonical_taxids(taxids, _db_path, _threads):
+    """
+    Override canonical taxid retrieval, so tests
+    don't require a real taxonomy database.
+    """
+    return taxids.astype(str).tolist()
+
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
 TAXONOMY = pd.DataFrame(columns=["subject acc.","regulated", "superkingdom", "phylum", "genus", "species"])
 BIORISK_ANNOTATIONS_DATA = pd.DataFrame(columns=["ID", "Description", "Must flag"])
@@ -99,6 +106,7 @@ class ScreenTesterFactory:
         # We also patch in the desired CLI arguments to avoid an input yaml, and control output.
         with (patch("commec.screeners.check_reg_path.get_taxonomic_labels", new=skip_taxonomy_info), patch(
                 "commec.screeners.check_biorisk.read_biorisk_annotations", new=skip_biorisk_annotations), patch(
+                "commec.screeners.check_reg_path.get_canonical_taxids", new=skip_canonical_taxids), patch(
             "sys.argv",
             arguments,
         )):
@@ -231,8 +239,10 @@ class ScreenTesterFactory:
         self.input_fasta_path = self.tmp_path / f"{self.name}.fasta"
         print("Using fasta file: " + str(self.input_fasta_path))
 
+        query_fasta = ""
         for key, value in self.queries.items():
-            self.input_fasta_path.write_text(f">{key}\n{value}\n")
+            query_fasta = query_fasta + f">{key}\n{value}\n"
+        self.input_fasta_path.write_text(query_fasta)
 
         # --RESUME FILES::
         # BIORISK FILES

@@ -6,9 +6,11 @@ Initialise with local input database, fasta to screen, and output file.
 Throws error if inputs are invalid. Creates a temporary log file, which is deleted on completion.
 """
 
+import os
+import glob
 import subprocess
 from commec.tools.blast_tools import BlastHandler
-from commec.tools.search_handler import SearchToolVersion
+from commec.tools.search_handler import SearchToolVersion, DatabaseValidationError
 
 
 class BlastNHandler(BlastHandler):
@@ -23,6 +25,14 @@ class BlastNHandler(BlastHandler):
         super().__init__(database_file, input_file, out_file, **kwargs)
         # We fill this with defaults, however they can always be overridden before screening.
         self.arguments_dictionary = {
+            "-task": "dc-megablast",
+            "-template_type": "optimal",
+            "-template_length": 16,
+            "-num_threads": self.threads,
+            "-mt_mode": 1,
+            "-evalue": 1e-5,
+            "-max_target_seqs": 500,
+            "-culling_limit": 1,
             "-outfmt": [
                 "7",
                 "qacc",
@@ -39,12 +49,31 @@ class BlastNHandler(BlastHandler):
                 "sstart",
                 "send",
             ],
-            "-num_threads": self.threads,
-            "-evalue": 10,
-            "-max_target_seqs": 50,
-            "-culling_limit": 5,
         }
         self.blastcall = "blastn"
+
+    def _validate_db(self):
+        """
+        BLASTN databases are addressed by a prefix with companion index files:
+        single-volume `<prefix>.nhr`, multi-volume alias `<prefix>.nal`, or unaliased
+        shards `<prefix>.<N>.nhr`. Validate the configured prefix points at one of these.
+        """
+        if not os.path.isdir(self.db_directory):
+            raise DatabaseValidationError(
+                f"No screening database directory found at: {self.db_directory}."
+                " Directory path can be set via --databases option or --config yaml."
+            )
+        if not (
+            os.path.isfile(f"{self.db_file}.nhr")
+            or os.path.isfile(f"{self.db_file}.nal")
+            or glob.glob(f"{self.db_file}.[0-9]*.nhr")
+        ):
+            raise DatabaseValidationError(
+                f"No BLASTN database files found for prefix '{self.db_file}'."
+                " Expected <prefix>.nhr, <prefix>.nal, or <prefix>.<N>.nhr in the database"
+                " directory. Check the prefix set via --databases or --config yaml matches"
+                " the BLAST index files on disk."
+            )
 
     def _search(self):
         command = [

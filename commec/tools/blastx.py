@@ -6,9 +6,11 @@ Initialise with local input database, fasta to screen, and output file.
 Throws error if inputs are invalid. Creates a temporary log file, which is deleted on completion.
 """
 
+import os
+import glob
 import subprocess
 from commec.tools.blast_tools import BlastHandler
-from commec.tools.search_handler import SearchToolVersion
+from commec.tools.search_handler import SearchToolVersion, DatabaseValidationError
 
 
 class BlastXHandler(BlastHandler):
@@ -23,17 +25,12 @@ class BlastXHandler(BlastHandler):
         super().__init__(database_file, input_file, out_file, **kwargs)
         # We fill this with defaults, however they can always be overridden before screening.
         self.arguments_dictionary = {
+            "-task": "blastx-fast",
             "-num_threads": self.threads,
+            "-mt_mode": 1,
             "-evalue": 1e-10,
-            "-word_size": 6,
-            "-threshold": 21,
-            "-max_target_seqs": 5000,
-            "-culling_limit": 50,
-            "-window_size": 40,
-            "-matrix": "BLOSUM62",
-            "-gapopen": 11,
-            "-gapextend": 1,
-            "-seg": "yes",
+            "-max_target_seqs": 500,
+            "-culling_limit": 1,
             "-outfmt": [
                 "7",
                 "qacc",
@@ -52,6 +49,29 @@ class BlastXHandler(BlastHandler):
             ],
         }
         self.blastcall = "blastx"
+
+    def _validate_db(self):
+        """
+        BLASTX databases are addressed by a prefix with companion index files:
+        single-volume `<prefix>.phr`, multi-volume alias `<prefix>.pal`, or unaliased
+        shards `<prefix>.<N>.phr`. Validate the configured prefix points at one of these.
+        """
+        if not os.path.isdir(self.db_directory):
+            raise DatabaseValidationError(
+                f"No screening database directory found at: {self.db_directory}."
+                " Directory path can be set via --databases option or --config yaml."
+            )
+        if not (
+            os.path.isfile(f"{self.db_file}.phr")
+            or os.path.isfile(f"{self.db_file}.pal")
+            or glob.glob(f"{self.db_file}.[0-9]*.phr")
+        ):
+            raise DatabaseValidationError(
+                f"No BLASTX database files found for prefix '{self.db_file}'."
+                " Expected <prefix>.phr, <prefix>.pal, or <prefix>.<N>.phr in the database"
+                " directory. Check the prefix set via --databases or --config yaml matches"
+                " the BLAST index files on disk."
+            )
 
     def _search(self):
         command = [

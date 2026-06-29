@@ -4,7 +4,7 @@ import textwrap
 from unittest.mock import patch
 import numpy as np
 import pandas as pd
-from commec.tools.blast_tools import _split_by_tax_id, read_blast, _get_lineages, get_taxonomic_labels
+from commec.tools.blast_tools import _split_by_tax_id, read_blast, get_lineages, get_taxonomic_labels
 
 
 @pytest.fixture
@@ -74,7 +74,7 @@ def test_split_by_tax_id(blast_df: pd.DataFrame):
 def test_get_lineages(mock_lineage, blast_df, lineage_df):
     mock_lineage.return_value = lineage_df
     blast_df = _split_by_tax_id(blast_df)
-    lin = _get_lineages(
+    lin = get_lineages(
         blast_df["subject tax ids"], "commec-dbs/taxonomy/", 8
     )
     # Expect the invalid taxid to be filtered out

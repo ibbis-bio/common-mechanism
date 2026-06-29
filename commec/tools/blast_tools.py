@@ -8,12 +8,11 @@ Also contains the abstract base class for blastX/N/Diamond database search handl
 """
 import os
 import logging
-import glob
 from typing import BinaryIO, TextIO
 import pytaxonkit
 import pandas as pd
 import numpy as np
-from commec.tools.search_handler import SearchHandler, DatabaseValidationError
+from commec.tools.search_handler import SearchHandler
 
 TAXID_SYNTHETIC_CONSTRUCTS = 32630
 TAXID_VECTORS = 29278
@@ -31,36 +30,6 @@ class BlastHandler(SearchHandler):
         if self.has_hits():
             output_dataframe = read_blast(self.out_file)
         return output_dataframe
-
-    def _validate_db(self):
-        """
-        Blast expects a set of files with shared prefix, rather than a single file.
-        Here we validate such directory structures for Blast related search handlers.
-        """
-        if not os.path.isdir(self.db_directory):
-            raise DatabaseValidationError(
-                f"No screening database directory found at: {self.db_directory}."
-                " Directory path can be set via --databases option or --config yaml."
-            )
-
-        # Search for files of provided prefix.
-        filename, extension = os.path.splitext(self.db_file)
-        search_file = os.path.join(
-            self.db_directory, "*" + os.path.basename(filename) + "*" + extension
-        )
-        files = glob.glob(search_file)
-        if len(files) == 0:
-            raise DatabaseValidationError(
-                f"Screening files not found. No files matched search: {filename}*"
-                " File location can be set via --databases option or --config yaml."
-            )
-
-        # Search for files of provided prefix.
-        filename, extension = os.path.splitext(self.db_file)
-        search_file = os.path.join(self.db_directory, "*" + os.path.basename(filename) + "*" + extension)
-        files = glob.glob(search_file)
-        if len(files) == 0:
-            raise DatabaseValidationError(f"Mandatory screening files with {filename}* not found.")
 
 def _split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
     """
@@ -88,7 +57,7 @@ def _split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
     return split
 
 
-def _get_lineages(taxids, db_path: str | os.PathLike, threads: int):
+def get_lineages(taxids: pd.Series, db_path: str | os.PathLike, threads: int):
     """
     Get the full lineage for each unique taxid. This is needed to determine whether it belongs to
     any regulated pathogen, since pathogens might be regulated at various points in the lineage
@@ -141,7 +110,7 @@ def get_taxonomic_labels(
     blast["genus"] = ""
     blast["species"] = ""
 
-    lin = _get_lineages(blast[TAXIDS_COL], db_path, threads)
+    lin = get_lineages(blast[TAXIDS_COL], db_path, threads)
 
     blast = blast[blast[TAXIDS_COL] != TAXID_SYNTHETIC_CONSTRUCTS]
     blast = blast[blast[TAXIDS_COL] != TAXID_VECTORS]

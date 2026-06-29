@@ -19,9 +19,9 @@ def expected_defaults():
         },
         "databases": {
             "low_concern": {
-                "rna": {"path": "commec-dbs/low_concern/rna/benign.cm"},
-                "dna": {"path": "commec-dbs/low_concern/dna/benign.fasta"},
-                "protein": {"path": "commec-dbs/low_concern/protein/benign.hmm"},
+                "rna": {"path": "commec-dbs/low_concern/rna/low_concern.cm"},
+                "dna": {"path": "commec-dbs/low_concern/dna/low_concern.fasta"},
+                "protein": {"path": "commec-dbs/low_concern/protein/low_concern.hmm"},
                 "annotations": 'commec-dbs/low_concern/low_concern_annotations.tsv',
                 "taxids": "commec-dbs/low_concern/vax_taxids.txt"
             },
@@ -73,9 +73,9 @@ def expected_updated_from_custom_yaml():
         },
         "databases": {
             "low_concern": {
-                "rna": {"path": "commec-dbs/low_concern/rna/benign.cm"},
-                "dna": {"path": "commec-dbs/low_concern/dna/benign.fasta"},
-                "protein": {"path": "commec-dbs/low_concern/protein/benign.hmm"},
+                "rna": {"path": "commec-dbs/low_concern/rna/low_concern.cm"},
+                "dna": {"path": "commec-dbs/low_concern/dna/low_concern.fasta"},
+                "protein": {"path": "commec-dbs/low_concern/protein/low_concern.hmm"},
                 "annotations": 'commec-dbs/low_concern/low_concern_annotations.tsv',
                 "taxids": "commec-dbs/low_concern/vax_taxids.txt"
             },

@@ -1,5 +1,5 @@
 {% set name = "commec" %}
-{% set version = "1.0.3" %}
+{% set version = "1.0.5" %}
 {% set sha256 = "" %}
 
 package:

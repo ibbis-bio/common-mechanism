@@ -178,7 +178,7 @@
             }
         },
         "FLAG_TEST_04": {
-            "query": "FLAG_TEST_02",
+            "query": "FLAG_TEST_04",
             "length": 1,
             "status": {
                 "screen_status": "Flag",

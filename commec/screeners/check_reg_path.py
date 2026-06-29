@@ -13,11 +13,11 @@ import os
 from dataclasses import asdict
 
 import pandas as pd
-
 from commec.tools.search_handler import SearchHandler
 from commec.config.query import Query
 from commec.tools.blast_tools import (
     read_blast,
+    get_lineages,
     get_taxonomic_labels,
     get_top_hits
 )
@@ -64,6 +64,15 @@ def _check_inputs(
         return False
 
     return True
+
+def get_canonical_taxids(taxids: pd.Series, db_path: str | os.PathLike, threads: int) -> list[str]:
+    """
+    Retrieve the current canonical taxids to handle NCBI taxonomy updates.
+    """
+    lin = get_lineages(taxids, db_path, threads)
+    canonical_taxids = lin["FullLineageTaxIDs"].map(lambda x: x.split(";")[-1]).tolist()
+    return canonical_taxids
+
 
 def parse_taxonomy_hits(
         search_handler : SearchHandler,
@@ -122,8 +131,16 @@ def parse_taxonomy_hits(
     log_container = {key : [] for key in data.queries.keys()}
 
     # Read in lists of regulated and low_concern tax ids
-    vax_taxids = pd.read_csv(low_concern_taxid_path, header=None).squeeze().astype(str).tolist()
-    reg_taxids = pd.read_csv(biorisk_taxid_path, header=None).squeeze().astype(str).tolist()
+    vax_taxids = get_canonical_taxids(
+        pd.read_csv(low_concern_taxid_path, header=None).squeeze("columns").astype(str),
+        taxonomy_directory,
+        n_threads,
+    )
+    reg_taxids = get_canonical_taxids(
+        pd.read_csv(biorisk_taxid_path, header=None).squeeze("columns").astype(str),
+        taxonomy_directory,
+        n_threads,
+    )
 
     blast = read_blast(search_handler.out_file)
     logger.debug("%s Blast Import: shape: %s preview:\n%s", step, blast.shape, blast.head())

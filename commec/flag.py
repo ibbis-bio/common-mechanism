@@ -145,7 +145,8 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         overall_flag = query.status.screen_status
         
         results.append({
-        "name": name,
+        "name": query.query,
+        "description": query.description,
         "filepath": file_path,
         "flag": overall_flag,
         "biorisk": query.status.biorisk,

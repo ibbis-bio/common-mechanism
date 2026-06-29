@@ -80,7 +80,7 @@ from commec.screeners.check_reg_path import parse_taxonomy_hits
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.tools.search_handler import DatabaseValidationError
 from commec.config.json_io import encode_screen_data_to_json
-from commec.config.constants import MINIMUM_QUERY_LENGTH
+from commec.config.constants import MINIMUM_QUERY_LENGTH, MAXIMUM_QUERY_LENGTH
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -303,7 +303,7 @@ class Screen:
         # Needed to initialize parameters before logging to files
         setup_file_logging(self.params.output_screen_file, log_level)
 
-        logger.info("Validating input query and databases...")
+        logger.info("Validating input parameters, query and databases...")
         try:
             self.database_tools: ScreenTools = ScreenTools(self.params)
         except(DatabaseValidationError) as e:
@@ -322,21 +322,30 @@ class Screen:
 
         total_query_length = 0
 
+        # Ensure that the translation aa is cleared.
+        with open(self.params.aa_path, 'w', encoding = "utf-8"): ...
+
         try:
             for query in self.queries.values():
                 logger.debug("Processing query: %s, (%s)", query.name, query.original_name)
 
                 # Link query to the output data.
                 qr = QueryResult(query.original_name,
+                                 query.description,
                                  query.length)
                 self.screen_data.queries[query.name] = qr
                 query.result = qr
 
-                # Determine short querys as skipped:
+                # Determine out-of-range queries as skipped:
                 if query.length < MINIMUM_QUERY_LENGTH:
-                    logger.debug("%s length %i is less than %i",
+                    logger.warning("%s length %i is less than %i",
                                     query.name, query.length, MINIMUM_QUERY_LENGTH)
-                    qr.skip()
+                    qr.skip(ScreenStatus.SKIP_SHORT)
+                    continue
+                elif query.length > MAXIMUM_QUERY_LENGTH:
+                    logger.warning("%s length %i exceeds maximum %i",
+                                    query.name, query.length, MAXIMUM_QUERY_LENGTH)
+                    qr.skip(ScreenStatus.SKIP_LONG)
                     continue
 
                 # Only translate if valid.

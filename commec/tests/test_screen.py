@@ -104,6 +104,27 @@ def test_screen_factory(tmp_path):
     assert result.queries["query_01"].status.nucleotide_taxonomy == ScreenStatus.FLAG
     assert result.queries["query_01"].status.low_concern == ScreenStatus.FLAG
 
+def test_low_concern_multiquery(tmp_path):
+    """
+    Checks that the low concern hits are correctly accessed when multiple queries are used, and 
+    the low concern databases have multiple hits across all queries.
+    """
+    screen_test = ScreenTesterFactory("lowconcern_multiquerycheck", tmp_path)
+    screen_test.add_query("query1", 1000)
+    screen_test.add_query("query2", 1000)
+    screen_test.add_query("query3", 1000)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query1", 400, 600, "ClearMe", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query2", 400, 600, "ClearMe", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.TAXONOMY_AA, "query3", 400, 600, "ClearMe", "RR55", 500, regulated=True)
+    screen_test.add_hit(ScreenStep.LOW_CONCERN_RNA, "query1", 100, 900, "ClearProtein", "RR55CLEAR", 500)
+    screen_test.add_hit(ScreenStep.LOW_CONCERN_RNA, "query2", 100, 900, "ClearProtein", "RR55CLEAR", 500)
+    screen_test.add_hit(ScreenStep.LOW_CONCERN_RNA, "query3", 100, 900, "ClearProtein", "RR55CLEAR", 500)
+    result = screen_test.run()
+
+    assert result.queries["query1"].status.screen_status == ScreenStatus.CLEARED_FLAG
+    assert result.queries["query2"].status.screen_status == ScreenStatus.CLEARED_FLAG
+    assert result.queries["query3"].status.screen_status == ScreenStatus.CLEARED_FLAG
+
 def test_different_regions(tmp_path):
     """
     Creates a single hit, with many regions, then a single clear on one of those regions.
