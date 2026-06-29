@@ -3,7 +3,7 @@
     "commec_version": "1.1.0",
     "json_output_version": "0.5",
     "time_taken": "00:00:01",
-    "date_run": "2026-06-29 15:13:20",
+    "date_run": "2026-06-29 20:36:44",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -36,7 +36,7 @@
     ]
   },
   "query_info": {
-    "file": "/tmp/pytest-of-michael/pytest-142/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-michael/pytest-162/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -62,8 +62,8 @@
           "description": "Mix of 1 controlled Viruses and 1 non-controlled Viruses",
           "region": {
             "e_value": 0.16,
-            "query_start": 501,
-            "query_end": 581
+            "query_start": 310,
+            "query_end": 390
           },
           "annotations": {
             "category": [
@@ -74,8 +74,8 @@
                 {
                   "evalue": 0.16,
                   "percent_identity": 99.999,
-                  "query_start": 501,
-                  "query_end": 581,
+                  "query_start": 310,
+                  "query_end": 390,
                   "match_start": 1,
                   "match_end": 80,
                   "target_hit": "NT_HIT_MIXED",
@@ -95,8 +95,8 @@
                 {
                   "evalue": 0.17,
                   "percent_identity": 99.999,
-                  "query_start": 501,
-                  "query_end": 581,
+                  "query_start": 310,
+                  "query_end": 390,
                   "match_start": 1,
                   "match_end": 80,
                   "target_hit": "NT_HIT_MIXED2",
@@ -170,8 +170,8 @@
             "status": "Flag (Cleared)",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "NR_HIT_ShouldntClear",
-          "description": "controlled Viruses NR_HIT_ShouldntClear",
+          "name": "SUBJECT_1",
+          "description": "controlled Viruses SUBJECT_1",
           "region": {
             "e_value": 0.14,
             "query_start": 110,
@@ -192,9 +192,9 @@
                   "match_end": 80,
                   "target_hit": "NT_HIT_FLAG2",
                   "target_description": "SUBJECT_2",
-                  "taxid": 12345,
-                  "genus": "orthoregulatidae",
-                  "species": "regulaticus",
+                  "taxid": 22345,
+                  "genus": "orthonovaregulatidae",
+                  "species": "Viria Novus",
                   "controlled_by_lists": [
                     {
                       "list": "default_test_list[Index experimentorum communium]",
@@ -220,8 +220,8 @@
             "status": "Flag (Cleared)",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "NR_HIT_ShouldntClear",
-          "description": "controlled Viruses NR_HIT_ShouldntClear",
+          "name": "SUBJECT_1",
+          "description": "controlled Viruses SUBJECT_1",
           "region": {
             "e_value": 0.13,
             "query_start": 220,
@@ -242,9 +242,9 @@
                   "match_end": 60,
                   "target_hit": "NT_HIT_FLAG1",
                   "target_description": "SUBJECT_1",
-                  "taxid": 12345,
-                  "genus": "orthoregulatidae",
-                  "species": "regulaticus",
+                  "taxid": 22345,
+                  "genus": "orthonovaregulatidae",
+                  "species": "Viria Novus",
                   "controlled_by_lists": [
                     {
                       "list": "default_test_list[Index experimentorum communium]",

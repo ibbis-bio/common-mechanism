@@ -159,7 +159,7 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
         logger.debug("\tProcessing query: %s", affected_query)
         biorisk_overall : ScreenStatus = ScreenStatus.PASS
 
-        query_data = data.get_query(affected_query)
+        query_data, _ = data.get_query(affected_query)
         if not query_data:
             logger.error("Query during hmmscan could not be found! [%s]", affected_query)
             continue

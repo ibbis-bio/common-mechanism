@@ -29,6 +29,15 @@ from commec.control_list.containers import (
 import commec.control_list.list_data as ld
 from commec.control_list.initialisation import tidy_control_list_data
 
+
+def fake_full_coords(
+        _protein_search_handler,
+        queries
+        ):
+    for query in queries.values():
+        query.non_coding_regions.append((1, query.length))
+    return
+
 def skip_taxonomy_info(
     blast: pd.DataFrame,
     _regulated_taxids: list[str],
@@ -114,6 +123,7 @@ class ScreenTesterFactory:
         # We patch taxonomic labels to avoid having to make a mini-taxonomy database.
         # We also patch in the desired CLI arguments to avoid an input yaml, and control output.
         with (patch("commec.screeners.check_biorisk.read_biorisk_annotations", new=skip_biorisk_annotations),
+              patch("commec.screen.calculate_noncoding_regions_per_query", new=fake_full_coords),
              patch("sys.argv", arguments)):
             parser = ScreenArgumentParser()
             add_args(parser)
@@ -224,7 +234,7 @@ class ScreenTesterFactory:
         
         if to_step == ScreenStep.TAXONOMY_NT:
             self.nucl_tx.append(
-                f"{to_query}\t{title}\t{accession}\t{taxid}\t{evalue}\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
+                f"{to_query}_0\t{title}\t{accession}\t{taxid}\t{evalue}\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
             )
             return
 

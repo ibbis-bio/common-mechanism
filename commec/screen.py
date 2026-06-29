@@ -568,7 +568,7 @@ class Screen:
         for query in self.queries.values():
             if query.result.status.nucleotide_taxonomy == ScreenStatus.SKIP:
                 continue
-            nc_fasta_sequences += query.get_non_coding_regions_as_fasta()
+            nc_fasta_sequences += "".join(query.get_non_coding_regions_as_fasta())
 
         # Skip if there is no non-coding information.
         if nc_fasta_sequences == "":

@@ -57,9 +57,9 @@ def test_functional_screen(tmp_path, request):
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixednonReg2", "NR_HIT_MIXED2", "12348", regulated = False, superkingdom = "Bacteria", species = "cute-happy-bacter", genus = "happicillus", evalue = 0.11)
     functional_test.add_hit(ScreenStep.TAXONOMY_AA, "FCTEST1", 340, 390, "ShouldMixedNonReg3", "NR_HIT_MIXED3", "12349", regulated = False, superkingdom = "Bacteria", species = "poopicus", genus = "faecia", evalue = 0.12)
     # Nucleotide Taxonomy
-    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 220, 280, "SUBJECT_1", "NT_HIT_FLAG1", "12345", regulated = True, superkingdom = "Viruses", species = "Viria Novus",genus = "orthonovaregulatidae", evalue = 0.13)
-    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 190, "SUBJECT_2", "NT_HIT_FLAG2", "12345", regulated = True, superkingdom = "Viruses", species = "Viria Novus",genus = "orthonovaregulatidae", evalue = 0.14)
-    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 200, "SUBJECT_3", "NT_HIT_FLAG3", "12350", regulated = True, superkingdom = "Viruses", species = "Viria Novia blue beads",genus = "orthonovaregulatidae", evalue = 0.15)
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 220, 280, "SUBJECT_1", "NT_HIT_FLAG1", "22345", description="Should clear from RNA (its on the cusp)", regulated = True, superkingdom = "Viruses", species = "Viria Novus",genus = "orthonovaregulatidae", evalue = 0.13)
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 190, "SUBJECT_2", "NT_HIT_FLAG2", "22345", regulated = True, superkingdom = "Viruses", species = "Viria Novus",genus = "orthonovaregulatidae", evalue = 0.14)
+    functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 110, 200, "SUBJECT_3", "NT_HIT_FLAG3", "12350", description="Should Flag", regulated = True, superkingdom = "Viruses", species = "Viria Novia blue beads",genus = "orthonovaregulatidae", evalue = 0.15)
     functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 310, 390, "Main", "NT_HIT_MIXED", "12345", regulated = True, superkingdom = "Viruses", species = "Viria Novus",genus = "orthonovaregulatidae", evalue = 0.16)
     functional_test.add_hit(ScreenStep.TAXONOMY_NT, "FCTEST1", 310, 390, "NonRegMixedWithMain", "NT_HIT_MIXED2", "12348", regulated = False, superkingdom = "Bacteria", species = "SafetyGreenius Virus",genus = "Greenocollii", evalue = 0.17)
     # Low Concern
@@ -91,19 +91,19 @@ def test_functional_screen(tmp_path, request):
 
 def test_screen_factory(tmp_path):
     my_factory = ScreenTesterFactory("test_01", tmp_path)
-    my_factory.add_query("query_01", 500)
-    my_factory.add_hit(ScreenStep.BIORISK, "query_01", 99, 399, "bad_risk", "BR500", 200, regulated = True)
-    my_factory.add_hit(ScreenStep.TAXONOMY_AA, "query_01", 100, 300, "reg_gene", "ACC500", 500, "imaginary_species", regulated = True)
-    my_factory.add_hit(ScreenStep.TAXONOMY_NT, "query_01", 1, 90, "reg_gene2", "ACC501", 501, "imaginary_species", regulated = True)
-    my_factory.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "query_01", 97, 402, "safe_protein", "SF21YKN", 256, "safeicius")
-    my_factory.add_hit(ScreenStep.LOW_CONCERN_DNA, "query_01", 97, 402, "safe_dna", "SF22YKN", 256, "safeicius")
-    my_factory.add_hit(ScreenStep.LOW_CONCERN_RNA, "query_01", 97, 402, "safe_rna", "SF23YKN", 256, "safeicius")
+    my_factory.add_query("query01", 500)
+    my_factory.add_hit(ScreenStep.BIORISK, "query01", 99, 399, "bad_risk", "BR500", 200, regulated = True)
+    my_factory.add_hit(ScreenStep.TAXONOMY_AA, "query01", 100, 300, "reg_gene", "ACC500", 500, "imaginary_species", regulated = True)
+    my_factory.add_hit(ScreenStep.TAXONOMY_NT, "query01", 1, 90, "reg_gene2", "ACC501", 501, "imaginary_species", regulated = True)
+    my_factory.add_hit(ScreenStep.LOW_CONCERN_PROTEIN, "query01", 97, 402, "safe_protein", "SF21YKN", 256, "safeicius")
+    my_factory.add_hit(ScreenStep.LOW_CONCERN_DNA, "query01", 97, 402, "safe_dna", "SF22YKN", 256, "safeicius")
+    my_factory.add_hit(ScreenStep.LOW_CONCERN_RNA, "query01", 97, 402, "safe_rna", "SF23YKN", 256, "safeicius")
     result = my_factory.run()
-    assert result.queries["query_01"].status.screen_status == ScreenStatus.FLAG
-    assert result.queries["query_01"].status.biorisk == ScreenStatus.FLAG
-    assert result.queries["query_01"].status.protein_taxonomy == ScreenStatus.CLEARED_FLAG
-    assert result.queries["query_01"].status.nucleotide_taxonomy == ScreenStatus.FLAG
-    assert result.queries["query_01"].status.low_concern == ScreenStatus.FLAG
+    assert result.queries["query01"].status.screen_status == ScreenStatus.FLAG
+    assert result.queries["query01"].status.biorisk == ScreenStatus.FLAG
+    assert result.queries["query01"].status.protein_taxonomy == ScreenStatus.CLEARED_FLAG
+    assert result.queries["query01"].status.nucleotide_taxonomy == ScreenStatus.FLAG
+    assert result.queries["query01"].status.low_concern == ScreenStatus.FLAG
 
 def test_low_concern_multiquery(tmp_path):
     """

@@ -725,13 +725,21 @@ class ScreenResult:
 
     def get_query(self, query_name: str) -> QueryResult:
         """
-        Wrapper for Query get logic.
+        Wrapper for Query get logic. We utilise the "_X" method for both
+        Protein taxonomy (to indicate which frame the query has been translated to)
+        and Nucleotide Taxonomy (to indicate which non-coding region the query is from)
+        We therefore check for the existance of an integer suffix, and modify
+        the search term for a query depending on it.
         """
         search_term = query_name
-        if re.search(r'_[1-6]$', query_name):  # Check if string ends with _1 to _6
-            search_term = query_name[:-2]  # Remove last two characters
+        suffix = query_name.split("_")[-1]
+        if suffix.isdigit():
+            search_term = query_name[:-(len(suffix)+1)]
 
-        return self.queries.get(search_term)
+        output = self.queries.get(search_term)
+        if not output:
+            logger.error("Unexpected Query get miss: Search term : %s, Suffix used : %s", search_term, suffix)
+        return output, search_term
 
     def update(self, queries_data):
         """
