@@ -69,7 +69,6 @@ PRIMARY_ARTIFACTS = (
     "{prefix}.output.json",
     "{prefix}_summary.html",
     "{prefix}.screen.log",
-    "config.used.yaml",
 )
 
 
