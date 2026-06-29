@@ -19,6 +19,8 @@ from commec.tools.blast_tools import (
     read_blast,
     split_by_tax_id,
     get_controlled_labels,
+    find_clusters,
+    get_top_hits,
 )
 from commec.config.result import (
     ScreenResult,
@@ -37,11 +39,6 @@ from commec.control_list import (
     ListMode,
     ControlList,
     get_cluster_hash,
-)
-
-from commec.tools.data_functions import (
-    find_clusters,
-    get_top_hits,
 )
 
 from commec.config.constants import N_NON_REGIONAL_HITS_TO_WARN

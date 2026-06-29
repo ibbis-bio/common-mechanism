@@ -61,102 +61,6 @@ class BlastHandler(SearchHandler):
             raise DatabaseValidationError(f"Mandatory screening files with {filename}* not found.")
 
 
-def get_taxonomic_labels(
-    blast: pd.DataFrame,
-    regulated_taxids: list[str],
-    vaccine_taxids: list[str],
-    db_path: str | os.PathLike,
-    threads: int,
-):
-    """
-    Fetch the full lineage for each taxonomy id returned in a similarity search, check if any
-    taxonomy id in the lineage is regulated (filtering out synthetic constructs), and return a new
-    dataframe with taxonomy information.
-    """
-    TAXIDS_COL = "subject tax ids"
-
-    # prevent truncation of taxonomy results
-    pd.set_option("display.max_colwidth", None)
-
-    blast = _split_by_tax_id(blast, TAXIDS_COL)
-
-    # Add new columns, which will later be used to classify the hits as regulated or non-regulated
-    blast["regulated"] = False
-    blast["superkingdom"] = ""
-    blast["phylum"] = ""
-    blast["genus"] = ""
-    blast["species"] = ""
-
-    lin = _get_lineages(blast[TAXIDS_COL], db_path, threads)
-
-    blast = blast[blast[TAXIDS_COL] != TAXID_SYNTHETIC_CONSTRUCTS]
-    blast = blast[blast[TAXIDS_COL] != TAXID_VECTORS]
-    blast = blast.reset_index(drop=True)
-
-    # Check if any rows will be removed due to not finding a valid lineage for them
-    rows_to_remove = blast[~blast[TAXIDS_COL].isin(lin["TaxID"])]
-    if not rows_to_remove.empty:
-        logger.warning(
-            "Removing %i rows from BLAST results due to invalid taxID(s): %s"
-            " - check that taxonomy and protein databases are up to date!",
-            len(rows_to_remove),
-            ", ".join(map(str, rows_to_remove[TAXIDS_COL].unique())),
-        )
-    # Filter to only those rows which have a matching taxonomic lineage
-    blast = blast[blast[TAXIDS_COL].isin(lin["TaxID"])]
-
-    # Get unique taxids
-    unique_taxids = blast[TAXIDS_COL].dropna().unique()
-    logger.debug("Checking %s unique taxids", len(unique_taxids))
-    # Build a mapping {taxid: truthiness}
-    taxid_to_regulated = {taxid: cl.is_regulated(taxid) for taxid in unique_taxids}
-    # Map back to the dataframe
-    blast["regulated"] = blast[TAXIDS_COL].map(taxid_to_regulated)
-
-    # Process each hit
-    rows_to_drop = []
-    for index, row in blast.iterrows():
-        row_lin = lin[lin["TaxID"] == row[TAXIDS_COL]].iloc[0]
-        full_lineage = pd.DataFrame(
-            {
-                "Lineage": row_lin["FullLineage"].split(";"),
-                "TaxID": row_lin["FullLineageTaxIDs"].split(";"),
-                "Rank": row_lin["FullLineageRanks"].split(";"),
-            }
-        )
-        full_lineage.set_index("Rank", inplace=True)
-        full_lineage_taxids = list(map(str, full_lineage["TaxID"]))
-
-        # If any organism in the lineage is synthetic, drop the row
-        if any(
-            taxid in [str(TAXID_SYNTHETIC_CONSTRUCTS), str(TAXID_VECTORS)]
-            for taxid in full_lineage_taxids
-        ):
-            rows_to_drop.append(index)
-            continue
-
-        # If any organism in the lineage is regulated, set this hit as regulated
-        if any(taxid in regulated_taxids for taxid in full_lineage_taxids):
-            blast.at[index, "regulated"] = True
-
-        # Unless we're dealing with a known vaccine strain
-        if any(taxid in vaccine_taxids for taxid in full_lineage_taxids):
-            blast.at[index, "regulated"] = False
-
-        # Set additional taxonomic information
-        for rank in ["superkingdom", "phylum", "genus", "species"]:
-            if rank in full_lineage.index:
-                blast.at[index, rank] = full_lineage.loc[rank, "Lineage"]
-            else:
-                blast.at[index, rank] = ""
-
-    blast = blast.drop(rows_to_drop)
-    blast = blast.sort_values(by=["% identity"], ascending=False)
-    blast = blast.reset_index(drop=True)
-
-    return blast
-
-
 def read_blast(blast_file: str | os.PathLike | BinaryIO | TextIO) -> pd.DataFrame:
     """
     Read in BLAST/DIAMOND files and pre-format the data frame with essential info
@@ -189,6 +93,55 @@ def read_blast(blast_file: str | os.PathLike | BinaryIO | TextIO) -> pd.DataFram
     blast = blast.reset_index(drop=True)
 
     return blast
+
+def get_top_hits(blast: pd.DataFrame):
+    """
+    Trim BLAST results down to the top hit for each base.
+    """
+
+    assert isinstance(blast, pd.DataFrame), "get_top_hits expects a pandas dataframe object."
+
+    if blast.empty:
+        logger.debug("Empty dataframe passed to Get Top Hits.")
+        return blast
+
+    top_hits = _trim_overlapping(blast)
+    top_hits = top_hits.sort_values("% identity", ascending=False)
+
+    # only keep coordinates of each hit that are not already covered by a better hit
+    df = top_hits
+
+    rerun = 1
+    while (
+        rerun == 1
+    ):  # edges of hits can be moved within a higher scoring hit in the first pass
+        df, rerun = _trim_edges(df)
+
+    for j in df.index:
+        top_hits.loc[j, "subject length"] = max(
+            [df.loc[j, "q. start"], df.loc[j, "q. end"]]
+        ) - min([df.loc[j, "q. start"], df.loc[j, "q. end"]])
+        top_hits.loc[j, "q. start"] = df.loc[j, "q. start"]
+        top_hits.loc[j, "q. end"] = df.loc[j, "q. end"]
+
+    top_hits = top_hits.sort_values("q. start")
+    top_hits = top_hits[top_hits["q. start"] != 0]
+
+    # only keep annotations covering 50 bases or more
+    top_hits = top_hits[top_hits["subject length"] >= 50]
+    top_hits = top_hits.reset_index(drop=True)
+    return top_hits
+
+
+def get_high_identity_hits(blast_output_file, threshold=90):
+    """
+    Read all hits with high sequence identity above a given threshold from a 
+    BLAST results file. This is current used to quickly grab candidates from the
+    Protein Taxonomy search to identify non-coding regions of a query.
+    """
+    hits = read_blast(blast_output_file)
+    hits = _trim_overlapping(hits)
+    return hits[hits["% identity"] >= threshold]
 
 def get_controlled_labels(
         blast : pd.DataFrame,
@@ -279,13 +232,55 @@ def split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
     split = pd.DataFrame(new_rows)
     return split
 
+def find_clusters(
+    input_data: pd.DataFrame,
+    start_heading: str = "q. start",
+    end_heading: str = "q. end",
+    output_label_heading: str = "cluster",
+) -> tuple[pd.DataFrame, list[tuple]]:
+    """
+    Groups rows into clusters where any set of rows with collectively overlapping
+    ranges (transitively) belong to the same cluster.
+
+    Returns a copy of input_data with a new integer cluster-ID column, and a list
+    of (min_start, max_end) tuples — one per cluster.
+    """
+    assert not input_data.empty, "Empty dataframe given to find_clusters()"
+    assert start_heading in input_data.columns
+    assert end_heading in input_data.columns
+
+    sorted_df = input_data.sort_values(by=start_heading)
+
+    clusters: list[tuple] = []
+    row_cluster_ids: dict = {}
+    current_cluster = -1
+    current_max_end = None
+
+    for idx, row in sorted_df.iterrows():
+        start = row[start_heading] - 1
+        end = row[end_heading] + 1
+
+        if current_cluster == -1 or start >= current_max_end:
+            current_cluster += 1
+            clusters.append((row[start_heading], row[end_heading]))
+            current_max_end = end
+        else:
+            current_max_end = max(current_max_end, end)
+            clusters[current_cluster] = (clusters[current_cluster][0], current_max_end)
+
+        row_cluster_ids[idx] = current_cluster
+
+    output_data = input_data.copy()
+    output_data[output_label_heading] = output_data.index.map(row_cluster_ids)
+
+    return output_data, clusters
 
 def _trim_overlapping(blast: pd.DataFrame):
     """
     Remove any hits that are completely overlapped by another, higher-quality hit.
     """
     # set start to the lowest coordinate and end to the highest to avoid confusion
-    blast = shift_hits_pos_strand(blast)
+    blast = _shift_hits_pos_strand(blast)
 
     # if any multispecies hits contain regulated pathogens, put the regulated up top
     if "regulated" in blast:
@@ -296,30 +291,27 @@ def _trim_overlapping(blast: pd.DataFrame):
     blast = blast.reset_index(drop=True)
 
     blast2 = blast
+
     # only keep top-ranked hits that don't overlap
-    for query in blast["query acc."].unique():
-        df = blast[blast["query acc."] == query]
-        for i in df.index:  # run through each hit from the top
-            for j in df.index[(i + 1) :]:  # compare to each below
-                if j in blast2.index:
-                    # if beginning and end of the higher-rank hit both overlap or extend further
-                    # than the beginning and end of lower-ranked hit, discard the lower-ranked hit
-                    if (
-                        df.loc[i, "q. start"] <= df.loc[j, "q. start"]
-                        and df.loc[i, "q. end"] >= df.loc[j, "q. end"]
-                    ):
-                        # Unless the hits have the same coordinates and % identity
-                        if (
-                            df.loc[i, "q. start"] < df.loc[j, "q. start"]
-                            or df.loc[i, "q. end"] > df.loc[j, "q. end"]
-                            or df.loc[i, "% identity"] > df.loc[j, "% identity"]
-                        ):
-                            blast2 = blast2.drop([j])
+    for i in blast.index:  # run through each hit from the top
+        for j in blast.index[(i + 1) :]:  # compare to each below
+            if j in blast2.index:
+                i_envelopes_j = (blast.loc[i, "q. start"] <= blast.loc[j, "q. start"]
+                                and blast.loc[i, "q. end"] >= blast.loc[j, "q. end"])
+                not_shared_coords_or_identity = (
+                        blast.loc[i, "q. start"] < blast.loc[j, "q. start"]
+                        or blast.loc[i, "q. end"] > blast.loc[j, "q. end"]
+                        or blast.loc[i, "% identity"] > blast.loc[j, "% identity"]
+                    )
+                
+                if i_envelopes_j and not_shared_coords_or_identity:
+                    blast2 = blast2.drop([j])
+
     blast2 = blast2.reset_index(drop=True)
 
     return blast2
 
-def shift_hits_pos_strand(blast):
+def _shift_hits_pos_strand(blast):
     for j in blast.index:
         if blast.loc[j, "q. start"] > blast.loc[j, "q. end"]:
             start = blast.loc[j, "q. end"]
@@ -412,56 +404,3 @@ def _trim_edges(df : pd.DataFrame) -> tuple[pd.DataFrame, int]:
                 rerun = 1
                 mix_starts = mix_starts + 1
     return df, rerun
-
-
-def get_top_hits(blast: pd.DataFrame):
-    """
-    Filters BLAST results down to top hits only:
-        * At least 1 top hit for each base.
-        * Above 
-    """
-
-    assert isinstance(blast, pd.DataFrame), "get_top_hits expects a pandas dataframe object."
-
-    if blast.empty:
-        logger.debug("Empty dataframe passed to Get Top Hits.")
-        return blast
-
-    top_hits = _trim_overlapping(blast)
-    top_hits = top_hits.sort_values("% identity", ascending=False)
-
-    # only keep coordinates of each hit that are not already covered by a better hit
-    for query in top_hits["query acc."].unique():
-        df = top_hits[top_hits["query acc."] == query]
-
-        rerun = 1
-        while (
-            rerun == 1
-        ):  # edges of hits can be moved within a higher scoring hit in the first pass
-            df, rerun = _trim_edges(df)
-
-        for j in df.index:
-            top_hits.loc[j, "subject length"] = max(
-                [df.loc[j, "q. start"], df.loc[j, "q. end"]]
-            ) - min([df.loc[j, "q. start"], df.loc[j, "q. end"]])
-            top_hits.loc[j, "q. start"] = df.loc[j, "q. start"]
-            top_hits.loc[j, "q. end"] = df.loc[j, "q. end"]
-
-    top_hits = top_hits.sort_values("q. start")
-    top_hits = top_hits[top_hits["q. start"] != 0]
-
-    # only keep annotations covering 50 bases or more
-    top_hits = top_hits[top_hits["subject length"] >= 50]
-    top_hits = top_hits.reset_index(drop=True)
-    return top_hits
-
-
-def get_high_identity_hits(blast_output_file, threshold=90):
-    """
-    Read all hits with high sequence identity above a given threshold from a 
-    BLAST results file. This is current used to quickly grab candidates from the
-    Protein Taxonomy search to identify non-coding regions of a query.
-    """
-    hits = read_blast(blast_output_file)
-    hits = _trim_overlapping(hits)
-    return hits[hits["% identity"] >= threshold]
