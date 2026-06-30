@@ -347,7 +347,8 @@
     padding: 10px 18px; border-radius: 8px; font: 600 14px var(--ui); white-space: nowrap;
     appearance: none; border: none; cursor: pointer;
   }
-  .files h3 { font: 600 12px var(--display); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; }
+  .files h3, #queries h3 { font: 600 12px var(--display); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; }
+  #queries { margin-top: 16px; }
   .file-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
   .file-row a { text-decoration: none; }
   .file-row a:hover { text-decoration: underline; }
@@ -543,10 +544,12 @@
     <div class="step-head">
       <span class="step-title" id="result-title">Result</span>
     </div>
-    <!-- Feature 6/9: verdict summary + embedded report + output files -->
+    <!-- Feature 6/9: overall verdict, embedded report, output files, then the
+         (potentially long) per-sequence list LAST so report/files stay reachable -->
     <div id="summary"></div>
     <div id="report"></div>
     <div class="files" id="files"></div>
+    <div id="queries"></div>
   </section>
 </div>
 
@@ -557,6 +560,7 @@ const logEl = document.getElementById("log");
 const filesEl = document.getElementById("files");
 const reportEl = document.getElementById("report");
 const summaryDiv = document.getElementById("summary");
+const queriesEl = document.getElementById("queries");
 const errEl = document.getElementById("errmsg");
 const presetsEl = document.getElementById("presets");
 const runPanel = document.getElementById("runpanel");
@@ -972,7 +976,7 @@ function attach(jobId) {
   streamingJobId = jobId;
   // Clear the separate Results card; it populates when this run finishes.
   resultCard.style.display = "none";
-  summaryDiv.innerHTML = ""; reportEl.innerHTML = ""; filesEl.innerHTML = ""; resultTitle.textContent = "Result";
+  summaryDiv.innerHTML = ""; reportEl.innerHTML = ""; filesEl.innerHTML = ""; queriesEl.innerHTML = ""; resultTitle.textContent = "Result";
   logEl.textContent = "";
   runPanel.classList.add("active");
   resetStages();
@@ -1199,6 +1203,7 @@ async function showResults(jobId) {
     summaryDiv.innerHTML = ""; summaryDiv.style.display = "none";
     reportEl.innerHTML = "";
     filesEl.innerHTML = "";
+    queriesEl.innerHTML = "";
 
     // Interrupted run: explain, and offer to continue it (re-runs the cut-off
     // step and reuses the rest).
@@ -1215,23 +1220,26 @@ async function showResults(jobId) {
       if (rb) rb.addEventListener("click", () => resumeRun(jobId));
     }
 
-    // Verdict summary, parsed from commec's output JSON.
+    // Verdict summary, parsed from commec's output JSON. The overall verdict
+    // stays at the top; the per-query list goes LAST (#queries) so a huge list
+    // doesn't push the report button + file links off-screen.
     const sm = body.summary;
     if (sm && sm.n) {
-      let h = `<div class="verdict v-${statusClass(sm.overall)}">`
-            + `Overall: ${escapeHtml(sm.overall)}`
-            + `<span class="vc">${sm.n} quer${sm.n === 1 ? "y" : "ies"}</span></div>`;
-      h += '<div class="qtable">';
-      for (const q of sm.queries) {
-        h += `<div class="qrow">
-          <span class="qpill q-${statusClass(q.status)}">${escapeHtml(q.status)}</span>
-          <span class="qn">${escapeHtml(q.name)}</span>
-          <span class="qr">${escapeHtml(q.rationale)}</span>
+      summaryDiv.innerHTML =
+        `<div class="verdict v-${statusClass(sm.overall)}">`
+        + `Overall: ${escapeHtml(sm.overall)}`
+        + `<span class="vc">${sm.n} quer${sm.n === 1 ? "y" : "ies"}</span></div>`;
+      summaryDiv.style.display = "block";
+      let q = '<h3>Per-sequence results</h3><div class="qtable">';
+      for (const query of sm.queries) {
+        q += `<div class="qrow">
+          <span class="qpill q-${statusClass(query.status)}">${escapeHtml(query.status)}</span>
+          <span class="qn">${escapeHtml(query.name)}</span>
+          <span class="qr">${escapeHtml(query.rationale)}</span>
         </div>`;
       }
-      h += '</div>';
-      summaryDiv.innerHTML = h;
-      summaryDiv.style.display = "block";
+      q += '</div>';
+      queriesEl.innerHTML = q;
     }
 
     const files = body.files || [];
