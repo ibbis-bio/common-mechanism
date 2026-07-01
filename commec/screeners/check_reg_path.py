@@ -89,7 +89,7 @@ def _get_hit_result_from_data(unique_query_data : pd.DataFrame, step : ScreenSte
 
     # Filter data to the top hits only.
     top_hits = get_top_hits(unique_query_data)
-    top_hits = get_controlled_labels(top_hits)
+    #top_hits = get_controlled_labels(top_hits)
     
     regulated_only = top_hits[top_hits["regulated"]]
     non_regulated_only = top_hits[~top_hits["regulated"]]
@@ -508,6 +508,10 @@ def parse_taxonomy_hits(
 
         # Filter to just top hits, correct for NT coords, trim the edges, sort and Clean up
         unique_query_data = blast[blast["query acc."] == query_acc]
+
+        if unique_query_data.empty:
+            logger.info("      --> No hits.")
+            continue
 
         # If NT Taxonomy, we have some additional parsing to consider...
         if step == ScreenStep.TAXONOMY_NT:

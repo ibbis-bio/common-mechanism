@@ -48,6 +48,7 @@ def import_data(import_path : str | os.PathLike,
 
     # This needs to occur before we interpret regional context.
     __region.load_region_list_data(os.path.join(import_path, "region_definitions.json"))
+    # Global, not control list specific ignore lists.
     __init.import_ignored_accesions(os.path.join(import_path, "ignored_taxids.csv"))
     
 

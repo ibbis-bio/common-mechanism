@@ -140,7 +140,9 @@ def get_high_identity_hits(blast_output_file, threshold=90):
     Protein Taxonomy search to identify non-coding regions of a query.
     """
     hits = read_blast(blast_output_file)
-    hits = _trim_overlapping(hits)
+    hits = pd.concat(
+        _trim_overlapping(group) for _, group in hits.groupby("query acc.")
+    )
     return hits[hits["% identity"] >= threshold]
 
 def get_controlled_labels(
