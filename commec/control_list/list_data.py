@@ -31,13 +31,6 @@ CONTROL_LIST_ANNOTATIONS : pd.DataFrame = pd.DataFrame({
     "genus": pd.Series(dtype="str"),
     "species": pd.Series(dtype="str"),
     "strain": pd.Series(dtype="str")
-    #"derived_from": pd.Series(dtype="str"),
-    #"preferred_taxonomy_name": pd.Series(dtype="str"),
-    #"other_taxonomy_name": pd.Series(dtype="str"),
-    #"genbank_protein": pd.Series(dtype="str"),
-    #"uniprot": pd.Series(dtype="str"),
-    #"target": pd.Series(dtype="str"),
-    #"hazard_group": pd.Series(dtype="str"),
     })
 
 # Precalculated and imported map of child
@@ -69,7 +62,6 @@ def clear(target : str | None = None) -> bool:
         del CONTROL_LISTS[target]
         CONTROL_LIST_ANNOTATIONS = CONTROL_LIST_ANNOTATIONS[
             CONTROL_LIST_ANNOTATIONS["list_acronym"] != target]
-        # Consider updating the REG_TAXID_LISTS too.
         return True
 
     if not target:

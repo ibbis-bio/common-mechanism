@@ -126,8 +126,6 @@ def get_cluster_hash(taxid: str) -> str | None:
     """
 
     # Early exit if not present in control lists.
-    #in_map = accession_hash.code in __data.ACCESSION_MAP["child_taxid"].values
-    #in_index = accession_hash in index_values
     if not is_regulated(taxid):
         return None
 
@@ -179,46 +177,6 @@ def get_cluster_hash(taxid: str) -> str | None:
         return None
 
     return accession_to_check
-
-
-def are_regulated_test(accessions) -> dict[str, bool]:
-    """
-    Batch alternative to calling is_regulated() per-element.
-    Requires testing to know if this is faster.
-
-    Replaces the dict comprehension in get_controlled_labels():
-        # Before:
-        taxid_to_regulated = {taxid: is_regulated(taxid) for taxid in unique_taxids}
-        # After:
-        taxid_to_regulated = are_regulated_test(unique_taxids)
-
-    Performance difference vs is_regulated() x N:
-        - ACCESSION_MAP is filtered oaccessionsnce with isin() instead of N separate .loc[] calls.
-        - CONTROL_LIST_ANNOTATIONS.index is converted to a set once instead of N times.
-        - Per-taxid disjoint check is still a Python loop (unavoidable without a bulk index op).
-    """
-    accessions = list(accessions)
-
-    # Convert index to a plain set once — avoids re-wrapping the Index on every call.
-    index_set = set(__data.CONTROL_LIST_ANNOTATIONS.index)
-
-    # One vectorised filter for all parent-taxid lookups.
-    mask = __data.ACCESSION_MAP["child_taxid"].isin(accessions)
-    parent_map: dict[str, list[str]] = (
-        __data.ACCESSION_MAP[mask]
-        .groupby("child_taxid")["controlled_taxid"]
-        .apply(list)
-        .to_dict()
-    )
-
-    result: dict[str, bool] = {}
-    for accession in accessions:
-        to_check = {Accession(accession)}
-        to_check.update(Accession(p) for p in parent_map.get(accession, []))
-        result[accession] = not to_check.isdisjoint(index_set)
-
-    return result
-
 
 def get_regulation(accession : str) -> list[ControlListOutput]:
     """
@@ -327,20 +285,6 @@ def run(arguments: argparse.Namespace):
         return 2
         
     import_data(database_location, regions)
-    
-    ## Temp testing for hash generation.
-    #children : pd.Series = __data.ACCESSION_MAP["child_taxid"]
-    #parents = __data.ACCESSION_MAP["controlled_taxid"]
-    #import pandas as pd
-    #hasherinos = []
-    #all_to_test = pd.concat([children, parents]).unique()
-    #for taxid in all_to_test:
-    #    taxid = str(taxid)
-    #    hash_taxid = get_cluster_hash(taxid)
-    #    hasherinos.append(hash_taxid)
-    
-    #hasherinos = set(hasherinos)
-    #logger.info("Total number of unique parent hashes : %i", len(hasherinos))
 
     if arguments.showlists:
         logger.info(" *----------* CONTROL LISTS *----------* ")
