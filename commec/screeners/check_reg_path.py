@@ -150,11 +150,9 @@ def parse_taxonomy_hits(
     for query_acc in unique_queries:
         query_obj = queries.get(query_acc)
         if query_obj:
-            logger.debug("Confirming hits for query %s.", query_acc)
-            query_obj.mark_as_hit()
+            logger.debug("Found hits for query %s.", query_acc)
         else:
-            logger.error("Could not mark query %s for confirmation of hit, "
-                            "query not found in input queries.", query_acc)
+            logger.error("Query %s not found in input queries.", query_acc)
 
     # Add taxonomic labels, and filter synthetic constructs
     blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)

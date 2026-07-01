@@ -143,13 +143,7 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         output_rationale = query.status.rationale if query.status.rationale != Rationale.NULL else ""
 
         overall_flag = query.status.screen_status
-        if query.status.rationale == Rationale.NO_HITS:
-            overall_flag = "No Hits"
-
-        overall_flag = query.status.screen_status
-        if query.status.rationale == Rationale.NO_HITS_SKIP_NOTE:
-            overall_flag = "No Hits (skipped steps)"
-
+        
         results.append({
         "name": query.query,
         "description": query.description,
@@ -184,10 +178,11 @@ def write_output_csv(output_dir: str | os.PathLike, status: dict, evalportal_for
     status_df = status_df.map(lambda x: ";".join(sorted(x)) if isinstance(x, set) else x)
 
     if evalportal_format:
-        # Using a "strict" mode coverting Flag/Warning to 1, and everything else to 0.
-        status_df["flag"] = status_df["flag"].map(
+        # Using a "strict" mode converting Flag/Warning to 1, and everything else to 0.
+        status_df["Flag"] = status_df["flag"].map(
             lambda x: 1 if x == "Flag" or x == "Warning" else 0)
-        status_df = status_df.rename(columns={"name": "UUID", "flag": "Flag"})
+        status_df = status_df.rename(columns={"name": "UUID"})
+        status_df = status_df[["UUID", "Flag"]]
 
     status_df.to_csv(status_file, index=False)
     print(f"Pipeline step status written to {status_file}")
