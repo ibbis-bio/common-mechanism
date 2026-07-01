@@ -240,33 +240,6 @@ def _get_hit_result_from_data(unique_query_data : pd.DataFrame, step : ScreenSte
 
     return output_hit_results, log_messages
 
-def _create_hit_info(row : pd.Series, control_output = None) -> dict:
-    """
-    Return the a formated taxonomy annotation output. Optionally, if 
-    it is an item of a control list, we add that info.
-    """
-    output_dict =  {
-        "evalue" : row["evalue"],
-        "percent_identity" : row["% identity"],
-        "query_start" : row["q. start"],
-        "query_end" : row["q. end"],
-        "match_start" : row["s. start"],
-        "match_end" : row["s. end"],
-        "target_hit" : row["subject acc."],
-        "target_description" : row["subject title"],
-        "taxid" : row["subject tax ids"],
-    }
-    if control_output:
-        output_dict["genus"] = control_output[0].genus
-        output_dict["species"] = control_output[0].species
-        output_dict["controlled_by_lists"] = [
-            {
-                "list" : get_control_lists(co.list).display_name, 
-                "source" : co.source_text
-            } for co in control_output]
-
-    return output_dict
-
 def _create_hit_result_for_cluster(
     cluster_data : pd.DataFrame,
     non_regulated_only : pd.DataFrame,
@@ -397,6 +370,32 @@ def _create_hit_result_for_cluster(
 
     return None, ""
 
+def _create_hit_info(row : pd.Series, control_output = None) -> dict:
+    """
+    Return the a formated taxonomy annotation output. Optionally, if 
+    it is an item of a control list, we add that info.
+    """
+    output_dict =  {
+        "evalue" : row["evalue"],
+        "percent_identity" : row["% identity"],
+        "query_start" : row["q. start"],
+        "query_end" : row["q. end"],
+        "match_start" : row["s. start"],
+        "match_end" : row["s. end"],
+        "target_hit" : row["subject acc."],
+        "target_description" : row["subject title"],
+        "taxid" : row["subject tax ids"],
+    }
+    if control_output:
+        output_dict["genus"] = control_output[0].genus
+        output_dict["species"] = control_output[0].species
+        output_dict["controlled_by_lists"] = [
+            {
+                "list" : get_control_lists(co.list).display_name, 
+                "source" : co.source_text
+            } for co in control_output]
+
+    return output_dict
 
 def _create_hit_result_from_annotations(
     controlled_cluster_label,
@@ -481,8 +480,6 @@ def _create_hit_result_from_annotations(
     )
     return new_hit, log_message
 
-# ── Logging helpers ────────────────────────────────────────────────────────────
-
 def _build_log_message(
     screen_status: ScreenStatus,
     domains_text: str,
@@ -522,19 +519,3 @@ def _build_log_message(
     msg += ")"
     return msg
 
-
-def _emit_query_logs(log_container: dict[str, list[str]], step: ScreenStep) -> None:
-    """
-    Emit deferred per-query log messages at INFO level, grouped by query name.
-
-    Messages are collected during hit processing and emitted here in query order
-    to produce a legacy-compatible .screen.log layout.
-    """
-    taxtype = "protein" if step == ScreenStep.TAXONOMY_AA else "nucleotide"
-    for query_name, log_list in log_container.items():
-        if not log_list:
-            continue
-        s = "" if len(log_list) == 1 else "s"
-        logger.info(" Regulated %s%s in %s:", taxtype, s, query_name)
-        for log_text in log_list:
-            logger.info(log_text)
