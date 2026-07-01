@@ -11,6 +11,7 @@ authors = [
   { name = "Nicole Wheeler" },
   { name = "Jen Lu" },
   { name = "Michael Barnett" },
+  { name = "Manu Shivakumara" },
   { name = "Tessa Alexanian", email = "tessa@ibbis.bio" },
 ]
 maintainers = [

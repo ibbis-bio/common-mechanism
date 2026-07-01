@@ -3,7 +3,10 @@
 
 # SCREENING
 MINIMUM_QUERY_LENGTH = 41
-N_NON_REGIONAL_HITS_TO_WARN = 2
+MAXIMUM_QUERY_LENGTH = 100000
+
+# CONTROL LISTS
+N_NON_REGIONAL_HITS_TO_WARN = 2 # How many non-regional hits you need before warnings start showing up.
 
 # NUCLEOTIDE TAXONOMY SCREEN
 # At what percent identity a protein hit must attain, to remove that region from non-coding label.

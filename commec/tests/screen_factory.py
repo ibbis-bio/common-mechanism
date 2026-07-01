@@ -59,6 +59,13 @@ def skip_biorisk_annotations(_input_file):
     """
     return BIORISK_ANNOTATIONS_DATA
 
+def skip_canonical_taxids(taxids, _db_path, _threads):
+    """
+    Override canonical taxid retrieval, so tests
+    don't require a real taxonomy database.
+    """
+    return taxids.astype(str).tolist()
+
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
 TAXONOMY = pd.DataFrame(columns=["subject acc.","regulated", "superkingdom", "phylum", "genus", "species"])
 BIORISK_ANNOTATIONS_DATA = pd.DataFrame(columns=["ID", "Description", "Must flag"])

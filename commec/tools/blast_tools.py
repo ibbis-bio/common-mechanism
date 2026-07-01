@@ -8,7 +8,6 @@ Also contains the abstract base class for blastX/N/Diamond database search handl
 """
 import os
 import logging
-import glob
 from typing import BinaryIO, TextIO
 import pytaxonkit
 import pandas as pd

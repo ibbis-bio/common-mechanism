@@ -16,7 +16,6 @@ from commec.config.query import Query
 from commec.tools.blast_tools import get_high_identity_hits
 from commec.tools.search_handler import SearchHandler
 from commec.config.result import ScreenStatus
-from commec.config.constants import NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD
 
 logger = logging.getLogger(__name__)
 
@@ -100,8 +99,7 @@ def calculate_noncoding_regions_per_query(
             _set_no_coding_regions(query)
         return
 
-    protein_hits = get_high_identity_hits(protein_search_handler.out_file,
-                                        NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD)
+    protein_hits = get_high_identity_hits(protein_search_handler.out_file)
 
     query_col = "query acc."
 

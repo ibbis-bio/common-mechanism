@@ -150,3 +150,17 @@ def test_different_regions(tmp_path):
     assert num_hits == 4, f"Got {num_hits}, instead of 4 hits. Expected 3 Clusters for tax_id 500, and 1 benign hit...\n{json.dumps(asdict(result.queries["query1"]), indent = 2)}"
     assert status == ScreenStatus.FLAG, ("Expected status is to FLAG, current status"
                                         f" is {status}, likely multiple region clearing issue.")
+
+def test_no_hits_outcomes(tmp_path):
+    """
+    Simply tests what occurs when commec is run and finds no hits, with and without --skip-tx
+    """
+    screen_test = ScreenTesterFactory("no_hits_test", tmp_path)
+    screen_test.add_query("query_not_hits",1000)
+    result = screen_test.run()
+    assert result.queries["query_not_hits"].status.screen_status == ScreenStatus.PASS
+
+    screen_test_skip_tx = ScreenTesterFactory("no_hits_test_skip_tx", tmp_path)
+    screen_test_skip_tx.add_query("query_not_hits",1000)
+    result = screen_test_skip_tx.run("--skip-tx")
+    assert result.queries["query_not_hits"].status.screen_status == ScreenStatus.PASS_SKIP_TX
