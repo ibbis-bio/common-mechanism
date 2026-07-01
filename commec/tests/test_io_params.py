@@ -198,6 +198,21 @@ def test_blast_mt_mode_override(tmp_path):
 
     assert params.config["blast_mt_mode"] == 0
 
+def test_blast_mt_mode_invalid_rejected(tmp_path):
+    """setup() must reject a blast_mt_mode that isn't one of the valid BLAST
+    multithreading modes (0, 1, 2)."""
+    user_config_path = tmp_path / "user_config.yaml"
+    with open(user_config_path, 'w') as f:
+        yaml.dump({"blast_mt_mode": 3}, f)
+
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
+    params = ScreenIO(args)
+
+    with pytest.raises(RuntimeError, match="blast_mt_mode"):
+        params.setup()
+
 def test_missing_default_config():
     """Test that missing default config raises appropriate error"""
     with patch("importlib.resources.files") as mock_files:
