@@ -12,20 +12,15 @@ import os
 from dataclasses import asdict
 
 import pandas as pd
+
 from commec.tools.search_handler import SearchHandler
 from commec.config.query import Query
 from commec.tools.blast_tools import (
     read_blast,
-<<<<<<< HEAD
     split_by_tax_id,
     get_controlled_labels,
     find_clusters,
     get_top_hits,
-=======
-    get_lineages,
-    get_taxonomic_labels,
-    get_top_hits
->>>>>>> develop
 )
 from commec.config.result import (
     ScreenResult,
@@ -53,8 +48,135 @@ pd.set_option("display.max_colwidth", 10000)
 logger = logging.getLogger(__name__)
 
 
-# ── Input validation ───────────────────────────────────────────────────────────
+# ── Public entry point ─────────────────────────────────────────────────────────
 
+def parse_taxonomy_hits(
+    search_handler: SearchHandler,
+    low_concern_taxid_path: str | os.PathLike,
+    biorisk_taxid_path: str | os.PathLike,
+    taxonomy_directory: str | os.PathLike,
+    data: ScreenResult,
+    queries: dict[str, Query],
+    step: ScreenStep,
+    n_threads: int,
+) -> int:
+    """
+    Parse a taxonomic BLAST screen output and update the ScreenResult in-place.
+
+    Process:
+        1. Load in the dataframe from provided SearchHandler.db_directory
+        2. Annotate the dataframe with control list annotations based on Accession (TaxID)
+            Includes removing synthetic or vaccine or other ingored taxa.
+            Parsing multi-species records via label, or multiple TaxID entries.
+            Provides a cluster ID for each hit based on its Control List connections
+        3. Split the dataframe into per Query processing.
+         per Query:
+        4. Filter to Top Hits and Trim Edges.
+        4. Split into Controlled vs non-controlled.
+        5. Creates clusters of controlled non-overlapping regions.
+        6. Remove any identically described hits based on subject title.
+        7. Generate a HitResults result object containing
+            > Longest display_name for controlled hit.
+            > ScreenResult
+            > Taxonomy annotations containing:
+                > Summary statistics
+                > List of Hits Controlled
+                > List of Hits non-regulated (Top 10 non-regulated hits).
+    Args:
+        search_handler: Handle of the search tool used for the taxonomic screen.
+        low_concern_taxid_path: Path to the low-concern taxid CSV.
+        biorisk_taxid_path: Path to the regulated taxid CSV (reserved for future use).
+        taxonomy_directory: Location of the NCBI taxonomy directory.
+        data: ScreenResult to be updated in-place.
+        queries: Mapping from query accession to Query objects.
+        step: Taxonomy step (TAXONOMY_NT or TAXONOMY_AA).
+        n_threads: Maximum threads available (reserved for future use).
+
+    Returns:
+        0 on success, 1 on unrecoverable input error.
+    """
+    logger.debug("Acquiring Taxonomic Data for JSON output:")
+
+    if not _check_inputs(
+        search_handler, low_concern_taxid_path,
+        biorisk_taxid_path, taxonomy_directory
+    ):
+        return 1
+
+    # Default all queries to PASS; downstream hits will override where needed.
+    for query in data.queries.values():
+        query.status.set_step_status(step, ScreenStatus.PASS)
+
+    if not search_handler.has_hits():
+        logger.info("\t...no hits\n")
+        return 0
+
+    # Data load and preparation.
+    blast = read_blast(search_handler.out_file)    
+    logger.debug("%s Blast Import: shape %s\n%s", step, blast.shape, blast.head())
+
+    # Label data with control information.
+    logger.info("    Identifying controlled taxa ...")
+    blast = get_controlled_labels(blast)
+
+    # Early exit if no regulated hits.
+    #if sum(1 for ch in blast["control_hash"] if ch is not None) == 0:
+    if blast["regulated"].sum() == 0:
+        logger.info("\t...no controlled hits\n")
+        return 0
+
+    logger.debug("%s Controlled Labels applied: shape %s\n%s", step, blast.shape, blast.head())
+
+    # Step 2: Per-query analysis
+    unique_query_accs = blast["query acc."].unique()
+    logger.debug("%s: %d unique queries with controlled hits", step, len(unique_query_accs))
+
+
+    # Each Query should be threaded:
+    for query_acc in unique_query_accs:
+        query_write, query_name = data.get_query(query_acc)
+        if not query_write:
+            logger.error("Query '%s' not found in ScreenResult during %s.", query_acc, step)
+            continue
+
+        query_info = queries[query_name]
+        logger.info("    Processing query: %s", query_name)
+
+        # Filter to just top hits, correct for NT coords, trim the edges, sort and Clean up
+        unique_query_data = blast[blast["query acc."] == query_acc]
+
+        if unique_query_data.empty:
+            logger.info("      --> No hits.")
+            continue
+
+        # If NT Taxonomy, we have some additional parsing to consider...
+        if step == ScreenStep.TAXONOMY_NT:
+            unique_query_data["q. start"] = [query_info.nc_to_nt_query_coords(
+                                                row["q. start"],
+                                                int(row["query acc."].split("_")[-1])
+                                            ) for _, row in unique_query_data.iterrows()]
+            unique_query_data["q. end"] = [query_info.nc_to_nt_query_coords(
+                                            row["q. end"],
+                                            int(row["query acc."].split("_")[-1])
+                                        ) for _, row in unique_query_data.iterrows()]
+            nc_id = int(query_acc.split("_")[-1])
+            start, stop = query_info.non_coding_regions[nc_id]
+            logger.info("    for the non-coding region: %s-%s", start, stop)
+
+        unique_query_data = unique_query_data.sort_values(by=["% identity"], ascending=False)
+        unique_query_data = unique_query_data.reset_index(drop=True)
+
+        hit_results_for_query, logs = _get_hit_result_from_data(unique_query_data, step)
+
+        # After thread is finished:
+        for new_hit in hit_results_for_query:
+            logger.debug("Adding hit for query %s : %s", query_acc, new_hit)
+            query_write.add_new_hit_information(new_hit)
+
+        for log in logs:
+            logger.info(log)
+
+    return 0
 
 def _check_inputs(
     search_handler: SearchHandler,
@@ -81,38 +203,6 @@ def _check_inputs(
 
     return True
 
-<<<<<<< HEAD
-=======
-def get_canonical_taxids(taxids: pd.Series, db_path: str | os.PathLike, threads: int) -> list[str]:
-    """
-    Retrieve the current canonical taxids to handle NCBI taxonomy updates.
-    """
-    lin = get_lineages(taxids, db_path, threads)
-    canonical_taxids = lin["FullLineageTaxIDs"].map(lambda x: x.split(";")[-1]).tolist()
-    return canonical_taxids
-
-
-def parse_taxonomy_hits(
-        search_handler : SearchHandler,
-        low_concern_taxid_path : str | os.PathLike,
-        biorisk_taxid_path : str | os.PathLike,
-        taxonomy_directory : str | os.PathLike,
-        data : ScreenResult,
-        queries : dict[str, Query],
-        step : ScreenStep,
-        n_threads : int
-        ):
-    """
-    Given a Taxonomic database screen output, update the screen data appropriately.
-        search_handler : The handle of the search tool used to screen taxonomic data.
-        low_concern_taxid_path : Path to low-concern taxid csv.
-        biorisk_taxid_path : Path to regulated taxid csv.
-        taxonomy_directory : The location of taxonomy directory.
-        data : the Screen data object, to be updated.
-        step : Which taxonomic step this is (Nucleotide, Protein, etc)
-        n_threads : maximum number of available threads for allocation.
-    """
->>>>>>> develop
 
 def _get_hit_result_from_data(unique_query_data : pd.DataFrame, step : ScreenStep) -> list[HitResult]:
     """
@@ -448,175 +538,3 @@ def _emit_query_logs(log_container: dict[str, list[str]], step: ScreenStep) -> N
         logger.info(" Regulated %s%s in %s:", taxtype, s, query_name)
         for log_text in log_list:
             logger.info(log_text)
-
-
-# ── Public entry point ─────────────────────────────────────────────────────────
-
-def parse_taxonomy_hits(
-    search_handler: SearchHandler,
-    low_concern_taxid_path: str | os.PathLike,
-    biorisk_taxid_path: str | os.PathLike,
-    taxonomy_directory: str | os.PathLike,
-    data: ScreenResult,
-    queries: dict[str, Query],
-    step: ScreenStep,
-    n_threads: int,
-) -> int:
-    """
-    Parse a taxonomic BLAST screen output and update the ScreenResult in-place.
-
-    Process:
-        1. Load in the dataframe from provided SearchHandler.db_directory
-        2. Annotate the dataframe with control list annotations based on Accession (TaxID)
-            Includes removing synthetic or vaccine hits.
-            Parsing multi-species records via label, or multiple TaxID entries.
-            Provides a cluster ID for each hit based on its Control List connections
-        3. Split the dataframe into per Query processing.
-         per Query: (Point of Threading)
-        4. Filter to Top Hits and Trim Edges.
-        4. Split into Controlled vs non-controlled.
-        5. Assess each cluster by non-overlapping regions.
-        6. Remove identically described hits based on subject title.
-        7. Generate a HitResults containing
-            > ID by "cluster_name"_"start"_"stop"
-            > Longest description for control hit.
-            > ScreenResult
-            > List of Hits Controlled
-            > List of Hits non-regulated (Top 10 non-regulated hits).
-    Args:
-        search_handler: Handle of the search tool used for the taxonomic screen.
-        low_concern_taxid_path: Path to the low-concern taxid CSV.
-        biorisk_taxid_path: Path to the regulated taxid CSV (reserved for future use).
-        taxonomy_directory: Location of the NCBI taxonomy directory.
-        data: ScreenResult to be updated in-place.
-        queries: Mapping from query accession to Query objects.
-        step: Taxonomy step (TAXONOMY_NT or TAXONOMY_AA).
-        n_threads: Maximum threads available (reserved for future use).
-
-    Returns:
-        0 on success, 1 on unrecoverable input error.
-    """
-    logger.debug("Acquiring Taxonomic Data for JSON output:")
-
-    if not _check_inputs(
-        search_handler, low_concern_taxid_path,
-        biorisk_taxid_path, taxonomy_directory
-    ):
-        return 1
-
-    # Default all queries to PASS; downstream hits will override where needed.
-    for query in data.queries.values():
-        query.status.set_step_status(step, ScreenStatus.PASS)
-
-    if not search_handler.has_hits():
-        logger.info("\t...no hits\n")
-        return 0
-
-    # Data load and preparation.
-    blast = read_blast(search_handler.out_file)    
-    logger.debug("%s Blast Import: shape %s\n%s", step, blast.shape, blast.head())
-
-<<<<<<< HEAD
-    # Label data with control information.
-    logger.info("    Identifying controlled taxa ...")
-    blast = get_controlled_labels(blast)
-
-    # Early exit if no regulated hits.
-    #if sum(1 for ch in blast["control_hash"] if ch is not None) == 0:
-    if blast["regulated"].sum() == 0:
-        logger.info("\t...no controlled hits\n")
-=======
-    # Read in lists of regulated and low_concern tax ids
-    vax_taxids = get_canonical_taxids(
-        pd.read_csv(low_concern_taxid_path, header=None).squeeze("columns").astype(str),
-        taxonomy_directory,
-        n_threads,
-    )
-    reg_taxids = get_canonical_taxids(
-        pd.read_csv(biorisk_taxid_path, header=None).squeeze("columns").astype(str),
-        taxonomy_directory,
-        n_threads,
-    )
-
-    blast = read_blast(search_handler.out_file)
-    logger.debug("%s Blast Import: shape: %s preview:\n%s", step, blast.shape, blast.head())
-
-    # Initial check for query to be identified as anything known.
-    unique_queries = blast['query acc.'].unique()
-    for query_acc in unique_queries:
-        query_obj = queries.get(query_acc)
-        if query_obj:
-            logger.debug("Found hits for query %s.", query_acc)
-        else:
-            logger.error("Query %s not found in input queries.", query_acc)
-
-    # Add taxonomic labels, and filter synthetic constructs
-    blast = get_taxonomic_labels(blast, reg_taxids, vax_taxids, taxonomy_directory, n_threads)
-    logger.debug("%s TaxLabels: shape: %s preview:\n%s", step, blast.shape, blast.head())
-
-    blast = blast[blast["species"] != ""]  # ignore submissions made above the species level
-    logger.debug("%s RemoveSpecies: shape: %s preview:\n%s", step, blast.shape, blast.head())
-
-    # label each base with the top matching hit, but include different taxids attributed to same hit
-    top_hits = get_top_hits(blast)
-    logger.debug("%s Top Hits: shape: %s preview:\n%s", step, top_hits.shape, top_hits.head())
-
-    if top_hits["regulated"].sum() == 0:
-        logger.info("\t...no regulated hits\n")
->>>>>>> develop
-        return 0
-
-    logger.debug("%s Controlled Labels applied: shape %s\n%s", step, blast.shape, blast.head())
-
-    # Step 2: Per-query analysis
-    unique_query_accs = blast["query acc."].unique()
-    logger.debug("%s: %d unique queries with controlled hits", step, len(unique_query_accs))
-
-
-    # Each Query should be threaded:
-    for query_acc in unique_query_accs:
-        query_write, query_name = data.get_query(query_acc)
-        if not query_write:
-            logger.error("Query '%s' not found in ScreenResult during %s.", query_acc, step)
-            continue
-
-        query_info = queries[query_name]
-        logger.info("    Processing query: %s", query_name)
-
-        # Filter to just top hits, correct for NT coords, trim the edges, sort and Clean up
-        unique_query_data = blast[blast["query acc."] == query_acc]
-
-        if unique_query_data.empty:
-            logger.info("      --> No hits.")
-            continue
-
-        # If NT Taxonomy, we have some additional parsing to consider...
-        if step == ScreenStep.TAXONOMY_NT:
-            unique_query_data["q. start"] = [query_info.nc_to_nt_query_coords(
-                                                row["q. start"],
-                                                int(row["query acc."].split("_")[-1])
-                                            ) for _, row in unique_query_data.iterrows()]
-            unique_query_data["q. end"] = [query_info.nc_to_nt_query_coords(
-                                            row["q. end"],
-                                            int(row["query acc."].split("_")[-1])
-                                        ) for _, row in unique_query_data.iterrows()]
-            nc_id = int(query_acc.split("_")[-1])
-            start, stop = query_info.non_coding_regions[nc_id]
-            logger.info("    for the non-coding region: %s-%s", start, stop)
-
-        unique_query_data = unique_query_data.sort_values(by=["% identity"], ascending=False)
-        unique_query_data = unique_query_data.reset_index(drop=True)
-
-        hit_results_for_query, logs = _get_hit_result_from_data(unique_query_data, step)
-
-        # After thread is finished:
-
-        for new_hit in hit_results_for_query:
-            logger.debug("Adding hit for query %s : %s", query_acc, new_hit)
-            query_write.add_new_hit_information(new_hit)
-
-        for log in logs:
-            logger.info(log)
-
-    return 0
-

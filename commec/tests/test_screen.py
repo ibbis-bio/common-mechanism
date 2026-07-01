@@ -158,9 +158,9 @@ def test_no_hits_outcomes(tmp_path):
     screen_test = ScreenTesterFactory("no_hits_test", tmp_path)
     screen_test.add_query("query_not_hits",1000)
     result = screen_test.run()
-    assert result.queries["query_not_hits"].status.screen_status == ScreenStatus.PASS
+    assert result.queries["query_not_hits"].status.screen_status == ScreenStatus.PASS, f"Query that had no hits, didn't have correct screen status.: {result.queries["query_not_hits"].status.screen_status}"
 
     screen_test_skip_tx = ScreenTesterFactory("no_hits_test_skip_tx", tmp_path)
     screen_test_skip_tx.add_query("query_not_hits",1000)
     result = screen_test_skip_tx.run("--skip-tx")
-    assert result.queries["query_not_hits"].status.screen_status == ScreenStatus.PASS_SKIP_TX
+    assert result.queries["query_not_hits"].status.screen_status == ScreenStatus.PASS_SKIP_TX, f"Query that skipped Tx, but had no hits, didn't have correct screen status.: {result.queries["query_not_hits"].status.screen_status}"
