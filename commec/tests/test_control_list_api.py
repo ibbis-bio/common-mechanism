@@ -62,7 +62,7 @@ def _build_db(base_path, lists):
             os.path.join(folder, "children_of_controlled_taxids.csv"), index=False)
         if "ignored" in entry:
             pd.DataFrame(entry["ignored"]).to_csv(
-                os.path.join(folder, "ignored_accessions.csv"), index=False)
+                os.path.join(folder, "ignored_taxids.csv"), index=False)
 
 
 _DEFAULT_LIST = {

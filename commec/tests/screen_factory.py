@@ -38,6 +38,13 @@ def fake_full_coords(
         query.non_coding_regions.append((1, query.length))
     return
 
+def skip_biorisk_annotations(_input_file):
+    """
+    Overrides the biorisk annotations retrieval to be
+    replaced with our own generated annotation data.
+    """
+    return BIORISK_ANNOTATIONS_DATA
+
 def skip_taxonomy_info(
     blast: pd.DataFrame,
     _regulated_taxids: list[str],
@@ -51,20 +58,6 @@ def skip_taxonomy_info(
     """
     blast = blast.merge(TAXONOMY, on = "subject acc.", how = "left")
     return blast
-
-def skip_biorisk_annotations(_input_file):
-    """
-    Overrides the biorisk annotations retrieval to be
-    replaced with our own generated annotation data.
-    """
-    return BIORISK_ANNOTATIONS_DATA
-
-def skip_canonical_taxids(taxids, _db_path, _threads):
-    """
-    Override canonical taxid retrieval, so tests
-    don't require a real taxonomy database.
-    """
-    return taxids.astype(str).tolist()
 
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
 TAXONOMY = pd.DataFrame(columns=["subject acc.","regulated", "superkingdom", "phylum", "genus", "species"])
@@ -123,10 +116,13 @@ class ScreenTesterFactory:
         
         arguments.extend(args)
 
-        print("Using the following Taxonomy Information:\n", TAXONOMY.to_string())
-
         print("Using the following Control Lists: ", ld.CONTROL_LISTS)
         print("Using the following control list annotations: ", ld.CONTROL_LIST_ANNOTATIONS)
+
+        if ld.CONTROL_LIST_ANNOTATIONS.size == 0:
+            print("Using a run with no added control lists, adding dummy data...")
+            self.add_dummy_cl_data()
+
         # We patch taxonomic labels to avoid having to make a mini-taxonomy database.
         # We also patch in the desired CLI arguments to avoid an input yaml, and control output.
         with (patch("commec.screeners.check_biorisk.read_biorisk_annotations", new=skip_biorisk_annotations),
@@ -149,6 +145,25 @@ class ScreenTesterFactory:
 
     def add_query(self, name, size):
         self.queries[name] = "a"*size
+
+    def add_dummy_cl_data(self):
+        ld.add_control_list(ControlList("dummy_list",
+                                        "Just a Dummy List",
+                                        "DUMMY","www.nourl.com",
+                                        Region("New Zealand","NZ"),
+                                        ListMode.COMPLIANCE,
+                                        "EXPORT"))
+        ld.add_control_list_annotations(pd.DataFrame([
+            {
+                "display_name": "Dummy entrant",
+                "tax_id": "DUMMY_TAXID",
+                "list_acronym": "DUMMY",
+                "category" : "Bacteria",
+                "species" : "Dummy Species",
+                "genus" : "Dummy genus",
+                "kingdom" : "Dummy Kingdom",
+            },
+        ]))
 
     def add_hit(self,
         to_step,                    # Which step this hit belongs to...

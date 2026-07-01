@@ -42,7 +42,7 @@ def _make_valid_list_dir(tmp_path, dirname="testlist", extra_lists=None,
     """
     Create a minimal valid control-list directory containing:
       list_info.csv, controlled_taxids.csv, children_of_controlled_taxids.csv
-    and optionally ignored_accessions.csv.
+    and optionally ignored_taxids.csv.
     Returns the directory Path.
     """
     d = tmp_path / dirname
@@ -73,7 +73,7 @@ def _make_valid_list_dir(tmp_path, dirname="testlist", extra_lists=None,
     _write_csv(d, "children_of_controlled_taxids.csv", children)
 
     if ignored is not None:
-        _write_csv(d, "ignored_accessions.csv", ignored)
+        _write_csv(d, "ignored_taxids.csv", ignored)
 
     return d
 
@@ -123,9 +123,9 @@ def test_import_control_lists_nonexistent_directory():
 
 
 def test_import_control_lists_optional_ignored_accessions(tmp_path):
-    """Import should succeed when ignored_accessions.csv is absent."""
+    """Import should succeed when ignored_taxids.csv is absent."""
     d = _make_valid_list_dir(tmp_path)
-    assert not os.path.isfile(os.path.join(str(d), "ignored_accessions.csv"))
+    assert not os.path.isfile(os.path.join(str(d), "ignored_taxids.csv"))
     assert import_control_lists(str(d)) is True
 
 
