@@ -68,7 +68,7 @@ def import_control_lists(
     info_filename = os.path.join(input_path, "list_info.csv")
     data_filename = os.path.join(input_path, "controlled_taxids.csv")
     child_lut_filename = os.path.join(input_path, "children_of_controlled_taxids.csv")
-    ignored_filename = os.path.join(input_path, "ignored_accessions.csv")
+    ignored_filename = os.path.join(input_path, "ignored_taxids.csv")
 
     # Check required files.
     if not os.path.isdir(input_path):

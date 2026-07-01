@@ -5,6 +5,10 @@
 MINIMUM_QUERY_LENGTH = 41
 N_NON_REGIONAL_HITS_TO_WARN = 2
 
+# NUCLEOTIDE TAXONOMY SCREEN
+# At what percent identity a protein hit must attain, to remove that region from non-coding label.
+NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD = 90
+
 # BIORISK E-VALUE FILTERING
 # Sequences shorter than this threshold use a length-dependent E-value cutoff.
 BIORISK_SHORT_QUERY_NT_THRESHOLD = 200

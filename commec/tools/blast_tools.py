@@ -15,6 +15,7 @@ import pandas as pd
 import numpy as np
 import commec.control_list as cl
 from commec.tools.search_handler import SearchHandler, DatabaseValidationError
+from commec.config.constants import NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +134,7 @@ def get_top_hits(blast: pd.DataFrame):
     return top_hits
 
 
-def get_high_identity_hits(blast_output_file, threshold=90):
+def get_high_identity_hits(blast_output_file, threshold=NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD):
     """
     Read all hits with high sequence identity above a given threshold from a 
     BLAST results file. This is current used to quickly grab candidates from the
