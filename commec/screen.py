@@ -418,7 +418,7 @@ class Screen:
                 self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.ERROR)
         else:
             logger.info("SKIPPING STEP 2: Protein search")
-            self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.SKIP)
+            self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.PASS_SKIP_TX)
 
         # Taxonomy screen (Nucleotide)
         if self.params.should_do_nucleotide_screening:
@@ -435,7 +435,7 @@ class Screen:
                 self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.ERROR)
         else:
             logger.info("SKIPPING STEP 3: Nucleotide search")
-            self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.SKIP)
+            self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.PASS_SKIP_TX)
 
         # Benign Screen
         if self.params.should_do_low_concern_screening:
