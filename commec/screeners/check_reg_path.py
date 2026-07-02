@@ -54,9 +54,6 @@ logger = logging.getLogger(__name__)
 
 def parse_taxonomy_hits(
     search_handler: SearchHandler,
-    low_concern_taxid_path: str | os.PathLike,
-    biorisk_taxid_path: str | os.PathLike,
-    taxonomy_directory: str | os.PathLike,
     data: ScreenResult,
     queries: dict[str, Query],
     step: ScreenStep,
@@ -86,9 +83,6 @@ def parse_taxonomy_hits(
                 > List of Hits non-regulated (Top 10 non-regulated hits).
     Args:
         search_handler: Handle of the search tool used for the taxonomic screen.
-        low_concern_taxid_path: Path to the low-concern taxid CSV.
-        biorisk_taxid_path: Path to the regulated taxid CSV (reserved for future use).
-        taxonomy_directory: Location of the NCBI taxonomy directory.
         data: ScreenResult to be updated in-place.
         queries: Mapping from query accession to Query objects.
         step: Taxonomy step (TAXONOMY_NT or TAXONOMY_AA).
@@ -99,10 +93,8 @@ def parse_taxonomy_hits(
     """
     logger.debug("Acquiring Taxonomic Data for JSON output:")
 
-    if not _check_inputs(
-        search_handler, low_concern_taxid_path,
-        biorisk_taxid_path, taxonomy_directory
-    ):
+    if not search_handler.validate_output():
+        logger.info("\t...ERROR: Taxonomic search results empty\n %s", search_handler.out_file)
         return 1
 
     # Default all queries to PASS; downstream hits will override where needed.
@@ -125,7 +117,6 @@ def parse_taxonomy_hits(
     blast = get_controlled_labels(blast)
 
     # Early exit if no regulated hits.
-    #if sum(1 for ch in blast["control_hash"] if ch is not None) == 0:
     if blast["regulated"].sum() == 0:
         logger.info("\t...no controlled hits\n")
         return 0
@@ -182,31 +173,6 @@ def parse_taxonomy_hits(
             logger.info(log)
 
     return 0
-
-def _check_inputs(
-    search_handler: SearchHandler,
-    low_concern_taxid_path: str | os.PathLike,
-    biorisk_taxid_path: str | os.PathLike,
-    taxonomy_directory: str | os.PathLike,
-) -> bool:
-    """
-    Check existence of required input files and directories.
-
-    Returns True if all checks pass and processing may continue.
-    """
-    if not search_handler.validate_output():
-        logger.info("\t...ERROR: Taxonomic search results empty\n %s", search_handler.out_file)
-        return False
-
-    if not os.path.exists(low_concern_taxid_path):
-        logger.error("\t...low-concern database file %s does not exist\n", low_concern_taxid_path)
-        return False
-
-    if not os.path.exists(taxonomy_directory):
-        logger.error("\t...taxonomy directory %s does not exist\n", taxonomy_directory)
-        return False
-
-    return True
 
 
 def _get_hit_result_from_data(unique_query_data : pd.DataFrame, step : ScreenStep) -> list[HitResult]:

@@ -15,7 +15,6 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 
 from commec.screeners.check_reg_path import (
-    _check_inputs,
     _create_hit_info,
     _create_hit_result_from_annotations,
     _create_hit_result_for_cluster,
@@ -111,37 +110,6 @@ def _make_screen_result(query_name: str = "seq1") -> ScreenResult:
 
 def _make_match_range() -> MatchRange:
     return MatchRange(1e-10, 100, 300)
-
-
-# ── _check_inputs ──────────────────────────────────────────────────────────────
-
-class TestCheckInputs:
-
-    def _handler(self, validates: bool) -> MagicMock:
-        h = MagicMock()
-        h.validate_output.return_value = validates
-        h.out_file = "/mock/out.blast"
-        return h
-
-    def test_returns_false_when_handler_output_invalid(self):
-        assert _check_inputs(self._handler(False), "/lc.csv", "/br.csv", "/taxdir") is False
-
-    def test_returns_false_when_low_concern_missing(self, tmp_path):
-        taxdir = tmp_path / "taxdir"
-        taxdir.mkdir()
-        assert _check_inputs(self._handler(True), "/nonexistent.csv", "/br.csv", str(taxdir)) is False
-
-    def test_returns_false_when_taxonomy_dir_missing(self, tmp_path):
-        lc = tmp_path / "lc.csv"
-        lc.write_text("1234\n")
-        assert _check_inputs(self._handler(True), str(lc), "/br.csv", "/nonexistent_dir") is False
-
-    def test_returns_true_when_all_valid(self, tmp_path):
-        lc = tmp_path / "lc.csv"
-        lc.write_text("1234\n")
-        taxdir = tmp_path / "taxdir"
-        taxdir.mkdir()
-        assert _check_inputs(self._handler(True), str(lc), "/br.csv", str(taxdir)) is True
 
 
 # ── _create_hit_info ───────────────────────────────────────────────────────────
@@ -462,8 +430,7 @@ class TestParseTaxonomyHits:
         result = ScreenResult()
         with patch("os.path.exists", return_value=True):
             ret = parse_taxonomy_hits(
-                handler, "/lc.csv", "/br.csv", "/taxdir",
-                result, {}, self.STEP, 1,
+                handler, result, {}, self.STEP, 1,
             )
         assert ret == 1
 
@@ -472,8 +439,7 @@ class TestParseTaxonomyHits:
         data = _make_screen_result("seq1")
         with patch("os.path.exists", return_value=True):
             ret = parse_taxonomy_hits(
-                handler, "/lc.csv", "/br.csv", "/taxdir",
-                data, {}, self.STEP, 1,
+                handler, data, {}, self.STEP, 1,
             )
         assert ret == 0
         assert data.queries["seq1"].status.protein_taxonomy == ScreenStatus.PASS
@@ -489,8 +455,7 @@ class TestParseTaxonomyHits:
             patch("commec.screeners.check_reg_path.get_controlled_labels", return_value=blast_df),
         ):
             ret = parse_taxonomy_hits(
-                handler, "/lc.csv", "/br.csv", "/taxdir",
-                data, {}, self.STEP, 1,
+                handler, data, {}, self.STEP, 1,
             )
         assert ret == 0
         assert data.queries["seq1"].status.protein_taxonomy == ScreenStatus.PASS
@@ -516,8 +481,7 @@ class TestParseTaxonomyHits:
             ),
         ):
             ret = parse_taxonomy_hits(
-                handler, "/lc.csv", "/br.csv", "/taxdir",
-                data, {"seq1": MagicMock()}, self.STEP, 1,
+                handler, data, {"seq1": MagicMock()}, self.STEP, 1,
             )
         assert ret == 0
         print(f"Expecting a Flag result for protein taxonomy: {json.dumps(asdict(data),indent=2)}")
@@ -539,8 +503,7 @@ class TestParseTaxonomyHits:
             ),
         ):
             ret = parse_taxonomy_hits(
-                handler, "/lc.csv", "/br.csv", "/taxdir",
-                data, {}, self.STEP, 1,
+                handler, data, {}, self.STEP, 1,
             )
         assert ret == 0
         # seq1 was set to PASS by default; nothing should have changed it

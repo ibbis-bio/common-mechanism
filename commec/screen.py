@@ -542,9 +542,6 @@ class Screen:
 
         exit_status = parse_taxonomy_hits(
             self.database_tools.regulated_protein,
-            self.database_tools.low_concern_taxid_path,
-            self.database_tools.biorisk_taxid_path,
-            self.database_tools.taxonomy_path,
             self.screen_data,
             self.queries,
             ScreenStep.TAXONOMY_AA,
@@ -605,9 +602,6 @@ class Screen:
         # Note: Currently noncoding coordinates are converted within parse_taxonomy_hits,
         exit_status = parse_taxonomy_hits(
             self.database_tools.regulated_nt,
-            self.database_tools.low_concern_taxid_path,
-            self.database_tools.biorisk_taxid_path,
-            self.database_tools.taxonomy_path,
             self.screen_data,
             self.queries,
             ScreenStep.TAXONOMY_NT,

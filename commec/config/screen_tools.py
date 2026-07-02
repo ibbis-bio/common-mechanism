@@ -30,16 +30,10 @@ class ScreenTools:
         self.low_concern_blastn: BlastNHandler = None
         self.low_concern_cmscan: CmscanHandler = None
 
-        self.taxonomy_path: str | os.PathLike = None
-        self.biorisk_taxid_path: str | os.PathLike = None
-        self.low_concern_taxid_path: str | os.PathLike = None
         self.biorisk_annotations_csv: str | os.PathLike = None
 
         # Paths for vaxid, taxids, and taxonomy directory, used for check_regulated_pathogens
         # (Declared this way for backwards compatibility to old database structure at this stage)
-        self.taxonomy_path = params.config["databases"]["taxonomy"]["path"]
-        self.biorisk_taxid_path = params.config["databases"]["biorisk"]["taxids"]
-        self.low_concern_taxid_path = params.config["databases"]["low_concern"]["taxids"]
         self.biorisk_annotations = params.config["databases"]["biorisk"]["annotations"]
         self.low_concern_annotations = params.config["databases"]["low_concern"]["annotations"]
 

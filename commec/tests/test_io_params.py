@@ -23,12 +23,10 @@ def expected_defaults():
                 "dna": {"path": "commec-dbs/low_concern/dna/low_concern.fasta"},
                 "protein": {"path": "commec-dbs/low_concern/protein/low_concern.hmm"},
                 "annotations": 'commec-dbs/low_concern/low_concern_annotations.tsv',
-                "taxids": "commec-dbs/low_concern/vax_taxids.txt"
             },
             "biorisk": {
                 "path": "commec-dbs/biorisk/biorisk.hmm",
                 "annotations": 'commec-dbs/biorisk/biorisk_annotations.csv',
-                "taxids": "commec-dbs/biorisk/reg_taxids.txt",
             },
             "regulated_nt": {
                 "path": "commec-dbs/nt_blast/core_nt"
@@ -36,9 +34,6 @@ def expected_defaults():
             "regulated_protein": {
                 "blast": {"path": "commec-dbs/nr_blast/nr"},
                 "diamond": {"path": "commec-dbs/nr_dmnd/nr.dmnd"}
-            },
-            "taxonomy": {
-                "path": "commec-dbs/taxonomy/",
             },
             "control_lists": {
                 "path": "commec-dbs/control_lists/",
@@ -81,12 +76,10 @@ def expected_updated_from_custom_yaml():
                 "dna": {"path": "commec-dbs/low_concern/dna/low_concern.fasta"},
                 "protein": {"path": "commec-dbs/low_concern/protein/low_concern.hmm"},
                 "annotations": 'commec-dbs/low_concern/low_concern_annotations.tsv',
-                "taxids": "commec-dbs/low_concern/vax_taxids.txt"
             },
             "biorisk": {
                 "path": "commec-dbs/biorisk/biorisk.hmm",
                 "annotations": 'commec-dbs/biorisk/biorisk_annotations.csv',
-                "taxids": "custom_path.txt",
             },
             "regulated_nt": {
                 "path": "commec-dbs/nt_blast/core_nt"
@@ -94,9 +87,6 @@ def expected_updated_from_custom_yaml():
             "regulated_protein": {
                 "blast": {"path": "commec-dbs/nr_blast/nr"},
                 "diamond": {"path": "commec-dbs/nr_dmnd/nr.dmnd"}
-            },
-            "taxonomy": {
-                "path": "commec-dbs/taxonomy/",
             },
             "control_lists": {
                 "path": "commec-dbs/control_lists/",
