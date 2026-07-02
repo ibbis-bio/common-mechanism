@@ -13,6 +13,7 @@ from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 from .containers import (
     ControlListOutput,
     ControlListContext,
+    ListMode,
 )
 from . import list_data as data
 
@@ -105,8 +106,10 @@ def format_control_lists(verbosity = False):
             "# Entries": (data.CONTROL_LIST_ANNOTATIONS["list_acronym"] == value.acronym).sum(),
             "Status": value.status
         })
-    output = pd.DataFrame(rows, columns=["Control List", "Acronym", "# Entries","Region", "Status"]).to_string(index = False)
-    return output
+    output = pd.DataFrame(rows, columns=["Control List", "Acronym", "# Entries","Region", "Status"])
+    output["Status"] = pd.Categorical(output["Status"], categories=list(ListMode), ordered=True)
+    output = output.sort_values("Status")
+    return output.to_string(index = False)
 
 def format_control_list_annotation(input_data : list[ControlListOutput]):
     """
