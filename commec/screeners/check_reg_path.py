@@ -41,7 +41,9 @@ from commec.control_list import (
     get_cluster_hash,
 )
 
-from commec.config.constants import N_NON_REGIONAL_HITS_TO_WARN
+from commec.config.constants import (
+    N_NON_REGIONAL_HITS_TO_WARN,
+    BAD_ACCESSIONS)
 
 pd.set_option("display.max_colwidth", 10000)
 
@@ -114,6 +116,9 @@ def parse_taxonomy_hits(
     # Data load and preparation.
     blast = read_blast(search_handler.out_file)    
     logger.debug("%s Blast Import: shape %s\n%s", step, blast.shape, blast.head())
+
+    # Remove very bad Accessions
+    blast = blast[~blast["subject acc."].isin(BAD_ACCESSIONS)]
 
     # Label data with control information.
     logger.info("    Identifying controlled taxa ...")

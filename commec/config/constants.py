@@ -4,6 +4,9 @@
 # SCREENING
 MINIMUM_QUERY_LENGTH = 41
 MAXIMUM_QUERY_LENGTH = 100000
+BAD_ACCESSIONS = [
+    "YP_009724390",
+]
 
 # CONTROL LISTS
 N_NON_REGIONAL_HITS_TO_WARN = 2 # How many non-regional hits you need before warnings start showing up.
