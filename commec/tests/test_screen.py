@@ -152,3 +152,17 @@ def test_different_regions(tmp_path):
                             " `query1` not equal to expected number (5).")
     assert status == ScreenStatus.FLAG, ("Expected status is to FLAG, current status"
                                         f" is {status}, likely multiple region clearing issue.")
+
+def test_no_hits_outcomes(tmp_path):
+    """
+    Simply tests what occurs when commec is run and finds no hits, with and without --skip-tx
+    """
+    screen_test = ScreenTesterFactory("no_hits_test", tmp_path)
+    screen_test.add_query("query_not_hits",1000)
+    result = screen_test.run()
+    assert result.queries["query_not_hits"].status.screen_status == ScreenStatus.PASS
+
+    screen_test_skip_tx = ScreenTesterFactory("no_hits_test_skip_tx", tmp_path)
+    screen_test_skip_tx.add_query("query_not_hits",1000)
+    result = screen_test_skip_tx.run("--skip-tx")
+    assert result.queries["query_not_hits"].status.screen_status == ScreenStatus.PASS_SKIP_TX

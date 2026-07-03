@@ -25,9 +25,6 @@ databases:
       path: "{default}taxonomy/"
 threads: 1
 diamond_jobs: null
-# Multithreading mode passed to blastn/blastx as -mt_mode (0, 1, or 2; 0 = auto).
-# On fast local disk, 0 performs well across query sizes; for slow networked
-# storage (e.g. HPC/NFS) 1 tends to be faster. Default 1 preserves prior behaviour.
 blast_mt_mode: 1
 do_cleanup: False
 force: False
