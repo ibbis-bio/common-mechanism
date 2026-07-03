@@ -256,6 +256,8 @@
 
   /* ---- Run bar --------------------------------------------------------- */
   .runbar { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .run-inputs { color: var(--muted); font-size: 12.5px; text-align: center; min-height: 1em; }
+  .run-inputs b { color: var(--heading); font-weight: 600; }
   button.run {
     background: var(--orange); color: #fff; border: none; border-radius: 8px;
     padding: 13px 28px; font: 700 15px var(--display); cursor: pointer;
@@ -512,6 +514,7 @@
     <section class="card" id="runpanel">
       <div class="runbar">
         <button type="submit" class="run" id="run" disabled>Run</button>
+        <div class="run-inputs" id="input-summary"></div>
       </div>
       <div class="err-msg" id="errmsg"></div>
 
@@ -700,6 +703,7 @@ tabsEl.addEventListener("click", (e) => {
     selectedPath = null; browseSel.textContent = "No file selected.";
     browseTo(t.dataset.mount || null);   // re-root at the USB mount, or home
   }
+  updateInputSummary();
 });
 
 /* ---- Removable media (USB): mounted volumes appear as tabs, flash new */
@@ -764,6 +768,7 @@ async function browseTo(path) {
         browseList.querySelectorAll(".row").forEach(x => x.classList.remove("sel"));
         r.classList.add("sel");
         browseSel.innerHTML = `Selected: <b>${escapeHtml(selectedPath)}</b>`;
+        updateInputSummary();
       }));
   } catch (e) { /* ignore */ }
 }
@@ -789,12 +794,29 @@ seqPaste.addEventListener("input", () => {
   }
   bpCount.textContent = bp.toLocaleString();
   recCount.textContent = records;
+  updateInputSummary();
 });
+
+// Show what a Run will screen, combined across ALL populated inputs (paste +
+// upload + picked file), so nothing sitting in a hidden tab is screened
+// silently. Filenames only (exact per-source counts land in the run log).
+const inputSummaryEl = document.getElementById("input-summary");
+function updateInputSummary() {
+  const parts = [];
+  if (seqPaste.value.trim()) parts.push(`${recCount.textContent} pasted`);
+  const uf = uploadInput.files[0];
+  if (uf) parts.push(`${uf.name} (upload)`);
+  if (selectedPath) parts.push(`${selectedPath.split("/").pop()} (file)`);
+  inputSummaryEl.innerHTML = parts.length
+    ? "Will screen: " + parts.map(p => `<b>${escapeHtml(p)}</b>`).join(" + ")
+    : "";
+}
 
 /* ---- Upload tab: file picker + drag-and-drop ------------------------- */
 function showUpload() {
   const f = uploadInput.files[0];
   uploadInfo.textContent = f ? `${f.name} — ${f.size.toLocaleString()} B` : "";
+  updateInputSummary();
 }
 uploadInput.addEventListener("change", showUpload);
 ["dragover", "dragenter"].forEach(ev => dropzone.addEventListener(ev, e => {
@@ -912,19 +934,19 @@ form.addEventListener("submit", async (e) => {
   }
 
   const data = new FormData();
-  data.append("input_mode", activeTab);
   data.append("skip_short", document.getElementById("skip50").checked ? "1" : "0");
-  if (activeTab === "upload") {
-    const f = uploadInput.files[0];
-    if (!f) { errEl.textContent = "Choose a FASTA file to upload."; return; }
-    data.append("upload_file", f);
-  } else if (activeTab === "paste") {
-    const text = seqPaste.value.trim();
-    if (!text) { errEl.textContent = "Paste a sequence to screen."; return; }
-    data.append("sequence_text", text);
-  } else {
-    if (!selectedPath) { errEl.textContent = "Choose a FASTA file from the server browser."; return; }
-    data.append("fasta_file", selectedPath);
+  // Screen EVERY populated input together (paste + upload + picked file),
+  // regardless of the active tab -- the summary by the Run button shows what's
+  // included so nothing hidden gets screened silently.
+  let anyInput = false;
+  const pasteText = seqPaste.value.trim();
+  if (pasteText) { data.append("sequence_text", pasteText); anyInput = true; }
+  const upFile = uploadInput.files[0];
+  if (upFile) { data.append("upload_file", upFile); anyInput = true; }
+  if (selectedPath) { data.append("fasta_file", selectedPath); anyInput = true; }
+  if (!anyInput) {
+    errEl.textContent = "Add sequences first: paste, upload, or pick a file (you can combine them).";
+    return;
   }
   const preset = form.querySelector("input[name=preset]:checked");
   if (preset) data.append("preset", preset.value);
@@ -966,6 +988,7 @@ function clearInputs() {
   uploadInput.value = ""; uploadInfo.textContent = "";
   selectedPath = null; browseSel.textContent = "No file selected.";
   browseList.querySelectorAll(".row.sel").forEach(x => x.classList.remove("sel"));
+  updateInputSummary();
 }
 
 // Attach to the LIVE run's log via SSE (replays from the start, so a late join

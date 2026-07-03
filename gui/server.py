@@ -916,63 +916,73 @@ def screen():
     if not prefix:
         prefix = time.strftime("run-%Y%m%d-%H%M%S")
 
-    # Every input mode is normalised into a set of records that we materialise
-    # as input.fasta INSIDE the run dir. This is required, not just tidy:
-    # commec writes its output next to the INPUT file (it ignores the directory
-    # part of -o; see screen_io._get_output_prefixes), so the input must live in
-    # the run dir or the output scatters into the browsed/source directory.
-    mode = (request.form.get("input_mode") or "path").strip()
+    # Screen EVERY provided input source as one batch (paste + upload + a picked
+    # server file), rather than a single "mode" -- no queue; the user merges
+    # inputs by filling in more than one. Silently screening a few extra
+    # sequences is a safer failure than missing some, so we combine. All input
+    # is materialised into one input.fasta INSIDE the run dir, which is required,
+    # not just tidy: commec writes its output next to the INPUT file (it ignores
+    # the directory part of -o; see screen_io._get_output_prefixes), so the input
+    # must live in the run dir or the output scatters into the source directory.
     skip_short = (request.form.get("skip_short") or "1") != "0"
-    records = None
+    records, sources = [], []  # sources: per-source "(N from X)" for the run note
 
-    if mode == "paste":
-        records = parse_pasted_sequences(request.form.get("sequence_text") or "")
-        if not records:
+    text = request.form.get("sequence_text") or ""
+    if text.strip():
+        r = parse_pasted_sequences(text)
+        if not r:
             return jsonify({"error": "Couldn't find any sequences in the pasted "
                 "text. Paste FASTA, or spreadsheet rows with a sequence column."}), 400
-    elif mode == "upload":
-        f = request.files.get("upload_file")
-        if not f or not f.filename:
-            return jsonify({"error": "Choose a file to upload."}), 400
-        text = f.read().decode("utf-8", errors="replace")
-        records = parse_pasted_sequences(text)
-        if not records:
-            return jsonify({"error": "No sequences found in the uploaded file. "
-                "Upload a FASTA file (or a CSV/TSV with a sequence column)."}), 400
-    elif mode == "path":
-        fasta = (request.form.get("fasta_file") or "").strip()
-        if not fasta:
-            return jsonify({"error": "A FASTA file path is required."}), 400
+        records += r
+        sources.append(f"{len(r)} pasted")
+
+    f = request.files.get("upload_file")
+    if f and f.filename:
+        r = parse_pasted_sequences(f.read().decode("utf-8", errors="replace"))
+        if not r:
+            return jsonify({"error": f"No sequences found in the uploaded file "
+                f"'{f.filename}' (expected FASTA, or CSV/TSV with a sequence "
+                "column)."}), 400
+        records += r
+        sources.append(f"{len(r)} from {f.filename}")
+
+    picked = (request.form.get("fasta_file") or "").strip()
+    if picked:
         # Confine to the same roots the browser exposes (home + USB mounts), so
         # a hand-crafted POST can't screen arbitrary server files. Resolve first
         # to defeat symlink/.. escapes, matching /browse and /results/file.
-        target = Path(fasta).resolve()
+        target = Path(picked).resolve()
         if not any(target == r or r in target.parents for r in _allowed_roots()):
             return jsonify({"error": "That file is outside the allowed directory."}), 400
-        fasta = str(target)
-        if not os.path.isfile(fasta):
-            return jsonify({"error": f"FASTA path not found on server: {fasta}"}), 400
+        if not target.is_file():
+            return jsonify({"error": f"FASTA path not found on server: {target}"}), 400
         try:
-            records = _parse_fasta_text(Path(fasta).read_text(encoding="utf-8"))
+            r = _parse_fasta_text(target.read_text(encoding="utf-8"))
         except OSError as exc:
-            return jsonify({"error": f"Could not read {fasta}: {exc}"}), 400
-        if not records:
-            return jsonify({"error": f"No FASTA records found in {fasta}."}), 400
-    else:
-        return jsonify({"error": f"Unknown input mode: {mode!r}"}), 400
+            return jsonify({"error": f"Could not read {target}: {exc}"}), 400
+        if not r:
+            return jsonify({"error": f"No FASTA records found in {target.name}."}), 400
+        records += r
+        sources.append(f"{len(r)} from {target.name}")
+
+    if not records:
+        return jsonify({"error": "No sequences to screen. Paste, upload, or pick "
+                                 "a file (you can combine them)."}), 400
 
     note = []
-    if records is not None:
-        records = _normalise_records(records)
-        if skip_short:
-            kept = [r for r in records if len(r[1]) >= MIN_SEQ_LEN]
-            dropped = len(records) - len(kept)
-            records = kept
-            if dropped:
-                note.append(f"Skipped {dropped} sequence(s) shorter than {MIN_SEQ_LEN} bp.")
-        if not records:
-            return jsonify({"error":
-                f"No sequences left to screen (all shorter than {MIN_SEQ_LEN} bp)."}), 400
+    if len(sources) > 1:
+        note.append("Combined inputs: " + ", ".join(sources) + ".")
+    # Normalise the COMBINED list so names are made unique across all sources.
+    records = _normalise_records(records)
+    if skip_short:
+        kept = [rec for rec in records if len(rec[1]) >= MIN_SEQ_LEN]
+        dropped = len(records) - len(kept)
+        records = kept
+        if dropped:
+            note.append(f"Skipped {dropped} sequence(s) shorter than {MIN_SEQ_LEN} bp.")
+    if not records:
+        return jsonify({"error":
+            f"No sequences left to screen (all shorter than {MIN_SEQ_LEN} bp)."}), 400
 
     with JOB_LOCK:
         busy = [j for j in JOBS.values() if not j["done"]]
