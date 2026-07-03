@@ -32,6 +32,15 @@ from flask import (Flask, Response, jsonify, redirect, request, send_file,
                    session, url_for)
 from werkzeug.security import check_password_hash
 
+# CPU/RAM meters read Linux /proc directly (zero-dep; the kiosk path). psutil is
+# a purely opportunistic fallback for platforms without /proc (macOS dev/demo):
+# never required, never installed by packaging, and never allowed to break the
+# server -- if it's absent or misbehaves, the meters just read "--".
+try:
+    import psutil
+except Exception:  # any import failure -> treat as unavailable
+    psutil = None
+
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024  # 200 MB upload cap
 app.secret_key = os.urandom(32)  # per-process; a restart invalidates sessions
@@ -268,7 +277,10 @@ def _cpu_percent():
     try:
         vals = [int(x) for x in open("/proc/stat").readline().split()[1:]]
     except (OSError, ValueError):
-        return None
+        try:
+            return psutil.cpu_percent(interval=None) if psutil else None
+        except Exception:
+            return None
     idle = vals[3] + (vals[4] if len(vals) > 4 else 0)  # idle + iowait
     total = sum(vals)
     prev_total, prev_idle = _CPU_PREV["total"], _CPU_PREV["idle"]
@@ -287,6 +299,12 @@ def _mem_info():
             key, _, val = line.partition(":")
             info[key] = int(val.split()[0]) * 1024  # kB -> bytes
     except (OSError, ValueError):
+        try:
+            if psutil:
+                m = psutil.virtual_memory()
+                return (m.percent, m.used, m.total)
+        except Exception:
+            pass
         return None
     total = info.get("MemTotal")
     avail = info.get("MemAvailable", info.get("MemFree", 0))
