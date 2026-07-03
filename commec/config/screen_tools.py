@@ -61,6 +61,7 @@ class ScreenTools:
                     threads=params.config["threads"],
                     force=params.config["force"],
                 )
+                self.regulated_protein.arguments_dictionary["-mt_mode"] = params.config["blast_mt_mode"]
             elif params.config["protein_search_tool"] in ("nr.dmnd", "diamond"):
                 self.regulated_protein = DiamondHandler(
                     params.config["databases"]["regulated_protein"]["diamond"]["path"],
@@ -86,6 +87,7 @@ class ScreenTools:
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
+            self.regulated_nt.arguments_dictionary["-mt_mode"] = params.config["blast_mt_mode"]
 
         if params.should_do_low_concern_screening:
             self.low_concern_hmm = HmmerHandler(
@@ -102,6 +104,7 @@ class ScreenTools:
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
+            self.low_concern_blastn.arguments_dictionary["-mt_mode"] = params.config["blast_mt_mode"]
             self.low_concern_cmscan = CmscanHandler(
                 params.config["databases"]["low_concern"]["rna"]["path"],
                 input_file=params.nt_path,
