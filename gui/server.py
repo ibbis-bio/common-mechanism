@@ -603,6 +603,22 @@ def _build_command(fasta, outdir, config_path, prefix, resume=False):
     return cmd
 
 
+# User-fixable commec errors we lift out of the (advanced-only) terminal log
+# into a plain message on the results card. These are caused by the operator's
+# input -- unlike internal failures -- so they deserve to be seen directly.
+def _error_hint(log_lines):
+    """A plain, actionable message for a user-caused error in commec's output,
+    or None. Add cases here as more get reported from real usage."""
+    text = "\n".join(log_lines)
+    if "Duplicate sequence identifier generated" in text:
+        m = re.search(r'Duplicate sequence identifier generated:\s*"([^"]+)"', text)
+        which = f' (e.g. "{m.group(1)}")' if m else ""
+        return ("Duplicate sequence names in your input" + which + ". Each FASTA "
+                "header must be unique within its first 64 characters -- rename "
+                "the duplicates and run again.")
+    return None
+
+
 def _job_meta(job, status, summary=None):
     """The meta.json payload for a job at a given status (the durable marker
     that survives a restart and drives the results/recent views)."""
@@ -611,6 +627,7 @@ def _job_meta(job, status, summary=None):
         "fasta": job.get("fasta"), "status": status,
         "returncode": job["returncode"], "created": job["created"],
         "finished": job.get("finished"), "summary": summary,
+        "error_hint": job.get("error_hint"),
     }
 
 
@@ -676,6 +693,8 @@ def _run_job(job):
         job["status"] = "interrupted"
     else:
         job["status"] = "done" if proc.returncode == 0 else "error"
+    if job["status"] == "error":
+        job["error_hint"] = _error_hint(job["log"])
     # Write the completion marker BEFORE marking done, so a client that loads
     # results on the 'end' event sees a finalized run.
     _finalize_job(job)
@@ -1072,6 +1091,7 @@ def events(job_id):
                 payload = json.dumps({
                     "status": job["status"],
                     "returncode": job["returncode"],
+                    "error_hint": job.get("error_hint"),
                 })
                 yield f"event: end\ndata: {payload}\n\n"
                 return
@@ -1159,11 +1179,13 @@ def results(job_id):
     files = _list_run_files(d) if d is not None else []
     if job:
         status, returncode, label = job["status"], job["returncode"], job["label"]
+        error_hint = job.get("error_hint")
     else:
         meta = _read_meta(d)
         status = _effective_status(meta, False)
         returncode = meta.get("returncode")
         label = meta.get("label")
+        error_hint = meta.get("error_hint")
     # Resumable whenever the run is interrupted and still has its config -- same
     # rule as /runs. (A live or finished job has status running/done, so this
     # naturally excludes them; being in JOBS is irrelevant -- a stopped run
@@ -1177,6 +1199,7 @@ def results(job_id):
         "files": files,
         "summary": _summarize_output(d) if d is not None else None,
         "resumable": resumable,
+        "error_hint": error_hint,
     })
 
 

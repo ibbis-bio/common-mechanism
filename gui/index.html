@@ -342,6 +342,8 @@
     border: 1px solid #cfe2ea; background: var(--tint); border-radius: 9px;
     margin-bottom: 16px;
   }
+  .report-cta.err { border-color: #f6c4b5; background: #fdeee9; }
+  .report-cta.err .rt { color: #b1310f; }
   .report-cta .rt { font-weight: 700; color: var(--heading); }
   .report-cta .rd { font-size: 13px; color: var(--muted); }
   .report-cta .btn {
@@ -1021,7 +1023,9 @@ function attach(jobId) {
     if (d.status === "interrupted")
       errEl.textContent = "Run stopped -- saved as Interrupted; resume it from Results.";
     else if (d.status !== "done")
-      errEl.textContent = `Screen failed (exit ${d.returncode}) - see the log.`;
+      // Surface a user-fixable error (e.g. duplicate names) plainly; fall back
+      // to the generic "see the log" only when we don't recognise it.
+      errEl.textContent = d.error_hint || `Screen failed (exit ${d.returncode}) - see the log.`;
     showResults(jobId);
     refreshStatus();
     loadRecent();
@@ -1241,6 +1245,18 @@ async function showResults(jobId) {
         </div>`;
       const rb = document.getElementById("resume-result");
       if (rb) rb.addEventListener("click", () => resumeRun(jobId));
+    }
+
+    // A recognised user-fixable error (e.g. duplicate FASTA names): show it on
+    // the card, so it's visible without opening the advanced-only log.
+    if (body.status === "error" && body.error_hint) {
+      reportEl.innerHTML += `
+        <div class="report-cta err">
+          <div>
+            <div class="rt">Screen failed</div>
+            <div class="rd">${escapeHtml(body.error_hint)}</div>
+          </div>
+        </div>`;
     }
 
     // Verdict summary, parsed from commec's output JSON. The overall verdict
