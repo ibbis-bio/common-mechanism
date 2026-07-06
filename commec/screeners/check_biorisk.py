@@ -164,8 +164,6 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
             logger.error("Query during hmmscan could not be found! [%s]", affected_query)
             continue
 
-        queries[affected_query[:-2]].mark_as_hit()
-
         # Grab a list of unique queries, and targets for iteration.
         unique_query_data : pd.DataFrame = hmmer[hmmer['query name'] == affected_query]
         unique_targets = unique_query_data['target name'].unique()
