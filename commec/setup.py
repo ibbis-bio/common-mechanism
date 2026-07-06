@@ -9,18 +9,23 @@ import os
 import shutil
 import argparse
 import subprocess
+import time
+import hashlib
 from pathlib import Path
 import ftplib
+import importlib.resources
 from urllib import request, error, parse
 import zipfile
-import tarfile
 import yaml
 import json
 from yaml.parser import ParserError
+from dataclasses import dataclass
 
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
+from commec.config import yaml_io as YamlIO
+from commec.utils.file_utils import expand_and_normalize
 
-DESCRIPTION = """Helper script for downloading the databases
+DESCRIPTION = """Helper script for downloading or updating the databases
  required for running the Common Mechanism Screen"""
 
 C_F_ORANGE = "\033[38;5;202m" # Colour Foreground Orange.
@@ -28,807 +33,576 @@ C_F_GRAY = "\033[38;5;242m" # Colour Foreground Gray
 C_F_BLUE = "\033[38;5;17m" # Colour Foreground Blue
 C_B_BLUE = "\033[48;5;17m" # Colour Background Blue
 C_RESET = "\033[0m" # Reset Console Formatting.
-
-class CliSetup:
-    """
-    Interacts with the user via the CLI, and then downloads appropriate files
-    into appropraite folders as requested by the user, to allow for the Commec
-    Screen workflow.
-
-    The current decision flow is the following:
-        > Start
-            > Specify overall database directory
-            > Confirm Biorisk download URL
-            > decide Blast protein database
-                > Choose Blast protein database
-            > decide Blast Nucleotide database
-                > Choose Blast Nucleotide database
-            > decide Taxonomy database
-                > Confirm taxonomy URL
-            > Confirm.
-
-        Going "back" takes you back up the tree.
-        Deciding not to something skips the trees children.
-
-        Due to a lack of wanting to over-engineer this,
-        each step tree is implemented using a function
-        collectively acting as a pseudo-statemachine.
-        Once Start is successfully returned, the setup process can begin.
-    """
-
-    def __init__(self, automate: bool = False):
-
-        self.latest_version = get_latest_commec_database_release_tag()[0]
-
-        self.database_directory: str = "commec-dbs/"
-
-        self.download_biorisk: bool = True
-        self.default_biorisk_download_url: str = (
-            "https://github.com/ibbis-bio/commec-databases/releases"
-            f"/download/{self.latest_version}/commec-dbs.zip"
-        ) if self.latest_version else ""
-        self.biorisk_download_url: str = self.default_biorisk_download_url
-
-        self.download_blastnr: bool = False
-        self.blastnr_database: str = "nr"
-        self.download_blastnt: bool = False
-        self.blastnt_database: str = "core_nt"
-
-        self.download_example_blastnr: bool = False
-        self.download_example_blastnt: bool = False
-
-        self.download_taxonomy: bool = False
-        self.default_taxonomy_download_url: str = (
-            "ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz"
-        )
-        self.taxonomy_download_url: str = self.default_taxonomy_download_url
-
-        if automate:
-            self.download_biorisk = True
-            self.download_blastnr = True
-            self.download_blastnt = True
-            self.download_taxonomy = True
-            self.do_setup()
-        else:
-            self.start()
-
-    def start(self):
-        """
-        Starts the user interrogation process.
-        """
-        print(
-            f"""\n                       Welcome to\n
- ██████╗ ██████╗ ███╗   ███╗███╗   ███╗███████╗ ██████╗ {C_F_ORANGE}         ▄▄               {C_RESET}
-██╔════╝██╔═══██╗████╗ ████║████╗ ████║██╔════╝██╔════╝ {C_F_ORANGE}       ▄███▌              {C_RESET}
-██║     ██║   ██║██╔████╔██║██╔████╔██║█████╗  ██║      {C_F_ORANGE}      ▐█████              {C_RESET}
-██║     ██║   ██║██║╚██╔╝██║██║╚██╔╝██║██╔══╝  ██║      {C_F_ORANGE}     ▐██████▌             {C_RESET}
-╚██████╗╚██████╔╝██║ ╚═╝ ██║██║ ╚═╝ ██║███████╗╚██████╗ {C_F_ORANGE}     ███████▌             {C_RESET}
- ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚═╝╚══════╝ ╚═════╝ {C_F_ORANGE}    ▐███████▌             {C_RESET}
-{C_B_BLUE}█ █████▄ █████▄ █ ▄█▀█▄                                 {C_F_ORANGE}     ███████   ▄█▄      {C_RESET}
-{C_B_BLUE}█ █    █ █    █ █ █   ▀          DATABASE               {C_F_ORANGE}      █████▌  ▄███▄▄     {C_RESET}  
-{C_B_BLUE}█ █████▄ █████▄ █ ▀███▄            SETUP                {C_F_ORANGE}      ▐█████▄██▀    ▀▄    {C_RESET}   
-{C_B_BLUE}█ █    █ █    █ █ ▄   █              UTILITY            {C_F_ORANGE}      ▐████████       ▌  {C_RESET}
-{C_B_BLUE}█ █████▀ █████▀ █ ▀█▄█▀                                 {C_F_ORANGE}      ████████▀         {C_RESET}
-                                                        {C_F_ORANGE}   ▄▄██████▀▀             {C_RESET}
-                                                        {C_F_ORANGE} ▀▀                       {C_RESET}"""
-        )
-        print(
-            "                 The Common Mechanism!",
-            "\n\nInternational Biosecurity and Biosafety Initiative for Science",
-            "\nCopyright © 2021-2024 ",
-            "\n\nThis script will help download the mandatory databases ",
-            "\nrequired for using Commec Screen, and requires a stable",
-            "\ninternet connection, wget, and update_blastdb.pl.",
-            "\n\nThis setup is split over 3 steps:",
-            "\n 1. Specify download location.",
-            "\n 2. Choose which databases to download.",
-            "\n 3. Confirm and start downloads."
-        )
-        self.print_help_info()
-        print()
-        self.check_requirements()
-        self.setup_overall_directory()
-        self.do_setup()
-
-    def print_help_info(self, additional_help=[""]):
-        """
-        Prints helpful instructions according to the current step,
-        as well as general instructions.
-        """
-        add_help_str = "" if len(additional_help) == 0 else "".join(additional_help)
-        print(
-            f"{C_F_ORANGE}"
-            " Instructions: "
-            '\n -> You can exit this setup at any time with "exit"'
-            '\n -> You can return to a previous step with "back"'
-            '\n -> You can get additional help at each step with "help"' + add_help_str + C_RESET
-        )
-
-    def check_requirements(self):
-        """Checks for wget, and update_blastdb.pl, which should both be present
-        given the conda environment to install and use Commec."""
-        print(f"{C_F_GRAY}Checking for wget, and update_blastdb{C_RESET}")
-        dependencies = ["wget", "update_blastdb.pl"]
-        missing_deps = [
-            dep
-            for dep in dependencies
-            if subprocess.run(
-                ["which", dep],
-                check=False,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            ).returncode
-            != 0
-        ]
-
-        if missing_deps:
-            print(
-                f"{C_F_ORANGE}Required dependencies missing: "
-                + ", ".join(missing_deps) + C_RESET
-            )
-            print(f"{C_F_ORANGE}Check these are installed in your environment.{C_RESET}")
-            self.stop()
-
-    def check_directory_is_writable(self, input_directory: str) -> str:
-        """
-        Checks a directory is viable by 
-        * Expanding terminal variables, user, and resolving the full path and
-        * Checking if it exists or
-        * Creating it and destroying it.
-
-        It returns a str representing the both the truthiness of the outcome,
-        as well as the valid path.
-        """
-        path = Path(os.path.expandvars(input_directory))
-
-        # Catches accidental ~/commec-dbs/ vs ~commec-dbs/ when theres no commec-dbs username.
-        try:
-            path = path.expanduser()
-        except(RuntimeError):
-            print("User expansion for path failed, ensure you are using"
-                  " \"~/\" for self, or a valid user with \"~username/\".")
-            return ""
-
-        try:
-            path = path.resolve()
-        except(RuntimeError):
-            return ""
-
-        print(path)
-        if path.exists():
-            return path
-        
-        if path.is_reserved():
-            print("This path contains reserved characters for this Operating System.")
-            return ""
-        
-        # Handily, all sorts of special characters are identified with a %XX, within posix, and are replaced
-        # by similar characters during mkdir, whilst technically legal, lets recommend against cursed dir names.
-        if '%' in path.as_posix():
-            print("Please avoid using special characters (\"|}{\":?><*&\" etc) in filepath names.")
-            return ""
-    
-        # If the path doesn't exist, the best way to know if user input is valid, is to try make it.
-        # Find the part of the directory which is new, so we can delete only it after.
-        path_to_remove_dirs = Path(path.parts[0])
-        for part in path.parts:
-            if path_to_remove_dirs.exists():
-                path_to_remove_dirs = path_to_remove_dirs / part
-                continue
-            break
-
-        # Create the directory, and delete anything created.
-        os.makedirs(path, exist_ok=True)
-        if path.exists():
-            try:
-                shutil.rmtree(path_to_remove_dirs)
-            except OSError:
-                pass
-            return path
-        return ""
-
-    def setup_overall_directory(self):
-        """
-        Get user inputs for global directory to store databases.
-        """
-        self.print_step_header(1)
-        user_input: str = ""
-        print(
-            "\nPlease provide the absolute or relative filepath",
-            "to where you would like the Commec databases to be located...",
-            "\nPress <Enter> to use existing: ",
-            self.database_directory,
-        )
-        while True:
-            user_input: str = self.user_input()
-            if user_input == "back":
-                self.stop()  # This is the first step, no point going back.
-            if user_input in ["help", "h"]:
-                self.print_help_info(
-                    [
-                        '\n -> Provide a path to download into e.g. "/location/to/download/commec-dbs"',
-                        "\n (The full path will be created if it does not exist.)",
-                    ]
-                )
-                continue
-
-            if len(user_input) > 0:
-                user_input_validated = self.check_directory_is_writable(user_input)
-                if not user_input_validated:
-                    print(user_input, " is not a valid directory structure!")
-                    continue
-                self.database_directory = user_input_validated
-
-            print("Using database directory: ", self.database_directory)
-            self.decide_commec_dbs()
-            return
-
-    def decide_commec_dbs(self):
-        """Decide whether the Commec Biorisks and low-concern databases need to be downloaded."""
-        self.print_step_header(2,1)
-        print(
-            "Do you want to download the " "mandatory Commec databases? (~1.2 GB)",
-            '\n"y" or "n", for yes or no.',
-        )
-        while True:
-            user_input: str = self.user_input()
-            if user_input == "help":
-                self.print_help_info(
-                    [
-                        "\n -> type yes,y or no,n to indicate decision.",
-                        "\n  (The Commec databases consist of a currated biorisk",
-                        "\n  and low-concern database, which are required for commec to run",
-                        '\n  and are the only databases used in "--skip-taxonomy")',
-                    ]
-                )
-                continue
-            if user_input == "back":
-                self.setup_overall_directory()
-                return
-            if user_input in ["y", "yes"]:
-                self.download_biorisk = True
-                self.get_biorisk_url()
-                return
-            if user_input in ["n", "no"]:
-                self.download_biorisk = False
-                self.decide_blastnr()
-                return
-            print("Unrecognised input (", user_input, ")")
-
-    def get_biorisk_url(self):
-        """
-        Get the URL where the Commec Biorisk and Benign databases are located.
-        """
-        self.print_step_header(2, 2)
-        print(
-            "Please provide the URL to download the Commec database.",
-            "\nPress <Enter> to use existing: ",
-            self.biorisk_download_url,
-        )
-        while True:
-            user_input: str = self.user_input()
-            if user_input in ["help", "h"]:
-                self.print_help_info(
-                    [
-                        "\n -> Provide a URL to download, the commec database URL can be found at ",
-                        "\n  https://github.com/ibbis-screening/common-mechanism/wiki/install",
-                        "\n  (The URL will be checked that it is valid",
-                        "\n  which will require an internet connection.)",
-                    ]
-                )
-                continue
-            if user_input == "back":
-                self.decide_commec_dbs()
-                return
-            if len(user_input) > 0:
-                self.biorisk_download_url = user_input
-
-            print("Checking URL is valid ... ")
-            if not self.check_url_exists(self.biorisk_download_url):
-                print(
-                    self.biorisk_download_url,
-                    " is not a valid URL! "
-                    "(or you are not connected to the internet)",
-                )
-                continue
-
-            print("Using Commec Biorisk and Benign URL:", self.biorisk_download_url)
-            self.decide_blastnr()
-            return
-
-    def decide_blastnr(self):
-        """Decide whether a Protein database needs to be downloaded."""
-        self.print_step_header(2,3)
-        print(
-            "Do you want to download the"
-            " protein NR database for protein screening? (~530 GB)",
-            '\n"y" or "n", for yes or no.',
-        )
-        while True:
-            user_input: str = self.user_input()
-            if user_input in ["help", "h"]:
-                self.print_help_info(
-                    [
-                        "\n -> type yes,y or no,n to indicate decision.",
-                        "\n   (The Blast non-redundant protein database is used to screen",
-                        '\n   translated queries when not in "--skip-taxonomy", and is ',
-                        "\n   around 530 GB in size.)",
-                    ]
-                )
-                continue
-            if user_input == "back":
-                if self.download_biorisk:
-                    self.get_biorisk_url()
-                    return
-                self.decide_commec_dbs()
-                return
-            if user_input == "y" or user_input == "yes":
-                self.download_blastnr = True
-                self.decide_blastnt()
-                return
-            if user_input == "n" or user_input == "no":
-                self.download_blastnr = False
-                self.decide_blastnt()
-                return
-            print("Unrecognised input (", user_input, ")")
-
-    def decide_blastnt(self):
-        """Decide what Nucleotide database needs to be downloaded."""
-        self.print_step_header(2,4)
-        print(
-            "Do you want to download the Nucleotide NT databases for non-coding"
-            " region nucleotide screening? (~580 GB)",
-            '\n"y" or "n", for yes or no.',
-        )
-        while True:
-            user_input: str = self.user_input()
-            if user_input in ["help", "h"]:
-                self.print_help_info(
-                    [
-                        "\n -> type yes,y or no,n to indicate decision.",
-                        "\n   (The Blast Nucleotide database is used to screen",
-                        '\n   non-coding regions of queries, unless the user specifies to skip taxonomy or nt search,'
-                        "\n   and is around 580 GB in size.)",
-                    ]
-                )
-                continue
-            if user_input == "back":
-                self.decide_blastnr()
-                return
-            if user_input == "y" or user_input == "yes":
-                self.download_blastnt = True
-                self.decide_taxonomy()
-                return
-            if user_input == "n" or user_input == "no":
-                self.download_blastnt = False
-                self.decide_taxonomy()
-                return
-            print("Unrecognised input (", user_input, ")")
-
-    def decide_taxonomy(self):
-        """Decide whether taxonomy database need to be downloaded."""
-        self.print_step_header(2,5)
-        print(
-            "Do you want to download the Taxonomy databases? ( less than ~500 MB)",
-            '\n"y" or "n", for yes or no.',
-        )
-        while True:
-            user_input: str = self.user_input()
-            if user_input in ["help", "h"]:
-                self.print_help_info(
-                    [
-                        "\n -> type yes,y or no,n to indicate decision.",
-                        "\n   (A Taxonomy database is used to check taxonomy IDs",
-                        '\n   against a list of regulated pathogens",'
-                        "\n   and is around 500 MB in size.)",
-                    ]
-                )
-                continue
-            if user_input == "back":
-                self.decide_blastnt()
-                return
-            if user_input == "y" or user_input == "yes":
-                self.download_taxonomy = True
-                self.get_taxonomy_url()
-                return
-            if user_input == "n" or user_input == "no":
-                self.download_taxonomy = False
-                self.confirm()
-                return
-            print("Unrecognised input (", user_input, ")")
-
-    def get_taxonomy_url(self):
-        """
-        Get the URL where the Commec Biorisk and Benign databases are located.
-        """
-        self.print_step_header(2, 6)
-        user_input: str = ""
-        print(
-            "Please provide the URL to download the Taxonomy database.",
-            "\nPress <Enter> to use existing: ",
-            self.taxonomy_download_url,
-        )
-        while True:
-            user_input: str = self.user_input()
-            if user_input in ["help", "h"]:
-                self.print_help_info(
-                    [
-                        "\n -> Provide a URL to download, the taxonomy URL can be found at ",
-                        "\n  https://github.com/ibbis-screening/common-mechanism/wiki/install",
-                        "\n  (The URL will be checked that it is valid",
-                        "\n  which will require an internet connection.)",
-                    ]
-                )
-                continue
-            if user_input == "back":
-                self.decide_taxonomy()
-                return
-            if len(user_input) > 0:
-                self.taxonomy_download_url = user_input
-                continue
-
-            print("Checking URL is valid ... ")
-            if not self.check_url_exists(self.taxonomy_download_url):
-                print(
-                    self.taxonomy_download_url,
-                    " is not a valid URL! "
-                    "(or you are not connected to the internet)",
-                )
-                continue
-
-            print("Using Commec Biorisk and Benign URL:", self.taxonomy_download_url)
-            self.confirm()
-            return
-
-    def confirm(self):
-        """Simply allows the user one last chance to confirm their settings."""
-        self.print_step_header(3)
-        print(
-            "The following settings will be used to setup Commec:",
-            "\n -> Database Directory: ",
-            self.database_directory,
-        )
-        if self.download_biorisk:
-            print(
-                " -> Commec Biorisk and Benign databases will be downloaded,"
-                "\n    from URL: ",
-                self.biorisk_download_url,
-            )
-        if self.download_blastnr:
-            print(" -> Protein database will be downloaded.")
-        if self.download_blastnt:
-            print(" -> Nucleotide database will be downloaded.")
-        if self.download_taxonomy:
-            print(
-                " -> Taxonomy database will be downloaded," "\n    from URL: ",
-                self.taxonomy_download_url,
-            )
-
-        if not (
-            self.download_biorisk
-            or self.download_blastnr
-            or self.download_blastnt
-            or self.download_taxonomy
-        ):
-            print(
-                "You have opted to not download anything!"
-                "\nContinuing will simply exit this setup. "
-                "\nGo back to confirm a database to download."
-            )
-
-        print(
-            "\nPress <Enter> to confirm these settings, ",
-            '\ntype "back" to alter previous setting, ',
-            '\ntype "exit" to abort setup.',
-            '\ntype "start" to restart from the beginning.',
-        )
-        while True:
-            user_input: str = self.user_input()
-            if user_input in ["help", "h"]:
-                self.print_help_info(
-                    [
-                        "\n -> press <Enter> to confirm choices, and start the download process.",
-                        '\n -> type "start" to restart setup from the beginning.',
-                    ]
-                )
-                continue
-            if len(user_input) == 0:
-                return
-            if user_input == "back":
-                if self.download_taxonomy:
-                    self.get_taxonomy_url()
-                    return
-                self.decide_taxonomy()
-                return
-            if user_input == "start":
-                self.setup_overall_directory()
-                return
-            print("Unrecognised input (", user_input, ")")
-
-    def do_setup(self):
-        """
-        Once CliSetup state has been finalized,
-        call to perform the required actions.
-        """
-        self.print_step_header(7)
-        if not (
-            self.download_biorisk
-            or self.download_blastnr
-            or self.download_blastnt
-            or self.download_taxonomy
-        ):
-            print("No downloads were requested!")
-            self.stop()
-
-        os.makedirs(self.database_directory, exist_ok=True)
-
-        if self.download_biorisk:
-            command = [
-                "wget",
-                "-c",
-                "-P",
-                self.database_directory,
-                self.biorisk_download_url,
-            ]
-            print("Downloading Biorisk database from\n", self.biorisk_download_url)
-            result = subprocess.run(command, check=True)
-            if result.returncode != 0:
-                command_str = " ".join(command)
-                print(
-                    "\t ERROR: Command",
-                    command_str,
-                    "failed with error",
-                    result.stderr,
-                )
-            # Parse the URL to extract the path
-            parsed_url = parse.urlparse(self.biorisk_download_url)
-            filename_zipped = os.path.join(
-                self.database_directory, os.path.basename(parsed_url.path)
-            )
-
-            print("Extracting Biorisk databases...")
-            # Open the zip file and extract its contents, remove zip file.
-            with zipfile.ZipFile(filename_zipped, "r") as zip_ref:
-                zip_ref.extractall(self.database_directory)
-            os.remove(filename_zipped)
-
-        if self.download_blastnr:
-            print(
-                "Downloading ",
-                self.blastnr_database,
-                "Blast database for Protein Screening from NCBI \n",
-            )
-            nr_directory = os.path.join(self.database_directory, "nr_blast")
-            os.makedirs(nr_directory, exist_ok=True)
-            print(nr_directory)
-            command = ["update_blastdb.pl", "--decompress", self.blastnr_database]
-            subprocess.run(command, cwd=nr_directory, check=True)
-
-        if self.download_blastnt:
-            print(
-                "Downloading ",
-                self.blastnt_database,
-                "Blast database for Nucleotide Screening from NCBI \n",
-            )
-            nt_directory = os.path.join(self.database_directory, "nt_blast")
-            os.makedirs(nt_directory, exist_ok=True)
-            print(nt_directory)
-            command = ["update_blastdb.pl", "--decompress", self.blastnt_database]
-            subprocess.run(command, cwd=nt_directory, check=True)
-
-        if self.download_taxonomy:
-            print("Downloading Taxonomy databases from NCBI \n")
-            tax_directory = os.path.join(self.database_directory, "taxonomy")
-            os.makedirs(tax_directory, exist_ok=True)
-            print(tax_directory)
-
-            command = ["wget", "-c", "-P", tax_directory, self.taxonomy_download_url]
-            print("Downloading taxonomy data from", self.taxonomy_download_url)
-            result = subprocess.run(command, check=True)
-
-            # Check if the download was successful
-            if result.returncode != 0:
-                command_str = " ".join(command)
-                print(
-                    f"\t ERROR: Command {command_str} failed with error {result.stderr}"
-                )
-
-            # Parse the URL to get the filename
-            parsed_url = parse.urlparse(self.taxonomy_download_url)
-            filename_zipped = os.path.join(
-                tax_directory, os.path.basename(parsed_url.path)
-            )
-
-            # Extract the tar.gz file
-            print("Extracting taxonomy databases...")
-            with tarfile.open(filename_zipped, "r:gz") as tar:
-                tar.extractall(path=tax_directory)
-
-            os.remove(filename_zipped)
-
-        # Default config file installed with commec package should by point to the newly
-        # installed databases
-        self.update_default_db_base_path(DEFAULT_CONFIG_YAML_PATH, self.database_directory)
-
-        print(
-            "\n\nThe common mechanism setup has completed!"
-            "\nYou can find all downloaded databases in",
-            self.database_directory,
-            "\n\nHave a bio-safe and secure day!",
-        )
-
-    def check_url_exists(self, url: str) -> bool:
-        """Helper function to quickly check if a URL is valid."""
-        parsed_url = parse.urlparse(url)
-
-        if parsed_url.scheme in ["http", "https"]:
-            # Handle HTTP/HTTPS URLs using urllib
-            try:
-                with request.urlopen(url) as response:
-                    # If the response status code is 200, the URL exists
-                    if response.status == 200:
-                        return True
-            except error.HTTPError as e:
-                # Handle HTTP errors (like 404, 403, etc.)
-                print(f"HTTP Error: {e.code}")
-            except error.URLError as e:
-                # Handle URL errors (like unreachable server, etc.)
-                print(f"URL Error: {e.reason}")
-            except ValueError as e:
-                print(
-                    "URL Value Error. It is likely the URL input"
-                    " is not a recognized URL format."
-                )
-
-        elif parsed_url.scheme == "ftp":
-            # Handle FTP URLs using ftplib
-            try:
-                with ftplib.FTP(parsed_url.hostname) as ftp:
-                    ftp.login()
-                    # Try to change to the directory and check the file
-                    ftp.cwd(os.path.dirname(parsed_url.path))
-                    ftp.size(os.path.basename(parsed_url.path))
-                    return True
-            except ftplib.error_perm as e:
-                print(f"FTP Permission Error: {e}")
-            except ftplib.error_temp as e:
-                print(f"FTP Temporary Error: {e}")
-            except ftplib.all_errors as e:
-                print(f"FTP Error: {str(e)}")
-
-        return False
-
-    def print_step_header(self, i: int = 0, ii: int = -1):
-        """helper for quick step delinearation."""
-        if ii > 0:
-            print(
-                f"\n{C_F_BLUE}*----------------*{C_RESET} Step ",
-                i,
-                ".",
-                ii,
-                f"{C_F_BLUE}*----------------*{C_RESET}",
-            )
-            return
-        print(
-            f"\n{C_F_BLUE}*----------------*{C_RESET} Step ",
-            i,
-            f" {C_F_BLUE}*-------------------*{C_RESET}",
-        )
-
-    def update_default_db_base_path(self, config_file: str, new_path: str) -> None:
-        """
-        Update the ['basepaths']['default'] path in the configuration yaml file to match the path
-        where the databases were installed.
-        """
-        try:
-            with open(config_file, 'r', encoding = "utf-8") as file:
-                config_data = yaml.safe_load(file)
-
-            # Update the default path under 'base_paths'
-            if 'base_paths' in config_data and 'default' in config_data['base_paths']:
-                config_data['base_paths']['default'] = new_path
-            else:
-                # For some reason this didn't exist, so lets just silently make it, and throw a warning.
-                print(f"{C_F_ORANGE}WARNING: base paths weren't defined in the default configuration file "
-                      f"{config_file}, the correct data will be added, however we recommend you double "
-                      "check that the default config yaml is correct. {C_RESET}")
-                config_data['base_paths'] = {'default' : new_path}
-
-            with open(config_file, 'w', encoding = "utf-8") as file:
-                yaml.safe_dump(config_data, file)
-
-        except FileNotFoundError:
-            print(f"Error: File '{config_file}' not found.")
-        except ParserError as e:
-            print(f"YAML parsing error: {e}")
-        except Exception as e:
-            print(f"An error occurred: {e}")
-
-    def print_database_options(self):
-        """
-        Fetches the databases from NCBI that can be downloaded,
-        as well as their sizes, and descriptions.
-        """
-        print("Fetching list of possible databases...")
-        subprocess.run(["update_blastdb.pl", "--showall", "pretty"], check=True)
-
-    def user_input(self, prompt: str = ">>> "):
-        """Get input from the user, and do some basic string sanitation."""
-        try:
-            user_input: str = input(prompt).strip().lower()
-        except KeyboardInterrupt:
-            self.stop()
-            return None
-
-        if user_input == "exit":
-            self.stop()
-        return user_input
-
-    def stop(self):
-        """Gracefully exit with a message to the user."""
-        print(f"{C_RESET}\nExiting setup for The Common Mechanism.")
-        sys.exit()
-
-def get_latest_commec_database_release_tag(repo="ibbis-bio/commec-databases") -> tuple[str | None, str]:
-    """
-    Contacts GitHub for the latest tagged release of the commec databases.
-    This can be used to compare to a local commec-db-version.txt file,
-    or to update the download URL to the latest version.
-    ----
-    ## inputs:
-    * `repo` : str (optional), Input repository where commec-databases are stored.
-    defaults to "ibbis-bio/commec-databases"
-    ----
-    ## outputs:
-    tuple:
-    *    0 : The version string e.g. "v1.0.0", or None.
-    *    1 : Reason for failure, or success.
-    ----
-    ## example use:
-    ```version, _ = get_latest_commec_database_release_tag()
-    if not version:
-        # Warn user there was a failure to get the version.
-        print("Database version retrieval failed: ",_)
-    ```
-    """
-    url = f"https://api.github.com/repos/{repo}/releases/latest"
-    req = request.Request(url, headers={"User-Agent": "commec-version-checker"})
-    try:
-        with request.urlopen(req, timeout=10) as response:
-            if response.status != 200:
-                return None, f"GitHub API error: HTTP {response.status}"
-            data = json.loads(response.read().decode())
-        if "tag_name" in data:
-            return data.get("tag_name"), "Success" 
-        else:
-            return None, "Unexpected response structure: 'tag_name' not found."
-    except error.HTTPError as e:
-        return None, f"GitHub API error: HTTP {e.code} - {e.reason}"
-    except error.URLError as e:
-        return None, f"Network error when contacting GitHub: {e.reason}"
-    except json.JSONDecodeError:
-        return None, "Invalid JSON received from GitHub"
-
-
-def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
+C_BOLD = "\033[1m" # Reset Console Formatting.
+
+ERROR_CHECK = C_F_ORANGE + C_BOLD + " X " + C_RESET
+STEP = " ➔ "
+BULLET = "  ● "
+
+# Base URL of the R2 bucket that hosts the commec databases and their
+# version manifest. Currently the public dev endpoint; swap for a stable
+# custom domain once one is provisioned (r2.dev is not meant for
+# production traffic -- no SLA, unpublished rate limits).
+R2_PUBLIC_BASE_URL = "https://pub-411843ff50b843c6b1e8d9600eed9093.r2.dev"
+
+SPLASH_IMAGE = f"""
+                       Welcome to
+
+     ██████╗ ██████╗ ███╗   ███╗███╗   ███╗███████╗ ██████╗ {C_F_ORANGE}         ▄▄               {C_RESET}
+    ██╔════╝██╔═══██╗████╗ ████║████╗ ████║██╔════╝██╔════╝ {C_F_ORANGE}       ▄███▌              {C_RESET}
+    ██║     ██║   ██║██╔████╔██║██╔████╔██║█████╗  ██║      {C_F_ORANGE}      ▐█████              {C_RESET}
+    ██║     ██║   ██║██║╚██╔╝██║██║╚██╔╝██║██╔══╝  ██║      {C_F_ORANGE}     ▐██████▌             {C_RESET}
+    ╚██████╗╚██████╔╝██║ ╚═╝ ██║██║ ╚═╝ ██║███████╗╚██████╗ {C_F_ORANGE}     ███████▌             {C_RESET}
+     ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚═╝╚══════╝ ╚═════╝ {C_F_ORANGE}    ▐███████▌             {C_RESET}
+{C_B_BLUE}    █ █████▄ █████▄ █ ▄█▀█▄                                 {C_F_ORANGE}     ███████   ▄█▄      {C_RESET}
+{C_B_BLUE}    █ █    █ █    █ █ █   ▀          DATABASE               {C_F_ORANGE}      █████▌  ▄███▄▄     {C_RESET}  
+{C_B_BLUE}    █ █████▄ █████▄ █ ▀███▄            UPDATE               {C_F_ORANGE}      ▐█████▄██▀    ▀▄    {C_RESET}   
+{C_B_BLUE}    █ █    █ █    █ █ ▄   █              UTILITY            {C_F_ORANGE}      ▐████████       ▌  {C_RESET}
+{C_B_BLUE}    █ █████▀ █████▀ █ ▀█▄█▀                                 {C_F_ORANGE}      ████████▀         {C_RESET}
+                                                            {C_F_ORANGE}   ▄▄██████▀▀             {C_RESET}
+                                                            {C_F_ORANGE} ▀▀                       {C_RESET}"""
+
+SPLASH_TEXT = """                    The Common Mechanism!
+\nInternational Biosecurity and Biosafety Initiative for Science Copyright © 2021-2024
+\nThis script will help download or update the mandatory databases required for using 
+Commec Screen, and requires a stable internet connection.\n"""
+
+def add_args(input_options: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
     Add module arguments to an ArgumentParser object.
     """
-    parser_obj.add_argument(
-        "-a",
-        "--auto",
-        dest="automated",
+
+    # These two should be a mutually exclusive group.
+    exclusive_group = input_options.add_mutually_exclusive_group()
+    exclusive_group.add_argument(
+        "-d",
+        "--databases",
+        dest="database_dir",
+        default="",
+        help="Path to a parent directory to download, or update, the Commec"
+        " databases.",
+    )
+    exclusive_group.add_argument(
+        "-y",
+        "--config",
+        dest="yaml_file",
+        default="",
+        help="Alternative to -d, --databases. Specify databases location with a commec yaml configuration file",
+    )
+
+    # Optional
+    input_options.add_argument(
+        "-r",
+        "--dryrun",
+        dest="dry_run",
         default=False,
         action="store_true",
-        help="Don't ask for user input, and use default options for everything.",
+        help="Output potential update information, without performing any download or update.",
     )
-    return parser_obj
 
+    return input_options
+
+class CommecSetup:
+    def __init__(self, args):
+        working_directory = Path()
+        # Updaters dictionary, of {[name : UpdaterObject]}
+        updaters = {}
+        self.yaml_mode = False
+        self.config = YamlIO.get_defaults()
+
+        # Derive databases directory / yaml outputs.abs
+        if args.database_dir:
+            working_directory = expand_and_normalize(args.database_dir)
+        if args.yaml_file:
+            self.config = read_config_yaml_for_database_setup(args.yaml_file)
+            working_directory = expand_and_normalize(self.config.get("base_paths").get("default"))
+            self.yaml_mode = True
+            for database_name, database_info in self.config.get("databases","").items():
+                # The biorisk database points directly to the .hmm, whereas other
+                # databases don't. It is best to just detect suffix, and remove, as 
+                # checking on name would affect other databases too.
+                db_path = Path(database_info.get("path"))
+                fileless_path = db_path.parent if db_path.suffix else db_path
+                updaters[database_name] = CommecDatabaseUpdater(fileless_path)
+                updaters[database_name].name = database_name
+
+        # Ensure working_directory is a valid path (even if it doesn't exist yet)
+        if not check_directory_is_writable(working_directory):
+            print(f"{ERROR_CHECK}Failed to parse working directory: {working_directory}")
+
+        # Fetch latest.json from R2.abs
+        print(f"{STEP}Fetching latest commec database revision information ...")
+        latest = self.fetch_latest_versions()
+
+        if not latest:
+            print(f"{ERROR_CHECK} Could not fetch latest revisions. Check internet connection and try again.")
+            return
+
+        # For each database, create an updater.
+        databases = latest["databases"]
+        for database_name, revision in databases.items():
+            updater = updaters.get(database_name)
+            if not updater:
+                download_location = os.path.join(working_directory,database_name)
+                updater = CommecDatabaseUpdater(download_location)
+                updaters[database_name] = updater
+                if self.yaml_mode:
+                    print(f"{ERROR_CHECK}{database_name} not present in provided configuration yaml, it may be out of date.")
+            updater.name = database_name
+            updater.check_for_update(revision)
+
+        # Check or ophaned databases:
+        for db_name, updater in updaters.items():
+            if not db_name in databases.keys():
+                print(f"{ERROR_CHECK}{db_name} has no formal update route. Input yaml has deprecated database entries.")
+                updater.update_required = False
+
+        # Each updater, reports on its status, does it need to update?
+        print(f"{STEP}The following actions have been identified ...")
+        for _db_name, updater in updaters.items():
+            print(BULLET,updater.update_message)
+
+        # Log output of intended changes.
+        if args.dry_run:
+            print(
+                f"\n{C_F_GRAY}This was a dry run. Run {C_F_ORANGE}\'commec"
+                f" setup\'{C_F_GRAY} again without {C_F_ORANGE}\'-r\'{C_F_GRAY}"
+                f" to continue with the update.{C_RESET}")
+            return
+
+        # Perform the database updates, consider making this async.
+        os.makedirs(working_directory, exist_ok=True)
+        for database_name, updater in updaters.items():
+            updater.perform_update()
+
+        # Create example config.yaml if we only passed a directory.
+        if not self.yaml_mode:
+            self.config["base_paths"]["default"] = str(Path(working_directory).resolve())
+            output_yaml_filepath = os.path.join(working_directory, "config.yaml")
+            with open(output_yaml_filepath, 'w', encoding="utf-8") as output_config_file:
+                yaml.safe_dump(self.config, output_config_file)
+            print(f"{STEP}An example config.yaml for commec was created in the provided directory.")
+
+        print(f"{STEP}Update check complete! Have a Biosafe-and-secure day!")
+
+    def fetch_latest_versions(self) -> dict | None:
+        """
+        A versions.json manifest exists at the root of the R2 bucket, listing
+        the latest revision of each database. Downloads and parses it into a
+        dict. Returns None if it could not be fetched or parsed.
+        """
+        raw = fetch_r2_object("latest.json")
+        if raw is None:
+            return None
+
+        try:
+            return json.loads(raw.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            print(f"Invalid JSON in latest.json manifest: {e}")
+            return None
+
+class CommecDatabaseUpdater:
+    """
+    Utility class, performs an update for a particular database.
+    Handles fetching, writing, and version management.
+    """
+    def __init__(self, existing_location : os.PathLike):
+        print(f" *** Created updater for {existing_location}")
+        self.name = None
+        self.write_location = existing_location
+        self.existing_revision = None
+
+        self.read_manifest()
+
+        self.fetch_location = None
+        self.update_required = True
+        self.__update_message = None
+
+        self.latest_revision = DatabaseRevision()
+        self.md5 = ""
+        self.sha256 = ""
+        self.size_bytes = ""
+
+    @property
+    def update_message(self):
+        return (self.__update_message or
+                f"{C_F_ORANGE}Unidentified{C_RESET} database \"{self.name}\" has no update option.")
+
+    def read_manifest(self):
+        """
+        All databases should have a manifest.json file.
+        """
+        manifest_filename = os.path.join(self.write_location, "manifest.json")
+        if os.path.exists(self.write_location) and os.path.isfile(manifest_filename):
+            try:
+                with open(manifest_filename, "r", encoding="utf-8") as manifest_file:
+                    json_string = manifest_file.read()
+                manifest = json.loads(json_string)
+                self.name = manifest["component"]
+                self.existing_revision = DatabaseRevision(manifest["revision"])
+            except json.JSONDecodeError as e:
+                print(f"{C_F_ORANGE}{C_BOLD}X{C_RESET} Issue reading {manifest_filename} : {e}")
+        return
+
+    def check_for_update(self, latest_revision : str):
+        self.latest_revision = DatabaseRevision(latest_revision)
+        # Database does not yet exist.
+        if not self.existing_revision:
+            self.update_required = True
+            self.__update_message = f"{C_F_ORANGE}Download{C_RESET} {self.name} (revision {latest_revision})"
+            return
+        # Database requires updating to latest revision
+        if self.existing_revision < self.latest_revision:
+            self.__update_message = f"{self.name} ({self.existing_revision}) will be {C_F_ORANGE}updated{C_RESET} to revision {latest_revision}."
+            self.update_required = True
+            return
+        
+        # Database is up to date.
+        self.__update_message = f"{self.name}: revision {self.existing_revision}. {C_F_ORANGE}No update required.{C_RESET}"
+        self.update_required = False
+        return
+
+    def perform_update(self):
+        if not self.update_required:
+            return
+        
+        os.makedirs(self.write_location, exist_ok=True)
+
+        #print(f"{C_F_GRAY} Removing existing {self.name} ...")
+        # Get a list of existing files at the location
+
+        print(f"{STEP}Downloading latest {self.name} ... ")
+        # Calculate fetch_location
+        self.fetch_location = os.path.join(self.name, str(self.latest_revision), "")
+        manifest_fetch_location = os.path.join(self.fetch_location, "manifest.json")
+        tar_fetch_location = os.path.join(self.fetch_location, f"{self.name}.tar.zst")
+
+        manifest_write_location = os.path.join(self.write_location, "manifest.json")
+        tar_write_location = os.path.join(self.write_location, f"{self.name}.tar.zst")
+
+        # Download tar from R2 self.fetch_location.
+        download_success = save_r2_object(tar_fetch_location, tar_write_location)
+        
+        if not download_success:
+            print(f"{ERROR_CHECK}Failed to download {self.name} ... ")
+            return
+
+        # Extract the Database tar.
+        # Stdlib tarfile only gained native zstd support ('r:zst') in
+        # Python 3.14 (PEP 784); this project caps at 3.13 due snakemake 
+        # benchmarking compatibility so we shell out to a locally installed tar
+        # binary (with zstd support) rather than pull in a Python version dependency.
+        print(f"{STEP}Extracting {self.name} database ... ")
+        output = subprocess.run(
+            ["tar", "--zstd", "-xf", tar_write_location, "-C", self.write_location]
+        )
+        if output.returncode > 0:
+            print(f"{ERROR_CHECK}Error during Extraction: {output.stdout}")
+            return
+
+        # Remove the tar
+        os.remove(tar_write_location)
+
+        # Write updated local manifest.
+        manifest_data = {
+            "component" : str(self.name),
+            "revision" : str(self.latest_revision),
+        }
+        with open(manifest_write_location, mode='w', encoding = "utf-8") as manifest_json:
+            json.dump(manifest_data, manifest_json, indent = 2)
+
+        return
+
+@dataclass
+class DatabaseRevision:
+    """
+    We don't have full semantic verisioning for databases, instead we use a 
+    revision system, i.e. 1.2, where the first number increments on breaking
+    changes that require a commec update, and minor revisions increment the
+    second number.
+    """
+    major : int = 0
+    minor : int = 0
+    def __init__(self, input_string : str = str("0.0")):
+        extraction = input_string.split(".")
+        if len(extraction) == 2:
+            self.major, self.minor = extraction
+            return
+        raise ValueError("Expected \"X.X\" string as input for Database Revision.")
+    def __eq__(self, other):
+        return (self.major == other.major 
+                and self.minor == other.minor)
+    def __lt__(self, other):
+        if not isinstance(other, DatabaseRevision):
+            return NotImplemented
+        if self.major == other.major:
+            return self.minor < other.minor
+        return self.major < other.major
+    def __gt__(self, other):
+        if not isinstance(other, DatabaseRevision):
+            return NotImplemented
+        if self.major == other.major:
+            return self.minor > other.minor
+        return self.major > other.major
+    def __le__(self, other):
+        if not isinstance(other, DatabaseRevision):
+            return NotImplemented
+        if self.major == other.major:
+            return self.minor <= other.minor
+        return self.major <= other.major
+    def __ge__(self, other):
+        if not isinstance(other, DatabaseRevision):
+            return NotImplemented
+        if self.major == other.major:
+            return self.minor >= other.minor
+        return self.major >= other.major
+    def __str__(self):
+        return f"{self.major}.{self.minor}"
+
+def fetch_r2_object(
+    object_path: str,
+    base_url: str = R2_PUBLIC_BASE_URL,
+    timeout: int = 10,
+    max_retries: int = 3,
+    retry_delay: float = 2.0,
+) -> bytes | None:
+    """
+    CURRENTLY only used for the latest.json, we need to use something more robust for 
+    the larger files.
+
+    Download a single object from the R2 bucket, retrying transient
+    network failures up to `max_retries` times with a short backoff.
+
+    `object_path` is the object's key/path within the bucket and is joined onto
+    `base_url`. `base_url` defaults to the public r2.dev endpoint but can
+    be swapped for a stable custom domain fronting the same bucket without
+    changing any calling code.
+
+    Returns the raw bytes of the object, or None if every attempt failed.
+    """
+    url = f"{base_url.rstrip('/')}/{object_path.lstrip('/')}"
+    req = request.Request(url, headers={"User-Agent": "commec-setup"})
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            with request.urlopen(req, timeout=timeout) as response:
+                if response.status == 200:
+                    return response.read()
+                print(f"{ERROR_CHECK}HTTP error fetching {url}: status {response.status}")
+        except error.HTTPError as e:
+            print(f"{ERROR_CHECK}HTTP Error fetching {url}: {e.code} - {e.reason}")
+            if 400 <= e.code < 500:
+                break  # Client errors (404, 403, ...) won't succeed on retry.
+        except error.URLError as e:
+            print(f"{ERROR_CHECK}URL Error fetching {url}: {e.reason}")
+
+        if attempt < max_retries:
+            time.sleep(retry_delay * attempt)
+
+    return None
+
+def save_r2_object(
+    object_path: str,
+    destination_path: os.PathLike | str,
+    base_url: str = R2_PUBLIC_BASE_URL,
+    max_retries: int = 3,
+    retry_delay: float = 2.0,
+    chunk_size: int = 8 * 1024 * 1024,
+) -> bool:
+    """
+    Download a (potentially very large, >7 GB) object from the R2 bucket and
+    stream it to disk at `destination_path`, rather than holding it in
+    memory like `fetch_r2_object`.
+
+    An MD5 checksum is expected to exist alongside the object, at
+    `object_path` with ".md5" appended, and is fetched via
+    `fetch_r2_object`. If found, the object is hashed as it's streamed to
+    disk, and the result is compared against this checksum, with a
+    mismatch triggering a retry. If no checksum is found, the download is
+    still attempted, just without any verification.
+
+    A failed download, or a checksum mismatch, is retried up to
+    `max_retries` times.
+
+    Returns True if the file was downloaded successfully (and verified,
+    if a checksum was available), False otherwise.
+    """
+    expected_md5_raw = fetch_r2_object(f"{object_path}.md5")
+    expected_md5 = None
+    if expected_md5_raw is None:
+        print(f"{ERROR_CHECK}Could not fetch checksum for {object_path}, proceeding without verification.")
+    else:
+        expected_md5 = expected_md5_raw.decode("utf-8").strip().split()[0]
+
+    url = f"{base_url.rstrip('/')}/{object_path.lstrip('/')}"
+    req = request.Request(url, headers={"User-Agent": "commec-setup"})
+    destination_path = Path(destination_path)
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            with request.urlopen(req, timeout=None) as response:
+                if response.status != 200:
+                    print(f"{ERROR_CHECK}HTTP error fetching {url}: status {response.status}")
+                else:
+                    total_size = int(response.getheader("Content-Length") or 0)
+                    downloaded = 0
+                    last_progress_time = 0.0
+                    progress_interval = 1 / 20  # throttle to at most ~20 updates/sec
+
+                    md5_hash = hashlib.md5()
+                    with open(destination_path, "wb") as out_file:
+                        while chunk := response.read(chunk_size):
+                            out_file.write(chunk)
+                            md5_hash.update(chunk)
+                            downloaded += len(chunk)
+
+                            now = time.monotonic()
+                            if now - last_progress_time >= progress_interval:
+                                print_progress(downloaded, total_size)
+                                last_progress_time = now
+                    
+                    # Always print a finished bar!
+                    print_progress(downloaded, total_size)
+                    print()
+
+                    if expected_md5 is None or md5_hash.hexdigest() == expected_md5:
+                        return True
+                    print(
+                        f"{ERROR_CHECK}Checksum mismatch for {url}: "
+                        f"expected {expected_md5}, got {md5_hash.hexdigest()}"
+                    )
+        except error.HTTPError as e:
+            print(f"{ERROR_CHECK}HTTP Error fetching {url}: {e.code} - {e.reason}")
+            if 400 <= e.code < 500:
+                break  # Client errors (404, 403, ...) won't succeed on retry.
+        except (error.URLError, OSError) as e:
+            print(f"{ERROR_CHECK}Error fetching {url}: {e}")
+
+        if attempt < max_retries:
+            time.sleep(retry_delay * attempt)
+
+    destination_path.unlink(missing_ok=True)
+    return False
+
+def print_progress(downloaded: int, total_size: int) -> None:
+    """
+    Render an in-place, single-line progress indicator to stdout.
+
+    Clears only the current terminal line (rather than scrolling) before
+    redrawing, so repeated calls animate a single line in place.
+
+    `total_size` of 0 means the size couldn't be determined (e.g. no
+    Content-Length header on the response) -- a percentage/bar can't be
+    computed without a denominator, so the raw amount downloaded is
+    reported instead, to keep terminal output compact.
+    """
+    downloaded_mb = downloaded / (1024 * 1024)
+
+    if total_size <= 0:
+        line = f"{BULLET}Downloading: {downloaded_mb:.1f} MB"
+    else:
+        total_mb = total_size / (1024 * 1024)
+        fraction = min(downloaded / total_size, 1.0)
+        suffix = f" {fraction * 100:5.1f}% ({downloaded_mb:7.1f}/{total_mb:7.1f} MB)"
+        bar_width = max(80 - len(suffix) - 2, 10)
+        filled = int(bar_width * fraction)
+        bar = C_F_ORANGE + "●" * filled + C_F_BLUE + "•" * (bar_width - filled) + C_RESET
+        line = f"[{bar}]{C_F_GRAY}{suffix}{C_RESET}"
+
+    sys.stdout.write(f"\033[2K\r{line}")
+    sys.stdout.flush()
+
+def read_config_yaml_for_database_setup(config_yaml_filepath : os.PathLike | str):
+    """
+    Reads a config yaml, updated from the defaults, and parses the output for
+    the control_list directory as per a commec screen run. Used instead of passing
+    the directory of the control list
+    
+    :param config_yaml_filepath: Description
+    :type config_yaml_filepath: os.PathLike | str
+    """
+
+    output_config = None
+
+    # Read package-level configuration defaults
+    default_yaml = importlib.resources.files("commec").joinpath(DEFAULT_CONFIG_YAML_PATH)
+    if default_yaml.exists():
+        output_config = YamlIO.load_config_from_yaml(str(default_yaml))
+    else:
+        raise FileNotFoundError(
+            f"No default yaml found. Expected at {DEFAULT_CONFIG_YAML_PATH}"
+            )
+
+    # Override configuration with any in user-provided YAML file
+    if os.path.exists(config_yaml_filepath):
+        output_config = YamlIO.update_config_from_yaml(output_config, config_yaml_filepath)
+
+    output_config = YamlIO.format_config_paths(output_config)
+
+    return output_config
+
+def check_directory_is_writable(input_directory: str) -> str:
+    """
+    Checks a directory is viable by 
+    * Expanding terminal variables, user, and resolving the full path and
+    * Checking if it exists or
+    * Creating it and destroying it.
+
+    It returns a str representing the both the truthiness of the outcome,
+    as well as the valid path.
+    """
+    path = Path(os.path.expandvars(input_directory))
+
+    # Catches accidental ~/commec-dbs/ vs ~commec-dbs/ when theres no commec-dbs username.
+    try:
+        path = path.expanduser()
+    except(RuntimeError):
+        print("User expansion for path failed, ensure you are using"
+                " \"~/\" for self, or a valid user with \"~username/\".")
+        return ""
+
+    try:
+        path = path.resolve()
+    except(RuntimeError):
+        return ""
+
+    if path.exists():
+        return path
+    
+    if path.is_reserved():
+        print("This path contains reserved characters for this Operating System.")
+        return ""
+    
+    # Handily, all sorts of special characters are identified with a %XX, within posix, and are replaced
+    # by similar characters during mkdir, whilst technically legal, lets recommend against cursed dir names.
+    if '%' in path.as_posix():
+        print("Please avoid using special characters (\"|}{\":?><*&\" etc) in filepath names.")
+        return ""
+
+    # If the path doesn't exist, the best way to know if user input is valid, is to try make it.
+    # Find the part of the directory which is new, so we can delete only it after.
+    path_to_remove_dirs = Path(path.parts[0])
+    for part in path.parts:
+        if path_to_remove_dirs.exists():
+            path_to_remove_dirs = path_to_remove_dirs / part
+            continue
+        break
+
+    # Create the directory, and delete anything created.
+    os.makedirs(path, exist_ok=True)
+    if path.exists():
+        try:
+            shutil.rmtree(path_to_remove_dirs)
+        except OSError:
+            pass
+        return path
+    return ""
 
 def run(arguments):
-    """Run CLI with an parsed argument parser input."""
-    CliSetup(arguments.automated)
-
+    """Entry point for CommecSetup"""
+    print(SPLASH_IMAGE)
+    print(SPLASH_TEXT)
+    CommecSetup(arguments)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=DESCRIPTION)
