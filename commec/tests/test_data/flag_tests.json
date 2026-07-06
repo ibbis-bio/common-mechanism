@@ -333,6 +333,32 @@
                     }
                 }
             }
+        },
+        "FLAG_TEST_07": {
+            "query": "FLAG_TEST_07",
+            "length": 1,
+            "status": {
+                "screen_status": "Pass",
+                "biorisk": "Pass",
+                "protein_taxonomy": "Pass",
+                "nucleotide_taxonomy": "Pass",
+                "low_concern": "Pass"
+            },
+            "hits": {
+            }
+        },
+        "FLAG_TEST_08": {
+            "query": "FLAG_TEST_08",
+            "length": 1,
+            "status": {
+                "screen_status": "Pass",
+                "biorisk": "Pass",
+                "protein_taxonomy": "Skip",
+                "nucleotide_taxonomy": "Skip",
+                "low_concern": "Pass"
+            },
+            "hits": {
+            }
         }
     }
 }
