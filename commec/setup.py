@@ -46,7 +46,7 @@ BULLET = "  ● "
 R2_PUBLIC_BASE_URL = "https://pub-411843ff50b843c6b1e8d9600eed9093.r2.dev"
 
 SPLASH_IMAGE = f"""
-                       Welcome to
+                        Welcome to
 
      ██████╗ ██████╗ ███╗   ███╗███╗   ███╗███████╗ ██████╗ {C_F_ORANGE}         ▄▄               {C_RESET}
     ██╔════╝██╔═══██╗████╗ ████║████╗ ████║██╔════╝██╔════╝ {C_F_ORANGE}       ▄███▌              {C_RESET}
@@ -257,7 +257,7 @@ class CommecDatabaseUpdater:
             return
         
         # Database is up to date.
-        self.__update_message = f"{self.name}: revision {self.existing_revision}. {C_F_ORANGE}No update required.{C_RESET}"
+        self.__update_message = f"{self.name}: revision {self.existing_revision}. {C_F_ORANGE}Up to date!{C_RESET}"
         self.update_required = False
         return
 
