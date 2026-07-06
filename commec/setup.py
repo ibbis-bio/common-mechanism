@@ -207,7 +207,6 @@ class CommecDatabaseUpdater:
     Handles fetching, writing, and version management.
     """
     def __init__(self, existing_location : os.PathLike):
-        print(f" *** Created updater for {existing_location}")
         self.name = None
         self.write_location = existing_location
         self.existing_revision = None
