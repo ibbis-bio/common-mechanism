@@ -13,6 +13,8 @@ The server is meant to run inside the `commec-dev` conda env so that the
 
 import argparse
 import atexit
+import glob
+import importlib.resources
 import ipaddress
 import json
 import os
@@ -157,17 +159,64 @@ def _required_db_dirs(config):
     return dirs
 
 
-def _missing_databases(preset):
-    """Return the required db subdirs that are absent under the database dir.
+def _db_present(path):
+    """True if a commec database exists at `path`, which may be a directory
+    (taxonomy/ncbi_taxonomy/), an exact file (biorisk/biorisk.hmm), or a BLAST/DIAMOND
+    file *prefix* (taxonomy/protein/prot -> prot.00.pin, prot.00.phr, ...)."""
+    if not path:
+        return False
+    return os.path.isdir(path) or os.path.exists(path) or bool(glob.glob(path + "*"))
 
-    Only meaningful when a database dir is configured and the preset relies on
-    it (our presets don't declare their own db paths). Returns [] otherwise.
-    """
+
+def _commec_db_paths():
+    """Resolve each database to its ACTUAL on-disk path from commec's shipped
+    screen-default-config.yaml ({default} expanded). Checking the real configured paths -
+    not hardcoded 'nr_blast'/'nt_blast' dir names - keeps availability correct whatever DB
+    layout the config points at. Falls back to <db_dir>/<name> for any database whose config
+    carries no path."""
+    db_dir = CFG.get("default_databases") or ""
+    base, dbs = db_dir, {}
+    try:
+        cfg = yaml.safe_load(importlib.resources.files("commec")
+                             .joinpath("screen-default-config.yaml").read_text())
+        base = (cfg.get("base_paths") or {}).get("default") or db_dir
+        dbs = cfg.get("databases", {}) or {}
+    except Exception:
+        pass
+    if base and not base.endswith(os.sep):
+        base += os.sep
+
+    def cfg_path(*keys):
+        d = dbs
+        for k in keys:
+            if not isinstance(d, dict):
+                return None
+            d = d.get(k)
+        return d.get("path") if isinstance(d, dict) else None
+
+    def resolve(name, *keys):
+        p = cfg_path(*keys)
+        return p.replace("{default}", base) if p else os.path.join(db_dir, name)
+
+    return {
+        "biorisk":     resolve("biorisk", "biorisk"),
+        "low_concern": resolve("low_concern", "low_concern"),
+        "nr_blast":    resolve("nr_blast", "regulated_protein", "blast"),
+        "nr_dmnd":     resolve("nr_dmnd", "regulated_protein", "diamond"),
+        "nt_blast":    resolve("nt_blast", "regulated_nt"),
+        "taxonomy":    resolve("taxonomy", "taxonomy"),
+    }
+
+
+def _missing_databases(preset):
+    """Return the required databases that are absent, checked against their real
+    configured paths (see _commec_db_paths). [] when no db dir is configured."""
     db_dir = CFG["default_databases"]
     if not db_dir or not os.path.isdir(db_dir):
         return []
+    paths = _commec_db_paths()
     return [name for name in _required_db_dirs(preset["config"])
-            if not os.path.isdir(os.path.join(db_dir, name))]
+            if not _db_present(paths.get(name, ""))]
 
 # ---------------------------------------------------------------------------
 # Offline Plotly. commec's *_summary.html report pulls plotly.js from a CDN
