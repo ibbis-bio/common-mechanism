@@ -24,6 +24,7 @@ from commec.config.constants import (
     MAXIMUM_QUERY_LENGTH,
     MAXIMUM_FILENAME_SIZE,
     MAXIMUM_QUERY_NAME_LENGTH,
+    VALID_BLAST_MT_MODES,
 )
 
 logger = logging.getLogger(__name__)
@@ -80,6 +81,12 @@ class ScreenIO:
 
         if self.config["threads"] < 1:
             raise RuntimeError("Number of allocated threads must be at least 1!")
+
+        if self.config["blast_mt_mode"] not in VALID_BLAST_MT_MODES:
+            raise RuntimeError(
+                f"blast_mt_mode must be one of {VALID_BLAST_MT_MODES}, "
+                f"but got {self.config['blast_mt_mode']!r}"
+            )
 
         if (
             self.config["diamond_jobs"] is not None

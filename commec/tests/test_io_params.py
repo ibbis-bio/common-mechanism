@@ -46,6 +46,7 @@ def expected_defaults():
         "skip_nt_search": False,
         "do_cleanup": False,
         "diamond_jobs": None,
+        "blast_mt_mode": 1,
         "force": False,
         "resume": False,
         "verbose": False
@@ -99,6 +100,7 @@ def expected_updated_from_custom_yaml():
         "skip_nt_search": False,
         "do_cleanup": False,
         "diamond_jobs": None,
+        "blast_mt_mode": 1,
         "force": True,
         "resume": False,
         "verbose": False
@@ -179,6 +181,35 @@ def test_cli_override(tmp_path, expected_updated_from_custom_yaml, custom_yaml_c
     )
 
     assert expected_defaults == params.config
+
+def test_blast_mt_mode_override(tmp_path):
+    """A user YAML can set blast_mt_mode (it must be a recognised default key,
+    or the config merge would reject it). Default is 1; here we override to 0."""
+    user_config_path = tmp_path / "user_config.yaml"
+    with open(user_config_path, 'w') as f:
+        yaml.dump({"blast_mt_mode": 0}, f)
+
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
+    params = ScreenIO(args)
+
+    assert params.config["blast_mt_mode"] == 0
+
+def test_blast_mt_mode_invalid_rejected(tmp_path):
+    """setup() must reject a blast_mt_mode that isn't one of the valid BLAST
+    multithreading modes (0, 1, 2)."""
+    user_config_path = tmp_path / "user_config.yaml"
+    with open(user_config_path, 'w') as f:
+        yaml.dump({"blast_mt_mode": 3}, f)
+
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
+    params = ScreenIO(args)
+
+    with pytest.raises(RuntimeError, match="blast_mt_mode"):
+        params.setup()
 
 def test_missing_default_config():
     """Test that missing default config raises appropriate error"""

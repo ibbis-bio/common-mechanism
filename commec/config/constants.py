@@ -27,6 +27,9 @@ BIORISK_LONG_QUERY_EVALUE_THRESHOLD = 1e-20
 HMMSCAN_MAX_THREAD_LIMIT = 4
 CMSCAN_MAX_THREAD_LIMIT = 4
 
+# Valid values for the BLAST -mt_mode argument (0: auto, 1: split by database, 2: split by query)
+VALID_BLAST_MT_MODES = (0, 1, 2)
+
 # I/O
 DEFAULT_CONFIG_YAML_PATH = "screen-default-config.yaml"
 MAXIMUM_FILENAME_SIZE = 255

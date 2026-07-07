@@ -24,6 +24,7 @@ databases:
       regions : "all"
 threads: 1
 diamond_jobs: null
+blast_mt_mode: 1
 do_cleanup: False
 force: False
 skip_taxonomy_search: False
