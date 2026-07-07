@@ -25,6 +25,7 @@ from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 from commec.config import yaml_io as YamlIO
 from commec.utils.file_utils import expand_and_normalize
 
+from  commec import __version__ as VERSION
 DESCRIPTION = """Helper script for downloading or updating the databases
  required for running the Common Mechanism Screen"""
 
@@ -132,7 +133,7 @@ class CommecSetup:
 
         # Fetch latest.json from R2.abs
         print(f"{STEP}Fetching latest commec database revision information ...")
-        latest = self.fetch_latest_versions()
+        latest = fetch_latest_revisions()
 
         if not latest:
             print(f"{ERROR_CHECK} Could not fetch latest revisions. Check internet connection and try again.")
@@ -185,21 +186,41 @@ class CommecSetup:
 
         print(f"{STEP}Update check complete! Have a Biosafe-and-secure day!")
 
-    def fetch_latest_versions(self) -> dict | None:
-        """
-        A versions.json manifest exists at the root of the R2 bucket, listing
-        the latest revision of each database. Downloads and parses it into a
-        dict. Returns None if it could not be fetched or parsed.
-        """
-        raw = fetch_r2_object("latest.json")
-        if raw is None:
-            return None
+def fetch_supported_revisions() -> dict | None:
+    """
+    The commec package has the database_compatibility.yaml, which
+    holds a datastructure that can be interrogated for latest revision
+    information supported by this version of commec.
+    Revisions contains a major, and minor revision. By definition, the
+    major revision increments only when a commec update is required.
 
-        try:
-            return json.loads(raw.decode("utf-8"))
-        except (json.JSONDecodeError, UnicodeDecodeError) as e:
-            print(f"Invalid JSON in latest.json manifest: {e}")
-            return None
+    Returns a dictionary where each database key contains the tuple:
+    (min, max) where max is non-inclusive. Fulfilling the ">=min, <max" logic.
+    """
+    data_filename = importlib.resources.files("commec").joinpath("database_compatibility.yaml")
+    supported_revision_data = YamlIO.load_config_from_yaml(data_filename)
+    for db_name, revision_string in supported_revision_data["supported_database_revisions"].items():
+        # Expects the following str format: ">=1.0,<2.0"
+        major_min = revision_string.split(",")[0].split(".")[0][2:]+".0"
+        major_max = revision_string.split(",")[1].split(".")[0][1:]+".0"
+        supported_revision_data[db_name] = (DatabaseRevision(major_min), DatabaseRevision(major_max))
+    return supported_revision_data
+
+def fetch_latest_revisions() -> dict | None:
+    """
+    A latest.json manifest exists at the root of the R2 bucket, listing
+    the latest revision of each database. Downloads and parses it into a
+    dict. Returns None if it could not be fetched or parsed.
+    """
+    raw = fetch_r2_object("latest.json")
+    if raw is None:
+        return None
+
+    try:
+        return json.loads(raw.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as e:
+        print(f"Invalid JSON in latest.json manifest: {e}")
+        return None
 
 class CommecDatabaseUpdater:
     """
@@ -245,11 +266,26 @@ class CommecDatabaseUpdater:
 
     def check_for_update(self, latest_revision : str):
         self.latest_revision = DatabaseRevision(latest_revision)
+
+        # Database not supported.
+        min_revision, max_revision = fetch_supported_revisions().get(self.name, (None,None))
+        if min_revision:
+            if self.latest_revision >= max_revision:
+                print(
+                    f"{ERROR_CHECK}Version {VERSION} of commec supports "
+                    f"to {self.name} <{str(max_revision)} and does not support"
+                    f" revision {str(max_revision)}.  "
+                    f"\n   We recommend {C_F_ORANGE}you update commec{C_RESET}, and rerun this setup.")
+                self.update_required = False
+                self.__update_message = f"{C_F_ORANGE}commec package out of date{C_RESET} for latest {self.name} (revision {latest_revision})"
+                return
+
         # Database does not yet exist.
         if not self.existing_revision:
             self.update_required = True
             self.__update_message = f"{C_F_ORANGE}Download{C_RESET} {self.name} (revision {latest_revision})"
             return
+
         # Database requires updating to latest revision
         if self.existing_revision < self.latest_revision:
             self.__update_message = f"{self.name} ({self.existing_revision}) will be {C_F_ORANGE}updated{C_RESET} to revision {latest_revision}."
@@ -300,7 +336,7 @@ class CommecDatabaseUpdater:
             return
 
         # Remove the tar
-        os.remove(tar_write_location)
+        #os.remove(tar_write_location)
 
         # Write updated local manifest.
         manifest_data = {
@@ -426,12 +462,13 @@ def save_r2_object(
     Returns True if the file was downloaded successfully (and verified,
     if a checksum was available), False otherwise.
     """
-    expected_md5_raw = fetch_r2_object(f"{object_path}.md5")
-    expected_md5 = None
-    if expected_md5_raw is None:
+    expected_sha256_raw = fetch_r2_object(f"{object_path}.sha256")
+    expected_sha256 = None
+    if expected_sha256_raw is None:
         print(f"{ERROR_CHECK}Could not fetch checksum for {object_path}, proceeding without verification.")
+        return False
     else:
-        expected_md5 = expected_md5_raw.decode("utf-8").strip().split()[0]
+        expected_sha256 = expected_sha256_raw.decode("utf-8").strip().split()[0]
 
     url = f"{base_url.rstrip('/')}/{object_path.lstrip('/')}"
     req = request.Request(url, headers={"User-Agent": "commec-setup"})
@@ -448,11 +485,11 @@ def save_r2_object(
                     last_progress_time = 0.0
                     progress_interval = 1 / 20  # throttle to at most ~20 updates/sec
 
-                    md5_hash = hashlib.md5()
+                    sha256_hash = hashlib.sha256()
                     with open(destination_path, "wb") as out_file:
                         while chunk := response.read(chunk_size):
                             out_file.write(chunk)
-                            md5_hash.update(chunk)
+                            sha256_hash.update(chunk)
                             downloaded += len(chunk)
 
                             now = time.monotonic()
@@ -464,11 +501,11 @@ def save_r2_object(
                     print_progress(downloaded, total_size)
                     print()
 
-                    if expected_md5 is None or md5_hash.hexdigest() == expected_md5:
+                    if sha256_hash.hexdigest() == expected_sha256:
                         return True
                     print(
                         f"{ERROR_CHECK}Checksum mismatch for {url}: "
-                        f"expected {expected_md5}, got {md5_hash.hexdigest()}"
+                        f"expected {expected_sha256}, got {sha256_hash.hexdigest()}"
                     )
         except error.HTTPError as e:
             print(f"{ERROR_CHECK}HTTP Error fetching {url}: {e.code} - {e.reason}")

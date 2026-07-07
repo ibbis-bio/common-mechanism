@@ -32,3 +32,4 @@ protein_search_tool: 'blastx'
 resume: False
 skip_nt_search: False
 verbose: False
+auto_update_databases: False
