@@ -18,7 +18,7 @@ databases:
       path: '{default}low_concern/dna/low_concern.fasta'
     protein:
       path: '{default}low_concern/protein/low_concern.hmm'
-    annotations: '{default}low_concern/low_concern_annotations.tsv'
+    annotations: '{default}low_concern/low_concern_annotations.csv'
   control_lists:
       path: "{default}control_lists/"
       regions : "all"

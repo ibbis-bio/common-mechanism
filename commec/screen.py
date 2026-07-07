@@ -641,8 +641,7 @@ class Screen:
 
         # Update Screen Data with low_concern outputs.
         low_concern_desc = pd.read_csv(
-            self.params.config["databases"]["low_concern"]["annotations"],
-            sep="\t",
+            self.params.config["databases"]["low_concern"]["annotations"]
         )
 
         parse_low_concern_hits(

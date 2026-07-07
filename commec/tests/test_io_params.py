@@ -22,7 +22,7 @@ def expected_defaults():
                 "rna": {"path": "commec-dbs/low_concern/rna/low_concern.cm"},
                 "dna": {"path": "commec-dbs/low_concern/dna/low_concern.fasta"},
                 "protein": {"path": "commec-dbs/low_concern/protein/low_concern.hmm"},
-                "annotations": 'commec-dbs/low_concern/low_concern_annotations.tsv',
+                "annotations": 'commec-dbs/low_concern/low_concern_annotations.csv',
             },
             "biorisk": {
                 "path": "commec-dbs/biorisk/biorisk.hmm",
@@ -76,7 +76,7 @@ def expected_updated_from_custom_yaml():
                 "rna": {"path": "commec-dbs/low_concern/rna/low_concern.cm"},
                 "dna": {"path": "commec-dbs/low_concern/dna/low_concern.fasta"},
                 "protein": {"path": "commec-dbs/low_concern/protein/low_concern.hmm"},
-                "annotations": 'commec-dbs/low_concern/low_concern_annotations.tsv',
+                "annotations": 'commec-dbs/low_concern/low_concern_annotations.csv',
             },
             "biorisk": {
                 "path": "commec-dbs/biorisk/biorisk.hmm",
