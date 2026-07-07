@@ -438,7 +438,6 @@ def _create_hit_result_from_annotations(
         status, domains_text, [match_range], hit_description,
         reg_taxids, non_reg_taxids, reg_species,
     )
-    logger.info(log_message)
 
     hit_name = f"{controlled_cluster_label}"#_{match_range.query_start}_{match_range.query_end}"
     new_hit = HitResult(
