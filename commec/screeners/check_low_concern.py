@@ -252,6 +252,8 @@ def _update_low_concern_data_for_query(query : Query,
         low_concern_dna_for_query = low_concern_dna[
             low_concern_dna["query acc."] == query.name
         ]
+    
+    if not low_concern_dna_for_query.empty:
         # Restrict to top hits for Synbio parts
         low_concern_dna_for_query = get_top_hits(low_concern_dna_for_query)
         logger.debug("\tLow-concern Synbio Top Hits Data for %s: shape: %s preview:\n%s",
