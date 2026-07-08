@@ -1,9 +1,9 @@
 {
   "commec_info": {
-    "commec_version": "1.0.5",
-    "json_output_version": "0.3",
-    "time_taken": "00:00:02",
-    "date_run": "2025-12-03 16:57:20",
+    "commec_version": "1.1.0",
+    "json_output_version": "0.5",
+    "time_taken": "00:00:01",
+    "date_run": "2026-06-29 20:36:44",
     "search_tool_info": {
       "biorisk_search_info": {
         "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
@@ -17,22 +17,26 @@
         "tool_info": "blastn: 2.17.0+\n Package: blast 2.17.0, build Aug 11 2025 09:46:06",
         "database_info": "BLASTDB Version: 5Date: May 21, 2025  8:12 AM\tLongest sequence: 8,669 bases"
       },
-      "low_concern_protein_search_info": {
-        "tool_info": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
-        "database_info": "HMMER3/f [3.4 | Aug 2023]"
-      },
-      "low_concern_rna_search_info": {
-        "tool_info": "INFERNAL 1.1.5 (Sep 2023)",
-        "database_info": "INFERNAL1/a [1.1.5 | Sep 2023]"
-      },
+      "low_concern_protein_search_info": {},
+      "low_concern_rna_search_info": {},
       "low_concern_dna_search_info": {
         "tool_info": "x.x.x",
         "database_info": "x.x.x"
       }
-    }
+    },
+    "control_list_info": [
+      {
+        "name": "default_test_list",
+        "acronym": "DTL",
+        "region": "New Zealand",
+        "includes": "NZ",
+        "status": "Compliance",
+        "url": "www.nourl.com"
+      }
+    ]
   },
   "query_info": {
-    "file": "/tmp/pytest-of-root/pytest-10/test_functional_screen0/functional.fasta",
+    "file": "/tmp/pytest-of-michael/pytest-162/test_functional_screen0/functional.fasta",
     "number_of_queries": 1,
     "total_query_length": 600
   },
@@ -48,457 +52,504 @@
         "low_concern": "Flag",
         "rationale": "Matches sequence with pathogenic or toxin function, and protein and nucleotide sequence with regulated organisms; as well as virulence factor; as well as flags cleared as common or non-hazardous."
       },
-      "hits": {
-        "Main": {
+      "hits": [
+        {
           "recommendation": {
             "status": "Pass",
             "from_step": "Nucleotide Taxonomy Search"
           },
-          "name": "Main",
-          "description": "Mix of 1 regulated Viruses and 1 non-regulated Viruses",
-          "ranges": [
-            {
-              "e_value": 0.16,
-              "match_start": 1,
-              "match_end": 80,
-              "query_start": 501,
-              "query_end": 581
-            }
-          ],
+          "name": "NR_HIT_ShouldntClear",
+          "description": "Mix of 1 controlled Viruses and 1 non-controlled Viruses",
+          "region": {
+            "e_value": 0.16,
+            "query_start": 310,
+            "query_end": 390
+          },
           "annotations": {
-            "domain": [
+            "category": [
               "Viruses"
             ],
-            "regulated_taxonomy": [
-              {
-                "number_of_regulated_taxids": "1",
-                "number_of_unregulated_taxids": "1",
-                "regulated_eukaryotes": "0",
-                "regulated_bacteria": "0",
-                "regulated_viruses": "1",
-                "regulated_taxa": [
-                  {
-                    "evalue": 0.16,
-                    "taxid": 12345,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
-                    "target_hit": "NT_HIT_MIXED",
-                    "target_description": "Main"
-                  }
-                ],
-                "non_regulated_taxa": [
-                  {
-                    "evalue": 0.17,
-                    "taxid": 12346,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Bacteria",
-                    "target_hit": "NT_HIT_MIXED2",
-                    "target_description": "NonRegMixedWithMain"
-                  }
-                ]
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 0.16,
+                  "percent_identity": 99.999,
+                  "query_start": 310,
+                  "query_end": 390,
+                  "match_start": 1,
+                  "match_end": 80,
+                  "target_hit": "NT_HIT_MIXED",
+                  "target_description": "Main",
+                  "taxid": 12345,
+                  "genus": "orthoregulatidae",
+                  "species": "regulaticus",
+                  "controlled_by_lists": [
+                    {
+                      "list": "default_test_list[Index experimentorum communium]",
+                      "source": ""
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [
+                {
+                  "evalue": 0.17,
+                  "percent_identity": 99.999,
+                  "query_start": 310,
+                  "query_end": 390,
+                  "match_start": 1,
+                  "match_end": 80,
+                  "target_hit": "NT_HIT_MIXED2",
+                  "target_description": "NonRegMixedWithMain",
+                  "taxid": 12348
+                }
+              ],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 1,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
               }
-            ]
+            }
           }
         },
-        "SUBJECT_3": {
+        {
           "recommendation": {
             "status": "Flag",
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "SUBJECT_3",
-          "description": "Regulated Viruses - SUBJECT_3",
-          "ranges": [
-            {
-              "e_value": 0.15,
-              "match_start": 1,
-              "match_end": 90,
-              "query_start": 110,
-              "query_end": 200
-            }
-          ],
-          "annotations": {
-            "domain": [
-              "Viruses"
-            ],
-            "regulated_taxonomy": [
-              {
-                "number_of_regulated_taxids": "2",
-                "number_of_unregulated_taxids": "0",
-                "regulated_eukaryotes": "0",
-                "regulated_bacteria": "0",
-                "regulated_viruses": "1",
-                "regulated_taxa": [
-                  {
-                    "evalue": 0.14,
-                    "taxid": 12345,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
-                    "target_hit": "NT_HIT_FLAG2",
-                    "target_description": "SUBJECT_2"
-                  },
-                  {
-                    "evalue": 0.15,
-                    "taxid": 12350,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
-                    "target_hit": "NT_HIT_FLAG3",
-                    "target_description": "SUBJECT_3"
-                  }
-                ],
-                "non_regulated_taxa": []
-              }
-            ]
-          }
-        },
-        "SUBJECT_2": {
-          "recommendation": {
-            "status": "Flag (Cleared)",
-            "from_step": "Nucleotide Taxonomy Search"
+          "description": "controlled Viruses SUBJECT_3",
+          "region": {
+            "e_value": 0.15,
+            "query_start": 110,
+            "query_end": 200
           },
-          "name": "SUBJECT_2",
-          "description": "Regulated Viruses - SUBJECT_2",
-          "ranges": [
-            {
-              "e_value": 0.14,
-              "match_start": 1,
-              "match_end": 80,
-              "query_start": 110,
-              "query_end": 190
-            }
-          ],
           "annotations": {
-            "domain": [
+            "category": [
               "Viruses"
             ],
-            "regulated_taxonomy": [
-              {
-                "number_of_regulated_taxids": "2",
-                "number_of_unregulated_taxids": "0",
-                "regulated_eukaryotes": "0",
-                "regulated_bacteria": "0",
-                "regulated_viruses": "1",
-                "regulated_taxa": [
-                  {
-                    "evalue": 0.14,
-                    "taxid": 12345,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
-                    "target_hit": "NT_HIT_FLAG2",
-                    "target_description": "SUBJECT_2"
-                  },
-                  {
-                    "evalue": 0.15,
-                    "taxid": 12350,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
-                    "target_hit": "NT_HIT_FLAG3",
-                    "target_description": "SUBJECT_3"
-                  }
-                ],
-                "non_regulated_taxa": []
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 0.15,
+                  "percent_identity": 99.999,
+                  "query_start": 110,
+                  "query_end": 200,
+                  "match_start": 1,
+                  "match_end": 90,
+                  "target_hit": "NT_HIT_FLAG3",
+                  "target_description": "SUBJECT_3",
+                  "taxid": 12350,
+                  "genus": "orthonovaregulatidae",
+                  "species": "Viria Novia blue beads",
+                  "controlled_by_lists": [
+                    {
+                      "list": "default_test_list[Index experimentorum communium]",
+                      "source": ""
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
               }
-            ]
+            }
           }
         },
-        "SUBJECT_1": {
+        {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Nucleotide Taxonomy Search"
           },
           "name": "SUBJECT_1",
-          "description": "Regulated Viruses - SUBJECT_1",
-          "ranges": [
-            {
-              "e_value": 0.13,
-              "match_start": 1,
-              "match_end": 60,
-              "query_start": 220,
-              "query_end": 280
-            }
-          ],
+          "description": "controlled Viruses SUBJECT_1",
+          "region": {
+            "e_value": 0.14,
+            "query_start": 110,
+            "query_end": 190
+          },
           "annotations": {
-            "domain": [
+            "category": [
               "Viruses"
             ],
-            "regulated_taxonomy": [
-              {
-                "number_of_regulated_taxids": "1",
-                "number_of_unregulated_taxids": "0",
-                "regulated_eukaryotes": "0",
-                "regulated_bacteria": "0",
-                "regulated_viruses": "1",
-                "regulated_taxa": [
-                  {
-                    "evalue": 0.13,
-                    "taxid": 12345,
-                    "species": "unclassified",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
-                    "target_hit": "NT_HIT_FLAG1",
-                    "target_description": "SUBJECT_1"
-                  }
-                ],
-                "non_regulated_taxa": []
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 0.14,
+                  "percent_identity": 99.999,
+                  "query_start": 110,
+                  "query_end": 190,
+                  "match_start": 1,
+                  "match_end": 80,
+                  "target_hit": "NT_HIT_FLAG2",
+                  "target_description": "SUBJECT_2",
+                  "taxid": 22345,
+                  "genus": "orthonovaregulatidae",
+                  "species": "Viria Novus",
+                  "controlled_by_lists": [
+                    {
+                      "list": "default_test_list[Index experimentorum communium]",
+                      "source": ""
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
               }
-            ]
+            }
           }
         },
-        "ShouldMixedReg1": {
+        {
+          "recommendation": {
+            "status": "Flag (Cleared)",
+            "from_step": "Nucleotide Taxonomy Search"
+          },
+          "name": "SUBJECT_1",
+          "description": "controlled Viruses SUBJECT_1",
+          "region": {
+            "e_value": 0.13,
+            "query_start": 220,
+            "query_end": 280
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 0.13,
+                  "percent_identity": 99.999,
+                  "query_start": 220,
+                  "query_end": 280,
+                  "match_start": 1,
+                  "match_end": 60,
+                  "target_hit": "NT_HIT_FLAG1",
+                  "target_description": "SUBJECT_1",
+                  "taxid": 22345,
+                  "genus": "orthonovaregulatidae",
+                  "species": "Viria Novus",
+                  "controlled_by_lists": [
+                    {
+                      "list": "default_test_list[Index experimentorum communium]",
+                      "source": ""
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
           "recommendation": {
             "status": "Pass",
             "from_step": "Protein Taxonomy Search"
           },
-          "name": "ShouldMixedReg1",
-          "description": "Mix of 1 regulated Viruses and 2 non-regulated Viruses",
-          "ranges": [
-            {
-              "e_value": 0.1,
-              "match_start": 1,
-              "match_end": 50,
-              "query_start": 340,
-              "query_end": 390
-            }
-          ],
+          "name": "ShouldClearBySynBio",
+          "description": "Mix of 1 controlled Viruses and 2 non-controlled Viruses",
+          "region": {
+            "e_value": 0.1,
+            "query_start": 340,
+            "query_end": 390
+          },
           "annotations": {
-            "domain": [
+            "category": [
               "Viruses"
             ],
-            "regulated_taxonomy": [
-              {
-                "number_of_regulated_taxids": "1",
-                "number_of_unregulated_taxids": "2",
-                "regulated_eukaryotes": "0",
-                "regulated_bacteria": "0",
-                "regulated_viruses": "1",
-                "regulated_taxa": [
-                  {
-                    "evalue": 0.1,
-                    "taxid": 12347,
-                    "species": "danger-poop",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
-                    "target_hit": "NR_HIT_MIXED1",
-                    "target_description": "ShouldMixedReg1"
-                  }
-                ],
-                "non_regulated_taxa": [
-                  {
-                    "evalue": 0.11,
-                    "taxid": 12348,
-                    "species": "cute-happy-bacter",
-                    "genus": "unclassified",
-                    "superkingdom": "Bacteria",
-                    "target_hit": "NR_HIT_MIXED2",
-                    "target_description": "ShouldMixednonReg2"
-                  },
-                  {
-                    "evalue": 0.12,
-                    "taxid": 12349,
-                    "species": "poopicus",
-                    "genus": "unclassified",
-                    "superkingdom": "Bacteria",
-                    "target_hit": "NR_HIT_MIXED3",
-                    "target_description": "ShouldMixedNonReg3"
-                  }
-                ]
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 0.1,
+                  "percent_identity": 99.999,
+                  "query_start": 340,
+                  "query_end": 390,
+                  "match_start": 1,
+                  "match_end": 50,
+                  "target_hit": "NR_HIT_MIXED1",
+                  "target_description": "ShouldMixedReg1",
+                  "taxid": 12347,
+                  "genus": "orthoregulatidae",
+                  "species": "regulaticus",
+                  "controlled_by_lists": [
+                    {
+                      "list": "default_test_list[Index experimentorum communium]",
+                      "source": ""
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [
+                {
+                  "evalue": 0.11,
+                  "percent_identity": 99.999,
+                  "query_start": 340,
+                  "query_end": 390,
+                  "match_start": 1,
+                  "match_end": 50,
+                  "target_hit": "NR_HIT_MIXED2",
+                  "target_description": "ShouldMixednonReg2",
+                  "taxid": 12348
+                },
+                {
+                  "evalue": 0.12,
+                  "percent_identity": 99.999,
+                  "query_start": 340,
+                  "query_end": 390,
+                  "match_start": 1,
+                  "match_end": 50,
+                  "target_hit": "NR_HIT_MIXED3",
+                  "target_description": "ShouldMixedNonReg3",
+                  "taxid": 12349
+                }
+              ],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 2,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
               }
-            ]
+            }
           }
         },
-        "ShouldClear": {
+        {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Protein Taxonomy Search"
           },
           "name": "ShouldClear",
-          "description": "Regulated Viruses - ShouldClear",
-          "ranges": [
-            {
-              "e_value": 0.09,
-              "match_start": 1,
-              "match_end": 60,
-              "query_start": 310,
-              "query_end": 370
-            }
-          ],
-          "annotations": {
-            "domain": [
-              "Viruses"
-            ],
-            "regulated_taxonomy": [
-              {
-                "number_of_regulated_taxids": "1",
-                "number_of_unregulated_taxids": "0",
-                "regulated_eukaryotes": "0",
-                "regulated_bacteria": "0",
-                "regulated_viruses": "1",
-                "regulated_taxa": [
-                  {
-                    "evalue": 0.09,
-                    "taxid": 12346,
-                    "species": "fine-icus",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
-                    "target_hit": "NR_HIT_FLAG4",
-                    "target_description": "ShouldClear"
-                  }
-                ],
-                "non_regulated_taxa": []
-              }
-            ]
-          }
-        },
-        "NR_HIT2_ShouldntClear": {
-          "recommendation": {
-            "status": "Flag",
-            "from_step": "Protein Taxonomy Search"
+          "description": "controlled Viruses ShouldClear",
+          "region": {
+            "e_value": 0.09,
+            "query_start": 310,
+            "query_end": 370
           },
-          "name": "NR_HIT2_ShouldntClear",
-          "description": "Regulated Viruses - NR_HIT2_ShouldntClear",
-          "ranges": [
-            {
-              "e_value": 0.08,
-              "match_start": 1,
-              "match_end": 90,
-              "query_start": 410,
-              "query_end": 500
-            }
-          ],
           "annotations": {
-            "domain": [
+            "category": [
               "Viruses"
             ],
-            "regulated_taxonomy": [
-              {
-                "number_of_regulated_taxids": "1",
-                "number_of_unregulated_taxids": "0",
-                "regulated_eukaryotes": "0",
-                "regulated_bacteria": "0",
-                "regulated_viruses": "1",
-                "regulated_taxa": [
-                  {
-                    "evalue": 0.07,
-                    "taxid": 12345,
-                    "species": "regulaticus",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
-                    "target_hit": "NR_HIT_FLAG2",
-                    "target_description": "ShouldClearBySynBio"
-                  }
-                ],
-                "non_regulated_taxa": []
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 0.09,
+                  "percent_identity": 99.999,
+                  "query_start": 310,
+                  "query_end": 370,
+                  "match_start": 1,
+                  "match_end": 60,
+                  "target_hit": "NR_HIT_FLAG4",
+                  "target_description": "ShouldClear",
+                  "taxid": 12346,
+                  "genus": "orthoderegulatidae",
+                  "species": "fine-icus",
+                  "controlled_by_lists": [
+                    {
+                      "list": "default_test_list[Index experimentorum communium]",
+                      "source": ""
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
               }
-            ]
-          }
-        },
-        "ShouldClearBySynBio": {
-          "recommendation": {
-            "status": "Flag (Cleared)",
-            "from_step": "Protein Taxonomy Search"
-          },
-          "name": "ShouldClearBySynBio",
-          "description": "Regulated Viruses - ShouldClearBySynBio",
-          "ranges": [
-            {
-              "e_value": 0.07,
-              "match_start": 1,
-              "match_end": 80,
-              "query_start": 410,
-              "query_end": 490
             }
-          ],
-          "annotations": {
-            "domain": [
-              "Viruses"
-            ],
-            "regulated_taxonomy": [
-              {
-                "number_of_regulated_taxids": "1",
-                "number_of_unregulated_taxids": "0",
-                "regulated_eukaryotes": "0",
-                "regulated_bacteria": "0",
-                "regulated_viruses": "1",
-                "regulated_taxa": [
-                  {
-                    "evalue": 0.07,
-                    "taxid": 12345,
-                    "species": "regulaticus",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
-                    "target_hit": "NR_HIT_FLAG2",
-                    "target_description": "ShouldClearBySynBio"
-                  }
-                ],
-                "non_regulated_taxa": []
-              }
-            ]
           }
         },
-        "NR_HIT_ShouldntClear": {
+        {
           "recommendation": {
             "status": "Flag",
             "from_step": "Protein Taxonomy Search"
           },
           "name": "NR_HIT_ShouldntClear",
-          "description": "Regulated Viruses - NR_HIT_ShouldntClear",
-          "ranges": [
-            {
-              "e_value": 0.06,
-              "match_start": 1,
-              "match_end": 60,
-              "query_start": 320,
-              "query_end": 380
-            }
-          ],
+          "description": "controlled Viruses NR_HIT_ShouldntClear",
+          "region": {
+            "e_value": 0.08,
+            "query_start": 410,
+            "query_end": 500
+          },
           "annotations": {
-            "domain": [
+            "category": [
               "Viruses"
             ],
-            "regulated_taxonomy": [
-              {
-                "number_of_regulated_taxids": "1",
-                "number_of_unregulated_taxids": "0",
-                "regulated_eukaryotes": "0",
-                "regulated_bacteria": "0",
-                "regulated_viruses": "1",
-                "regulated_taxa": [
-                  {
-                    "evalue": 0.06,
-                    "taxid": 12345,
-                    "species": "regulaticus",
-                    "genus": "unclassified",
-                    "superkingdom": "Viruses",
-                    "target_hit": "NR_HIT_FLAG1",
-                    "target_description": "NR_HIT_ShouldntClear"
-                  }
-                ],
-                "non_regulated_taxa": []
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 0.08,
+                  "percent_identity": 99.999,
+                  "query_start": 410,
+                  "query_end": 500,
+                  "match_start": 1,
+                  "match_end": 90,
+                  "target_hit": "NR_HIT_FLAG3",
+                  "target_description": "NR_HIT2_ShouldntClear",
+                  "taxid": 12345,
+                  "genus": "orthoregulatidae",
+                  "species": "regulaticus",
+                  "controlled_by_lists": [
+                    {
+                      "list": "default_test_list[Index experimentorum communium]",
+                      "source": ""
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
               }
-            ]
+            }
           }
         },
-        "Toxin1a": {
+        {
+          "recommendation": {
+            "status": "Flag (Cleared)",
+            "from_step": "Protein Taxonomy Search"
+          },
+          "name": "ShouldClearBySynBio",
+          "description": "controlled Viruses ShouldClearBySynBio",
+          "region": {
+            "e_value": 0.07,
+            "query_start": 410,
+            "query_end": 490
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 0.07,
+                  "percent_identity": 99.999,
+                  "query_start": 410,
+                  "query_end": 490,
+                  "match_start": 1,
+                  "match_end": 80,
+                  "target_hit": "NR_HIT_FLAG2",
+                  "target_description": "ShouldClearBySynBio",
+                  "taxid": 12347,
+                  "genus": "orthoregulatidae",
+                  "species": "regulaticus",
+                  "controlled_by_lists": [
+                    {
+                      "list": "default_test_list[Index experimentorum communium]",
+                      "source": ""
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Protein Taxonomy Search"
+          },
+          "name": "NR_HIT_ShouldntClear",
+          "description": "controlled Viruses NR_HIT_ShouldntClear",
+          "region": {
+            "e_value": 0.06,
+            "query_start": 320,
+            "query_end": 380
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 0.06,
+                  "percent_identity": 99.999,
+                  "query_start": 320,
+                  "query_end": 380,
+                  "match_start": 1,
+                  "match_end": 60,
+                  "target_hit": "NR_HIT_FLAG1",
+                  "target_description": "NR_HIT_ShouldntClear",
+                  "taxid": 12345,
+                  "genus": "orthoregulatidae",
+                  "species": "regulaticus",
+                  "controlled_by_lists": [
+                    {
+                      "list": "default_test_list[Index experimentorum communium]",
+                      "source": ""
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
           "recommendation": {
             "status": "Flag",
             "from_step": "Biorisk Search"
           },
           "name": "Toxin1a",
-          "description": "LargeAreaFlag",
-          "ranges": [
-            {
-              "e_value": 1e-21,
-              "match_start": 1,
-              "match_end": 29,
-              "query_start": 4,
-              "query_end": 93
-            }
-          ],
+          "description": "ShouldntClear LargeAreaFlag",
+          "region": {
+            "e_value": 1e-21,
+            "query_start": 4,
+            "query_end": 93
+          },
           "annotations": {
             "domain": [
               "not assigned"
@@ -508,22 +559,18 @@
             ]
           }
         },
-        "Toxin1b": {
+        {
           "recommendation": {
             "status": "Flag",
             "from_step": "Biorisk Search"
           },
           "name": "Toxin1b",
-          "description": "SmallImportantFlag",
-          "ranges": [
-            {
-              "e_value": 1e-22,
-              "match_start": 1,
-              "match_end": 10,
-              "query_start": 31,
-              "query_end": 63
-            }
-          ],
+          "description": "ShouldntClear SmallImportantFlag",
+          "region": {
+            "e_value": 1e-22,
+            "query_start": 31,
+            "query_end": 63
+          },
           "annotations": {
             "domain": [
               "not assigned"
@@ -533,22 +580,18 @@
             ]
           }
         },
-        "Toxin2": {
+        {
           "recommendation": {
             "status": "Warning",
             "from_step": "Biorisk Search"
           },
           "name": "Toxin2",
           "description": "WarningExample",
-          "ranges": [
-            {
-              "e_value": 1.0000000000000001e-24,
-              "match_start": 1,
-              "match_end": 27,
-              "query_start": 106,
-              "query_end": 189
-            }
-          ],
+          "region": {
+            "e_value": 1.0000000000000001e-24,
+            "query_start": 106,
+            "query_end": 189
+          },
           "annotations": {
             "domain": [
               "not assigned"
@@ -558,22 +601,18 @@
             ]
           }
         },
-        "Toxin3": {
+        {
           "recommendation": {
             "status": "Warning",
             "from_step": "Biorisk Search"
           },
           "name": "Toxin3",
           "description": "ReverseExample",
-          "ranges": [
-            {
-              "e_value": 9.999999999999999e-26,
-              "match_start": 1,
-              "match_end": 29,
-              "query_start": 507,
-              "query_end": 596
-            }
-          ],
+          "region": {
+            "e_value": 9.999999999999999e-26,
+            "query_start": 507,
+            "query_end": 596
+          },
           "annotations": {
             "domain": [
               "not assigned"
@@ -583,63 +622,51 @@
             ]
           }
         },
-        "BENIGNPROT": {
+        {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Low Concern Protein Search"
           },
           "name": "BENIGNPROT",
           "description": "",
-          "ranges": [
-            {
-              "e_value": 9.999999999999999e-27,
-              "match_start": 1,
-              "match_end": 56,
-              "query_start": 199,
-              "query_end": 369
-            }
-          ],
+          "region": {
+            "e_value": 9.999999999999999e-27,
+            "query_start": 199,
+            "query_end": 369
+          },
           "annotations": {
             "Coverage: ": 0.9833333333333333
           }
         },
-        "BENIGNRNA": {
+        {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Low Concern RNA Search"
           },
           "name": "BENIGNRNA",
           "description": "BenignCMTestOutput",
-          "ranges": [
-            {
-              "e_value": 1e-27,
-              "match_start": 1,
-              "match_end": 100,
-              "query_start": 50,
-              "query_end": 150
-            }
-          ],
+          "region": {
+            "e_value": 1e-27,
+            "query_start": 50,
+            "query_end": 150
+          },
           "annotations": {}
         },
-        "BENIGNSYNBIO": {
+        {
           "recommendation": {
             "status": "Flag (Cleared)",
             "from_step": "Low Concern DNA Search"
           },
           "name": "BENIGNSYNBIO",
           "description": "BENIGNSYNBIO",
-          "ranges": [
-            {
-              "e_value": 1.0000000000000001e-28,
-              "match_start": 1,
-              "match_end": 70,
-              "query_start": 410,
-              "query_end": 480
-            }
-          ],
+          "region": {
+            "e_value": 1.0000000000000001e-28,
+            "query_start": 410,
+            "query_end": 480
+          },
           "annotations": {}
         }
-      }
+      ]
     }
   }
 }

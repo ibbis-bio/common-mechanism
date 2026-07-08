@@ -4,7 +4,7 @@ import textwrap
 from unittest.mock import patch
 import numpy as np
 import pandas as pd
-from commec.tools.blast_tools import _split_by_tax_id, read_blast, get_lineages, get_taxonomic_labels
+from commec.tools.blast_tools import read_blast
 
 
 @pytest.fixture
@@ -60,42 +60,3 @@ def lineage_df():
             ],
         }
     )
-
-
-def test_split_by_tax_id(blast_df: pd.DataFrame):
-    assert len(blast_df) == 3
-    split_blast = _split_by_tax_id(blast_df)
-    assert len(split_blast) == 5
-    expected_tax_ids = {2371, 644357, 10760, 110011001100, 32630}
-    assert set(split_blast["subject tax ids"]) == expected_tax_ids
-
-
-@patch("pytaxonkit.lineage")
-def test_get_lineages(mock_lineage, blast_df, lineage_df):
-    mock_lineage.return_value = lineage_df
-    blast_df = _split_by_tax_id(blast_df)
-    lin = get_lineages(
-        blast_df["subject tax ids"], "commec-dbs/taxonomy/", 8
-    )
-    # Expect the invalid taxid to be filtered out
-    expected_tax_ids = {2371, 644357, 10760, 32630}
-    assert set(lin["TaxID"]) == expected_tax_ids
-
-
-@patch("pytaxonkit.lineage")
-def test_taxdist(mock_lineage, blast_df, lineage_df):
-    mock_lineage.return_value = lineage_df
-    # Fake values - should find 1 regulated hit after filtering
-    reg_taxids = ['644357', '10760']
-    vax_taxids = ['10760']
-    reg_df = get_taxonomic_labels(
-        blast_df, reg_taxids, vax_taxids, "commec-dbs/taxonomy/", 8
-    )
-    # Expect the synthetic taxid to be filtered out
-    expected_tax_ids = {2371, 644357, 10760}
-    assert set(reg_df["subject tax ids"]) == expected_tax_ids
-
-    # Expect only taxid 644357 to be marked as "regulated"
-    assert reg_df[reg_df["subject tax ids"] == 2371]["regulated"].iloc[0] == False
-    assert reg_df[reg_df["subject tax ids"] == 644357]["regulated"].iloc[0] == True
-    assert reg_df[reg_df["subject tax ids"] == 10760]["regulated"].iloc[0] == False

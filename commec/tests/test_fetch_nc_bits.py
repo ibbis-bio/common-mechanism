@@ -106,8 +106,10 @@ def test_fetch_nocoding_regions(tmp_path):
 
     expected_output = textwrap.dedent(
         """\
-        >NC_TEST01 (1-100) (201-300)
-        ggtagttccctaaacttatcattaagcgatcttcatcgtcaggtatctcgattggtgcagcaagagagcggtgattgtaccgggaaattaagaggtaacgaaatgttgttctaactcaagaagataccgctaagctattgcaaagtacggtaaagcataatttgaataattatgacttaagaagtgtcggcaatggtaat
+        >NC_TEST01_0 (1-100)
+        ggtagttccctaaacttatcattaagcgatcttcatcgtcaggtatctcgattggtgcagcaagagagcggtgattgtaccgggaaattaagaggtaacg
+        >NC_TEST01_1 (201-300)
+        aaatgttgttctaactcaagaagataccgctaagctattgcaaagtacggtaaagcataatttgaataattatgacttaagaagtgtcggcaatggtaat
         """
     )
 
@@ -142,6 +144,6 @@ def test_fetch_nocoding_regions(tmp_path):
     for query in queries.values():
         if query.result.status.nucleotide_taxonomy == ScreenStatus.SKIP:
             continue
-        actual_output += query.get_non_coding_regions_as_fasta()
+        actual_output += "".join(query.get_non_coding_regions_as_fasta())
 
     assert actual_output.strip() == expected_output.strip()
