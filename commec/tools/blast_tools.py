@@ -100,6 +100,8 @@ def get_top_hits(blast: pd.DataFrame):
     """
 
     assert isinstance(blast, pd.DataFrame), "get_top_hits expects a pandas dataframe object."
+    if "query acc." in blast.columns:
+        assert len(blast["query acc."].unique() == 1)
 
     if blast.empty:
         logger.debug("Empty dataframe passed to Get Top Hits.")

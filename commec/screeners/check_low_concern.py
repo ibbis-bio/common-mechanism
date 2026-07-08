@@ -252,6 +252,10 @@ def _update_low_concern_data_for_query(query : Query,
         low_concern_dna_for_query = low_concern_dna[
             low_concern_dna["query acc."] == query.name
         ]
+        # Restrict to top hits for Synbio parts
+        low_concern_dna_for_query = get_top_hits(low_concern_dna_for_query)
+        logger.debug("\tLow-concern Synbio Top Hits Data for %s: shape: %s preview:\n%s",
+                    query.name, low_concern_dna_for_query.shape, low_concern_dna_for_query.head())
 
     new_low_concern_hits = []
     # Separated for logging purposes only.
@@ -362,10 +366,7 @@ def parse_low_concern_hits(protein_handler : HmmerHandler,
                 low_concern_rna_screen_data.shape, low_concern_rna_screen_data.head())
     
     low_concern_dna_screen_data = dna_handler.read_output()
-    low_concern_dna_screen_data = get_top_hits(low_concern_dna_screen_data)
-    logger.debug("\tLow-concern Synbio Top Hits Data: shape: %s preview:\n%s",
-                low_concern_dna_screen_data.shape, low_concern_dna_screen_data.head())
-    
+
     for query in queries.values():
 
         skip = True
