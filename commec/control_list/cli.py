@@ -149,6 +149,8 @@ def generate_output_summary_csv(output_filepath : str | os.PathLike):
         for regulation in get_regulation(accession):
             output_data.loc[accession, regulation.list] = 1
 
+    output_data = output_data.sort_values("display_name")
+
     # Export - ensure .csv suffix
     output_path = Path(output_filepath)
     if output_path.suffix != ".csv":
