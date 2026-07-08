@@ -284,7 +284,7 @@ class Rationale(StrEnum):
 
     # post Types:
     TAX_FLAG = " regulated organisms"
-    TAX_WARN = " equally-good matches to regulated and non-regulated organisms"
+    TAX_WARN = " organisms of concern" # This is currently unused, but will appear if a control list is set to warn.
 
     # Outcomes:
     NO_HITS = ("No matches found during any stage of analysis. "
