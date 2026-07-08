@@ -131,25 +131,29 @@ def generate_output_summary_csv(output_filepath : str | os.PathLike):
     imported into commec.
     Doesn't include invalid imported data with no Accession method.
     """
+    # Deferred import: control_list imports this module, so importing at
+    # module level here would create a circular import.
+    from .control_list import get_regulation
 
-    output_data = data.CONTROL_LIST_ANNOTATIONS.copy(deep = True)
-    
-    # Step 1: create dummy columns for list_acronym
-    dummies = pd.get_dummies(output_data["list_acronym"], dtype = int)
+    # One row per accession (there may be multiple rows per index, one per list).
+    output_data = data.CONTROL_LIST_ANNOTATIONS.drop(
+        columns=["list_acronym", "list_item", "kingdom"]).groupby(
+        data.CONTROL_LIST_ANNOTATIONS.index, sort=False).first()
 
-    # Step 2: aggregate by index (since there may be multiple rows per index)
-    indicators = dummies.groupby(output_data.index, sort=False).max()
+    # Add a column for each Control List, defaulted to False.
+    for list_acronym in data.CONTROL_LISTS.keys():
+        output_data[list_acronym] = 0
 
-    # Step 3: merge back with the *deduplicated* original dataframe
-    # (dropping 'list_acronym' because it's now encoded, and 'list_item' because there's too many to encode per taxid)
-    base = output_data.drop(columns=["list_acronym", "list_item"]).groupby(output_data.index, sort=False).first()
-    result = base.join(indicators, how="outer")
+    # Flag the lists that regulate each accession.
+    for accession in output_data.index:
+        for regulation in get_regulation(accession):
+            output_data.loc[accession, regulation.list] = 1
 
     # Export - ensure .csv suffix
     output_path = Path(output_filepath)
     if output_path.suffix != ".csv":
         output_path = output_path.with_suffix(".csv")
-    result.to_csv(output_path, index = False)
+    output_data.to_csv(output_path, index = False)
 
 def read_config_yaml_for_control_list_info(config_yaml_filepath : os.PathLike | str):
     """
