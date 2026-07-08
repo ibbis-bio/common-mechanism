@@ -1056,7 +1056,7 @@ async function loadRecent() {
       if (r.status === "interrupted") pill = `<span class="qpill q-int">Interrupted</span>`;
       else if (r.overall) pill = `<span class="qpill q-${statusClass(r.overall)}">${escapeHtml(r.overall)}</span>`;
       else pill = `<span class="qpill q-skip">${r.status === "error" ? "Error" : "Done"}</span>`;
-      const when = r.finished ? new Date(r.finished * 1000).toLocaleString() : "";
+      const when = r.finished ? fmtDateTime(r.finished) : "";
       const nq = r.status === "interrupted" ? "interrupted"
         : (r.n ? `${r.n} quer${r.n === 1 ? "y" : "ies"}` : (r.status === "error" ? "failed" : ""));
       const sz = r.size != null ? humanBytes(r.size) : "";
@@ -1193,6 +1193,14 @@ function humanBytes(n) {
   let i = 0;
   while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
   return (i === 0 ? n : n.toFixed(1)) + " " + u[i];
+}
+// Format an epoch (seconds) as local YYYY-MM-DD HH:MM (24-hour), so dates read
+// the same regardless of the browser's locale (toLocaleString gives M/D/YYYY in en-US).
+function fmtDateTime(epochSec) {
+  const d = new Date(epochSec * 1000);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} `
+       + `${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 async function loadMetrics() {
   try {
