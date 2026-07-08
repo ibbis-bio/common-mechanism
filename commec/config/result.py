@@ -764,11 +764,12 @@ class ScreenResult:
         the search term for a query depending on it.
         """
         search_term = query_name
-        suffix = query_name.split("_")[-1]
-        if suffix.isdigit():
-            search_term = query_name[:-(len(suffix)+1)]
-
-        output = self.queries.get(search_term)
+        output = self.queries.get(query_name)
+        if not output: # We have appended a non-coding or translation suffix.
+            suffix = query_name.split("_")[-1]
+            if suffix.isdigit():
+                search_term = query_name[:-(len(suffix)+1)]
+            output = self.queries.get(search_term)
         if not output:
             logger.error("Unexpected Query get miss: Search term : %s, Suffix used : %s", search_term, suffix)
         return output, search_term

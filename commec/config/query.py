@@ -138,13 +138,9 @@ class Query:
 
         if len(name) <= MAXIMUM_QUERY_NAME_LENGTH:
             return name
-        
+
+        # Name is too long, lets try shorten it.
         tokens = name.split("_")
-
-        # Protect against commec _X usage for frames and nc regions.
-        if tokens[-1].isdigit():
-            tokens = tokens[:-1]
-
         if len(tokens) == 1:
             return name[:MAXIMUM_QUERY_NAME_LENGTH]
 
