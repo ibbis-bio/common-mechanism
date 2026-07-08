@@ -1,0 +1,22 @@
+{
+  "version": "1.2",
+  "dbname": "nr",
+  "dbtype": "Protein",
+  "db-version": 5,
+  "description": "pseudo_queries_aa.fasta",
+  "number-of-letters": 6970,
+  "number-of-sequences": 10,
+  "last-updated": "2024-09-03T00:32:00",
+  "number-of-volumes": 1,
+  "bytes-total": 45266,
+  "bytes-to-cache": 7165,
+  "files": [
+    "nr.pdb",
+    "nr.phr",
+    "nr.pin",
+    "nr.pot",
+    "nr.psq",
+    "nr.ptf",
+    "nr.pto"
+  ]
+}
