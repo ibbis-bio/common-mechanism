@@ -320,10 +320,13 @@ class Screen:
             updated_required, updaters = check_for_updates(self.params.config)
             if updated_required:
                 names = [updater.name for updater in updaters.values() if (updater.update_required and updater.existing_revision)]
-                logger.info("Updates required for the following databases:\n %s. "
-                            "\nPerforming updates now.", ", ".join(names), extra={"box_down":True})
+                names = [name[:1].upper() + name[1:].replace("_"," ") for name in names]
+                logger.info("Updates required for the following databases:\n%s. "
+                            "\nPerforming updates now.", ", ".join(names))
+                logger.info("",extra={"no_prefix" : True , "box_up" : True})
                 [updater.perform_update() for updater in updaters.values() if updater.existing_revision] # Only update those where the database existed.
-                logger.info("Update complete. Proceeding with Screen", extra={"box_up":True})
+                logger.info("",extra={"no_prefix" : True , "box_down" : True})
+                logger.info("Update complete. Proceeding with Screen ... ")
 
         logger.info("Validating input query, regulations, and databases...")
         try:
