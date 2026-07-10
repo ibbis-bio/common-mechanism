@@ -8,12 +8,16 @@ Sets and alters defaults based on input parameters.
 
 import logging
 import os
+import argparse
+import sys
 from commec.config.screen_io import ScreenIO
 from commec.tools.blastn import BlastNHandler
 from commec.tools.blastx import BlastXHandler
 from commec.tools.diamond import DiamondHandler
 from commec.tools.cmscan import CmscanHandler
 from commec.tools.hmmer import HmmerHandler
+from commec.tools.search_handler import DatabaseValidationError
+from commec.utils.file_utils import file_arg
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +25,6 @@ class ScreenTools:
     """
     Using parameters and filenames in `ScreenIo`, set up the tools needed to search datbases.
     """
-
     def __init__(self, params: ScreenIO):
         self.biorisk: HmmerHandler = None
         self.regulated_protein : BlastXHandler | DiamondHandler = None
@@ -42,6 +45,12 @@ class ScreenTools:
             threads=params.config["threads"],
             force=params.config["force"],
         )
+        try:
+            file_arg(params.config["databases"]["biorisk"]["annotations"])
+        except(argparse.ArgumentTypeError):
+            raise DatabaseValidationError(
+                f"{params.config["databases"]["biorisk"]["annotations"]} expected file does not exist."
+                )
 
         if params.should_do_protein_screening:
             if params.config["protein_search_tool"] == "blastx":
@@ -103,3 +112,9 @@ class ScreenTools:
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
+            try:
+                file_arg(params.config["databases"]["low_concern"]["annotations"])
+            except(argparse.ArgumentTypeError):
+                raise DatabaseValidationError(
+                    f"{params.config["databases"]["low_concern"]["annotations"]} expected file does not exist."
+                    )

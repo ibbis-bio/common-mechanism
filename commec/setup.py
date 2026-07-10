@@ -74,19 +74,19 @@ def add_args(input_options: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
 
     # These two should be a mutually exclusive group.
-    exclusive_group = input_options.add_mutually_exclusive_group()
+    exclusive_group = input_options.add_mutually_exclusive_group(required = True)
     exclusive_group.add_argument(
         "-d",
         "--databases",
         dest="database_dir",
-        default="",
+        default=None,
         help="Path to a parent directory to download, or update, the Commec"
         " databases.",
     )
     exclusive_group.add_argument(
         "-y",
         "--config",
-        dest="yaml_file",
+        dest="config_yaml",
         default="",
         help="Alternative to -d, --databases. Specify databases location with a commec yaml configuration file",
     )
@@ -114,18 +114,15 @@ class CommecSetup:
         # Derive databases directory / yaml outputs.abs
         if args.database_dir:
             working_directory = expand_and_normalize(args.database_dir)
-        if args.yaml_file:
-            self.config = read_config_yaml_for_database_setup(args.yaml_file)
+        elif args.config_yaml:
+            self.config = read_config_yaml_for_database_setup(args.config_yaml)
             working_directory = expand_and_normalize(self.config.get("base_paths").get("default"))
             self.yaml_mode = True
-            for database_name, database_info in self.config.get("databases","").items():
-                # The biorisk database points directly to the .hmm, whereas other
-                # databases don't. It is best to just detect suffix, and remove, as 
-                # checking on name would affect other databases too.
-                db_path = Path(database_info.get("path"))
-                fileless_path = db_path.parent if db_path.suffix else db_path
-                updaters[database_name] = CommecDatabaseUpdater(fileless_path)
-                updaters[database_name].name = database_name
+            updaters = create_updaters_from_config(self.config)
+        else:
+            print("{ERROR_CHECK}Neither database working directory, of configuration yaml provided. Exiting now.")
+            sys.exit(1)
+            return
 
         # Ensure working_directory is a valid path (even if it doesn't exist yet)
         if not check_directory_is_writable(working_directory):
@@ -164,7 +161,8 @@ class CommecSetup:
             print(BULLET,updater.update_message)
 
         # Log output of intended changes.
-        if args.dry_run:
+        dry_run = args.dry_run if hasattr(args,"dry_run") else False
+        if dry_run:
             print(
                 f"\n{C_F_GRAY}This was a dry run. Run {C_F_ORANGE}\'commec"
                 f" setup\'{C_F_GRAY} again without {C_F_ORANGE}\'-r\'{C_F_GRAY}"
@@ -239,9 +237,6 @@ class CommecDatabaseUpdater:
         self.__update_message = None
 
         self.latest_revision = DatabaseRevision()
-        self.md5 = ""
-        self.sha256 = ""
-        self.size_bytes = ""
 
     @property
     def update_message(self):
@@ -347,6 +342,21 @@ class CommecDatabaseUpdater:
             json.dump(manifest_data, manifest_json, indent = 2)
 
         return
+
+def create_updaters_from_config(config : dict) -> dict[str,CommecDatabaseUpdater]:
+    """
+    Given a yaml config dict, create a named dict of updaters.
+    """
+    updaters = {}
+    for database_name, database_info in config.get("databases","").items():
+        # The biorisk database points directly to the .hmm, whereas other
+        # databases don't. It is best to just detect suffix, and remove, as 
+        # checking on name would affect other databases too.
+        db_path = Path(database_info.get("path"))
+        fileless_path = db_path.parent if db_path.suffix else db_path
+        updaters[database_name] = CommecDatabaseUpdater(fileless_path)
+        updaters[database_name].name = database_name
+    return updaters
 
 @dataclass
 class DatabaseRevision:
@@ -633,6 +643,24 @@ def check_directory_is_writable(input_directory: str) -> str:
             pass
         return path
     return ""
+
+def check_for_updates(config : dict) -> tuple[bool, dict[str,CommecDatabaseUpdater]]:
+    """
+    Helper function for calling from commec, quickly assess if an update is 
+    required for yaml config dict, and output the updaters of those databases 
+    which require updates. Call perform_update() on updates to complete updates.
+    """
+    updaters = create_updaters_from_config(config)
+    latest_revisions = fetch_latest_revisions()["databases"]
+    for dbname, latest in latest_revisions.items():
+        db_to_update = updaters.get(dbname)
+        if not db_to_update:
+            continue # Ignore yaml databases that aren't in latest revisions.
+        db_to_update.name = dbname
+        db_to_update.check_for_update(latest)
+    
+    update_flag : bool = any([(db.update_required and db.existing_revision) for db in updaters.values()])
+    return update_flag, updaters
 
 def run(arguments):
     """Entry point for CommecSetup"""

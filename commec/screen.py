@@ -81,6 +81,7 @@ from commec.screeners.check_reg_path import parse_taxonomy_hits
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.tools.search_handler import DatabaseValidationError
 from commec.config.json_io import encode_screen_data_to_json
+from commec.setup import check_for_updates
 import commec.control_list as control_list
 from commec.config.constants import MINIMUM_QUERY_LENGTH, MAXIMUM_QUERY_LENGTH
 
@@ -312,6 +313,17 @@ class Screen:
 
         # Needed to initialize parameters before logging to files
         setup_file_logging(self.params.output_screen_file, log_level)
+
+        # Check for database updates.
+        if self.params.config["auto_update_databases"]:
+            logger.info("Checking for database updates ... ")
+            updated_required, updaters = check_for_updates(self.params.config)
+            if updated_required:
+                names = [updater.name for updater in updaters.values() if (updater.update_required and updater.existing_revision)]
+                logger.info("Updates required for the following databases:\n %s. "
+                            "\nPerforming updates now.", ", ".join(names), extra={"box_down":True})
+                [updater.perform_update() for updater in updaters.values() if updater.existing_revision] # Only update those where the database existed.
+                logger.info("Update complete. Proceeding with Screen", extra={"box_up":True})
 
         logger.info("Validating input query, regulations, and databases...")
         try:

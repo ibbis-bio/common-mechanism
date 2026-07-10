@@ -18,7 +18,7 @@ from Bio.SeqRecord import SeqRecord
 
 import commec.config.yaml_io as YamlIO
 from commec.config.query import Query
-from commec.utils.file_utils import expand_and_normalize
+from commec.utils.file_utils import expand_and_normalize, file_arg
 from commec.config.constants import (
     MINIMUM_QUERY_LENGTH,
     MAXIMUM_QUERY_LENGTH,
@@ -99,6 +99,7 @@ class ScreenIO:
 
         # Write a clean FASTA that can be used downstream
         self._write_clean_fasta()
+
         return True
 
 
