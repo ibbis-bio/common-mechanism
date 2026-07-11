@@ -147,15 +147,13 @@ def parse_taxonomy_hits(
 
         # If NT Taxonomy, we have some additional parsing to consider...
         if step == ScreenStep.TAXONOMY_NT:
-            unique_query_data["q. start"] = [query_info.nc_to_nt_query_coords(
-                                                row["q. start"],
-                                                int(row["query acc."].split("_")[-1])
-                                            ) for _, row in unique_query_data.iterrows()]
-            unique_query_data["q. end"] = [query_info.nc_to_nt_query_coords(
-                                            row["q. end"],
-                                            int(row["query acc."].split("_")[-1])
-                                        ) for _, row in unique_query_data.iterrows()]
             nc_id = int(query_acc.split("_")[-1])
+            unique_query_data["q. start"] = unique_query_data["q. start"].apply(
+                query_info.nc_to_nt_query_coords, index=nc_id
+            )
+            unique_query_data["q. end"] = unique_query_data["q. end"].apply(
+                query_info.nc_to_nt_query_coords, index=nc_id
+            )
             start, stop = query_info.non_coding_regions[nc_id]
             logger.info("    for the non-coding region: %s-%s", start, stop)
 
