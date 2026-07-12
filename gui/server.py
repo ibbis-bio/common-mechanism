@@ -537,6 +537,9 @@ MIN_SEQ_LEN = 50  # "skip short sequences" threshold (bp), default-on in the UI
 
 
 def _clean_seq(s):
+    # Detection heuristic ONLY (see _looks_like_dna). Pasted/uploaded sequences are NOT sanitised
+    # before screening: raw content goes to commec as-is, so a malformed sequence fails loudly at
+    # commec rather than being silently repaired here.
     return re.sub(r"[^A-Za-z]", "", s)
 
 
@@ -557,7 +560,7 @@ def _parse_fasta_text(text):
                 records.append((name, "".join(seq)))
             name, seq = line[1:].strip(), []
         elif line.strip():
-            seq.append(_clean_seq(line))
+            seq.append(line.strip())
     if name is not None:
         records.append((name, "".join(seq)))
     return records
@@ -575,7 +578,7 @@ def _parse_spreadsheet_text(text):
             continue
         seq = max(dna, key=len)
         names = [f for f in fields if f is not seq]
-        records.append((names[0] if names else f"sequence_{i + 1}", _clean_seq(seq)))
+        records.append((names[0] if names else f"sequence_{i + 1}", seq))
     return records
 
 
@@ -584,7 +587,8 @@ def _parse_blocks_text(text):
     lines joined into one sequence (so a single sequence may wrap over lines)."""
     records = []
     for i, block in enumerate(re.split(r"\n\s*\n", text.strip())):
-        seq = _clean_seq(block)
+        # Join the block's (possibly wrapped) lines into one sequence WITHOUT sanitising content.
+        seq = "".join(l.strip() for l in block.splitlines())
         if seq:
             records.append((f"sequence_{i + 1}", seq))
     return records
@@ -607,7 +611,6 @@ def _normalise_records(records):
     """Drop empty sequences; make names FASTA-safe and unique."""
     out, used = [], set()
     for i, (name, seq) in enumerate(records):
-        seq = _clean_seq(seq)
         if not seq:
             continue
         name = re.sub(r"\s+", "_", (name or "").strip())
