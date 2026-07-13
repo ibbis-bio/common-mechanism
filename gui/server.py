@@ -1165,7 +1165,14 @@ def _summarize_output(outdir):
         data = json.loads(jsons[0].read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    sev = {"Flag": 3, "Warning": 2, "Pass": 1, "Skip": 0}
+    # Overall verdict = the most severe per-query status. Skip ranks just below Flag: an
+    # unscreened query (e.g. too long) is treated as nearly as serious as a flagged one, and
+    # above Warning/Pass. Matched by base word so commec's variants ("Skip (too long)",
+    # "Pass (Skipped Taxonomy)") are counted; unknown/error defaults to the Skip level.
+    sev = {"Flag": 4, "Skip": 3, "Warning": 2, "Pass": 1}
+    def _sev(s):
+        s = str(s or "")
+        return next((n for base, n in sev.items() if s.startswith(base)), 3)
     rows = []
     for name, v in (data.get("queries") or {}).items():
         st = v.get("status") or {}
@@ -1177,7 +1184,7 @@ def _summarize_output(outdir):
         })
     if not rows:
         return None
-    overall = max((r["status"] for r in rows), key=lambda s: sev.get(s, 0))
+    overall = max((r["status"] for r in rows), key=_sev)
     return {"n": len(rows), "overall": overall, "queries": rows}
 
 

@@ -316,7 +316,7 @@
   .v-flag { color: #b1310f; background: #fdeee9; border-color: #f6c4b5; }
   .v-warn { color: #9a6a12; background: #fbf3e3; border-color: #eed9ad; }
   .v-pass { color: #1f6e44; background: #eaf6ef; border-color: #bfe3cd; }
-  .v-skip { color: var(--muted); background: #f1f3f6; border-color: var(--line); }
+  .v-skip { color: #b1310f; background: #fdeee9; border-color: #f6c4b5; }  /* unscreened (Skip) is flagged as loud as Flag */
   .qtable { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
   .qrow {
     display: grid; grid-template-columns: 88px minmax(120px, 1fr) 2fr; gap: 12px;
@@ -331,7 +331,7 @@
   .q-flag { color: #b1310f; background: #fdeee9; }
   .q-warn { color: #9a6a12; background: #fbf3e3; }
   .q-pass { color: #1f6e44; background: #eaf6ef; }
-  .q-skip { color: var(--muted); background: #f1f3f6; }
+  .q-skip { color: #b1310f; background: #fdeee9; }  /* Skip == Flag colour */
   .q-int { color: #5a6b7a; background: #e8edf2; }  /* run state: interrupted */
   .qn { font: 13px var(--mono); color: var(--heading); word-break: break-all; }
   .qr { color: var(--muted); }
@@ -922,7 +922,14 @@ function appendLog(line) {
 
 /* ---- Submit (only the server-path tab is wired so far) --------------- */
 function statusClass(s) {
-  return { Flag: "flag", Warning: "warn", Pass: "pass", Skip: "skip" }[s] || "skip";
+  // Match by base word so commec's parenthetical variants map correctly:
+  // "Pass (Skipped Taxonomy)" -> pass, "Skip (too long/short)" -> skip, "Flag/Warning (Cleared)" -> flag/warn.
+  s = String(s || "");
+  if (s.startsWith("Flag")) return "flag";
+  if (s.startsWith("Warning")) return "warn";
+  if (s.startsWith("Pass")) return "pass";
+  if (s.startsWith("Skip")) return "skip";
+  return "skip";  // unknown/error status -> conservative (skip is flag-coloured: unscreened can be as bad as flagged)
 }
 
 form.addEventListener("submit", async (e) => {
@@ -1055,7 +1062,7 @@ async function loadRecent() {
       let pill;
       if (r.status === "interrupted") pill = `<span class="qpill q-int">Interrupted</span>`;
       else if (r.overall) pill = `<span class="qpill q-${statusClass(r.overall)}">${escapeHtml(r.overall)}</span>`;
-      else pill = `<span class="qpill q-skip">${r.status === "error" ? "Error" : "Done"}</span>`;
+      else pill = `<span class="qpill q-int">${r.status === "error" ? "Error" : "Done"}</span>`;
       const when = r.finished ? fmtDateTime(r.finished) : "";
       const nq = r.status === "interrupted" ? "interrupted"
         : (r.n ? `${r.n} quer${r.n === 1 ? "y" : "ies"}` : (r.status === "error" ? "failed" : ""));
