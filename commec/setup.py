@@ -40,11 +40,8 @@ ERROR_CHECK = C_F_ORANGE + C_BOLD + " X " + C_RESET
 STEP = " ➔ "
 BULLET = "  ● "
 
-# Base URL of the R2 bucket that hosts the commec databases and their
-# version manifest. Currently the public dev endpoint; swap for a stable
-# custom domain once one is provisioned (r2.dev is not meant for
-# production traffic -- no SLA, unpublished rate limits).
-R2_PUBLIC_BASE_URL = "https://pub-411843ff50b843c6b1e8d9600eed9093.r2.dev"
+# Custom domain URL of the R2 bucket that hosts the commec databases and latest.json
+R2_PUBLIC_BASE_URL = "https://databases.commec.io"
 
 SPLASH_IMAGE = f"""
                         Welcome to
@@ -155,10 +152,12 @@ class CommecSetup:
                 print(f"{ERROR_CHECK}{db_name} has no formal update route. Input yaml has deprecated database entries.")
                 updater.update_required = False
 
+        updated_required = False
         # Each updater, reports on its status, does it need to update?
         print(f"{STEP}The following actions have been identified ...")
         for _db_name, updater in updaters.items():
             print(BULLET,updater.update_message)
+            updated_required = updated_required or updater.update_required
 
         # Log output of intended changes.
         dry_run = args.dry_run if hasattr(args,"dry_run") else False
@@ -174,13 +173,14 @@ class CommecSetup:
         for database_name, updater in updaters.items():
             updater.perform_update()
 
-        # Create example config.yaml if we only passed a directory.
+        # Create example config.yaml if we only passed a directory, and if one doens't already exist.
         if not self.yaml_mode:
             self.config["base_paths"]["default"] = str(Path(working_directory).resolve())
             output_yaml_filepath = os.path.join(working_directory, "config.yaml")
-            with open(output_yaml_filepath, 'w', encoding="utf-8") as output_config_file:
-                yaml.safe_dump(self.config, output_config_file)
-            print(f"{STEP}An example config.yaml for commec was created in the provided directory.")
+            if not os.path.isfile(output_yaml_filepath):
+                with open(output_yaml_filepath, 'w', encoding="utf-8") as output_config_file:
+                    yaml.safe_dump(self.config, output_config_file)
+                print(f"{STEP}An example config.yaml for commec was created in the provided directory.")
 
         print(f"{STEP}Update check complete! Have a Biosafe-and-secure day!")
 
