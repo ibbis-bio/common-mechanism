@@ -86,17 +86,18 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
 
         if (qs.protein_taxonomy
             not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
-            for hit in query.hits.values():
+            for hit in query.hits:
                 if hit.recommendation.from_step in {ScreenStep.TAXONOMY_AA, ScreenStep.TAXONOMY_NT}:
-                    for info in hit.annotations["regulated_taxonomy"]:
-                        bacteria_flag  |= (int(info["regulated_bacteria"]) > 0)
-                        virus_flag     |= (int(info["regulated_viruses"]) > 0)
-                        eukaryote_flag |= (int(info["regulated_eukaryotes"]) > 0)
+                    info = hit.annotations["controlled_taxonomy"]["statistics"]
+                    bacteria_flag  |= (int(info["controlled_bacteria"]) > 0)
+                    virus_flag     |= (int(info["controlled_viruses"]) > 0)
+                    eukaryote_flag |= (int(info["controlled_fungi"]) > 0)
+                    eukaryote_flag |= (int(info["controlled_parasites"]) > 0)
 
         # Which forms of low_concern hits are present?
         if (qs.low_concern
             not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
-            for hit in query.hits.values():
+            for hit in query.hits:
                 match hit.recommendation.from_step:
                     case ScreenStep.LOW_CONCERN_PROTEIN:
                         low_concern_protein = True
@@ -111,20 +112,16 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         # Note, at the moment, Taxonomy is not WARN when there is a Mix.
         mixed_aa_taxonomy = False
         mixed_nt_taxonomy = False
-        for hit in query.hits.values():
+        for hit in query.hits:
             match hit.recommendation.from_step:
                 case ScreenStep.TAXONOMY_AA:
                     if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN, ScreenStatus.PASS]:
-                        reg_dicts = hit.annotations["regulated_taxonomy"]
-                        for r in reg_dicts:
-                            if len(r["non_regulated_taxa"]) > 0:
-                                mixed_aa_taxonomy = True
+                        if hit.annotations["controlled_taxonomy"]["statistics"]["number_of_non-controlled_taxids"] > 0:
+                            mixed_aa_taxonomy = True
 
                 case ScreenStep.TAXONOMY_NT:
                     if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN]:
-                        reg_dicts = hit.annotations["regulated_taxonomy"]
-                        for r in reg_dicts:
-                            if len(r["non_regulated_taxa"]) > 0:
+                        if hit.annotations["controlled_taxonomy"]["statistics"]["number_of_non-controlled_taxids"] > 0:
                                 mixed_nt_taxonomy = True
                 case _:
                     continue
@@ -143,15 +140,10 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         output_rationale = query.status.rationale if query.status.rationale != Rationale.NULL else ""
 
         overall_flag = query.status.screen_status
-        if query.status.rationale == Rationale.NO_HITS:
-            overall_flag = "No Hits"
-
-        overall_flag = query.status.screen_status
-        if query.status.rationale == Rationale.NO_HITS_SKIP_NOTE:
-            overall_flag = "No Hits (skipped steps)"
-
+        
         results.append({
-        "name": name,
+        "name": query.query,
+        "description": query.description,
         "filepath": file_path,
         "flag": overall_flag,
         "biorisk": query.status.biorisk,
@@ -183,10 +175,11 @@ def write_output_csv(output_dir: str | os.PathLike, status: dict, evalportal_for
     status_df = status_df.map(lambda x: ";".join(sorted(x)) if isinstance(x, set) else x)
 
     if evalportal_format:
-        # Using a "strict" mode coverting Flag/Warning to 1, and everything else to 0.
-        status_df["flag"] = status_df["flag"].map(
+        # Using a "strict" mode converting Flag/Warning to 1, and everything else to 0.
+        status_df["Flag"] = status_df["flag"].map(
             lambda x: 1 if x == "Flag" or x == "Warning" else 0)
-        status_df = status_df.rename(columns={"name": "UUID", "flag": "Flag"})
+        status_df = status_df.rename(columns={"name": "UUID"})
+        status_df = status_df[["UUID", "Flag"]]
 
     status_df.to_csv(status_file, index=False)
     print(f"Pipeline step status written to {status_file}")

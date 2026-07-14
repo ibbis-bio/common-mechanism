@@ -3,7 +3,6 @@ base_paths:
 databases:
   biorisk:
     path: '{default}biorisk/biorisk.hmm'
-    taxids: "{default}biorisk/reg_taxids.txt"
     annotations: '{default}biorisk/biorisk_annotations.csv'
   regulated_protein:
     blast:
@@ -19,12 +18,13 @@ databases:
       path: '{default}low_concern/dna/low_concern.fasta'
     protein:
       path: '{default}low_concern/protein/low_concern.hmm'
-    taxids: "{default}low_concern/vax_taxids.txt"
-    annotations: '{default}low_concern/low_concern_annotations.tsv'
-  taxonomy:
-      path: "{default}taxonomy/"
+    annotations: '{default}low_concern/low_concern_annotations.csv'
+  control_lists:
+      path: "{default}control_lists/"
+      regions : "all"
 threads: 1
 diamond_jobs: null
+blast_mt_mode: 1
 do_cleanup: False
 force: False
 skip_taxonomy_search: False

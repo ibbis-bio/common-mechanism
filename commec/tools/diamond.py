@@ -14,7 +14,7 @@ from math import gcd as greatest_common_denominator
 from multiprocessing import Pool
 
 from commec.tools.blast_tools import BlastHandler
-from commec.tools.search_handler import SearchToolVersion
+from commec.tools.search_handler import SearchToolVersion, DatabaseValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +53,28 @@ class DiamondHandler(BlastHandler):
         # Set during `self.search`
         self.concurrent_runs = None
         self.threads_per_run = None
+
+    def _validate_db(self):
+        """
+        Diamond databases come as `<prefix>.dmnd` (single file) or sharded
+        `<prefix>.<N>.dmnd`. The configured path may include the `.dmnd` suffix or not.
+        """
+        if not os.path.isdir(self.db_directory):
+            raise DatabaseValidationError(
+                f"No screening database directory found at: {self.db_directory}."
+                " Directory path can be set via --databases option or --config yaml."
+            )
+        prefix = self.db_file[:-5] if self.db_file.endswith(".dmnd") else self.db_file
+        if not (
+            os.path.isfile(f"{prefix}.dmnd")
+            or glob.glob(f"{prefix}.[0-9]*.dmnd")
+        ):
+            raise DatabaseValidationError(
+                f"No Diamond database files found for prefix '{prefix}'."
+                " Expected <prefix>.dmnd or <prefix>.<N>.dmnd in the database directory."
+                " Check the path set via --databases or --config yaml matches the .dmnd"
+                " files on disk."
+            )
 
     def find_db_files(self):
         """

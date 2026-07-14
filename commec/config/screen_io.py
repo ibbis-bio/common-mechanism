@@ -11,22 +11,21 @@ import glob
 import argparse
 import logging
 import multiprocessing
-import importlib.resources
 from pprint import pformat
-
-import yaml
-from yaml.parser import ParserError
-
 from Bio import SeqIO
+import yaml
+from Bio.SeqRecord import SeqRecord
 
+import commec.config.yaml_io as YamlIO
 from commec.config.query import Query
-from commec.config.constants import (
-    DEFAULT_CONFIG_YAML_PATH,
-    MINIMUM_QUERY_LENGTH,
-    MAXIMUM_FILENAME_SIZE,
-)
 from commec.utils.file_utils import expand_and_normalize
-from commec.utils.dict_utils import deep_update
+from commec.config.constants import (
+    MINIMUM_QUERY_LENGTH,
+    MAXIMUM_QUERY_LENGTH,
+    MAXIMUM_FILENAME_SIZE,
+    MAXIMUM_QUERY_NAME_LENGTH,
+    VALID_BLAST_MT_MODES,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -61,11 +60,11 @@ class ScreenIO:
         if os.path.exists(self.output_screen_file) and not (
             self.config["force"] or self.config["resume"]):
             logger.error(
-                f"""Screen output {self.output_screen_file} already exists.
+                """Screen output %s already exists.
                 Either use a different output location, or use --force or --resume to override.
-                Aborting Screen."""
-            )
+                Aborting Screen.""", self.output_screen_file)
             sys.exit(1)
+
 
     def setup(self) -> bool:
         """
@@ -82,6 +81,12 @@ class ScreenIO:
 
         if self.config["threads"] < 1:
             raise RuntimeError("Number of allocated threads must be at least 1!")
+
+        if self.config["blast_mt_mode"] not in VALID_BLAST_MT_MODES:
+            raise RuntimeError(
+                f"blast_mt_mode must be one of {VALID_BLAST_MT_MODES}, "
+                f"but got {self.config['blast_mt_mode']!r}"
+            )
 
         if (
             self.config["diamond_jobs"] is not None
@@ -102,6 +107,7 @@ class ScreenIO:
         Parse queries from FASTA file.
         """
         records = []
+        updated_records = []
         queries = {}
 
         try:
@@ -120,22 +126,20 @@ class ScreenIO:
                 query = Query(record)
                 if query.name in queries:
                     raise ValueError(f"Duplicate sequence identifier generated: \"{query.name}\" from record: {record}\n"
-                                     "Ensure that the first 25 characters for each fasta record are unique.")
+                                     f"Ensure that the first {MAXIMUM_QUERY_NAME_LENGTH} characters for each fasta record are unique.")
                 queries[query.name] = query
-                # Override the original cleaned fasta, with updated names.
-                record.id = query.name
-                record.name = ""
-                record.description = ""
+                # Override the original cleaned fasta, with queries above a given length and updated names
+                if MINIMUM_QUERY_LENGTH < len(record.seq) <= MAXIMUM_QUERY_LENGTH:
+                    # Creating new SeqRecord to avoid overwriting the seq_record object inside query and preserve the original seq id
+                    updated_records.append(SeqRecord(record.seq, id=query.name, description=""))
             except Exception as e:
                 raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}, {e}") from e
-            
-        # Don't write a cleaned fasta for queries below a given length.
-        records = [record for record in records if len(record.seq) > MINIMUM_QUERY_LENGTH]
 
         with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
-            SeqIO.write(records, fasta_file, "fasta")
+            SeqIO.write(updated_records, fasta_file, "fasta")
 
         return queries
+
 
     def clean(self):
         """
@@ -155,6 +159,7 @@ class ScreenIO:
                     if os.path.isfile(file):
                         os.remove(file)
 
+
     def _read_config(self, args: argparse.Namespace):
         """
         Get the configuration for this screen run.
@@ -166,175 +171,38 @@ class ScreenIO:
             1. Contents of a user-defined YAML file provided using the --config argument
             2. (highest-priority) Configuration provided directly as CLI arguments
         """
-        # Read package-level configuration defaults
-        default_yaml = importlib.resources.files("commec").joinpath(DEFAULT_CONFIG_YAML_PATH)
-        if default_yaml.exists():
-            self.config = self._load_config_from_yaml(str(default_yaml))
-        else:
-            raise FileNotFoundError(
-                f"No default yaml found. Expected at {DEFAULT_CONFIG_YAML_PATH}"
-                )
+        self.config = YamlIO.get_defaults()
 
-        # Override configuration with any in user-provided YAML file
+        # Import a config yaml file if provided.
         cli_config_yaml=args.config_yaml.strip()
         if cli_config_yaml:
             if not os.path.exists(cli_config_yaml):
                 raise FileNotFoundError(
                     f"--config YAML not found: {cli_config_yaml}"
                 )
-            logger.debug(f"Overriding defaults in {default_yaml} with values from {cli_config_yaml}")
-            self._update_config_from_yaml(cli_config_yaml)
+            logger.debug("Overriding defaults in with values from %s", cli_config_yaml)
+            self.config = YamlIO.update_config_from_yaml(self.config, cli_config_yaml)
 
         # Override configuration with any user-provided CLI arguments
-        self._update_config_from_cli(args)
+        self.config = YamlIO.update_config_from_cli(self.config ,args)
+
+        # Override the default base path with database directory from cli.
+        base_paths = self.config["base_paths"]
+        if self.db_dir is not None:
+            logger.debug("Command line arguments updated base databases directory: %s", self.db_dir)
+            base_paths["default"] = self.db_dir
+        else:
+            # Otherwise update the default database path if it wasn't defined.
+            self.db_dir = base_paths["default"]
 
         # CLI -d accepts relative paths for shell convenience; normalize to absolute.
         db_dir_override = expand_and_normalize(self.db_dir) if self.db_dir else None
 
         # Update paths in configuration using appropriate string substitution
-        self._format_config_paths(db_dir_override)
+        self.config = YamlIO.format_config_paths(self.config)
 
         logger.debug("Running Screen with the following parameter set:")
         logger.debug(pformat(self.config))
-
-    def _load_config_from_yaml(self, config_filepath: str | os.PathLike) -> dict:
-        """
-        Loads a yaml file, ensuring it's a dictionary.
-        """
-        try:
-            with open(config_filepath, "r", encoding = "utf-8") as file:
-                config_from_yaml = yaml.safe_load(file)
-        except ParserError:
-            raise ValueError(f"Invalid yaml syntax in configuration file: {config_filepath}")
-
-        if not isinstance(config_from_yaml, dict):
-            raise TypeError(f"Loaded configuration file did not result in a dictionary: {file}")
-        return config_from_yaml
-
-    def _update_config_from_yaml(self, config_filepath: str | os.PathLike) -> None:
-        """
-        Override config with values from a user-provided YAML file. Any keys in the provided
-        file that don't exist in the default YAML are treated as a fatal config error
-        (typically caused by typos like `databse:` instead of `databases:`).
-        """
-        config_from_yaml = self._load_config_from_yaml(config_filepath)
-        self.config, rejected = deep_update(self.config, config_from_yaml)
-        if rejected:
-            keys = ", ".join(f"{k}={v!r}" for k, v in rejected)
-            raise IoValidationError(
-                f"Unrecognized key(s) in {config_filepath}: {keys}. "
-                "Check for typos against the packaged default config."
-            )
-
-    def _update_config_from_cli(self, args: argparse.Namespace):
-        """ 
-        Override YAML configuration based on arguments given in the command line.
-        Need to reference `user_specified_args` because CLI defaults should not override YAML.
-        """
-        if not hasattr(args, "user_specified_args"):
-            raise ValueError(
-                "Missing required 'user_specified_args' in arguments namespace. "
-            )
-
-        # Update the YAML default values in the configuration dictionary
-        logger.debug("Using the following CLI configuration arguments:")
-        logger.debug(pformat(args.user_specified_args))
-
-        for arg in args.user_specified_args:
-            if arg in self.config and hasattr(args, arg):
-                logger.debug(f"Command line arguments updated '{arg}' to: {getattr(args,arg)}")
-                self.config[arg] = getattr(args, arg)
-
-    def _format_config_paths(self,
-        db_dir_override: str | os.PathLike = None
-    ):
-        """
-        The YAML file is expected to contain a 'base_paths' key that is referenced in string
-        substitutions, so that base paths do not need to be defined more than once. For example:
-
-            base_paths:
-                default: /path/to/databases/
-            databases:
-                regulated_nt:
-                    path: '{default}nt_blast/core_nt'
-
-        This script will update the dictionary to propagate these substitutions.
-        If a database directory is provided, it will override the base_path provided in the yaml.
-        """
-        def recursive_format(nested_yaml, paths):
-            """
-            Recursively apply string formatting to read paths from nested yaml config dicts.
-            """
-            if isinstance(nested_yaml, dict):
-                return {key: recursive_format(value, paths)
-                        for key, value in nested_yaml.items()}
-            if isinstance(nested_yaml, str):
-                try:
-                    return nested_yaml.format(**paths)
-                except KeyError as e:
-                    raise IoValidationError(
-                        f"Unknown base path key {e} referenced in path: {nested_yaml!r}. "
-                        f"Known keys: {sorted(paths.keys())}"
-                    ) from e
-            return nested_yaml
-
-        base_paths = self.config.get("base_paths") or {}
-        yaml_default = base_paths.get("default")
-
-        if db_dir_override is not None:
-            if yaml_default and yaml_default != db_dir_override:
-                logger.info(
-                    "CLI --databases (%s) overriding YAML base_paths.default (%s)",
-                    db_dir_override, yaml_default,
-                )
-            base_paths["default"] = db_dir_override
-
-        if not base_paths.get("default"):
-            raise IoValidationError(
-                "base_paths.default is not configured. Set it via one of:\n"
-                "  - `commec screen -d /path/to/databases ...`\n"
-                "  - `base_paths: {default: /abs/path/to/databases}` in your --config YAML\n"
-                "  - run `commec setup` to download databases and emit a config snippet"
-            )
-
-        # Substitute placeholders within base_paths first, so user-defined entries like
-        # `lowconcernfiles: '{default}low_concern/'` resolve to an absolute path before
-        # we validate them. See PR #105 for the original use case.
-        base_paths = recursive_format(base_paths, base_paths)
-
-        # Every resolved base path must be absolute. Normalize with trailing separator.
-        for key, value in base_paths.items():
-            if value is None:
-                continue
-            expanded = expand_and_normalize(value)
-            if not os.path.isabs(expanded):
-                raise IoValidationError(
-                    f"base_paths.{key} must be an absolute path, got: {value!r}"
-                )
-            base_paths[key] = os.path.join(expanded, "")
-
-        self.config["base_paths"] = base_paths
-        self.db_dir = base_paths["default"]
-
-        self.config = recursive_format(self.config, base_paths)
-        self._validate_database_paths(self.config.get("databases", {}))
-
-    def _validate_database_paths(self, tree, breadcrumbs=()):
-        """
-        Walk the resolved `databases:` subtree and raise on any string value that
-        isn't an absolute path.
-        """
-        if isinstance(tree, dict):
-            for key, value in tree.items():
-                self._validate_database_paths(value, breadcrumbs + (key,))
-            return
-        if isinstance(tree, str):
-            location = ".".join(breadcrumbs)
-            if not os.path.isabs(expand_and_normalize(tree)):
-                raise IoValidationError(
-                    f"databases.{location} must be an absolute path, got: {tree!r}. "
-                    "Use absolute paths in YAML; CLI `-d` accepts relative paths."
-                )
 
     @staticmethod
     def _get_output_prefixes(input_file: str | os.PathLike, prefix_arg=None) -> str:
@@ -378,6 +246,7 @@ class ScreenIO:
 
         return base_prefix, outputs_prefix, inputs_prefix
 
+
     def output_yaml(self, output_filepath : str | os.PathLike):
         """
             Takes the current state of the yaml configuration dictionary and 
@@ -392,7 +261,7 @@ class ScreenIO:
 
     def _write_clean_fasta(self) -> str:
         """
-        Write a FASTA in which whitespace (including non-breaking spaces) and 
+        Write a FASTA in which whitespace (excluding in header), including non-breaking spaces and 
         illegal characters are replaced with underscores.
         """
 
@@ -402,10 +271,15 @@ class ScreenIO:
         ):
             for line in fin:
                 line = line.strip()
-                modified_line = "".join(
-                    "_" if c.isspace() or c == "\xc2\xa0" or c == "#" else c
-                    for c in line
-                )
+                if line.startswith(">"):
+                    modified_line = "".join(
+                        "_" if c == "\xc2\xa0" or c == "#" else c for c in line
+                    )
+                else:
+                    modified_line = "".join(
+                        "_" if c.isspace() or c == "\xc2\xa0" or c == "#" else c
+                        for c in line
+                    )
                 fout.write(f"{modified_line}{os.linesep}")
 
     @property

@@ -30,16 +30,10 @@ class ScreenTools:
         self.low_concern_blastn: BlastNHandler = None
         self.low_concern_cmscan: CmscanHandler = None
 
-        self.taxonomy_path: str | os.PathLike = None
-        self.biorisk_taxid_path: str | os.PathLike = None
-        self.low_concern_taxid_path: str | os.PathLike = None
         self.biorisk_annotations_csv: str | os.PathLike = None
 
         # Paths for vaxid, taxids, and taxonomy directory, used for check_regulated_pathogens
         # (Declared this way for backwards compatibility to old database structure at this stage)
-        self.taxonomy_path = params.config["databases"]["taxonomy"]["path"]
-        self.biorisk_taxid_path = params.config["databases"]["biorisk"]["taxids"]
-        self.low_concern_taxid_path = params.config["databases"]["low_concern"]["taxids"]
         self.biorisk_annotations = params.config["databases"]["biorisk"]["annotations"]
         self.low_concern_annotations = params.config["databases"]["low_concern"]["annotations"]
 
@@ -61,6 +55,7 @@ class ScreenTools:
                     threads=params.config["threads"],
                     force=params.config["force"],
                 )
+                self.regulated_protein.arguments_dictionary["-mt_mode"] = params.config["blast_mt_mode"]
             elif params.config["protein_search_tool"] in ("nr.dmnd", "diamond"):
                 self.regulated_protein = DiamondHandler(
                     params.config["databases"]["regulated_protein"]["diamond"]["path"],
@@ -86,6 +81,7 @@ class ScreenTools:
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
+            self.regulated_nt.arguments_dictionary["-mt_mode"] = params.config["blast_mt_mode"]
 
         if params.should_do_low_concern_screening:
             self.low_concern_hmm = HmmerHandler(
@@ -102,6 +98,7 @@ class ScreenTools:
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
+            self.low_concern_blastn.arguments_dictionary["-mt_mode"] = params.config["blast_mt_mode"]
             self.low_concern_cmscan = CmscanHandler(
                 params.config["databases"]["low_concern"]["rna"]["path"],
                 input_file=params.nt_path,

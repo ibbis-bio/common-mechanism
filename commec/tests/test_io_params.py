@@ -19,16 +19,14 @@ def expected_defaults():
         },
         "databases": {
             "low_concern": {
-                "rna": {"path": "/commec-dbs/low_concern/rna/low_concern.cm"},
-                "dna": {"path": "/commec-dbs/low_concern/dna/low_concern.fasta"},
-                "protein": {"path": "/commec-dbs/low_concern/protein/low_concern.hmm"},
-                "annotations": '/commec-dbs/low_concern/low_concern_annotations.tsv',
-                "taxids": "/commec-dbs/low_concern/vax_taxids.txt"
+                "rna": {"path": "commec-dbs/low_concern/rna/low_concern.cm"},
+                "dna": {"path": "commec-dbs/low_concern/dna/low_concern.fasta"},
+                "protein": {"path": "commec-dbs/low_concern/protein/low_concern.hmm"},
+                "annotations": 'commec-dbs/low_concern/low_concern_annotations.csv',
             },
             "biorisk": {
-                "path": "/commec-dbs/biorisk/biorisk.hmm",
-                "annotations": '/commec-dbs/biorisk/biorisk_annotations.csv',
-                "taxids": "/commec-dbs/biorisk/reg_taxids.txt",
+                "path": "commec-dbs/biorisk/biorisk.hmm",
+                "annotations": 'commec-dbs/biorisk/biorisk_annotations.csv',
             },
             "regulated_nt": {
                 "path": "/commec-dbs/nt_blast/core_nt"
@@ -37,8 +35,9 @@ def expected_defaults():
                 "blast": {"path": "/commec-dbs/nr_blast/nr"},
                 "diamond": {"path": "/commec-dbs/nr_dmnd/nr.dmnd"}
             },
-            "taxonomy": {
-                "path": "/commec-dbs/taxonomy/",
+            "control_lists": {
+                "path": "commec-dbs/control_lists/",
+                "regions": "all"
             }
         },
         "threads": 1,
@@ -47,6 +46,7 @@ def expected_defaults():
         "skip_nt_search": False,
         "do_cleanup": False,
         "diamond_jobs": None,
+        "blast_mt_mode": 1,
         "force": False,
         "resume": False,
         "verbose": False
@@ -74,16 +74,14 @@ def expected_updated_from_custom_yaml():
         },
         "databases": {
             "low_concern": {
-                "rna": {"path": "/commec-dbs/low_concern/rna/low_concern.cm"},
-                "dna": {"path": "/commec-dbs/low_concern/dna/low_concern.fasta"},
-                "protein": {"path": "/commec-dbs/low_concern/protein/low_concern.hmm"},
-                "annotations": '/commec-dbs/low_concern/low_concern_annotations.tsv',
-                "taxids": "/commec-dbs/low_concern/vax_taxids.txt"
+                "rna": {"path": "commec-dbs/low_concern/rna/low_concern.cm"},
+                "dna": {"path": "commec-dbs/low_concern/dna/low_concern.fasta"},
+                "protein": {"path": "commec-dbs/low_concern/protein/low_concern.hmm"},
+                "annotations": 'commec-dbs/low_concern/low_concern_annotations.csv',
             },
             "biorisk": {
-                "path": "/commec-dbs/biorisk/biorisk.hmm",
-                "annotations": '/commec-dbs/biorisk/biorisk_annotations.csv',
-                "taxids": "/custom_path.txt",
+                "path": "commec-dbs/biorisk/biorisk.hmm",
+                "annotations": 'commec-dbs/biorisk/biorisk_annotations.csv',
             },
             "regulated_nt": {
                 "path": "/commec-dbs/nt_blast/core_nt"
@@ -92,8 +90,9 @@ def expected_updated_from_custom_yaml():
                 "blast": {"path": "/commec-dbs/nr_blast/nr"},
                 "diamond": {"path": "/commec-dbs/nr_dmnd/nr.dmnd"}
             },
-            "taxonomy": {
-                "path": "/commec-dbs/taxonomy/",
+            "control_lists": {
+                "path": "commec-dbs/control_lists/",
+                "regions": "all"
             }
         },
         "threads": 8,
@@ -102,6 +101,7 @@ def expected_updated_from_custom_yaml():
         "skip_nt_search": False,
         "do_cleanup": False,
         "diamond_jobs": None,
+        "blast_mt_mode": 1,
         "force": True,
         "resume": False,
         "verbose": False
@@ -196,6 +196,35 @@ def test_cli_override(tmp_path, expected_updated_from_custom_yaml, custom_yaml_c
     )
 
     assert expected_defaults == params.config
+
+def test_blast_mt_mode_override(tmp_path):
+    """A user YAML can set blast_mt_mode (it must be a recognised default key,
+    or the config merge would reject it). Default is 1; here we override to 0."""
+    user_config_path = tmp_path / "user_config.yaml"
+    with open(user_config_path, 'w') as f:
+        yaml.dump({"blast_mt_mode": 0}, f)
+
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
+    params = ScreenIO(args)
+
+    assert params.config["blast_mt_mode"] == 0
+
+def test_blast_mt_mode_invalid_rejected(tmp_path):
+    """setup() must reject a blast_mt_mode that isn't one of the valid BLAST
+    multithreading modes (0, 1, 2)."""
+    user_config_path = tmp_path / "user_config.yaml"
+    with open(user_config_path, 'w') as f:
+        yaml.dump({"blast_mt_mode": 3}, f)
+
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
+    params = ScreenIO(args)
+
+    with pytest.raises(RuntimeError, match="blast_mt_mode"):
+        params.setup()
 
 def test_missing_default_config():
     """Test that missing default config raises appropriate error"""

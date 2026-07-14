@@ -6,9 +6,11 @@ Initialise with local input database, fasta to screen, and output file.
 Throws error if inputs are invalid. Creates a temporary log file, which is deleted on completion.
 """
 
+import os
+import glob
 import subprocess
 from commec.tools.blast_tools import BlastHandler
-from commec.tools.search_handler import SearchToolVersion
+from commec.tools.search_handler import SearchToolVersion, DatabaseValidationError
 
 
 class BlastXHandler(BlastHandler):
@@ -47,6 +49,29 @@ class BlastXHandler(BlastHandler):
             ],
         }
         self.blastcall = "blastx"
+
+    def _validate_db(self):
+        """
+        BLASTX databases are addressed by a prefix with companion index files:
+        single-volume `<prefix>.phr`, multi-volume alias `<prefix>.pal`, or unaliased
+        shards `<prefix>.<N>.phr`. Validate the configured prefix points at one of these.
+        """
+        if not os.path.isdir(self.db_directory):
+            raise DatabaseValidationError(
+                f"No screening database directory found at: {self.db_directory}."
+                " Directory path can be set via --databases option or --config yaml."
+            )
+        if not (
+            os.path.isfile(f"{self.db_file}.phr")
+            or os.path.isfile(f"{self.db_file}.pal")
+            or glob.glob(f"{self.db_file}.[0-9]*.phr")
+        ):
+            raise DatabaseValidationError(
+                f"No BLASTX database files found for prefix '{self.db_file}'."
+                " Expected <prefix>.phr, <prefix>.pal, or <prefix>.<N>.phr in the database"
+                " directory. Check the prefix set via --databases or --config yaml matches"
+                " the BLAST index files on disk."
+            )
 
     def _search(self):
         command = [

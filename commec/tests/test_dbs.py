@@ -65,6 +65,11 @@ bad_databases = [
     [BlastXHandler, "bad", "bad"],
     [HmmerHandler, "bad", "bad.hmm"],
     [CmscanHandler, "bad", "bad.cmscan"],
+    # Wrong BLAST alias: directory has `core_nt.*` files but user configured prefix `nt`.
+    # Previous glob-based validation matched any file containing 'nt' and silently passed,
+    # surfacing a cryptic "No alias or index file found" error from BLAST itself.
+    [BlastNHandler, "nt_blast", "nt"],
+    [BlastXHandler, "nr_blast", "n"],
 ]
 
 
