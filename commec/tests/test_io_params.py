@@ -22,13 +22,11 @@ def expected_defaults():
                 "rna": {"path": "commec-dbs/low_concern/rna/low_concern.cm"},
                 "dna": {"path": "commec-dbs/low_concern/dna/low_concern.fasta"},
                 "protein": {"path": "commec-dbs/low_concern/protein/low_concern.hmm"},
-                "annotations": 'commec-dbs/low_concern/low_concern_annotations.tsv',
-                "taxids": "commec-dbs/low_concern/vax_taxids.txt"
+                "annotations": 'commec-dbs/low_concern/low_concern_annotations.csv',
             },
             "biorisk": {
                 "path": "commec-dbs/biorisk/biorisk.hmm",
                 "annotations": 'commec-dbs/biorisk/biorisk_annotations.csv',
-                "taxids": "commec-dbs/biorisk/reg_taxids.txt",
             },
             "regulated_nt": {
                 "path": "commec-dbs/nt_blast/core_nt"
@@ -37,8 +35,9 @@ def expected_defaults():
                 "blast": {"path": "commec-dbs/nr_blast/nr"},
                 "diamond": {"path": "commec-dbs/nr_dmnd/nr.dmnd"}
             },
-            "taxonomy": {
-                "path": "commec-dbs/taxonomy/",
+            "control_lists": {
+                "path": "commec-dbs/control_lists/",
+                "regions": "all"
             }
         },
         "threads": 1,
@@ -77,13 +76,11 @@ def expected_updated_from_custom_yaml():
                 "rna": {"path": "commec-dbs/low_concern/rna/low_concern.cm"},
                 "dna": {"path": "commec-dbs/low_concern/dna/low_concern.fasta"},
                 "protein": {"path": "commec-dbs/low_concern/protein/low_concern.hmm"},
-                "annotations": 'commec-dbs/low_concern/low_concern_annotations.tsv',
-                "taxids": "commec-dbs/low_concern/vax_taxids.txt"
+                "annotations": 'commec-dbs/low_concern/low_concern_annotations.csv',
             },
             "biorisk": {
                 "path": "commec-dbs/biorisk/biorisk.hmm",
                 "annotations": 'commec-dbs/biorisk/biorisk_annotations.csv',
-                "taxids": "custom_path.txt",
             },
             "regulated_nt": {
                 "path": "commec-dbs/nt_blast/core_nt"
@@ -92,8 +89,9 @@ def expected_updated_from_custom_yaml():
                 "blast": {"path": "commec-dbs/nr_blast/nr"},
                 "diamond": {"path": "commec-dbs/nr_dmnd/nr.dmnd"}
             },
-            "taxonomy": {
-                "path": "commec-dbs/taxonomy/",
+            "control_lists": {
+                "path": "commec-dbs/control_lists/",
+                "regions": "all"
             }
         },
         "threads": 8,

@@ -11,6 +11,7 @@ dependencies:
   - pandas
   - pytaxonkit
   - pyyaml
+  - pycountry
   # Web GUI (`commec gui`)
   - flask
   - psutil

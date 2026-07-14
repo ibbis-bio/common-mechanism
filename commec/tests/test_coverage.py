@@ -34,7 +34,7 @@ example_hmmer_01_output = pd.DataFrame({
     "coverage_ratio": [1.0, 0.5, 0.0, 1.0]
 })
 
-reg_range_01 = MatchRange(0.0, 100, 200, 100, 200)
+reg_range_01 = MatchRange(0.0, 100, 200)
 
 @pytest.mark.parametrize(
     "input_hmmer, input_region, expected_output_hmmer",

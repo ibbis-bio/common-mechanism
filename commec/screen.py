@@ -71,6 +71,7 @@ from commec.config.result import (
     ScreenStep,
     QueryResult,
     ScreenStatus,
+    ControlListResult,
 )
 from commec.utils.file_utils import file_arg, directory_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
@@ -80,6 +81,7 @@ from commec.screeners.check_reg_path import parse_taxonomy_hits
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.tools.search_handler import DatabaseValidationError
 from commec.config.json_io import encode_screen_data_to_json
+import commec.control_list as control_list
 from commec.config.constants import MINIMUM_QUERY_LENGTH, MAXIMUM_QUERY_LENGTH
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
@@ -230,6 +232,14 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         action="store_true",
         help="Re-use any pre-existing output for this Screen run (cannot be used with --force)",
     )
+    screen_logic_group.add_argument(
+        "-r",
+        "--regions",
+        dest="regions",
+        nargs="+",
+        default=[],
+        help="A list of countries or regions to add context to list compliance i.e. NZ US CH",
+    )
     return parser
 
 class Screen:
@@ -303,7 +313,7 @@ class Screen:
         # Needed to initialize parameters before logging to files
         setup_file_logging(self.params.output_screen_file, log_level)
 
-        logger.info("Validating input parameters, query and databases...")
+        logger.info("Validating input query, regulations, and databases...")
         try:
             self.database_tools: ScreenTools = ScreenTools(self.params)
         except(DatabaseValidationError) as e:
@@ -312,6 +322,31 @@ class Screen:
 
         logger.info("Input query file: ")
         logger.info(self.params.input_fasta_path, extra={"no_prefix":True,"cap":True})
+
+        # Initialize the control list data (not needed when using --skip-tx)
+        if self.params.should_do_protein_screening or self.params.should_do_nucleotide_screening:
+            regulation_path = self.params.config["databases"]["control_lists"]["path"]
+            region_context = args.regions or self.params.config["databases"]["control_lists"]["regions"]
+            if not control_list.import_data(regulation_path, region_context):
+                logger.error("Control list import failed. Check the import path used %s,"
+                            " that the location has a valid region definitions file, as"
+                            " well as valid control lists for import. Otherwise,"
+                            " run commec screen with --skip-tx to skip taxonomy search.", regulation_path)
+                self.early_exit()
+
+            logger.info("Using Control Lists:")
+            logger.info(control_list.format_control_lists(), extra = {"no_prefix" : True, "cap" : True})
+            
+            # Custom output format for Control Lists info, for JSON:
+            control_lists = control_list.get_control_lists()
+            control_lists = [ControlListResult(
+                    cl.name,
+                    cl.acronym,
+                    cl.region.name,
+                    ",".join(control_list.get_regions_set(cl.region)),
+                    cl.status,
+                    cl.url) for cl in control_lists]
+            self.screen_data.commec_info.control_list_info = control_lists
 
         # Initialize the queries
         try:
@@ -507,9 +542,6 @@ class Screen:
 
         exit_status = parse_taxonomy_hits(
             self.database_tools.regulated_protein,
-            self.database_tools.low_concern_taxid_path,
-            self.database_tools.biorisk_taxid_path,
-            self.database_tools.taxonomy_path,
             self.screen_data,
             self.queries,
             ScreenStep.TAXONOMY_AA,
@@ -542,7 +574,7 @@ class Screen:
         for query in self.queries.values():
             if query.result.status.nucleotide_taxonomy == ScreenStatus.SKIP:
                 continue
-            nc_fasta_sequences += query.get_non_coding_regions_as_fasta()
+            nc_fasta_sequences += "".join(query.get_non_coding_regions_as_fasta())
 
         # Skip if there is no non-coding information.
         if nc_fasta_sequences == "":
@@ -570,9 +602,6 @@ class Screen:
         # Note: Currently noncoding coordinates are converted within parse_taxonomy_hits,
         exit_status = parse_taxonomy_hits(
             self.database_tools.regulated_nt,
-            self.database_tools.low_concern_taxid_path,
-            self.database_tools.biorisk_taxid_path,
-            self.database_tools.taxonomy_path,
             self.screen_data,
             self.queries,
             ScreenStep.TAXONOMY_NT,
@@ -612,8 +641,7 @@ class Screen:
 
         # Update Screen Data with low_concern outputs.
         low_concern_desc = pd.read_csv(
-            self.params.config["databases"]["low_concern"]["annotations"],
-            sep="\t",
+            self.params.config["databases"]["low_concern"]["annotations"]
         )
 
         parse_low_concern_hits(
