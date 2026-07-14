@@ -1452,8 +1452,12 @@ def resume_run(job_id):
     return jsonify({"job_id": d.name})
 
 
-def main():
-    ap = argparse.ArgumentParser(description="Tiny web GUI for `commec screen`.")
+DESCRIPTION = "Launch the commec screening web GUI (spawns a local Flask server)."
+
+
+def add_args(parser):
+    """Register the GUI server's command-line arguments (subcommand contract)."""
+    ap = parser  # local alias keeps the argument definitions below unchanged
     ap.add_argument("--host", default=None,
                     help="Bind address. Default: 127.0.0.1, or 0.0.0.0 if --lan.")
     ap.add_argument("--port", type=int, default=443,
@@ -1504,8 +1508,11 @@ def main():
     ap.add_argument("--tls-auto", action="store_true",
                     help="Serve HTTPS, generating certs/server.{crt,key} on "
                          "first startup (via gen-cert.sh) if they don't exist.")
-    args = ap.parse_args()
+    return parser
 
+
+def run(args):
+    """Configure the server from parsed args and launch it (blocks in app.run)."""
     CFG["commec_bin"] = args.commec_bin
     CFG["runs_dir"] = Path(args.runs_dir).resolve()
     CFG["runs_dir"].mkdir(parents=True, exist_ok=True)
@@ -1562,15 +1569,17 @@ def main():
             try:
                 subprocess.run(["bash", str(here / "gen-cert.sh")], check=True)
             except (subprocess.CalledProcessError, OSError) as exc:
-                ap.error(f"Automatic cert generation failed: {exc}")
+                raise SystemExit(f"commec gui: error: automatic cert generation "
+                                 f"failed: {exc}")
 
     ssl_context = None
     if cert or key:
         if not (cert and key):
-            ap.error("--tls-cert and --tls-key must be given together.")
+            raise SystemExit("commec gui: error: --tls-cert and --tls-key must "
+                             "be given together.")
         for label, path in (("cert", cert), ("key", key)):
             if not os.path.isfile(path):
-                ap.error(f"TLS {label} not found: {path}")
+                raise SystemExit(f"commec gui: error: TLS {label} not found: {path}")
         ssl_context = (cert, key)
 
     scheme = "https" if ssl_context else "http"
@@ -1592,6 +1601,13 @@ def main():
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()
 
     app.run(host=host, port=args.port, threaded=True, ssl_context=ssl_context)
+
+
+def main():
+    """Standalone entrypoint (python -m commec.gui.server / direct script run)."""
+    ap = argparse.ArgumentParser(description=DESCRIPTION)
+    add_args(ap)
+    run(ap.parse_args())
 
 
 if __name__ == "__main__":

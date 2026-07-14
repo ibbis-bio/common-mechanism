@@ -42,4 +42,4 @@ if [[ -n "${COMMEC_GUI_PASSWORD_FILE:-}" ]]; then
   ARGS+=(--password-file "$COMMEC_GUI_PASSWORD_FILE")
 fi
 
-exec python "$HERE/server.py" "${ARGS[@]}"
+exec commec gui "${ARGS[@]}"

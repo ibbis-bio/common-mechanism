@@ -4,11 +4,17 @@ Notes for the image-minting pipeline that will provision the kiosk image and
 write the GUI's `.env`. Keep this in sync with `server.py` / `kiosk.sh` /
 `lan.sh`.
 
+The GUI is launched as a commec subcommand: **`commec gui`** (the scripts
+`kiosk.sh` / `lan.sh` both `exec commec gui ...`). `commec gui` is equivalent
+to running `commec/gui/server.py` directly.
+
 ## Runtime environment requirement (important)
 
-The GUI server (`server.py`) does **not** import commec; it shells out to the
-`commec` binary. But commec only works when its whole toolchain resolves on
-`PATH`, so the server process must run in an environment that has **all** of:
+The GUI is a subcommand of the `commec` CLI, but its server does **not** import
+commec's screening internals -- it shells out to the `commec` binary
+(`commec screen ...`) as a subprocess. commec only works when its whole
+toolchain resolves on `PATH`, so the server process must run in an environment
+that has **all** of:
 
 - `commec`
 - search tools: `blastx`, `blastn`, `diamond`, `hmmscan`, `cmscan`, `transeq`,
@@ -21,8 +27,10 @@ The GUI server (`server.py`) does **not** import commec; it shells out to the
 before launching, which puts that env's `bin/` on `PATH`. The image must point
 `COMMEC_CONDA_ENV` at the env that actually contains commec + the tools above.
 
-The server itself additionally needs `flask` and `pyyaml` installed in that
-same env.
+The server itself needs `flask`, `pyyaml`, and (optionally) `psutil`. These are
+declared in `environment.yaml`, so an env built from it already has them; only a
+hand-rolled env needs them added. `psutil` is an optional fallback for the
+CPU/RAM meters on non-Linux hosts and is never required.
 
 ## `.env` values the image should set
 
@@ -96,7 +104,26 @@ runs as the unprivileged GUI user, so the host must grant the bind. Pick one
 
 - **systemd service unit (recommended):** run the GUI as a service with
   `User=<kiosk-user>` and `AmbientCapabilities=CAP_NET_BIND_SERVICE`. Grants
-  exactly the bind to just this service; nothing else gains privilege.
+  exactly the bind to just this service; nothing else gains privilege. The unit
+  launches `commec gui` from the conda env and puts that env's `bin/` on `PATH`
+  so both the server and the `commec screen` children it spawns (plus
+  blast/hmmer/taxonkit) resolve without a shell `conda activate`:
+
+  ```ini
+  [Service]
+  User=<kiosk-user>
+  WorkingDirectory=/home/<kiosk-user>
+  Environment=PATH=/opt/conda/envs/<env>/bin:/usr/local/bin:/usr/bin:/bin
+  AmbientCapabilities=CAP_NET_BIND_SERVICE
+  ExecStart=/opt/conda/envs/<env>/bin/commec gui --lan --tls-auto \
+      --port 443 --databases /home/<kiosk-user>/commec-dbs \
+      --runs-dir /home/<kiosk-user>/commec-runs
+  Restart=on-failure
+  ```
+
+  Set an absolute `--runs-dir` (the default `./runs` is relative to
+  `WorkingDirectory`). `commec gui` defaults `--commec-bin` to `commec` on
+  `PATH`, which the `Environment=PATH=` line above provides.
 - **Lower the unprivileged-port floor (simple, dedicated box):**
   `sysctl -w net.ipv4.ip_unprivileged_port_start=443` (persist in
   `/etc/sysctl.d/`). Any process may then bind 443+. Fine for a single-purpose

@@ -41,8 +41,8 @@ Clients connect at `https://<this-machine-ip>:<port>/`.
 
 ```bash
 conda activate commec-dev
-python server.py --kiosk --databases /path/to/databases          # local, HTTP
-python server.py --lan --tls-auto --databases /path/to/databases # LAN, HTTPS
+commec gui --kiosk --databases /path/to/databases          # local, HTTP
+commec gui --lan --tls-auto --databases /path/to/databases # LAN, HTTPS
 ```
 
 ## Configuration (`.env`)

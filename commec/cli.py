@@ -39,6 +39,23 @@ from commec.setup import (
 
 from commec import __version__ as COMMEC_VERSION
 
+# The GUI subcommand pulls in Flask (an optional dependency). Import it
+# defensively so a missing Flask disables only `commec gui`, rather than
+# breaking the core screen/flag/split/setup commands.
+try:
+    from commec.gui.server import (
+        DESCRIPTION as gui_DESCRIPTION,
+        add_args as gui_add_args,
+        run as gui_run,
+    )
+    _GUI_IMPORT_ERROR = None
+except ImportError as exc:
+    gui_DESCRIPTION = "Launch the commec screening web GUI (requires Flask)."
+    gui_add_args = None
+    gui_run = None
+    _GUI_IMPORT_ERROR = exc
+
+
 def main():
     """
     Parse the command line arguments and call the relevant sub-command.
@@ -75,6 +92,12 @@ def main():
     setup_parser = subparsers.add_parser("setup", description=setup_DESCRIPTION)
     setup_add_args(setup_parser)
 
+    # Sub-command for "gui" (registered even when Flask is absent, so the command
+    # exists and can print a helpful install hint instead of "invalid choice").
+    gui_parser = subparsers.add_parser("gui", description=gui_DESCRIPTION)
+    if gui_add_args is not None:
+        gui_add_args(gui_parser)
+
     args = parser.parse_args()
 
     if args.command == "screen":
@@ -85,6 +108,13 @@ def main():
         split_run(args)
     elif args.command == "setup":
         setup_run(args)
+    elif args.command == "gui":
+        if gui_run is None:
+            raise SystemExit(
+                "commec gui requires Flask, which isn't installed. Install it "
+                "with `conda install -c conda-forge flask` (or `pip install "
+                f"flask`) and try again.\n(import error: {_GUI_IMPORT_ERROR})")
+        gui_run(args)
     elif args.version:
         print( "Commec  : The Common Mechanism\n"
               f"Version : {COMMEC_VERSION}\n"

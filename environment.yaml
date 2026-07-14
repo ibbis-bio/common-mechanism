@@ -11,6 +11,9 @@ dependencies:
   - pandas
   - pytaxonkit
   - pyyaml
+  # Web GUI (`commec gui`)
+  - flask
+  - psutil
   # Runtime non-Python dependencies
   - blast>=2.17
   - diamond>=2.1

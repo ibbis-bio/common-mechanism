@@ -56,4 +56,4 @@ else
   ARGS+=(--tls-auto)
 fi
 
-exec python "$HERE/server.py" "${ARGS[@]}"
+exec commec gui "${ARGS[@]}"
