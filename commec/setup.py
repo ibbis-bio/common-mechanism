@@ -90,12 +90,20 @@ def add_args(input_options: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
     # Optional
     input_options.add_argument(
-        "-r",
+        "-n",
         "--dryrun",
         dest="dry_run",
         default=False,
         action="store_true",
         help="Output potential update information, without performing any download or update.",
+    )
+
+    input_options.add_argument(
+        "-r",
+        "--revision",
+        dest="revision",
+        default="latest",
+        help="Specify a revision of databases to use, defaults to \"latest\", or alternatives \"experimental\" or ",
     )
 
     return input_options
@@ -134,7 +142,11 @@ class CommecSetup:
             return
 
         # For each database, create an updater.
-        databases = latest["databases"]
+        if args.revision == "latest" or args.revision == "experimental":
+            databases = latest[latest[args.revision]]
+        else:
+            databases = latest[args.revision]
+
         for database_name, revision in databases.items():
             updater = updaters.get(database_name)
             if not updater:
@@ -259,34 +271,40 @@ class CommecDatabaseUpdater:
                 print(f"{C_F_ORANGE}{C_BOLD}X{C_RESET} Issue reading {manifest_filename} : {e}")
         return
 
-    def check_for_update(self, latest_revision : str):
-        self.latest_revision = DatabaseRevision(latest_revision)
+    def check_for_update(self, requested_revision : str):
+        self.requested_revision = DatabaseRevision(requested_revision)
 
         # Database not supported.
         min_revision, max_revision = fetch_supported_revisions().get(self.name, (None,None))
         if min_revision:
-            if self.latest_revision >= max_revision:
+            if self.requested_revision >= max_revision:
                 print(
                     f"{ERROR_CHECK}Version {VERSION} of commec supports "
                     f"to {self.name} <{str(max_revision)} and does not support"
                     f" revision {str(max_revision)}.  "
                     f"\n   We recommend {C_F_ORANGE}you update commec{C_RESET}, and rerun this setup.")
                 self.update_required = False
-                self.__update_message = f"{C_F_ORANGE}commec package out of date{C_RESET} for latest {self.name} (revision {latest_revision})"
+                self.__update_message = f"{C_F_ORANGE}commec package out of date{C_RESET} for latest {self.name} (revision {requested_revision})"
                 return
 
         # Database does not yet exist.
         if not self.existing_revision:
             self.update_required = True
-            self.__update_message = f"{C_F_ORANGE}Download{C_RESET} {self.name} (revision {latest_revision})"
+            self.__update_message = f"{C_F_ORANGE}Download{C_RESET} {self.name} (revision {requested_revision})"
             return
 
         # Database requires updating to latest revision
-        if self.existing_revision < self.latest_revision:
-            self.__update_message = f"{self.name} ({self.existing_revision}) will be {C_F_ORANGE}updated{C_RESET} to revision {latest_revision}."
+        if self.existing_revision < self.requested_revision:
+            self.__update_message = f"{self.name} ({self.existing_revision}) will be {C_F_ORANGE}updated{C_RESET} to revision {self.requested_revision}."
             self.update_required = True
             return
-        
+
+       # Database has requested a downgrade to a specific revision
+        if self.existing_revision > self.requested_revision:
+            self.__update_message = f"{self.name} ({self.existing_revision}) will be {C_F_ORANGE}reverted{C_RESET} to revision {self.requested_revision}."
+            self.update_required = True
+            return
+
         # Database is up to date.
         self.__update_message = f"{self.name}: revision {self.existing_revision}. {C_F_ORANGE}Up to date!{C_RESET}"
         self.update_required = False
@@ -649,9 +667,11 @@ def check_for_updates(config : dict) -> tuple[bool, dict[str,CommecDatabaseUpdat
     Helper function for calling from commec, quickly assess if an update is 
     required for yaml config dict, and output the updaters of those databases 
     which require updates. Call perform_update() on updates to complete updates.
+    Requests latest updates only.
     """
     updaters = create_updaters_from_config(config)
-    latest_revisions = fetch_latest_revisions()["databases"]
+    revisions = fetch_latest_revisions()
+    latest_revisions = revisions[revisions["latest"]]
     for dbname, latest in latest_revisions.items():
         db_to_update = updaters.get(dbname)
         if not db_to_update:
