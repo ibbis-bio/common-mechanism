@@ -3,7 +3,8 @@ from unittest.mock import patch
 import os
 import yaml
 
-from commec.config.screen_io import ScreenIO, IoValidationError
+from commec.config.screen_io import ScreenIO
+from commec.config.yaml_io import YamlIOValidationError
 from commec.cli import ScreenArgumentParser
 from commec.screen import add_args
 from commec.utils.file_utils import expand_and_normalize
@@ -19,14 +20,14 @@ def expected_defaults():
         },
         "databases": {
             "low_concern": {
-                "rna": {"path": "commec-dbs/low_concern/rna/low_concern.cm"},
-                "dna": {"path": "commec-dbs/low_concern/dna/low_concern.fasta"},
-                "protein": {"path": "commec-dbs/low_concern/protein/low_concern.hmm"},
-                "annotations": 'commec-dbs/low_concern/low_concern_annotations.csv',
+                "rna": {"path": "/commec-dbs/low_concern/rna/low_concern.cm"},
+                "dna": {"path": "/commec-dbs/low_concern/dna/low_concern.fasta"},
+                "protein": {"path": "/commec-dbs/low_concern/protein/low_concern.hmm"},
+                "annotations": '/commec-dbs/low_concern/low_concern_annotations.csv',
             },
             "biorisk": {
-                "path": "commec-dbs/biorisk/biorisk.hmm",
-                "annotations": 'commec-dbs/biorisk/biorisk_annotations.csv',
+                "path": "/commec-dbs/biorisk/biorisk.hmm",
+                "annotations": '/commec-dbs/biorisk/biorisk_annotations.csv',
             },
             "regulated_nt": {
                 "path": "/commec-dbs/nt_blast/core_nt"
@@ -36,7 +37,7 @@ def expected_defaults():
                 "diamond": {"path": "/commec-dbs/nr_dmnd/nr.dmnd"}
             },
             "control_lists": {
-                "path": "commec-dbs/control_lists/",
+                "path": "/commec-dbs/control_lists/",
                 "regions": "all"
             }
         },
@@ -58,7 +59,7 @@ def custom_yaml_config():
         "base_paths": {"default": "/commec-dbs/"},
         "databases": {
             "biorisk": {
-                "taxids" : "/custom_path.txt"
+                "annotations" : "/custom_path.txt"
             }
         },
         "skip_taxonomy_search": True,
@@ -74,14 +75,14 @@ def expected_updated_from_custom_yaml():
         },
         "databases": {
             "low_concern": {
-                "rna": {"path": "commec-dbs/low_concern/rna/low_concern.cm"},
-                "dna": {"path": "commec-dbs/low_concern/dna/low_concern.fasta"},
-                "protein": {"path": "commec-dbs/low_concern/protein/low_concern.hmm"},
-                "annotations": 'commec-dbs/low_concern/low_concern_annotations.csv',
+                "rna": {"path": "/commec-dbs/low_concern/rna/low_concern.cm"},
+                "dna": {"path": "/commec-dbs/low_concern/dna/low_concern.fasta"},
+                "protein": {"path": "/commec-dbs/low_concern/protein/low_concern.hmm"},
+                "annotations": '/commec-dbs/low_concern/low_concern_annotations.csv',
             },
             "biorisk": {
-                "path": "commec-dbs/biorisk/biorisk.hmm",
-                "annotations": 'commec-dbs/biorisk/biorisk_annotations.csv',
+                "path": "/commec-dbs/biorisk/biorisk.hmm",
+                "annotations": "/custom_path.txt",
             },
             "regulated_nt": {
                 "path": "/commec-dbs/nt_blast/core_nt"
@@ -91,7 +92,7 @@ def expected_updated_from_custom_yaml():
                 "diamond": {"path": "/commec-dbs/nr_dmnd/nr.dmnd"}
             },
             "control_lists": {
-                "path": "commec-dbs/control_lists/",
+                "path": "/commec-dbs/control_lists/",
                 "regions": "all"
             }
         },
@@ -118,7 +119,7 @@ def test_default_config_only_raises():
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args([INPUT_QUERY])
-    with pytest.raises(IoValidationError, match="base_paths.default is not configured"):
+    with pytest.raises(YamlIOValidationError, match="base_paths.default is not configured"):
         ScreenIO(args)
 
 
@@ -202,7 +203,7 @@ def test_blast_mt_mode_override(tmp_path):
     or the config merge would reject it). Default is 1; here we override to 0."""
     user_config_path = tmp_path / "user_config.yaml"
     with open(user_config_path, 'w') as f:
-        yaml.dump({"blast_mt_mode": 0}, f)
+        yaml.dump({"base_paths": {"default": "/commec-dbs/"}, "blast_mt_mode": 0}, f)
 
     parser = ScreenArgumentParser()
     add_args(parser)
@@ -216,7 +217,7 @@ def test_blast_mt_mode_invalid_rejected(tmp_path):
     multithreading modes (0, 1, 2)."""
     user_config_path = tmp_path / "user_config.yaml"
     with open(user_config_path, 'w') as f:
-        yaml.dump({"blast_mt_mode": 3}, f)
+        yaml.dump({"base_paths": {"default": "/commec-dbs/"}, "blast_mt_mode": 3}, f)
 
     parser = ScreenArgumentParser()
     add_args(parser)
@@ -258,7 +259,7 @@ def test_unknown_yaml_key_raises(tmp_path):
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
-    with pytest.raises(IoValidationError, match="Unrecognized key"):
+    with pytest.raises(YamlIOValidationError, match="Unrecognized key"):
         ScreenIO(args)
 
 
@@ -270,7 +271,7 @@ def test_relative_path_in_yaml_raises(tmp_path):
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
-    with pytest.raises(IoValidationError, match="must be an absolute path"):
+    with pytest.raises(YamlIOValidationError, match="must be an absolute path"):
         ScreenIO(args)
 
 
@@ -288,7 +289,7 @@ def test_d_shadowing_yaml_logs_info(tmp_path, caplog):
     with caplog.at_level(logging.INFO, logger="commec.config.screen_io"):
         ScreenIO(args)
     assert any(
-        "overriding YAML base_paths.default" in rec.message
+        "Command line arguments updated base databases directory" in rec.message
         for rec in caplog.records
     )
 

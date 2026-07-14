@@ -189,7 +189,7 @@ class ScreenIO:
         # Override the default base path with database directory from cli.
         base_paths = self.config["base_paths"]
         if self.db_dir is not None:
-            logger.debug("Command line arguments updated base databases directory: %s", self.db_dir)
+            logger.info("Command line arguments updated base databases directory: %s", self.db_dir)
             base_paths["default"] = self.db_dir
         else:
             # Otherwise update the default database path if it wasn't defined.

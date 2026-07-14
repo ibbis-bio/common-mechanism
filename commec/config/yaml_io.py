@@ -17,9 +17,13 @@ import yaml
 from yaml.parser import ParserError
 
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
+from commec.utils.file_utils import expand_and_normalize
 from commec.utils.dict_utils import deep_update
 
 logger = logging.getLogger(__name__)
+
+class YamlIOValidationError(ValueError):
+    """Custom exception for errors when handling input and output with Yaml Config."""
 
 def load_config_from_yaml(config_filepath: str | os.PathLike) -> dict:
     """
@@ -42,10 +46,12 @@ def update_config_from_yaml(existing_config : dict, config_filepath: str | os.Pa
     """
     config_from_yaml = load_config_from_yaml(config_filepath)
     updated_config, rejected = deep_update(existing_config, config_from_yaml)
-    for rejects in rejected:
-        logger.warning("The follow input from the user provided"
-            " configuration was not recognised: %s : %s",
-            rejects[0], rejects[1])
+    if rejected:
+        keys = ", ".join(f"{k}={v!r}" for k, v in rejected)
+        raise YamlIOValidationError(
+            f"Unrecognized key(s) in {config_filepath}: {keys}. "
+            "Check for typos against the packaged default config."
+        )
     return updated_config
 
 def update_config_from_cli(yaml_config : dict, args: argparse.Namespace):
@@ -82,17 +88,14 @@ def format_config_paths(yaml_config : dict) -> dict:
     If a database directory is provided, it will override the base_path provided in the yaml.
     """
 
-    if not yaml_config.get("base_paths"):
-        logger.debug("No Base paths to perform yaml substitution.")
-        return yaml_config
-    
+    if not yaml_config.get("base_paths").get("default"):
+        raise YamlIOValidationError(
+            "base_paths.default is not configured. Set it via one of:\n"
+            "  - `commec screen -d /path/to/databases ...`\n"
+            "  - `base_paths: {default: /abs/path/to/databases}` in your --config YAML\n"
+            "  - run `commec setup` to download databases and emit a config snippet"
+        )
     try:
-        base_paths = yaml_config["base_paths"]
-
-        # Ensure all the base paths end with a separator "/""
-        for key, value in base_paths.items():
-            base_paths[key] = os.path.join(value,'')
-
         def recursive_format(nested_yaml, base_paths):
             """
             Recursively apply string formatting to
@@ -105,21 +108,55 @@ def format_config_paths(yaml_config : dict) -> dict:
                 try:
                     return nested_yaml.format(**base_paths)
                 except KeyError as e:
-                    raise ValueError(
-                        f"Unknown base path key referenced in path: {nested_yaml}"
+                    raise YamlIOValidationError(
+                        f"Unknown base path key {e} referenced in path: {nested_yaml!r}. "
+                        f"Known keys: {sorted(paths.keys())}"
                     ) from e
             return nested_yaml
 
-        # Recursively format all paths
+        # Update the base paths
         yaml_config["base_paths"] = recursive_format(yaml_config["base_paths"], yaml_config["base_paths"])
+        
+        # Every resolved base path must be absolute. Normalize with trailing separator.
+        for key, value in yaml_config["base_paths"].items():
+            if value is None:
+                continue
+            expanded = expand_and_normalize(value)
+            if not os.path.isabs(expanded):
+                raise YamlIOValidationError(
+                    f"base_paths.{key} must be an absolute path, got: {value!r}"
+                )
+            yaml_config["base_paths"][key] = os.path.join(expanded, "")
+
+        # Recursively format all paths
         yaml_config = recursive_format(yaml_config, yaml_config["base_paths"])
 
-        yaml_config = recursive_format(yaml_config, base_paths)
     except TypeError as e:
         logger.error("Encountered unexpected TypeError during yaml config base path substitution: %s", e)
-        pass
+        raise YamlIOValidationError(f"Encountered unexpected TypeError during yaml config base path substitution: {e}")
+    
+    _validate_database_paths(yaml_config.get("databases", {}))
 
     return yaml_config
+
+def _validate_database_paths(tree, breadcrumbs=()):
+    """
+    Walk the resolved `databases:` subtree and raise on any string value that
+    isn't an absolute path.
+    """
+    if isinstance(tree, dict):
+        for key, value in tree.items():
+            if key == "regions": # Override for control lists.
+                continue
+            _validate_database_paths(value, breadcrumbs + (key,))
+        return
+    if isinstance(tree, str):
+        location = ".".join(breadcrumbs)
+        if not os.path.isabs(expand_and_normalize(tree)):
+            raise YamlIOValidationError(
+                f"databases.{location} must be an absolute path, got: {tree!r}. "
+                "Use absolute paths in YAML; CLI `-d` accepts relative paths."
+            )
 
 def get_defaults() -> dict:
     """
