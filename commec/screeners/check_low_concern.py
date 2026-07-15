@@ -360,6 +360,8 @@ def parse_low_concern_hits(protein_handler : HmmerHandler,
     low_concern_protein_screen_data = protein_handler.read_output()
     append_nt_querylength_info(low_concern_protein_screen_data, queries)
     recalculate_hmmer_query_coordinates(low_concern_protein_screen_data)
+    low_concern_protein_screen_data = low_concern_protein_screen_data[
+        low_concern_protein_screen_data["evalue"] < LOW_CONCERN_PROTEIN_EVALUE_CUTOFF]
     logger.debug("\tLow-concern Protein Data: shape: %s preview:\n%s",
                  low_concern_protein_screen_data.shape, low_concern_protein_screen_data.head())
     
