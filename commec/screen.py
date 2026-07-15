@@ -81,7 +81,7 @@ from commec.screeners.check_reg_path import parse_taxonomy_hits
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.tools.search_handler import DatabaseValidationError
 from commec.config.json_io import encode_screen_data_to_json
-from commec.setup import check_for_updates
+from commec.setup import check_for_updates, read_manifest
 import commec.control_list as control_list
 from commec.config.constants import MINIMUM_QUERY_LENGTH, MAXIMUM_QUERY_LENGTH
 
@@ -446,6 +446,18 @@ class Screen:
             _info.low_concern_protein_search_info = _tools.low_concern_hmm.get_version_information()
             _info.low_concern_rna_search_info = _tools.low_concern_cmscan.get_version_information()
             _info.low_concern_dna_search_info = _tools.low_concern_blastn.get_version_information()
+
+        # Initalise the revision info for all the databases:
+        for dbname, dbinfo in self.params.config["databases"].items():
+            path = dbinfo.get("path")
+            logger.info("Trying to find revision info from %s", path)
+            name, revision = read_manifest(path)
+            if name == dbname:
+                self.screen_data.commec_info.database_revisions[dbname] = str(revision)
+            else:
+                logger.error("Expected database name %s, from location %s, was"
+                            " not matched in local manifest.json, %s.",
+                            dbname, path, name)
 
         # Store start time.
         self.screen_data.commec_info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

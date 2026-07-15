@@ -735,6 +735,7 @@ class ScreenRunInfo:
     time_taken: str = ""
     date_run: str = ""
     search_tool_info: SearchToolInfo = field(default_factory=SearchToolInfo)
+    database_revisions: dict[str, str] = field(default_factory=dict)
     control_list_info : list[ControlListResult] = field(default_factory=list)
 
 

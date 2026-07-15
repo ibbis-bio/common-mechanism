@@ -23,7 +23,7 @@ from dataclasses import dataclass
 
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 from commec.config import yaml_io as YamlIO
-from commec.utils.file_utils import expand_and_normalize
+from commec.utils.file_utils import expand_and_normalize, remove_filename_from_path
 
 from  commec import __version__ as VERSION
 DESCRIPTION = """Helper script for downloading or updating the databases
@@ -90,20 +90,29 @@ def add_args(input_options: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
     # Optional
     input_options.add_argument(
-        "-n",
+        "-m",
         "--dryrun",
         dest="dry_run",
         default=False,
         action="store_true",
-        help="Output potential update information, without performing any download or update.",
+        help="Mock output potential update information, without performing any download or update.",
+    )
+
+    input_options.add_argument(
+        "-e",
+        "--experimental",
+        dest="experimental",
+        default=False,
+        action="store_true",
+        help="Download the latest experimental databases. Note: These are not intended for general use.",
     )
 
     input_options.add_argument(
         "-r",
-        "--revision",
-        dest="revision",
-        default="latest",
-        help="Specify a revision of databases to use, defaults to \"latest\", or alternatives \"experimental\" or ",
+        "--restore",
+        dest="restore_json",
+        default=None,
+        help="Point setup to a commec screen output json file to replicate the databases used for that run.",
     )
 
     return input_options
@@ -133,19 +142,33 @@ class CommecSetup:
         if not check_directory_is_writable(working_directory):
             print(f"{ERROR_CHECK}Failed to parse working directory: {working_directory}")
 
+        databases = None
         # Fetch latest.json from R2.abs
-        print(f"{STEP}Fetching latest commec database revision information ...")
-        latest = fetch_latest_revisions()
+        if os.path.isfile(args.restore_json):
+            print(f"{STEP}A json database file was provided, using ")
+            json_string : str
+            with open(input_json_filepath, "r", encoding="utf-8") as json_file:
+                # Read the file contents as a string
+                json_string = json_file.read()
+            my_data : dict = json.loads(json_string)
 
-        if not latest:
-            print(f"{ERROR_CHECK} Could not fetch latest revisions. Check internet connection and try again.")
-            return
-
-        # For each database, create an updater.
-        if args.revision == "latest" or args.revision == "experimental":
-            databases = latest[latest[args.revision]]
         else:
-            databases = latest[args.revision]
+            print(f"{STEP}Fetching latest commec database revision information ...")
+            latest = fetch_latest_revisions()
+
+            if not latest:
+                print(f"{ERROR_CHECK} Could not fetch latest revisions. Check internet connection and try again.")
+                return
+
+            # For each database, create an updater.
+            if args.experimental:# == "latest" or args.revision == "experimental":
+                databases = latest["experimental"]
+            else:
+                databases = latest["latest"]
+
+        if not databases:
+            print(f"{ERROR_CHECK}An issue occured when fetching databases. Exiting now.")
+            return
 
         for database_name, revision in databases.items():
             updater = updaters.get(database_name)
@@ -158,7 +181,7 @@ class CommecSetup:
             updater.name = database_name
             updater.check_for_update(revision)
 
-        # Check or ophaned databases:
+        # Check for orphaned databases:
         for db_name, updater in updaters.items():
             if not db_name in databases.keys():
                 print(f"{ERROR_CHECK}{db_name} has no formal update route. Input yaml has deprecated database entries.")
@@ -216,6 +239,20 @@ def fetch_supported_revisions() -> dict | None:
         supported_revision_data[db_name] = (DatabaseRevision(major_min), DatabaseRevision(major_max))
     return supported_revision_data
 
+def fetch_revisions_from_json(filename : str | os.PathLike) -> dict | None:
+    """
+    Any json output from commec screen should contain the revision information of the databases used.
+
+    """
+    json_string : str
+    with open(filename, "r", encoding="utf-8") as json_file:
+        json_string = json_file.read()
+    my_data : dict = json.loads(json_string)
+    db_revisions = my_data.get("commec_info", {})
+    db_revisions = db_revisions.get("database_revisions", {})
+    return db_revisions
+
+
 def fetch_latest_revisions() -> dict | None:
     """
     A latest.json manifest exists at the root of the R2 bucket, listing
@@ -232,6 +269,19 @@ def fetch_latest_revisions() -> dict | None:
         print(f"Invalid JSON in latest.json manifest: {e}")
         return None
 
+def read_manifest(check_location):
+    """
+    All databases should have a manifest.json file.
+    """
+    manifest_location = remove_filename_from_path(check_location)
+    manifest_filename = os.path.join(manifest_location, "manifest.json")
+    print("Looking for ", manifest_filename)
+    if os.path.exists(manifest_location) and os.path.isfile(manifest_filename):
+        with open(manifest_filename, "r", encoding="utf-8") as manifest_file:
+            json_string = manifest_file.read()
+        manifest = json.loads(json_string)
+    return manifest["component"], DatabaseRevision(manifest["revision"])
+
 class CommecDatabaseUpdater:
     """
     Utility class, performs an update for a particular database.
@@ -242,7 +292,10 @@ class CommecDatabaseUpdater:
         self.write_location = existing_location
         self.existing_revision = None
 
-        self.read_manifest()
+        try:
+            self.name, self.existing_revision = read_manifest()
+        except json.JSONDecodeError as e:
+            print(f"{C_F_ORANGE}{C_BOLD}X{C_RESET} Issue reading {manifest_filename} : {e}")
 
         self.fetch_location = None
         self.update_required = True
@@ -254,22 +307,6 @@ class CommecDatabaseUpdater:
     def update_message(self):
         return (self.__update_message or
                 f"{C_F_ORANGE}Unidentified{C_RESET} database \"{self.name}\" has no update option.")
-
-    def read_manifest(self):
-        """
-        All databases should have a manifest.json file.
-        """
-        manifest_filename = os.path.join(self.write_location, "manifest.json")
-        if os.path.exists(self.write_location) and os.path.isfile(manifest_filename):
-            try:
-                with open(manifest_filename, "r", encoding="utf-8") as manifest_file:
-                    json_string = manifest_file.read()
-                manifest = json.loads(json_string)
-                self.name = manifest["component"]
-                self.existing_revision = DatabaseRevision(manifest["revision"])
-            except json.JSONDecodeError as e:
-                print(f"{C_F_ORANGE}{C_BOLD}X{C_RESET} Issue reading {manifest_filename} : {e}")
-        return
 
     def check_for_update(self, requested_revision : str):
         self.requested_revision = DatabaseRevision(requested_revision)
@@ -370,8 +407,7 @@ def create_updaters_from_config(config : dict) -> dict[str,CommecDatabaseUpdater
         # The biorisk database points directly to the .hmm, whereas other
         # databases don't. It is best to just detect suffix, and remove, as 
         # checking on name would affect other databases too.
-        db_path = Path(database_info.get("path"))
-        fileless_path = db_path.parent if db_path.suffix else db_path
+        fileless_path = remove_filename_from_path(database_info.get("path"))
         updaters[database_name] = CommecDatabaseUpdater(fileless_path)
         updaters[database_name].name = database_name
     return updaters
