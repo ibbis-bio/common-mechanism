@@ -159,7 +159,7 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
         logger.debug("\tProcessing query: %s", affected_query)
         biorisk_overall : ScreenStatus = ScreenStatus.PASS
 
-        query_data = data.get_query(affected_query)
+        query_data, _ = data.get_query(affected_query)
         if not query_data:
             logger.error("Query during hmmscan could not be found! [%s]", affected_query)
             continue
@@ -183,7 +183,6 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
             for _, region in unique_target_data.iterrows():
                 match_range = MatchRange(
                     float(region['E-value']),
-                    int(region['hmm from']), int(region['hmm to']),
                     int(region['q. start']), int(region['q. end'])
                 )
                 match_ranges.append(match_range)
@@ -204,12 +203,16 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
             log_container[affected_query[:-2]].append(log_message)
 
             # Deal with whether this biorisk should collapse into an existing hit or not.
-            hit_data : HitResult = query_data.get_hit(affected_target)
-            if hit_data:
-                logger.debug("\t\tHit already existed! Extending hit data ranges only...")
-                hit_data.ranges.extend(match_ranges)
-                logger.debug("Updated hit: %s", hit_data)
-                continue
+
+            # THIS NEEDS UPDATING, Biorisks should be unique no matter what after collapsing hits
+            # with remove_overlaps()
+
+            #hit_data : HitResult = query_data.get_hit(affected_target)
+            #if hit_data:
+            #    logger.debug("\t\tHit already existed! Extending hit data ranges only...")
+            #    hit_data.region = match_ranges[0]
+            #    logger.debug("Updated hit: %s", hit_data)
+            #    continue
 
             domain : str = _guess_domain(""+str(affected_target)+target_description)
 
@@ -220,11 +223,12 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
                 ),
                 affected_target,
                 target_description,
-                match_ranges,
+                match_ranges[0],
                 {"domain" : [domain],"regulated":[regulation_str]},
             )
             logger.debug("\t\tHit was unique, creating new hit result information...\n%s", new_hit)
-            query_data.hits[affected_target] = new_hit
+            query_data.add_new_hit_information(new_hit)
+            #hits[affected_target] = new_hit
 
 
         # Update the recommendation for this query for biorisk.

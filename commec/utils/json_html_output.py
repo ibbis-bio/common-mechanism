@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import importlib.resources
 from mako.template import Template
-
+from dataclasses import asdict
 from commec.config.json_io import get_screen_data_from_json
 from commec.config.result import (
     ScreenResult,
@@ -20,6 +20,7 @@ from commec.config.result import (
     ScreenStep,
     ScreenStatus,
 )
+import commec.control_list as cl
 
 class CommecPalette():
     """ 
@@ -244,31 +245,52 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
     if "Taxonomy" in hit.recommendation.from_step:
         output_string = ""
 
-        n_regulated_eukaryotes = 0
+        n_regulated_fungi = 0
+        n_regulated_parasites = 0
         n_regulated_bacteria = 0
         n_regulated_viruses = 0
         regulated_taxids = []
         non_regulated_taxids = []
         regulated_species = []
+        regulated_names = []
+        controlled_lists = []
 
-        if "regulated_taxonomy" in hit.annotations:
-            reg = hit.annotations["regulated_taxonomy"]
-            for r in reg:
-                n_regulated_eukaryotes += int(r["regulated_eukaryotes"])
-                n_regulated_bacteria += int(r["regulated_bacteria"])
-                n_regulated_viruses += int(r["regulated_viruses"])
-                regulated_taxids.extend([x["species"] for x in r["regulated_taxa"]])
-                non_regulated_taxids.extend(r["non_regulated_taxa"])
+        if "controlled_taxonomy" in hit.annotations:
+            reg = hit.annotations["controlled_taxonomy"]
+
+            r = reg.get("statistics")
+            if r:
+                n_regulated_fungi += int(r["controlled_fungi"])
+                n_regulated_parasites += int(r["controlled_parasites"])
+                n_regulated_bacteria += int(r["controlled_bacteria"])
+                n_regulated_viruses += int(r["controlled_viruses"])
             
-            for entry in set(regulated_taxids):
-                regulated_species.append(entry)
+            regulated_taxids.extend(reg["controlled_taxa"])
+            non_regulated_taxids.extend(reg["non-controlled_taxa"])
             
+            for anno_data in regulated_taxids:
+                regulated_species.append(anno_data["species"])
+                controlled_lists.extend([a["list"] for a in anno_data["controlled_by_lists"]])
+                regulated_names.extend([a["list"] + ":" + a["source"] for a in anno_data["controlled_by_lists"]])
+
+            controlled_lists = set(controlled_lists)
+            regulated_species = set(regulated_species)
+            regulated_names = set(regulated_names)
+
             domain_string = " across multiple domains."
-            if n_regulated_bacteria > 0 and n_regulated_viruses == 0 and n_regulated_eukaryotes == 0:
+
+            no_non_bacteria = n_regulated_fungi + n_regulated_parasites + n_regulated_viruses == 0
+            no_non_fungi = n_regulated_bacteria + n_regulated_parasites + n_regulated_viruses == 0
+            no_non_viruses = n_regulated_fungi + n_regulated_parasites + n_regulated_bacteria == 0
+            no_non_parasites = n_regulated_fungi + n_regulated_bacteria + n_regulated_viruses == 0
+
+            if n_regulated_bacteria > 0 and no_non_bacteria:
                 domain_string = " bacteria"
-            elif n_regulated_eukaryotes > 0 and n_regulated_viruses == 0:
-                domain_string = " eukaryotes"
-            elif n_regulated_viruses > 0:
+            if n_regulated_parasites > 0 and no_non_parasites:
+                domain_string = " human parasites"
+            if n_regulated_fungi > 0 and no_non_fungi:
+                domain_string = " human parasites"
+            if n_regulated_viruses > 0 and no_non_viruses:
                 domain_string = " viruses"
 
             total_hits : int = len(regulated_taxids) + len(non_regulated_taxids)
@@ -279,14 +301,20 @@ def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
             else:
                 output_string += "Best match to regulated" + domain_string + ".<br>"
 
-            output_string += str(total_hits) + " Best match hits to " if total_hits > 1 else "Best hit to "
-            output_string += peptide_type + " found in " + str(len(regulated_species)) + " species, with regulated pathogen taxId in "
-            output_string += "lineage " if len(regulated_species) == 1 else "lineages "
+            output_string += str(total_hits) + " best match hits to " if total_hits > 1 else "Best hit to "
+            plural_species = len(regulated_species) > 1
+            plural_lists = len(controlled_lists) > 1
+            output_string += (
+                f"{peptide_type} found {"over" if plural_species else "in"} {len(regulated_species)} "
+                f"species {"across" if plural_lists else "from"} "
+                f"{len(controlled_lists)} control list{"s" if plural_lists else ""}: <br>"
+                )
+            #output_string += "lineage " if len(regulated_names) == 1 else "lineages "
 
             species_list = textwrap.fill(
-                ", ".join(regulated_species), 100
+                ", ".join(regulated_names), 100
             ).replace("\n", "<br>")
-            
+        
             output_string += "<br>" + species_list
 
             return output_string
@@ -314,37 +342,36 @@ def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
     # Keep track of how many vertical stacks this image has.
     n_stacks = 1
 
-    for hit in query_to_draw.hits.values():
-        for match in hit.ranges:
-            # Find the best vertical position to reduce collisions, and fill all space.
-            collision_free = False
-            stack_write = 1 # 1 gives a bit of space between the query and the data.
-            while not collision_free:
-                stack_write += 1
-                collision_free = True
-                for entry in graph_data:
-                    if entry["stack"] == stack_write:
-                        collision_free = (collision_free and
-                                            (match.query_start > entry["stop"] 
-                                            or match.query_end < entry["start"])
-                                            )
+    for hit in query_to_draw.hits:
+        # Find the best vertical position to reduce collisions, and fill all space.
+        collision_free = False
+        stack_write = 1 # 1 gives a bit of space between the query and the data.
+        while not collision_free:
+            stack_write += 1
+            collision_free = True
+            for entry in graph_data:
+                if entry["stack"] == stack_write:
+                    collision_free = (collision_free and
+                                        (hit.region.query_start > entry["stop"] 
+                                        or hit.region.query_end < entry["start"])
+                                        )
 
-            n_stacks = max(n_stacks, stack_write + 1)
+        n_stacks = max(n_stacks, stack_write + 1)
 
-            graph_data.append(
-                {
-                    "label" : hit.description[:25] + "...",
-                    "label_verbose" : hit.description[:],
-                    "outcome" : f"{hit.recommendation.status} from {hit.recommendation.from_step}",
-                    "outcome_verbose" : generate_outcome_string(query_to_draw, hit),
-                    "start" : match.query_start,
-                    "stop" : match.query_end,
-                    "color" : color_from_hit(hit),
-                    "stack" : stack_write,
-                    "text" : overlay_text_from_hit(hit),
-                    "text_color" : constrast_color_from_hit(hit),
-                }
-            )
+        graph_data.append(
+            {
+                "label" : hit.description[:25] + "...",
+                "label_verbose" : hit.description[:],
+                "outcome" : f"{hit.recommendation.status} from {hit.recommendation.from_step}",
+                "outcome_verbose" : generate_outcome_string(query_to_draw, hit),
+                "start" : hit.region.query_start,
+                "stop" : hit.region.query_end,
+                "color" : color_from_hit(hit),
+                "stack" : stack_write,
+                "text" : overlay_text_from_hit(hit),
+                "text_color" : constrast_color_from_hit(hit),
+            }
+        )
 
     df = pd.DataFrame(graph_data)
 
