@@ -1,5 +1,5 @@
 base_paths:
-  default: commec-dbs/
+  default: null
 databases:
   biorisk:
     path: '{default}biorisk/biorisk.hmm'

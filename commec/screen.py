@@ -336,7 +336,7 @@ class Screen:
 
             logger.info("Using Control Lists:")
             logger.info(control_list.format_control_lists(), extra = {"no_prefix" : True, "cap" : True})
-            
+
             # Custom output format for Control Lists info, for JSON:
             control_lists = control_list.get_control_lists()
             control_lists = [ControlListResult(
@@ -396,7 +396,25 @@ class Screen:
         except RuntimeError as e:
             logger.error(e)
             self.early_exit()
+        
+        # Summarise some query info to the log:
+        query_print_info = []
+        for name, qr in self.screen_data.queries.items():
+            if not qr.status.screen_status in {
+                ScreenStatus.SKIP,
+                ScreenStatus.SKIP_SHORT,
+                ScreenStatus.SKIP_LONG,
+                ScreenStatus.ERROR}:
+                query_print_info.append(str(self.queries[name]))
+        print_queries = ", ".join([q for q in query_print_info])
+        qscr = len(query_print_info)
+        qtot = len(self.queries)
+        query_number_string = f"{qtot}" if qtot == qscr else f"{qscr}/{qtot}"
+        logger.info("Commec will screen the following %s queries:", query_number_string)
+        logger.info(print_queries, extra = {"no_prefix" : True, "cap" : True})
+        logger.info("Total length of all queries : %i b.p. \n", total_query_length)        
 
+        # Add global query info to result.
         self.screen_data.query_info.file = self.params.input_fasta_path
         self.screen_data.query_info.number_of_queries = len(self.queries.values())
         self.screen_data.query_info.total_query_length = total_query_length

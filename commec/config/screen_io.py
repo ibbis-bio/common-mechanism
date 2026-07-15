@@ -55,7 +55,7 @@ class ScreenIO:
         # Get configuration based on defaults and CLI args (including YAML config if supplied)
         self.config = {}
         self._read_config(args)
-        
+
         # Check whether a .screen output file already exists.
         if os.path.exists(self.output_screen_file) and not (
             self.config["force"] or self.config["resume"]):
@@ -175,7 +175,11 @@ class ScreenIO:
 
         # Import a config yaml file if provided.
         cli_config_yaml=args.config_yaml.strip()
-        if os.path.exists(cli_config_yaml):
+        if cli_config_yaml:
+            if not os.path.exists(cli_config_yaml):
+                raise FileNotFoundError(
+                    f"--config YAML not found: {cli_config_yaml}"
+                )
             logger.debug("Overriding defaults in with values from %s", cli_config_yaml)
             self.config = YamlIO.update_config_from_yaml(self.config, cli_config_yaml)
 
@@ -185,11 +189,14 @@ class ScreenIO:
         # Override the default base path with database directory from cli.
         base_paths = self.config["base_paths"]
         if self.db_dir is not None:
-            logger.debug("Command line arguments updated base databases directory: %s", self.db_dir)
+            logger.info("Command line arguments updated base databases directory: %s", self.db_dir)
             base_paths["default"] = self.db_dir
         else:
             # Otherwise update the default database path if it wasn't defined.
             self.db_dir = base_paths["default"]
+
+        # CLI -d accepts relative paths for shell convenience; normalize to absolute.
+        db_dir_override = expand_and_normalize(self.db_dir) if self.db_dir else None
 
         # Update paths in configuration using appropriate string substitution
         self.config = YamlIO.format_config_paths(self.config)
