@@ -44,18 +44,18 @@ def non_coding_regions():
 @pytest.fixture
 def test_cases():
     """
-    Fixture providing a list of (input_coordinate, expected_output) tuples.
+    Fixture providing a list of (input_coordinate, region, expected_output) tuples.
     The input is a sequence coordinate, and the expected output is its transformed coordinate.
     """
     return [
-        (1, 1),
-        (10, 10),
-        (50, 50),
-        (51, 71),
-        (80, 100),
-        (81, 131),
-        (99, 149),
-        (100, 150),
+        (1,0, 1),
+        (10,0, 10),
+        (50,0, 50),
+        (1,1, 71),
+        (30,1, 100),
+        (1,2, 131),
+        (19,2, 149),
+        (20,2, 150),
     ]
 
 def test_coordinate_conversion(seq_record, non_coding_regions, test_cases):
@@ -67,19 +67,26 @@ def test_coordinate_conversion(seq_record, non_coding_regions, test_cases):
     test_query.non_coding_regions = non_coding_regions
 
     # Test Correct coords:
-    for nc, nt in test_cases:
-        assert nt == test_query.nc_to_nt_query_coords(nc)
+    for nc, region, nt in test_cases:
+        assert nt == test_query.nc_to_nt_query_coords(nc, region), f"{nc} for non-coding chunk {region}, failed to resolve to {nt}"
 
-    # Test Failure out of bounds.
+    # Test Failure Coord out of bounds.
     try:
-        _x = test_query.nc_to_nt_query_coords(test_cases[-1][0]+1)
+        _x = test_query.nc_to_nt_query_coords(test_cases[-1][0]+1, 2)
+        assert False
+    except QueryValueError:
+        assert True
+
+    # Test Failure Index out of bounds.
+    try:
+        _x = test_query.nc_to_nt_query_coords(nc, 4)
         assert False
     except QueryValueError:
         assert True
 
     # Test Failure out of bounds.
     try:
-        _x = test_query.nc_to_nt_query_coords(0)
+        _x = test_query.nc_to_nt_query_coords(0, 0)
         assert False
     except QueryValueError:
         assert True

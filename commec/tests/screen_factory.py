@@ -21,6 +21,30 @@ from commec.screen import run, ScreenArgumentParser, add_args
 from commec.config.result import ScreenResult, ScreenStep
 from commec.config.json_io import get_screen_data_from_json
 
+from commec.control_list.region import Region
+from commec.control_list.containers import (
+    ControlList,
+    ListMode
+)
+import commec.control_list.list_data as ld
+from commec.control_list.initialisation import tidy_control_list_data
+
+
+def fake_full_coords(
+        _protein_search_handler,
+        queries
+        ):
+    for query in queries.values():
+        query.non_coding_regions.append((1, query.length))
+    return
+
+def skip_biorisk_annotations(_input_file):
+    """
+    Overrides the biorisk annotations retrieval to be
+    replaced with our own generated annotation data.
+    """
+    return BIORISK_ANNOTATIONS_DATA
+
 def skip_taxonomy_info(
     blast: pd.DataFrame,
     _regulated_taxids: list[str],
@@ -34,20 +58,6 @@ def skip_taxonomy_info(
     """
     blast = blast.merge(TAXONOMY, on = "subject acc.", how = "left")
     return blast
-
-def skip_biorisk_annotations(_input_file):
-    """
-    Overrides the biorisk annotations retrieval to be
-    replaced with our own generated annotation data.
-    """
-    return BIORISK_ANNOTATIONS_DATA
-
-def skip_canonical_taxids(taxids, _db_path, _threads):
-    """
-    Override canonical taxid retrieval, so tests
-    don't require a real taxonomy database.
-    """
-    return taxids.astype(str).tolist()
 
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
 TAXONOMY = pd.DataFrame(columns=["subject acc.","regulated", "superkingdom", "phylum", "genus", "species"])
@@ -81,8 +91,12 @@ class ScreenTesterFactory:
         self.input_fasta_path = ""
 
         # We reset the globals when a new test is made - its just safer.
+        global TAXONOMY
+        global BIORISK_ANNOTATIONS_DATA
+        
         TAXONOMY = pd.DataFrame(columns=["subject acc.","regulated", "superkingdom", "phylum", "genus", "species"])
         BIORISK_ANNOTATIONS_DATA = pd.DataFrame(columns=["ID", "Description", "Must flag"])
+        ld.clear()
 
     def run(self, *args):
         """
@@ -90,6 +104,7 @@ class ScreenTesterFactory:
         """
 
         self._create_temporary_files()
+        tidy_control_list_data()
 
         arguments = [
                 "test.py", str(self.input_fasta_path), 
@@ -101,15 +116,18 @@ class ScreenTesterFactory:
         
         arguments.extend(args)
 
-        print("Using the following Taxonomy Information:\n", TAXONOMY.to_string())
+        print("Using the following Control Lists: ", ld.CONTROL_LISTS)
+        print("Using the following control list annotations: ", ld.CONTROL_LIST_ANNOTATIONS)
+
+        if ld.CONTROL_LIST_ANNOTATIONS.size == 0:
+            print("Using a run with no added control lists, adding dummy data...")
+            self.add_dummy_cl_data()
+
         # We patch taxonomic labels to avoid having to make a mini-taxonomy database.
         # We also patch in the desired CLI arguments to avoid an input yaml, and control output.
-        with (patch("commec.screeners.check_reg_path.get_taxonomic_labels", new=skip_taxonomy_info), patch(
-                "commec.screeners.check_biorisk.read_biorisk_annotations", new=skip_biorisk_annotations), patch(
-                "commec.screeners.check_reg_path.get_canonical_taxids", new=skip_canonical_taxids), patch(
-            "sys.argv",
-            arguments,
-        )):
+        with (patch("commec.screeners.check_biorisk.read_biorisk_annotations", new=skip_biorisk_annotations),
+              patch("commec.screen.calculate_noncoding_regions_per_query", new=fake_full_coords),
+             patch("sys.argv", arguments)):
             parser = ScreenArgumentParser()
             add_args(parser)
             args = parser.parse_args()
@@ -128,13 +146,32 @@ class ScreenTesterFactory:
     def add_query(self, name, size):
         self.queries[name] = "a"*size
 
+    def add_dummy_cl_data(self):
+        ld.add_control_list(ControlList("dummy_list",
+                                        "Just a Dummy List",
+                                        "DUMMY","www.nourl.com",
+                                        Region("New Zealand","NZ"),
+                                        ListMode.COMPLIANCE,
+                                        "EXPORT"))
+        ld.add_control_list_annotations(pd.DataFrame([
+            {
+                "display_name": "Dummy entrant",
+                "tax_id": "DUMMY_TAXID",
+                "list_acronym": "DUMMY",
+                "category" : "Bacteria",
+                "species" : "Dummy Species",
+                "genus" : "Dummy genus",
+                "kingdom" : "Dummy Kingdom",
+            },
+        ]))
+
     def add_hit(self,
         to_step,                    # Which step this hit belongs to...
         to_query,                   # Which query this hit belongs to...
         start,                      # Start Nucleotide in Query coords.
         stop,                       # End Nucleotide in Query Coords...
         title = "untitled",
-        accession = "",
+        accession = "12345",
         taxid = 0,
         species = "unclassified",
         genus = "unclassified",
@@ -148,6 +185,25 @@ class ScreenTesterFactory:
 
         assert start > 0
         assert stop > 0
+
+        if regulated:
+            ld.add_control_list(ControlList("default_test_list",
+                                            "Index experimentorum communium",
+                                            "DTL","www.nourl.com",
+                                            Region("New Zealand","NZ"),
+                                            ListMode.COMPLIANCE,
+                                            "EXPORT"))
+            ld.add_control_list_annotations(pd.DataFrame([
+                {
+                    "display_name": title,
+                    "tax_id": taxid,
+                    "list_acronym": "DTL",
+                    "category" : superkingdom,
+                    "species" : species,
+                    "genus" : genus,
+                    "kingdom" : superkingdom,
+                },
+            ]))
 
         # Ensure that the taxonomy LUT entry for this hit exists.
         if to_step in [ScreenStep.TAXONOMY_AA, ScreenStep.TAXONOMY_NT]:
@@ -200,7 +256,7 @@ class ScreenTesterFactory:
         
         if to_step == ScreenStep.TAXONOMY_NT:
             self.nucl_tx.append(
-                f"{to_query}\t{title}\t{accession}\t{taxid}\t{evalue}\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
+                f"{to_query}_0\t{title}\t{accession}\t{taxid}\t{evalue}\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
             )
             return
 

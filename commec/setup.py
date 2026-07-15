@@ -16,9 +16,6 @@ import zipfile
 import tarfile
 import yaml
 import json
-from yaml.parser import ParserError
-
-from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 
 DESCRIPTION = """Helper script for downloading the databases
  required for running the Common Mechanism Screen"""
@@ -646,9 +643,9 @@ class CliSetup:
 
             os.remove(filename_zipped)
 
-        # Default config file installed with commec package should by point to the newly
-        # installed databases
-        self.update_default_db_base_path(DEFAULT_CONFIG_YAML_PATH, self.database_directory)
+        # Emit a config snippet pointing at the freshly installed databases and offer
+        # to save it. The user passes the saved file with `commec screen -y <path>`.
+        self.emit_config_snippet(self.database_directory)
 
         print(
             "\n\nThe common mechanism setup has completed!"
@@ -715,34 +712,49 @@ class CliSetup:
             f" {C_F_BLUE}*-------------------*{C_RESET}",
         )
 
-    def update_default_db_base_path(self, config_file: str, new_path: str) -> None:
+    def emit_config_snippet(self, database_directory: str) -> None:
         """
-        Update the ['basepaths']['default'] path in the configuration yaml file to match the path
-        where the databases were installed.
+        Print a YAML snippet pointing `base_paths.default` at the freshly installed
+        databases, and interactively offer to save it. The user then runs
+        `commec screen -y <saved_path> ...` to use it.
+
+        The packaged default YAML is never mutated — it ships with no
+        `base_paths.default`, so every run needs explicit configuration via `-y` or `-d`.
         """
+        snippet = yaml.safe_dump(
+            {"base_paths": {"default": str(database_directory)}},
+            default_flow_style=False,
+        )
+        print(
+            f"\n{C_F_BLUE}Config snippet for these databases:{C_RESET}\n"
+            f"{snippet}"
+            f"Pass this file to `commec screen` with `-y <path>` to use these databases.\n"
+        )
+
+        print("Save this snippet to a file now? Enter a path, or leave blank to skip:")
+        target = self.user_input()
+        if not target:
+            print("Skipped saving. You can recreate this snippet at any time by re-running setup.")
+            return
+
         try:
-            with open(config_file, 'r', encoding = "utf-8") as file:
-                config_data = yaml.safe_load(file)
+            target_path = Path(os.path.expandvars(target)).expanduser()
+        except RuntimeError:
+            print(f"{C_F_ORANGE}Could not expand user in path: {target}{C_RESET}")
+            return
 
-            # Update the default path under 'base_paths'
-            if 'base_paths' in config_data and 'default' in config_data['base_paths']:
-                config_data['base_paths']['default'] = new_path
-            else:
-                # For some reason this didn't exist, so lets just silently make it, and throw a warning.
-                print(f"{C_F_ORANGE}WARNING: base paths weren't defined in the default configuration file "
-                      f"{config_file}, the correct data will be added, however we recommend you double "
-                      "check that the default config yaml is correct. {C_RESET}")
-                config_data['base_paths'] = {'default' : new_path}
+        try:
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(target_path, "w", encoding="utf-8") as out:
+                out.write(snippet)
+        except OSError as e:
+            print(f"{C_F_ORANGE}Could not write to {target_path}: {e}{C_RESET}")
+            return
 
-            with open(config_file, 'w', encoding = "utf-8") as file:
-                yaml.safe_dump(config_data, file)
-
-        except FileNotFoundError:
-            print(f"Error: File '{config_file}' not found.")
-        except ParserError as e:
-            print(f"YAML parsing error: {e}")
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        print(
+            f"Wrote {target_path}. Run screens with:\n"
+            f"    commec screen -y {target_path} <input.fasta>"
+        )
 
     def print_database_options(self):
         """
