@@ -55,7 +55,7 @@ class ScreenIO:
         # Get configuration based on defaults and CLI args (including YAML config if supplied)
         self.config = {}
         self._read_config(args)
-        
+
         # Check whether a .screen output file already exists.
         if os.path.exists(self.output_screen_file) and not (
             self.config["force"] or self.config["resume"]):

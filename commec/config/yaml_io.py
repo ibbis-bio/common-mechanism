@@ -146,11 +146,9 @@ def _validate_database_paths(tree, breadcrumbs=()):
     """
     if isinstance(tree, dict):
         for key, value in tree.items():
-            if key == "regions": # Override for control lists.
-                continue
             _validate_database_paths(value, breadcrumbs + (key,))
         return
-    if isinstance(tree, str):
+    if isinstance(tree, str) and breadcrumbs[-1] == "path":
         location = ".".join(breadcrumbs)
         if not os.path.isabs(expand_and_normalize(tree)):
             raise YamlIOValidationError(

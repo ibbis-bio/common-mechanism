@@ -23,9 +23,11 @@ class Query:
         self.name = self.create_id(seq_record.id)
         self.description = seq_record.description[len(seq_record.id):].strip()
         self.non_coding_regions : list[tuple[int, int]] = [] # 1 based coordinates for Non-Coding Regions.
-        #self.result : QueryResult = None
         self.result = None
         self.translations: list[QueryTranslation] = []
+
+    def __str__(self) -> str:
+        return self.name
 
     @property
     def original_name(self) -> str:
