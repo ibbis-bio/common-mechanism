@@ -103,8 +103,8 @@ def test_diamond_job_and_threads_calculations(input_jobs):
      No specific expected outcomes, but we check general expectations (e.g. never exceeding max_threads)
     """
     handler = DiamondHandler(
-        "commec/tests/test_dbs/nr_dmnd/nr",
-        "commec/tests/test_data/single_record.fasta",
+        os.path.join(DATABASE_DIRECTORY, "nr_dmnd/nr"),
+        os.path.join(os.path.dirname(__file__), "test_data/single_record.fasta"),
         "output.test",
     )
     handler.jobs = input_jobs
@@ -147,8 +147,8 @@ def test_diamond_job_and_threads_calculations_parametrized(
     Specific test cases for Diamond Jobs.
     """
     handler = DiamondHandler(
-        "commec/tests/test_dbs/nr_dmnd/nr",
-        "commec/tests/test_data/single_record.fasta",
+        os.path.join(DATABASE_DIRECTORY, "nr_dmnd/nr"),
+        os.path.join(os.path.dirname(__file__), "test_data/single_record.fasta"),
         "output.test",
     )
     handler.jobs = input_jobs
