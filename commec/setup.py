@@ -91,7 +91,7 @@ def add_args(input_options: argparse.ArgumentParser) -> argparse.ArgumentParser:
     # Optional
     input_options.add_argument(
         "-m",
-        "--dryrun",
+        "--mock",
         dest="dry_run",
         default=False,
         action="store_true",
@@ -144,14 +144,12 @@ class CommecSetup:
 
         databases = None
         # Fetch latest.json from R2.abs
-        if os.path.isfile(args.restore_json):
-            print(f"{STEP}A json database file was provided, using ")
-            json_string : str
-            with open(input_json_filepath, "r", encoding="utf-8") as json_file:
-                # Read the file contents as a string
-                json_string = json_file.read()
-            my_data : dict = json.loads(json_string)
-
+        if args.restore_json:
+            if not os.path.isfile(args.restore_json):
+                print(f"{ERROR_CHECK}Provided argument for import revisions from JSON file not a valid file: {args.restore_json}")
+                raise FileNotFoundError(args.restore_json)
+            print(f"{STEP}A json database file was provided, fetching revision information...")
+            databases = fetch_revisions_from_json(args.restore_json)
         else:
             print(f"{STEP}Fetching latest commec database revision information ...")
             latest = fetch_latest_revisions()
@@ -198,8 +196,8 @@ class CommecSetup:
         dry_run = args.dry_run if hasattr(args,"dry_run") else False
         if dry_run:
             print(
-                f"\n{C_F_GRAY}This was a dry run. Run {C_F_ORANGE}\'commec"
-                f" setup\'{C_F_GRAY} again without {C_F_ORANGE}\'-r\'{C_F_GRAY}"
+                f"\n{C_F_GRAY}This was a mock run. Run {C_F_ORANGE}\'commec"
+                f" setup\'{C_F_GRAY} again without {C_F_ORANGE}\'-m/--mock\'{C_F_GRAY}"
                 f" to continue with the update.{C_RESET}")
             return
 
@@ -238,6 +236,7 @@ def fetch_supported_revisions() -> dict | None:
         major_max = revision_string.split(",")[1].split(".")[0][1:]+".0"
         supported_revision_data[db_name] = (DatabaseRevision(major_min), DatabaseRevision(major_max))
     return supported_revision_data
+
 
 def fetch_revisions_from_json(filename : str | os.PathLike) -> dict | None:
     """
@@ -291,12 +290,10 @@ class CommecDatabaseUpdater:
         self.name = None
         self.write_location = existing_location
         self.existing_revision = None
-
         try:
-            self.name, self.existing_revision = read_manifest()
+            self.name, self.existing_revision = read_manifest(existing_location)
         except json.JSONDecodeError as e:
             print(f"{C_F_ORANGE}{C_BOLD}X{C_RESET} Issue reading {manifest_filename} : {e}")
-
         self.fetch_location = None
         self.update_required = True
         self.__update_message = None
