@@ -14,14 +14,6 @@ def test_screendata():
             json_output_version=JSON_COMMEC_FORMAT_VERSION,
             time_taken="00:00:00:00",
             date_run="1.1.2024",
-            search_tool_info= SearchToolInfo(
-                biorisk_search_info=SearchToolVersion("HMM 0.0.0","DB 0.0.0"),
-                protein_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-                nucleotide_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-                low_concern_protein_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-                low_concern_rna_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-                low_concern_dna_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
-            )
         ),
         query_info = ScreenQueryInfo(
             file="no file",
@@ -48,6 +40,23 @@ def test_screendata():
                 }
             )
         },
+        database_info= DatabaseInfo(
+            search_tool_info= SearchToolInfo(
+                biorisk_search_info=SearchToolVersion("HMM 0.0.0","DB 0.0.0"),
+                protein_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                nucleotide_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                low_concern_protein_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                low_concern_rna_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+                low_concern_dna_search_info=SearchToolVersion("Blast 0.0.0","DB 0.0.0"),
+            ),
+            revisions = {
+                "biorisk" : "1.0",
+                "best_match" : "1.0",
+                "low_concern" : "1.0",
+                "control_lists" : "1.0"
+            },
+            control_list_info = []
+        )
     )
 
 @pytest.fixture

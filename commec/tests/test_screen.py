@@ -24,7 +24,7 @@ def sanitize_for_test(screen_result: ScreenResult):
     screen_result.commec_info.date_run = None
 
     # All search tool versions etc may change.
-    screen_result.commec_info.search_tool_info = None
+    screen_result.database_info = None
 
     # Pytest increments the filename version, so ignore the input file.
     screen_result.query_info.file = "/test_placeholder/"

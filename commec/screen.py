@@ -361,7 +361,7 @@ class Screen:
                     ",".join(control_list.get_regions_set(cl.region)),
                     cl.status,
                     cl.url) for cl in control_lists]
-            self.screen_data.commec_info.control_list_info = control_lists
+            self.screen_data.database_info.control_list_info = control_lists
 
         # Initialize the queries
         try:
@@ -436,7 +436,7 @@ class Screen:
 
         # Initialize the version info for all the databases
         _tools = self.database_tools
-        _info = self.screen_data.commec_info.search_tool_info
+        _info = self.screen_data.database_info.search_tool_info
         _info.biorisk_search_info = _tools.biorisk.get_version_information()
         if self.params.should_do_protein_screening:
             _info.protein_search_info = _tools.regulated_protein.get_version_information()
@@ -450,10 +450,15 @@ class Screen:
         # Initalise the revision info for all the databases:
         for dbname, dbinfo in self.params.config["databases"].items():
             path = dbinfo.get("path")
-            logger.info("Trying to find revision info from %s", path)
-            name, revision = read_manifest(path)
+            logger.debug("Trying to find revision info from %s", path)
+            try:
+                name, revision = read_manifest(path)
+            except FileNotFoundError as e:
+                logger.warning("No local manifest information for database %s", dbname)
+                self.screen_data.database_info.revisions[dbname] = "0.0"
+                continue
             if name == dbname:
-                self.screen_data.commec_info.database_revisions[dbname] = str(revision)
+                self.screen_data.database_info.revisions[dbname] = str(revision)
             else:
                 logger.error("Expected database name %s, from location %s, was"
                             " not matched in local manifest.json, %s.",

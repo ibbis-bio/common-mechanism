@@ -150,6 +150,18 @@ class CommecSetup:
                 raise FileNotFoundError(args.restore_json)
             print(f"{STEP}A json database file was provided, fetching revision information...")
             databases = fetch_revisions_from_json(args.restore_json)
+            if not databases:
+                print(f"{ERROR_CHECK}Input JSON had no database revision information. Ensure the expected format: e.g.\n"
+                        "{\n"
+                        "  \"database_info\" : {\n"
+                        "    \"revisions\" : {\n"
+                        "       \"biorisk\" : \"1.0\",\n"
+                        "       \"best_match\" : \"1.0\",\n"
+                        "       \"low_concern\" : \"1.0\",\n"
+                        "       \"control_lists\" : \"1.0\"\n"
+                        "    }\n  }\n}"
+                        )
+                return
         else:
             print(f"{STEP}Fetching latest commec database revision information ...")
             latest = fetch_latest_revisions()
@@ -241,14 +253,23 @@ def fetch_supported_revisions() -> dict | None:
 def fetch_revisions_from_json(filename : str | os.PathLike) -> dict | None:
     """
     Any json output from commec screen should contain the revision information of the databases used.
-
+    Expected json format is:
+    database_info : {
+        revisions : {
+            biorisk : "1.0",
+            best_match : "1.0",
+            low_concern : "1.0",
+            control_list : "1.0"
+        }
+    }
+    Returns an empty dict on failure.
     """
     json_string : str
     with open(filename, "r", encoding="utf-8") as json_file:
         json_string = json_file.read()
     my_data : dict = json.loads(json_string)
-    db_revisions = my_data.get("commec_info", {})
-    db_revisions = db_revisions.get("database_revisions", {})
+    db_revisions = my_data.get("database_info", {})
+    db_revisions = db_revisions.get("revisions", {})
     return db_revisions
 
 
@@ -274,7 +295,10 @@ def read_manifest(check_location):
     """
     manifest_location = remove_filename_from_path(check_location)
     manifest_filename = os.path.join(manifest_location, "manifest.json")
-    print("Looking for ", manifest_filename)
+    manifest = {
+        "component" : "invalid",
+        "revision" : "0.0"
+    }
     if os.path.exists(manifest_location) and os.path.isfile(manifest_filename):
         with open(manifest_filename, "r", encoding="utf-8") as manifest_file:
             json_string = manifest_file.read()
@@ -298,7 +322,7 @@ class CommecDatabaseUpdater:
         self.update_required = True
         self.__update_message = None
 
-        self.latest_revision = DatabaseRevision()
+        self.requested_revision = DatabaseRevision()
 
     @property
     def update_message(self):
@@ -329,13 +353,13 @@ class CommecDatabaseUpdater:
 
         # Database requires updating to latest revision
         if self.existing_revision < self.requested_revision:
-            self.__update_message = f"{self.name} ({self.existing_revision}) will be {C_F_ORANGE}updated{C_RESET} to revision {self.requested_revision}."
+            self.__update_message = f"{self.name} {self.existing_revision} will be {C_F_ORANGE}updated{C_RESET} to revision {self.requested_revision}."
             self.update_required = True
             return
 
        # Database has requested a downgrade to a specific revision
         if self.existing_revision > self.requested_revision:
-            self.__update_message = f"{self.name} ({self.existing_revision}) will be {C_F_ORANGE}reverted{C_RESET} to revision {self.requested_revision}."
+            self.__update_message = f"{self.name} {self.existing_revision} will be {C_F_ORANGE}reverted{C_RESET} to revision {self.requested_revision}."
             self.update_required = True
             return
 
@@ -355,7 +379,7 @@ class CommecDatabaseUpdater:
 
         print(f"{STEP}Downloading latest {self.name} ... ")
         # Calculate fetch_location
-        self.fetch_location = os.path.join(self.name, str(self.latest_revision), "")
+        self.fetch_location = os.path.join(self.name, str(self.requested_revision), "")
         manifest_fetch_location = os.path.join(self.fetch_location, "manifest.json")
         tar_fetch_location = os.path.join(self.fetch_location, f"{self.name}.tar.zst")
 
@@ -388,7 +412,7 @@ class CommecDatabaseUpdater:
         # Write updated local manifest.
         manifest_data = {
             "component" : str(self.name),
-            "revision" : str(self.latest_revision),
+            "revision" : str(self.requested_revision),
         }
         with open(manifest_write_location, mode='w', encoding = "utf-8") as manifest_json:
             json.dump(manifest_data, manifest_json, indent = 2)
@@ -420,7 +444,7 @@ class DatabaseRevision:
     major : int = 0
     minor : int = 0
     def __init__(self, input_string : str = str("0.0")):
-        extraction = input_string.split(".")
+        extraction = str(input_string).split(".")
         if len(extraction) == 2:
             self.major, self.minor = extraction
             return
@@ -526,7 +550,7 @@ def save_r2_object(
     expected_sha256_raw = fetch_r2_object(f"{object_path}.sha256")
     expected_sha256 = None
     if expected_sha256_raw is None:
-        print(f"{ERROR_CHECK}Could not fetch checksum for {object_path}, proceeding without verification.")
+        print(f"{ERROR_CHECK}Could not fetch checksum for {object_path}")
         return False
     else:
         expected_sha256 = expected_sha256_raw.decode("utf-8").strip().split()[0]
