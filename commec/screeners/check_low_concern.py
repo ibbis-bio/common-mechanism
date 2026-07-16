@@ -358,6 +358,8 @@ def parse_low_concern_hits(protein_handler : HmmerHandler,
     """
     # Reading empty outcomes should result in empty DataFrames, not errors.
     low_concern_protein_screen_data = protein_handler.read_output()
+    low_concern_protein_screen_data = low_concern_protein_screen_data[
+        low_concern_protein_screen_data["evalue"] < LOW_CONCERN_PROTEIN_EVALUE_CUTOFF]
     append_nt_querylength_info(low_concern_protein_screen_data, queries)
     recalculate_hmmer_query_coordinates(low_concern_protein_screen_data)
     logger.debug("\tLow-concern Protein Data: shape: %s preview:\n%s",
