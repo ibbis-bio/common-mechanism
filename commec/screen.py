@@ -315,17 +315,16 @@ class Screen:
         # Check for database updates.
         if self.params.config["auto_update_databases"]:
             logger.info("Checking for database updates ... ")
-            updated_required, updaters = check_for_updates(self.params.config)
-            if updated_required:
+            updates_required, updaters = check_for_updates(self.params.config)
+            if updates_required:
                 names = [updater.name for updater in updaters.values() if (updater.update_required and not updater.existing_revision.invalid())]
                 names = [name[:1].upper() + name[1:].replace("_"," ") for name in names]
-                if len(names) > 0:
-                    logger.info("Updates available for the following installed databases:\n%s. "
-                                "\nPerforming updates now.", ", ".join(names))
-                    logger.info("",extra={"no_prefix" : True , "box_up" : True})
-                    [updater.perform_update() for updater in updaters.values() if not updater.existing_revision.invalid()] # Only update those where the database existed.
-                    logger.info("",extra={"no_prefix" : True , "box_down" : True})
-                    logger.info("Update complete. Proceeding with Screen ... ")
+                logger.info("Updates available for the following installed databases:\n%s. "
+                            "\nPerforming updates now.", ", ".join(names))
+                logger.info("",extra={"no_prefix" : True , "box_up" : True})
+                [updater.perform_update() for updater in updaters.values() if not updater.existing_revision.invalid()] # Only update those where the database existed.
+                logger.info("",extra={"no_prefix" : True , "box_down" : True})
+                logger.info("Update complete. Proceeding with Screen ... ")
 
         logger.info("Validating input query, regulations, and databases...")
         try:

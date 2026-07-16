@@ -739,7 +739,7 @@ def check_for_updates(config : dict) -> tuple[bool, dict[str,CommecDatabaseUpdat
         db_to_update.name = dbname
         db_to_update.check_for_update(latest)
     
-    update_flag : bool = any([(db.update_required and db.existing_revision) for db in updaters.values()])
+    update_flag : bool = any([(db.update_required and not db.existing_revision.invalid()) for db in updaters.values()])
     return update_flag, updaters
 
 def run(arguments):
