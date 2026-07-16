@@ -459,6 +459,8 @@ class Screen:
                 continue
             if name == dbname:
                 self.screen_data.database_info.revisions[dbname] = str(revision)
+                if revision.invalid():
+                    logger.warning("No local manifest information for database %s", dbname)
             else:
                 logger.error("Expected database name %s, from location %s, was"
                             " not matched in local manifest.json, %s.",
