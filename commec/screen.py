@@ -451,20 +451,17 @@ class Screen:
         for dbname, dbinfo in self.params.config["databases"].items():
             path = dbinfo.get("path")
             logger.debug("Trying to find revision info from %s", path)
-            try:
-                name, revision = read_manifest(path)
-            except FileNotFoundError as e:
+            self.screen_data.database_info.revisions[dbname] = "0.0"
+            name, revision = read_manifest(path)
+            if revision.invalid():
                 logger.warning("No local manifest information for database %s", dbname)
-                self.screen_data.database_info.revisions[dbname] = "0.0"
                 continue
             if name == dbname:
                 self.screen_data.database_info.revisions[dbname] = str(revision)
-                if revision.invalid():
-                    logger.warning("No local manifest information for database %s", dbname)
-            else:
-                logger.error("Expected database name %s, from location %s, was"
-                            " not matched in local manifest.json, %s.",
-                            dbname, path, name)
+                continue
+            logger.error("Expected database name %s, from location %s, was"
+                        " not matched in local manifest.json, %s.",
+                        dbname, path, name)
 
         # Store start time.
         self.screen_data.commec_info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
