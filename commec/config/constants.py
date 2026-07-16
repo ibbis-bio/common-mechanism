@@ -13,7 +13,7 @@ N_NON_REGIONAL_HITS_TO_WARN = 2 # How many non-regional hits you need before war
 
 # NUCLEOTIDE TAXONOMY SCREEN
 # At what percent identity a protein hit must attain, to remove that region from non-coding label.
-NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD = 90
+NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD = 80
 
 # BIORISK E-VALUE FILTERING
 # Sequences shorter than this threshold use a length-dependent E-value cutoff.
