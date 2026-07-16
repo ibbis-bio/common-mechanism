@@ -377,7 +377,7 @@ class CommecDatabaseUpdater:
         #print(f"{C_F_GRAY} Removing existing {self.name} ...")
         # Get a list of existing files at the location
 
-        print(f"{STEP}Downloading latest {self.name} ... ")
+        print(f"{STEP}Downloading {self.name} revision {str(self.requested_revision)}... ")
         # Calculate fetch_location
         self.fetch_location = os.path.join(self.name, str(self.requested_revision), "")
         manifest_fetch_location = os.path.join(self.fetch_location, "manifest.json")
@@ -731,7 +731,7 @@ def check_for_updates(config : dict) -> tuple[bool, dict[str,CommecDatabaseUpdat
     """
     updaters = create_updaters_from_config(config)
     revisions = fetch_latest_revisions()
-    latest_revisions = revisions[revisions["latest"]]
+    latest_revisions = revisions["latest"]
     for dbname, latest in latest_revisions.items():
         db_to_update = updaters.get(dbname)
         if not db_to_update:

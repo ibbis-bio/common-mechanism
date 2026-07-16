@@ -321,7 +321,7 @@ class Screen:
             if updated_required:
                 names = [updater.name for updater in updaters.values() if (updater.update_required and updater.existing_revision)]
                 names = [name[:1].upper() + name[1:].replace("_"," ") for name in names]
-                logger.info("Updates required for the following databases:\n%s. "
+                logger.info("Updates available for the following databases:\n%s. "
                             "\nPerforming updates now.", ", ".join(names))
                 logger.info("",extra={"no_prefix" : True , "box_up" : True})
                 [updater.perform_update() for updater in updaters.values() if updater.existing_revision] # Only update those where the database existed.
