@@ -346,7 +346,7 @@ class CommecDatabaseUpdater:
                 return
 
         # Database does not yet exist.
-        if not self.existing_revision:
+        if ((not self.existing_revision) or (self.existing_revision.major == 0)):
             self.update_required = True
             self.__update_message = f"{C_F_ORANGE}Download{C_RESET} {self.name} (revision {requested_revision})"
             return
@@ -446,7 +446,8 @@ class DatabaseRevision:
     def __init__(self, input_string : str = str("0.0")):
         extraction = str(input_string).split(".")
         if len(extraction) == 2:
-            self.major, self.minor = extraction
+            self.major = int(extraction[0])
+            self.minor = int(extraction[1])
             return
         raise ValueError("Expected \"X.X\" string as input for Database Revision.")
     def __eq__(self, other):
