@@ -117,9 +117,7 @@ class ScreenArgumentParser(argparse.ArgumentParser):
                         collect_user_actions(subparser)
                 else:
                     for arg_string in action.option_strings:
-                        #print("Testing:", arg_string)
                         if arg_string in cli_strings:
-                            #print("added!")
                             user_specified_args.add(action.dest)
 
         # Collect arguments from main parser and all subparsers
