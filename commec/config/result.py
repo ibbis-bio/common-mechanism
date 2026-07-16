@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 # Seperate versioning for the output JSON.
-JSON_COMMEC_FORMAT_VERSION = "0.5"
+JSON_COMMEC_FORMAT_VERSION = "0.6"
 
 
 class ScreenStatus(StrEnum):
@@ -734,9 +734,6 @@ class ScreenRunInfo:
     json_output_version: str = JSON_COMMEC_FORMAT_VERSION
     time_taken: str = ""
     date_run: str = ""
-    search_tool_info: SearchToolInfo = field(default_factory=SearchToolInfo)
-    control_list_info : list[ControlListResult] = field(default_factory=list)
-
 
 @dataclass
 class ScreenQueryInfo:
@@ -745,6 +742,15 @@ class ScreenQueryInfo:
     number_of_queries: int = 0
     total_query_length: int = 0
 
+@dataclass
+class DatabaseInfo:
+    """ 
+    Container for more database related summary information, less important info
+    that we want to display near the end of the json.
+    """
+    search_tool_info: SearchToolInfo = field(default_factory=SearchToolInfo)
+    revisions: dict[str, str] = field(default_factory=dict)
+    control_list_info : list[ControlListResult] = field(default_factory=list)
 
 @dataclass
 class ScreenResult:
@@ -754,6 +760,7 @@ class ScreenResult:
     commec_info: ScreenRunInfo = field(default_factory=ScreenRunInfo)
     query_info: ScreenQueryInfo = field(default_factory=ScreenQueryInfo)
     queries: dict[str, QueryResult] = field(default_factory=dict)
+    database_info : DatabaseInfo = field(default_factory=DatabaseInfo)
 
     def get_query(self, query_name: str) -> QueryResult:
         """

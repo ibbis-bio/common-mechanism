@@ -43,6 +43,8 @@ requirements:
     - plotly
     - yaml
     - mako
+    - tar
+    - zstd
 
 test:
   commands:

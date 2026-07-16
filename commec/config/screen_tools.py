@@ -8,12 +8,16 @@ Sets and alters defaults based on input parameters.
 
 import logging
 import os
+import argparse
+import sys
 from commec.config.screen_io import ScreenIO
 from commec.tools.blastn import BlastNHandler
 from commec.tools.blastx import BlastXHandler
 from commec.tools.diamond import DiamondHandler
 from commec.tools.cmscan import CmscanHandler
 from commec.tools.hmmer import HmmerHandler
+from commec.tools.search_handler import DatabaseValidationError
+from commec.utils.file_utils import file_arg
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +25,6 @@ class ScreenTools:
     """
     Using parameters and filenames in `ScreenIo`, set up the tools needed to search datbases.
     """
-
     def __init__(self, params: ScreenIO):
         self.biorisk: HmmerHandler = None
         self.regulated_protein : BlastXHandler | DiamondHandler = None
@@ -30,10 +33,7 @@ class ScreenTools:
         self.low_concern_blastn: BlastNHandler = None
         self.low_concern_cmscan: CmscanHandler = None
 
-        self.biorisk_annotations_csv: str | os.PathLike = None
-
-        # Paths for vaxid, taxids, and taxonomy directory, used for check_regulated_pathogens
-        # (Declared this way for backwards compatibility to old database structure at this stage)
+        # Paths for annotations still used in the Biorisk, and Low Concern databases.
         self.biorisk_annotations = params.config["databases"]["biorisk"]["annotations"]
         self.low_concern_annotations = params.config["databases"]["low_concern"]["annotations"]
 
@@ -45,11 +45,17 @@ class ScreenTools:
             threads=params.config["threads"],
             force=params.config["force"],
         )
+        try:
+            file_arg(params.config["databases"]["biorisk"]["annotations"])
+        except(argparse.ArgumentTypeError):
+            raise DatabaseValidationError(
+                f"{params.config["databases"]["biorisk"]["annotations"]} expected file does not exist."
+                )
 
         if params.should_do_protein_screening:
             if params.config["protein_search_tool"] == "blastx":
                 self.regulated_protein = BlastXHandler(
-                    params.config["databases"]["regulated_protein"]["blast"]["path"],
+                    params.config["databases"]["best_match"]["protein"]["path"],
                     input_file=params.nt_path,
                     out_file=f"{params.output_prefix}.nr.blastx",
                     threads=params.config["threads"],
@@ -58,7 +64,7 @@ class ScreenTools:
                 self.regulated_protein.arguments_dictionary["-mt_mode"] = params.config["blast_mt_mode"]
             elif params.config["protein_search_tool"] in ("nr.dmnd", "diamond"):
                 self.regulated_protein = DiamondHandler(
-                    params.config["databases"]["regulated_protein"]["diamond"]["path"],
+                    params.config["databases"]["best_match"]["protein"]["path"],
                     input_file=params.nt_path,
                     out_file=f"{params.output_prefix}.nr.dmnd",
                     threads=params.config["threads"],
@@ -75,7 +81,7 @@ class ScreenTools:
 
         if params.should_do_nucleotide_screening:
             self.regulated_nt = BlastNHandler(
-                params.config["databases"]["regulated_nt"]["path"],
+                params.config["databases"]["best_match"]["nucleotide"]["path"],
                 input_file=params.nc_path,
                 out_file=f"{params.output_prefix}.nt.blastn",
                 threads=params.config["threads"],
@@ -106,3 +112,9 @@ class ScreenTools:
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
+            try:
+                file_arg(params.config["databases"]["low_concern"]["annotations"])
+            except(argparse.ArgumentTypeError):
+                raise DatabaseValidationError(
+                    f"{params.config["databases"]["low_concern"]["annotations"]} expected file does not exist."
+                    )

@@ -16,8 +16,8 @@ DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs")
 
 databases_to_implement = [
     [DiamondHandler, "nr_dmnd", "nr"],
-    [BlastNHandler, "nt_blast", "core_nt"],
-    [BlastXHandler, "nr_blast", "nr"],
+    [BlastNHandler, "best_match/nucleotide/", "core_nt"],
+    [BlastXHandler, "best_match/protein/", "nr"],
     [HmmerHandler, "low_concern/protein", "benign.hmm"],
     [CmscanHandler, "low_concern/rna", "benign.cm"],
 ]
@@ -56,8 +56,8 @@ def test_database_can_run(input_db):
 
 bad_databases = [
     [DiamondHandler, "nr_dmnd", "bad"],
-    [BlastNHandler, "nt_blast", "bad"],
-    [BlastXHandler, "nr_blast", "bad"],
+    [BlastNHandler, "best_match/nucleotide/", "bad"],
+    [BlastXHandler, "best_match/protein/", "bad"],
     [HmmerHandler, "low_concern_db", "bad.hmm"],
     [CmscanHandler, "low_concern_db", "bad.cmscan"],
     [DiamondHandler, "bad", "bad"],
@@ -68,8 +68,8 @@ bad_databases = [
     # Wrong BLAST alias: directory has `core_nt.*` files but user configured prefix `nt`.
     # Previous glob-based validation matched any file containing 'nt' and silently passed,
     # surfacing a cryptic "No alias or index file found" error from BLAST itself.
-    [BlastNHandler, "nt_blast", "nt"],
-    [BlastXHandler, "nr_blast", "n"],
+    [BlastNHandler, "best_match/nucleotide/", "nt"],
+    [BlastXHandler, "best_match/protein/", "n"],
 ]
 
 

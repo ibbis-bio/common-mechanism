@@ -58,7 +58,7 @@ class HmmerHandler(SearchHandler):
             with open(self.db_file, "r", encoding="utf-8") as file:
                 for line in file:
                     if line.startswith("HMMER3/f"):
-                        database_info = line.split(";", maxsplit=1)[0].strip()
+                        database_info = line.split(";", maxsplit=1)[0].strip().replace("/f","")
                         continue
                     # Early exit if data has been found
                     if database_info:
@@ -67,7 +67,7 @@ class HmmerHandler(SearchHandler):
             tool_version_result = subprocess.run(
                 ["hmmscan", "-h"], capture_output=True, text=True, check=True
             )
-            tool_info: str = tool_version_result.stdout.splitlines()[1].strip()
+            tool_info: str = tool_version_result.stdout.splitlines()[1].strip()[2:]
             return SearchToolVersion(tool_info, database_info)
 
         except (subprocess.CalledProcessError, FileNotFoundError):

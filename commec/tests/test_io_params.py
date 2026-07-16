@@ -20,6 +20,7 @@ def expected_defaults():
         },
         "databases": {
             "low_concern": {
+                "path" : "/commec-dbs/low_concern/",
                 "rna": {"path": "/commec-dbs/low_concern/rna/low_concern.cm"},
                 "dna": {"path": "/commec-dbs/low_concern/dna/low_concern.fasta"},
                 "protein": {"path": "/commec-dbs/low_concern/protein/low_concern.hmm"},
@@ -29,12 +30,10 @@ def expected_defaults():
                 "path": "/commec-dbs/biorisk/biorisk.hmm",
                 "annotations": '/commec-dbs/biorisk/biorisk_annotations.csv',
             },
-            "regulated_nt": {
-                "path": "/commec-dbs/nt_blast/core_nt"
-            },
-            "regulated_protein": {
-                "blast": {"path": "/commec-dbs/nr_blast/nr"},
-                "diamond": {"path": "/commec-dbs/nr_dmnd/nr.dmnd"}
+            "best_match": {
+                "path": "/commec-dbs/best_match/",
+                "nucleotide": {"path": "/commec-dbs/best_match/nucleotide/nucl"},
+                "protein": {"path": "/commec-dbs/best_match/protein/prot",}
             },
             "control_lists": {
                 "path": "/commec-dbs/control_lists/",
@@ -42,15 +41,16 @@ def expected_defaults():
             }
         },
         "threads": 1,
-        "protein_search_tool": "blastx",
-        "skip_taxonomy_search": False,
-        "skip_nt_search": False,
-        "do_cleanup": False,
         "diamond_jobs": None,
         "blast_mt_mode": 1,
+        "do_cleanup": False,
         "force": False,
+        "skip_taxonomy_search": False,
+        "protein_search_tool": "blastx",
         "resume": False,
-        "verbose": False
+        "skip_nt_search": False,
+        "verbose": False,
+        "auto_update_databases" : False
     }
 
 @pytest.fixture
@@ -75,6 +75,7 @@ def expected_updated_from_custom_yaml():
         },
         "databases": {
             "low_concern": {
+                "path" : "/commec-dbs/low_concern/",
                 "rna": {"path": "/commec-dbs/low_concern/rna/low_concern.cm"},
                 "dna": {"path": "/commec-dbs/low_concern/dna/low_concern.fasta"},
                 "protein": {"path": "/commec-dbs/low_concern/protein/low_concern.hmm"},
@@ -84,12 +85,10 @@ def expected_updated_from_custom_yaml():
                 "path": "/commec-dbs/biorisk/biorisk.hmm",
                 "annotations": "/custom_path.txt",
             },
-            "regulated_nt": {
-                "path": "/commec-dbs/nt_blast/core_nt"
-            },
-            "regulated_protein": {
-                "blast": {"path": "/commec-dbs/nr_blast/nr"},
-                "diamond": {"path": "/commec-dbs/nr_dmnd/nr.dmnd"}
+            "best_match": {
+                "path": "/commec-dbs/best_match/",
+                "nucleotide": {"path": "/commec-dbs/best_match/nucleotide/nucl"},
+                "protein": {"path": "/commec-dbs/best_match/protein/prot",}
             },
             "control_lists": {
                 "path": "/commec-dbs/control_lists/",
@@ -97,15 +96,16 @@ def expected_updated_from_custom_yaml():
             }
         },
         "threads": 8,
-        "protein_search_tool": "blastx",
-        "skip_taxonomy_search": True,
-        "skip_nt_search": False,
-        "do_cleanup": False,
         "diamond_jobs": None,
         "blast_mt_mode": 1,
+        "do_cleanup": False,
         "force": True,
+        "skip_taxonomy_search": True,
+        "protein_search_tool": "blastx",
         "resume": False,
-        "verbose": False
+        "skip_nt_search": False,
+        "verbose": False,
+        "auto_update_databases" : False
     }
 
 def test_missing_input_file():
@@ -113,6 +113,7 @@ def test_missing_input_file():
     add_args(args)
     with pytest.raises(SystemExit):
         args = args.parse_args()
+        print("What got passed: ", args.fasta_file)
     
 def test_default_config_only_raises():
     """Default config alone has no base_paths.default — must raise rather than fall back."""

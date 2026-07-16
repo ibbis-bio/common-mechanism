@@ -134,7 +134,7 @@ def test_fetch_nocoding_regions(tmp_path):
         query.result = QueryResult()
 
     # Setup result handler for function input.
-    db_file = os.path.join(DATABASE_DIRECTORY, "nr_blast/nr")
+    db_file = os.path.join(DATABASE_DIRECTORY, "best_match/protein/nr")
     handler = BlastXHandler(db_file, input_fasta, input_blast, force=True)
 
     calculate_noncoding_regions_per_query(handler, queries)

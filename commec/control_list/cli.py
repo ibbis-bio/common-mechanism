@@ -152,7 +152,7 @@ def generate_output_summary_csv(output_filepath : str | os.PathLike):
     output_data = output_data.sort_values("display_name")
 
     # Export - ensure .csv suffix
-    output_path = Path(output_filepath)
+    output_path = Path(output_filepath).resolve()
     if output_path.suffix != ".csv":
         output_path = output_path.with_suffix(".csv")
     output_data.to_csv(output_path, index = False)

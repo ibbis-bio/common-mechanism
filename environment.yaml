@@ -21,6 +21,8 @@ dependencies:
   - yaml
   - mako
   - wget
+  - tar
+  - zstd
   # Development dependencies
   - pip
   - pytest

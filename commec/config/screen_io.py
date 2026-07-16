@@ -12,13 +12,14 @@ import argparse
 import logging
 import multiprocessing
 from pprint import pformat
+from pathlib import Path
 from Bio import SeqIO
 import yaml
 from Bio.SeqRecord import SeqRecord
 
 import commec.config.yaml_io as YamlIO
 from commec.config.query import Query
-from commec.utils.file_utils import expand_and_normalize
+from commec.utils.file_utils import expand_and_normalize, file_arg
 from commec.config.constants import (
     MINIMUM_QUERY_LENGTH,
     MAXIMUM_QUERY_LENGTH,
@@ -99,6 +100,7 @@ class ScreenIO:
 
         # Write a clean FASTA that can be used downstream
         self._write_clean_fasta()
+
         return True
 
 
@@ -188,15 +190,15 @@ class ScreenIO:
 
         # Override the default base path with database directory from cli.
         base_paths = self.config["base_paths"]
-        if self.db_dir is not None:
-            logger.info("Command line arguments updated base databases directory: %s", self.db_dir)
-            base_paths["default"] = self.db_dir
+        if not self.db_dir is None:
+            base_paths["default"] = Path(expand_and_normalize(self.db_dir)).resolve()
+            logger.info("Command line arguments updated base databases directory: %s", base_paths["default"])
         else:
             # Otherwise update the default database path if it wasn't defined.
             self.db_dir = base_paths["default"]
 
         # CLI -d accepts relative paths for shell convenience; normalize to absolute.
-        db_dir_override = expand_and_normalize(self.db_dir) if self.db_dir else None
+        # db_dir_override = expand_and_normalize(self.db_dir) if self.db_dir else None
 
         # Update paths in configuration using appropriate string substitution
         self.config = YamlIO.format_config_paths(self.config)

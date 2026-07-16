@@ -81,6 +81,7 @@ from commec.screeners.check_reg_path import parse_taxonomy_hits
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.tools.search_handler import DatabaseValidationError
 from commec.config.json_io import encode_screen_data_to_json
+from commec.setup import check_for_updates, read_manifest
 import commec.control_list as control_list
 from commec.config.constants import MINIMUM_QUERY_LENGTH, MAXIMUM_QUERY_LENGTH
 
@@ -116,9 +117,7 @@ class ScreenArgumentParser(argparse.ArgumentParser):
                         collect_user_actions(subparser)
                 else:
                     for arg_string in action.option_strings:
-                        #print("Testing:", arg_string)
                         if arg_string in cli_strings:
-                            #print("added!")
                             user_specified_args.add(action.dest)
 
         # Collect arguments from main parser and all subparsers
@@ -313,6 +312,20 @@ class Screen:
         # Needed to initialize parameters before logging to files
         setup_file_logging(self.params.output_screen_file, log_level)
 
+        # Check for database updates.
+        if self.params.config["auto_update_databases"]:
+            logger.info("Checking for database updates ... ")
+            updates_required, updaters = check_for_updates(self.params.config)
+            if updates_required:
+                names = [updater.name for updater in updaters.values() if (updater.update_required and not updater.existing_revision.invalid())]
+                names = [name[:1].upper() + name[1:].replace("_"," ") for name in names]
+                logger.info("Updates available for the following installed databases:\n%s. "
+                            "\nPerforming updates now.", ", ".join(names))
+                logger.info("",extra={"no_prefix" : True , "box_up" : True})
+                [updater.perform_update() for updater in updaters.values() if not updater.existing_revision.invalid()] # Only update those where the database existed.
+                logger.info("",extra={"no_prefix" : True , "box_down" : True})
+                logger.info("Update complete. Proceeding with Screen ... ")
+
         logger.info("Validating input query, regulations, and databases...")
         try:
             self.database_tools: ScreenTools = ScreenTools(self.params)
@@ -346,7 +359,7 @@ class Screen:
                     ",".join(control_list.get_regions_set(cl.region)),
                     cl.status,
                     cl.url) for cl in control_lists]
-            self.screen_data.commec_info.control_list_info = control_lists
+            self.screen_data.database_info.control_list_info = control_lists
 
         # Initialize the queries
         try:
@@ -421,7 +434,7 @@ class Screen:
 
         # Initialize the version info for all the databases
         _tools = self.database_tools
-        _info = self.screen_data.commec_info.search_tool_info
+        _info = self.screen_data.database_info.search_tool_info
         _info.biorisk_search_info = _tools.biorisk.get_version_information()
         if self.params.should_do_protein_screening:
             _info.protein_search_info = _tools.regulated_protein.get_version_information()
@@ -431,6 +444,22 @@ class Screen:
             _info.low_concern_protein_search_info = _tools.low_concern_hmm.get_version_information()
             _info.low_concern_rna_search_info = _tools.low_concern_cmscan.get_version_information()
             _info.low_concern_dna_search_info = _tools.low_concern_blastn.get_version_information()
+
+        # Initalise the revision info for all the databases:
+        for dbname, dbinfo in self.params.config["databases"].items():
+            path = dbinfo.get("path")
+            logger.debug("Trying to find revision info from %s", path)
+            self.screen_data.database_info.revisions[dbname] = "0.0"
+            name, revision = read_manifest(path)
+            if revision.invalid():
+                logger.warning("No local manifest information for database %s", dbname)
+                continue
+            if name == dbname:
+                self.screen_data.database_info.revisions[dbname] = str(revision)
+                continue
+            logger.error("Expected database name %s, from location %s, was"
+                        " not matched in local manifest.json, %s.",
+                        dbname, path, name)
 
         # Store start time.
         self.screen_data.commec_info.date_run = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
