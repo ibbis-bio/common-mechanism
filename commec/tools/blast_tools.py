@@ -30,6 +30,14 @@ class BlastHandler(SearchHandler):
             output_dataframe = read_blast(self.out_file)
         return output_dataframe
 
+    def validate_output(self) -> bool:
+        """
+        BLAST/DIAMOND tabular output (outfmt 6) contains no header lines, so a valid
+        run that simply found no hits is legitimately an empty file. Only require that
+        the output file exists, rather than that it is non-empty.
+        """
+        return os.path.isfile(self.out_file)
+
     def _validate_db(self):
         """
         Blast expects a set of files with shared prefix, rather than a single file.
@@ -63,9 +71,12 @@ class BlastHandler(SearchHandler):
 
 def read_blast(blast_file: str | os.PathLike | BinaryIO | TextIO) -> pd.DataFrame:
     """
-    Read in BLAST/DIAMOND files and pre-format the data frame with essential info
+    Read in BLAST/DIAMOND files and pre-format the data frame with essential info.
+
+    Both backends are run with tabular output (outfmt 6) which contains no comment
+    lines, so the file can be handed to pandas directly.
     """
-    blast = pd.read_csv(blast_file, sep="\t", comment="#", header=None)
+    blast = pd.read_csv(blast_file, sep="\t", header=None)
     columns = [
         "query acc.",
         "subject title",

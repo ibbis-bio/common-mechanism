@@ -108,9 +108,8 @@ def readhmmer(fileh):
 
     with open(fileh, "r", encoding="utf-8") as f:
         for line in f:
-            if "# Program:         hmmscan" in line:
-                break
-            if "#" in line:
+            # Only treat a line as a comment when it *starts* with "#".
+            if line.startswith("#"):
                 continue
             bits = re.split(r"\s+", line)
             description = " ".join(bits[22:])

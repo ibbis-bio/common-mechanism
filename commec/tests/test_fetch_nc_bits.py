@@ -91,13 +91,9 @@ def test_fetch_nocoding_regions(tmp_path):
         """
     )
 
+    # outfmt 6 tabular output: data rows only, no comment/header lines.
     blast_to_parse = textwrap.dedent(
         """\
-        # BLASTX 2.15.0+
-        # Query: NC_TEST
-        # Database: /root/commec-dbs/mock
-        #query acc.	subject title	subject acc.	subject tax ids	evalue	bit score	% identity	query length	q. start	q. end	subject length	s. start	s. end
-        # 3 hits found
         NC_TEST01	SUBJECT	SUBJECT_ACC	TAXID	0.0	BITSCORE	99.999	300	101	200	500	1	100
         NC_TEST02	SUBJECT	SUBJECT_ACC	TAXID	0.0	BITSCORE	99.999	300	25	80	500	1	100
         NC_TEST02	SUBJECT	SUBJECT_ACC	TAXID	0.0	BITSCORE	99.999	300	100	300	500	1	100

@@ -34,7 +34,7 @@ class BlastNHandler(BlastHandler):
             "-max_target_seqs": 500,
             "-culling_limit": 1,
             "-outfmt": [
-                "7",
+                "6",
                 "qacc",
                 "stitle",
                 "sacc",

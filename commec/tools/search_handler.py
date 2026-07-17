@@ -137,8 +137,9 @@ class SearchHandler(ABC):
         """
         Check the output file contains something, indicating that the search ran.
         Can be overridden if more complex checks for a particular tool are desired.
-        Is overridden for Diamond outputs, which have no header information, and simply only
-        checks for file-existance, rather than lack of content, for example.
+        Is overridden for BLAST/DIAMOND outputs (BlastHandler), which use tabular
+        output with no header information, and simply only check for file-existance,
+        rather than lack of content, for example.
         """
         return not self.has_empty_output()
 
