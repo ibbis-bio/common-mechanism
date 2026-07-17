@@ -172,9 +172,28 @@
     var laneOf = function (dd) { return dd === "flagbio" ? "bio" : (dd === "warning" ? "warn" : (dd === "flagbest" ? "best" : "ann")); };
     var selLane = hits[sel] ? laneOf(hits[sel].d) : null;
     var overlapsSel = function (hh) { return selH && hh.qs <= selH.qe && selH.qs <= hh.qe; };
-    var LANE = { bio: { top: 6, h: 22, drop: 28 }, warn: { top: 6, h: 22, drop: 28 }, best: { top: 9, h: 22, drop: 28 }, ann: { top: 9, h: 13, drop: 18 } };
+    var LANE = { bio: { top: 6, h: 22 }, warn: { top: 6, h: 22 }, best: { top: 9, h: 22 }, ann: { top: 9, h: 13 } };
+    var GAP = 6;
     var BG = { flagbio: "#C23A14", warning: "#E0A020", flagbest: "#F05023", exempt: "rgba(65,155,185,.6)", cleared: "rgba(127,168,184,.45)", common: "rgba(185,192,204,.85)" };
     var laneBottom = { bio: 0, warn: 0, best: 0, ann: 0 };
+
+    // When focused, de-collide the selected hit's lane by packing its hits into stable
+    // rows (greedy by start coord). The row assignment does NOT depend on which hit is
+    // selected, so reselecting within the lane never reshuffles rows. Other lanes stay
+    // single-row (compact); their co-located hits are highlighted and the rest dim.
+    var packRow = {};
+    if (focus && selLane) {
+      var laneHits = [];
+      hits.forEach(function (x, i) { if (laneOf(x.d) === selLane) laneHits.push({ i: i, qs: x.h.qs, qe: x.h.qe }); });
+      laneHits.sort(function (a, b) { return (a.qs - b.qs) || (a.qe - b.qe) || (a.i - b.i); });
+      var rowsEnd = [];
+      laneHits.forEach(function (o) {
+        var r = 0;
+        while (r < rowsEnd.length && rowsEnd[r] >= o.qs) r++;
+        rowsEnd[r] = o.qe;
+        packRow[o.i] = r;
+      });
+    }
 
     var bio = [], warn = [], best = [], ann = [];
     hits.forEach(function (x, i) {
@@ -182,22 +201,20 @@
       var g = self.geom(x.h, len);
       var key = laneOf(x.d);
       var L = LANE[key];
-      var ov = !on && overlapsSel(x.h);
-      var dropped = focus && ov && key === selLane;   // same lane as selection, overlaps it
-      var coLoc = focus && ov && key !== selLane;      // other lane, shares its coordinates
-      var dim = focus && !on && !dropped && !coLoc;
-      var top = L.top + (dropped ? L.drop : 0);
+      var ov = !on && overlapsSel(x.h);                 // shares coordinates with the selection
+      var dim = focus && !on && !ov;
+      var row = (focus && key === selLane) ? (packRow[i] || 0) : 0;
+      var top = L.top + row * (L.h + GAP);
       if (top + L.h > laneBottom[key]) laneBottom[key] = top + L.h;
 
       var opacity, shadow, zi;
       if (on) { opacity = "1"; shadow = "box-shadow:0 0 0 2px #23285A;"; zi = 9999; }
-      else if (dropped) { opacity = "1"; shadow = "box-shadow:0 0 0 1.5px " + self.dotFor(x.d) + ";"; zi = 800; }
-      else if (coLoc) { opacity = ".9"; shadow = "box-shadow:0 0 0 1px rgba(35,40,90,.3);"; zi = 500; }
-      else if (dim) { opacity = ".2"; shadow = ""; zi = 2; }
+      else if (ov) { opacity = "1"; shadow = "box-shadow:0 0 0 1.5px " + self.dotFor(x.d) + ";"; zi = 700; }
+      else if (dim) { opacity = ".5"; shadow = ""; zi = 2; }
       else { opacity = ".82"; shadow = ""; zi = Math.max(2, Math.round(300 - g.w * 2)); }
 
       var bar = {
-        style: "position:absolute; top:" + top + "px; height:" + L.h + "px; left:" + g.left + "%; width:" + g.w + "%; min-width:6px; background:" + (BG[x.d] || BG.common) + "; opacity:" + opacity + "; border-radius:2px; z-index:" + zi + "; cursor:pointer; transition:top .15s ease, opacity .15s ease, box-shadow .15s ease; " + shadow,
+        style: "position:absolute; top:" + top + "px; height:" + L.h + "px; left:" + g.left + "%; width:" + g.w + "%; min-width:6px; background:" + (BG[x.d] || BG.common) + "; opacity:" + opacity + "; border-radius:1px; z-index:" + zi + "; cursor:pointer; transition:top .15s ease, opacity .15s ease, box-shadow .15s ease; " + shadow,
         title: self.shortName(x.h.name) + " · " + (x.h.pctId || "") + " · " + self.coord(x.h),
         onSelect: function () { selectHit(i); }
       };
@@ -469,7 +486,7 @@
 
     // faint coordinate band spanning the selected hit's start–end across the lanes
     var band = d.focus
-      ? '<div style="position:absolute; top:0; bottom:0; left:' + d.bandLeft + '%; width:' + d.bandW + '%; min-width:6px; background:rgba(35,40,90,.06); border-left:1px solid rgba(35,40,90,.18); border-right:1px solid rgba(35,40,90,.18); z-index:0; pointer-events:none;"></div>'
+      ? '<div style="position:absolute; top:0; bottom:0; left:' + d.bandLeft + '%; width:' + d.bandW + '%; min-width:6px; background:#f4f5fa; z-index:0; pointer-events:none;"></div>'
       : "";
 
     var bioLane = d.bioHas
