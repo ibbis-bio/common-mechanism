@@ -429,7 +429,7 @@
         '<div style="display:flex; align-items:flex-end; justify-content:space-between; margin-top:22px; gap:30px;">' +
           '<div>' +
             '<div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:32px; font-weight:700; color:#fff; line-height:1.04; letter-spacing:-.01em;">' + esc(v.mFile) + '</div>' +
-            '<div class="mono" style="font-size:13.5px; color:rgba(255,255,255,.62); margin-top:11px; line-height:1.75;">' + esc(v.mLine1) + '<br>' + esc(v.mLine2) + (v.mRevs ? '<br>' + esc(v.mRevs) : '') + '</div>' +
+            '<div class="mono" style="font-size:12px; color:rgba(255,255,255,.62); margin-top:11px; line-height:1.7;">' + esc(v.mLine1) + '<br>' + esc(v.mLine2) + (v.mRevs ? '<br>' + esc(v.mRevs) : '') + '</div>' +
           '</div>' +
         '</div>' +
       '</div>';
