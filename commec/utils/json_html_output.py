@@ -2,15 +2,27 @@
 Convert a Commec Screen JSON object (or a ScreenResult object) into a self-contained,
 interactive HTML report ("Commec Screening Report").
 
-The report is a single HTML file with no external framework and no CDN dependency
-(fonts are loaded from Google Fonts but degrade gracefully offline). It embeds a
-flattened, per-hit data model as ``window.COMMEC_REPORT`` and renders it with the
-vanilla-JS component in ``report_assets/report.js`` (styled by ``report.css``).
+Division of responsibilities (Python vs. browser)
+-------------------------------------------------
+This module is deliberately thin and only does two things:
 
-The heavy lifting here is :func:`build_report_model`, which flattens the nested
-``ScreenResult`` (queries -> hits -> free-form ``annotations``) into the shape the
-renderer expects. Each hit's disposition is derived downstream from commec's own
-authoritative per-hit status, so the report always agrees with commec's flag counts.
+  1. :func:`build_report_model` flattens the nested ``ScreenResult``
+     (queries -> hits -> free-form ``annotations``) into a plain per-hit data model.
+  2. :func:`render_report_html` assembles a single HTML file: it embeds that model as
+     ``window.COMMEC_REPORT`` and inlines the CSS / JS / logo assets.
+
+Almost all of the actual report *construction* happens in the browser, in
+``report_assets/report.js`` (styled by ``report.css``): grouping hits per organism,
+deciding each hit's disposition, the status tabs, the sequence table, the expandable
+detail view (swimlane lanes, hit rail, best-target card, control-list drill-down) and
+all interactivity. If you are changing what the report looks like or does, that is
+almost certainly a report.js / report.css change -- this module only governs what
+*data* reaches the page.
+
+The report is a single HTML file with no external framework and no CDN dependency
+(fonts are loaded from Google Fonts but degrade gracefully offline). Hit disposition
+and tab status are derived (in report.js) from commec's own authoritative per-hit
+status, so the report always agrees with commec's flag counts.
 """
 
 import os

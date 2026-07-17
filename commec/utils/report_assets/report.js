@@ -1,5 +1,13 @@
 /* Commec Screening Report — self-contained renderer.
  *
+ * This file is where most of the report is actually constructed. The Python side
+ * (json_html_output.py) only flattens the ScreenResult into window.COMMEC_REPORT and
+ * inlines these assets into one HTML file; everything the reader sees and interacts
+ * with is built here in the browser: grouping hits per organism, computing each hit's
+ * disposition, the status tabs, the sequence table, the expandable detail view
+ * (swimlane lanes, hit rail, best-target card, control-list drill-down), and all
+ * click handling.
+ *
  * Ported from the Claude Design "DCLogic" prototype. The interactive-framework
  * pieces (x-dc / sc-for / sc-if / {{ }} / props / scope toggle) are replaced by a
  * plain string-builder + a single delegated click handler. Disposition and tab
