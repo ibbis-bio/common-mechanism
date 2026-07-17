@@ -627,9 +627,9 @@
         '<div>' +
           '<div class="cap" style="font-size:10px; font-weight:700; letter-spacing:.1em; color:#23285A; padding-bottom:7px; border-bottom:1px solid #E4E7EE; margin-bottom:12px;">Status</div>' +
           '<div style="display:flex; flex-direction:column; gap:11px;">' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span class="badge" style="background:#F05023; color:#fff; margin-top:1px;">Flag</span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;">Found biorisk or match to a controlled organism. Follow-up recommended.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span class="badge" style="background:#D98A00; color:#fff; margin-top:1px;">Warning</span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;">Some signals of concern &mdash; consider follow-up screening.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span class="badge" style="background:#419BB9; color:#fff; margin-top:1px;">Clear</span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;">Nothing of concern identified in-scope; any matches were cleared.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span class="badge" style="background:#F05023; color:#fff; margin-top:1px;">Flag</span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;">Found sequence of concern: biorisk or match to controlled pathogen. Follow-up screening recommended.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span class="badge" style="background:#D98A00; color:#fff; margin-top:1px;">Warning</span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;">Some signals of concern. Consider follow-up screening.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span class="badge" style="background:#419BB9; color:#fff; margin-top:1px;">Clear</span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;">Nothing of concern identified. All matches cleared or only regulated elsewhere.</div></div>' +
           '</div>' +
         '</div>' +
         '<div>' +
