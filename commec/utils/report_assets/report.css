@@ -34,7 +34,7 @@ a:hover { color: #2F7C97; text-decoration: underline; }
 .badge {
   display: inline-flex; align-items: center; justify-content: center;
   height: 21px; padding: 0 9px; border-radius: 2px;
-  font-family: 'Manrope', Arial, sans-serif; font-weight: 700; font-size: 10.5px;
+  font-family: 'Manrope', Arial, sans-serif; font-weight: 700; font-size: 12.5px;
   letter-spacing: .05em; text-transform: uppercase; white-space: nowrap;
 }
 

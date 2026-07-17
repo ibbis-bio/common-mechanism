@@ -321,7 +321,7 @@
         onClick: function () { self.setState({ tab: k, open: {}, selHit: {}, selList: {} }); },
         style: "display:flex; align-items:baseline; gap:9px; padding:14px 20px 14px; cursor:pointer; border-bottom:2px solid " + (active ? "#23285A" : "transparent") + "; background:" + (active ? "#F8F9FC" : "transparent") + ";",
         numStyle: "font-family:'Crimson Pro',Georgia,serif; font-size:30px; font-weight:700; line-height:1; color:" + colorFor[k] + ";" + (c === 0 && !active ? "opacity:.32;" : ""),
-        labelStyle: "font-size:11px; font-weight:700; letter-spacing:.1em; color:#23285A;" + (active ? "" : "opacity:.6;")
+        labelStyle: "font-size:13px; font-weight:700; letter-spacing:.1em; color:#23285A;" + (active ? "" : "opacity:.6;")
       };
     });
 
@@ -377,7 +377,7 @@
         name: s.name, lengthLabel: lengthLabel, finding: finding, mapBars: mapBars, open: open,
         wrapBg: open ? "#FBFCFE" : "#fff",
         rowStyle: "display:grid; grid-template-columns:18px 3.1fr 2.4fr 3.0fr; align-items:center; gap:18px; padding:13px 40px; " + (skip ? "cursor:default;" : "cursor:pointer;") + (open ? "background:#FBFCFE;" : ""),
-        chevStyle: "font-size:12px; color:" + (open ? "#F05023" : "#9a9fb0") + "; transition:transform .18s cubic-bezier(.2,.7,.2,1); transform:rotate(" + (open ? 90 : 0) + "deg);" + (skip ? "visibility:hidden;" : ""),
+        chevStyle: "font-size:14px; color:" + (open ? "#F05023" : "#9a9fb0") + "; transition:transform .18s cubic-bezier(.2,.7,.2,1); transform:rotate(" + (open ? 90 : 0) + "deg);" + (skip ? "visibility:hidden;" : ""),
         onToggle: skip ? function () {} : (function () {
           var o = {}; var k; for (k in self.state.open) o[k] = self.state.open[k];
           o[sid] = !self.state.open[sid];
@@ -423,12 +423,12 @@
       '<div style="background:#23285A; padding:26px 40px 24px;">' +
         '<div style="display:flex; align-items:center; gap:18px;">' + COMMEC_LOGO +
           '<div style="flex:1;"></div>' +
-          '<span class="cap" style="font-size:9.5px; font-weight:700; letter-spacing:.12em; color:rgba(255,255,255,.5);">Synthesis screening report</span>' +
+          '<span class="cap" style="font-size:11.5px; font-weight:700; letter-spacing:.12em; color:rgba(255,255,255,.5);">Synthesis screening report</span>' +
         '</div>' +
         '<div style="display:flex; align-items:flex-end; justify-content:space-between; margin-top:22px; gap:30px;">' +
           '<div>' +
             '<div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:32px; font-weight:700; color:#fff; line-height:1.04; letter-spacing:-.01em;">' + esc(v.mFile) + '</div>' +
-            '<div class="mono" style="font-size:11.5px; color:rgba(255,255,255,.62); margin-top:11px; line-height:1.75;">' + esc(v.mLine1) + '<br>' + esc(v.mLine2) + '</div>' +
+            '<div class="mono" style="font-size:13.5px; color:rgba(255,255,255,.62); margin-top:11px; line-height:1.75;">' + esc(v.mLine1) + '<br>' + esc(v.mLine2) + '</div>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -443,22 +443,22 @@
         }).join("") +
         '<div style="flex:1;"></div>' +
         '<div style="display:flex; flex-direction:column; align-items:flex-end; justify-content:center; gap:3px; padding:12px 0;">' +
-          '<span class="cap" style="font-size:9px; font-weight:700; letter-spacing:.1em; color:#9a9fb0;">Control lists</span>' +
-          '<span class="sans" style="font-size:12px; font-weight:700; color:#23285A;">' + esc(v.listCount) + ' screened</span>' +
+          '<span class="cap" style="font-size:11px; font-weight:700; letter-spacing:.1em; color:#9a9fb0;">Control lists</span>' +
+          '<span class="sans" style="font-size:14px; font-weight:700; color:#23285A;">' + esc(v.listCount) + ' screened</span>' +
         '</div>' +
       '</div>';
 
     var toggleAll = v.showToggleAll
-      ? '<span data-cb="' + self.cb(v.onToggleAll) + '" style="cursor:pointer; font-size:9px; font-weight:700; letter-spacing:.08em; color:#419BB9;">' + esc(v.toggleAllLabel) + '</span>'
+      ? '<span data-cb="' + self.cb(v.onToggleAll) + '" style="cursor:pointer; font-size:11px; font-weight:700; letter-spacing:.08em; color:#419BB9;">' + esc(v.toggleAllLabel) + '</span>'
       : '';
     var tableHeader = v.hasRows ?
-      '<div class="cap" style="display:grid; grid-template-columns:18px 3.1fr 2.4fr 3.0fr; align-items:center; gap:18px; padding:12px 40px 10px; font-size:10px; font-weight:700; letter-spacing:.1em; color:#9a9fb0; border-bottom:1px solid #E4E7EE;">' +
+      '<div class="cap" style="display:grid; grid-template-columns:18px 3.1fr 2.4fr 3.0fr; align-items:center; gap:18px; padding:12px 40px 10px; font-size:12px; font-weight:700; letter-spacing:.1em; color:#9a9fb0; border-bottom:1px solid #E4E7EE;">' +
         '<div></div><div>Sequence</div><div>Map</div><div style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><span>Finding</span>' + toggleAll + '</div></div>' : "";
 
     var rows = v.rows.map(function (r) { return self.rowTemplate(r); }).join("");
 
     var empty = v.isEmpty ?
-      '<div style="padding:46px 40px; text-align:center;"><div class="sans" style="font-size:13px; color:#9a9fb0;">' + esc(v.emptyText) + '</div></div>' : "";
+      '<div style="padding:46px 40px; text-align:center;"><div class="sans" style="font-size:15px; color:#9a9fb0;">' + esc(v.emptyText) + '</div></div>' : "";
 
     return '<div class="cm report-card"><div>' + masthead + tabsRow + tableHeader + rows + empty + this.howToRead() + '</div></div>';
   };
@@ -470,11 +470,11 @@
       '<div class="row-hover" data-cb="' + self.cb(r.onToggle) + '" style="' + r.rowStyle + '">' +
         '<span style="' + r.chevStyle + '">▸</span>' +
         '<div style="min-width:0;">' +
-          '<div style="font-family:\'Crimson Pro\',Georgia,serif; font-weight:700; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(r.name) + '</div>' +
-          '<div class="mono" style="font-size:10.5px; color:#9a9fb0; margin-top:2px;">' + esc(r.lengthLabel) + '</div>' +
+          '<div style="font-family:\'Crimson Pro\',Georgia,serif; font-weight:700; font-size:16.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(r.name) + '</div>' +
+          '<div class="mono" style="font-size:12.5px; color:#9a9fb0; margin-top:2px;">' + esc(r.lengthLabel) + '</div>' +
         '</div>' +
         '<div style="position:relative; height:14px; background:#F4F5FA; border:1px solid #E7EAF1; border-radius:2px;">' + mapBars + '</div>' +
-        '<div class="sans" style="font-size:12px; color:#5b6070; line-height:1.4; overflow:hidden; text-overflow:ellipsis;">' + esc(r.finding) + '</div>' +
+        '<div class="sans" style="font-size:14px; color:#5b6070; line-height:1.4; overflow:hidden; text-overflow:ellipsis;">' + esc(r.finding) + '</div>' +
       '</div>';
 
     var expanded = (r.open && r.detail) ? this.detailTemplate(r.detail) : "";
@@ -496,41 +496,41 @@
       ? '<div style="position:relative; min-height:' + d.warnH + 'px; display:flex; align-items:center;">' + d.warnBars.map(function (b) { return '<div title="' + esc(b.title) + '" data-cb="' + self.cb(b.onSelect) + '" style="' + b.style + '"></div>'; }).join("") + '</div>'
       : "";
     var neitherLane = d.bioneither
-      ? '<div style="position:relative; min-height:30px; display:flex; align-items:center;"><div style="position:absolute; left:0; right:0; top:50%; height:1px; background:repeating-linear-gradient(90deg,#E0E2EA,#E0E2EA 4px,transparent 4px,transparent 8px);"></div><span class="sans" style="position:relative; font-size:10px; color:#aab; background:#FBFCFE; padding-right:8px;">No biorisk models matched</span></div>'
+      ? '<div style="position:relative; min-height:30px; display:flex; align-items:center;"><div style="position:absolute; left:0; right:0; top:50%; height:1px; background:repeating-linear-gradient(90deg,#E0E2EA,#E0E2EA 4px,transparent 4px,transparent 8px);"></div><span class="sans" style="position:relative; font-size:12px; color:#aab; background:#FBFCFE; padding-right:8px;">No biorisk models matched</span></div>'
       : "";
 
     var bestBars = d.bestBars.map(function (b) {
       return '<div title="' + esc(b.title) + '" data-cb="' + self.cb(b.onSelect) + '" style="' + b.style + '"></div>';
     }).join("");
-    var bestEmpty = d.bestEmpty ? '<div style="position:absolute; left:0; right:0; top:50%; height:1px; background:repeating-linear-gradient(90deg,#E0E2EA,#E0E2EA 4px,transparent 4px,transparent 8px);"></div><span class="sans" style="position:absolute; top:50%; transform:translateY(-50%); font-size:10px; color:#aab; background:#FBFCFE; padding-right:8px;">Nothing flagged in scope</span>' : "";
+    var bestEmpty = d.bestEmpty ? '<div style="position:absolute; left:0; right:0; top:50%; height:1px; background:repeating-linear-gradient(90deg,#E0E2EA,#E0E2EA 4px,transparent 4px,transparent 8px);"></div><span class="sans" style="position:absolute; top:50%; transform:translateY(-50%); font-size:12px; color:#aab; background:#FBFCFE; padding-right:8px;">Nothing flagged in scope</span>' : "";
 
     var annBars = d.annBars.map(function (b) { return '<div title="' + esc(b.title) + '" data-cb="' + self.cb(b.onSelect) + '" style="' + b.style + '"></div>'; }).join("");
-    var annEmpty = d.annEmpty ? '<span class="sans" style="position:relative; font-size:10px; color:#aab;">None</span>' : "";
+    var annEmpty = d.annEmpty ? '<span class="sans" style="position:relative; font-size:12px; color:#aab;">None</span>' : "";
 
     var swimlane =
       '<div style="padding:16px 40px 14px;">' +
         '<div style="position:relative; height:13px; margin-left:132px; border-bottom:1px solid #D6DAE0;">' +
-          '<span class="mono" style="position:absolute; left:0; bottom:2px; font-size:9px; color:#9a9fb0;">1</span>' +
-          '<span class="mono" style="position:absolute; left:50%; bottom:2px; font-size:9px; color:#9a9fb0; transform:translateX(-50%);">' + esc(d.axisMid) + '</span>' +
-          '<span class="mono" style="position:absolute; right:0; bottom:2px; font-size:9px; color:#9a9fb0;">' + esc(d.axisEnd) + '</span>' +
+          '<span class="mono" style="position:absolute; left:0; bottom:2px; font-size:11px; color:#9a9fb0;">1</span>' +
+          '<span class="mono" style="position:absolute; left:50%; bottom:2px; font-size:11px; color:#9a9fb0; transform:translateX(-50%);">' + esc(d.axisMid) + '</span>' +
+          '<span class="mono" style="position:absolute; right:0; bottom:2px; font-size:11px; color:#9a9fb0;">' + esc(d.axisEnd) + '</span>' +
         '</div>' +
         '<div style="display:flex; align-items:stretch; min-height:36px; border-bottom:1px solid #F2F3F7;">' +
-          '<div style="width:132px; flex-shrink:0; display:flex; flex-direction:column; justify-content:center; gap:2px;"><div style="display:flex; align-items:center; gap:7px;"><span style="width:9px;height:9px;border-radius:2px;background:#C23A14;"></span><span class="cap" style="font-size:9.5px; font-weight:700; color:#23285A;">Biorisk</span></div></div>' +
+          '<div style="width:132px; flex-shrink:0; display:flex; flex-direction:column; justify-content:center; gap:2px;"><div style="display:flex; align-items:center; gap:7px;"><span style="width:9px;height:9px;border-radius:2px;background:#C23A14;"></span><span class="cap" style="font-size:11.5px; font-weight:700; color:#23285A;">Biorisk</span></div></div>' +
           '<div style="position:relative; flex:1; display:flex; flex-direction:column; justify-content:center;">' + band + bioLane + warnLane + neitherLane + '</div>' +
         '</div>' +
         '<div style="display:flex; align-items:stretch; min-height:42px; border-bottom:1px solid #F2F3F7;">' +
-          '<div style="width:132px; flex-shrink:0; display:flex; flex-direction:column; justify-content:center; gap:2px;"><div style="display:flex; align-items:center; gap:7px;"><span style="width:9px;height:9px;border-radius:2px;background:#F05023;"></span><span class="cap" style="font-size:9.5px; font-weight:700; color:#23285A;">Best match</span></div><span class="sans" style="font-size:8.5px; color:#9a9fb0; padding-left:16px;">click a hit</span></div>' +
+          '<div style="width:132px; flex-shrink:0; display:flex; flex-direction:column; justify-content:center; gap:2px;"><div style="display:flex; align-items:center; gap:7px;"><span style="width:9px;height:9px;border-radius:2px;background:#F05023;"></span><span class="cap" style="font-size:11.5px; font-weight:700; color:#23285A;">Best match</span></div><span class="sans" style="font-size:10.5px; color:#9a9fb0; padding-left:16px;">click a hit</span></div>' +
           '<div style="position:relative; flex:1; min-height:' + d.bestH + 'px;">' + band + bestEmpty + bestBars + '</div>' +
         '</div>' +
         '<div style="display:flex; align-items:stretch; min-height:40px;">' +
-          '<div style="width:132px; flex-shrink:0; display:flex; flex-direction:column; justify-content:center; gap:2px;"><div style="display:flex; align-items:center; gap:7px;"><span style="width:9px;height:9px;border-radius:2px;background:#419BB9;"></span><span class="cap" style="font-size:9.5px; font-weight:700; color:#23285A;">Annotations</span></div><span class="sans" style="font-size:8.5px; color:#9a9fb0; padding-left:16px;">context</span></div>' +
+          '<div style="width:132px; flex-shrink:0; display:flex; flex-direction:column; justify-content:center; gap:2px;"><div style="display:flex; align-items:center; gap:7px;"><span style="width:9px;height:9px;border-radius:2px;background:#419BB9;"></span><span class="cap" style="font-size:11.5px; font-weight:700; color:#23285A;">Annotations</span></div><span class="sans" style="font-size:10.5px; color:#9a9fb0; padding-left:16px;">context</span></div>' +
           '<div style="position:relative; flex:1; min-height:' + d.annH + 'px; display:flex; align-items:center;">' + band + annEmpty + annBars + '</div>' +
         '</div>' +
       '</div>';
 
     var body = "";
     if (d.hasHits) body = this.detailBody(d);
-    else if (d.noHits) body = '<div style="border-top:1px solid #E4E7EE; padding:20px 40px; background:#F8F9FC;"><div class="sans" style="font-size:12px; color:#8a8f9e; font-style:italic;">No hits — nothing matched any screening database for this sequence.</div></div>';
+    else if (d.noHits) body = '<div style="border-top:1px solid #E4E7EE; padding:20px 40px; background:#F8F9FC;"><div class="sans" style="font-size:14px; color:#8a8f9e; font-style:italic;">No hits — nothing matched any screening database for this sequence.</div></div>';
 
     return '<div style="background:#FBFCFE; border-top:1px solid #E7EAF1;">' + swimlane + body + '</div>';
   };
@@ -540,19 +540,19 @@
 
     var rail =
       '<div style="border-right:1px solid #E4E7EE; background:#F8F9FC; padding:12px 10px;">' +
-        '<div class="cap" style="font-size:9px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; padding:2px 4px 9px;">' + esc(d.railLabel) + '</div>' +
+        '<div class="cap" style="font-size:11px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; padding:2px 4px 9px;">' + esc(d.railLabel) + '</div>' +
         d.railSections.map(function (sec) {
           return '<div style="display:flex; align-items:center; gap:6px; padding:11px 4px 5px;">' +
               '<span style="width:7px;height:7px;border-radius:2px;background:' + sec.color + ';flex-shrink:0;"></span>' +
-              '<span class="cap" style="font-size:8.5px; font-weight:700; letter-spacing:.1em; color:' + sec.color + ';">' + esc(sec.label) + '</span>' +
-              '<span class="mono" style="font-size:9px; color:#b3b8c4;">' + esc(sec.count) + '</span>' +
+              '<span class="cap" style="font-size:10.5px; font-weight:700; letter-spacing:.1em; color:' + sec.color + ';">' + esc(sec.label) + '</span>' +
+              '<span class="mono" style="font-size:11px; color:#b3b8c4;">' + esc(sec.count) + '</span>' +
             '</div>' +
             '<div style="display:flex; flex-direction:column; gap:2px;">' +
               sec.items.map(function (rl) {
                 return '<div data-cb="' + self.cb(rl.onSelect) + '" style="' + rl.rowStyle + '">' +
                   '<span style="width:8px;height:8px;border-radius:9999px;background:' + rl.dot + ';flex-shrink:0;margin-top:4px;"></span>' +
-                  '<div style="flex:1; min-width:0;"><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; font-weight:' + rl.weight + '; ' + rl.nameStyle + ' line-height:1.25;">' + esc(rl.name) + '</div><div class="mono" style="font-size:9.5px; color:#9a9fb0; margin-top:1px;">' + esc(rl.coords) + '</div></div>' +
-                  '<span class="mono" style="font-size:10.5px; color:#6b7080;">' + esc(rl.pct) + '</span>' +
+                  '<div style="flex:1; min-width:0;"><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; font-weight:' + rl.weight + '; ' + rl.nameStyle + ' line-height:1.25;">' + esc(rl.name) + '</div><div class="mono" style="font-size:11.5px; color:#9a9fb0; margin-top:1px;">' + esc(rl.coords) + '</div></div>' +
+                  '<span class="mono" style="font-size:12.5px; color:#6b7080;">' + esc(rl.pct) + '</span>' +
                 '</div>';
               }).join("") +
             '</div>';
@@ -561,48 +561,48 @@
 
     var meta = "";
     if (d.showBest) {
-      meta = '<div class="sans" style="font-size:11.5px; color:#6b7080; margin-top:5px; display:flex; gap:14px; flex-wrap:wrap;">' +
+      meta = '<div class="sans" style="font-size:13.5px; color:#6b7080; margin-top:5px; display:flex; gap:14px; flex-wrap:wrap;">' +
         '<span>Category <strong style="color:#23285A;">' + esc(d.selCategory) + '</strong></span>' +
         '<span>taxid <span class="mono" style="color:#23285A;">' + esc(d.selTaxid) + '</span></span>' +
       '</div>';
     } else if (d.isBiorisk) {
-      meta = '<div class="sans" style="font-size:11.5px; color:#6b7080; margin-top:5px; display:flex; gap:14px; flex-wrap:wrap;">' +
+      meta = '<div class="sans" style="font-size:13.5px; color:#6b7080; margin-top:5px; display:flex; gap:14px; flex-wrap:wrap;">' +
         '<span>Domain <strong style="color:#23285A;">' + esc(d.selDomain) + '</strong></span></div>';
     }
 
     var hero = "";
     if (d.showBest) {
       hero = '<div style="margin:16px 0; padding:20px; background:#fff; border:1px solid #E4E7EE; border-radius:4px; text-align:center;">' +
-        '<div class="cap" style="font-size:9px; font-weight:700; letter-spacing:.12em; color:#8a8f9e;">Best target</div>' +
+        '<div class="cap" style="font-size:11px; font-weight:700; letter-spacing:.12em; color:#8a8f9e;">Best target</div>' +
         '<div class="mono" style="font-size:23px; font-weight:600; color:#419BB9; margin-top:8px; letter-spacing:.01em;">' +
           (d.selTargetUrl ? '<a href="' + esc(d.selTargetUrl) + '" target="_blank" rel="noopener noreferrer" style="color:#419BB9;">' + esc(d.selTarget) + '</a>' : esc(d.selTarget)) +
         '</div>' +
-        '<div class="sans" style="font-size:12.5px; color:#3c4156; margin-top:6px; max-width:520px; margin-left:auto; margin-right:auto; line-height:1.45;">' + esc(d.selTargetDesc) + '</div>' +
+        '<div class="sans" style="font-size:14.5px; color:#3c4156; margin-top:6px; max-width:520px; margin-left:auto; margin-right:auto; line-height:1.45;">' + esc(d.selTargetDesc) + '</div>' +
         '<div style="display:flex; justify-content:center; gap:34px; margin-top:16px; padding-top:15px; border-top:1px solid #E7EAF1;">' +
-          '<div><div class="cap" style="font-size:8.5px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; margin-bottom:5px;">Identity</div><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:20px; font-weight:700; color:#23285A;">' + esc(d.selPct) + '</div></div>' +
-          '<div><div class="cap" style="font-size:8.5px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; margin-bottom:5px;">E-value</div><div class="mono" style="font-size:16px; font-weight:600; color:#23285A; margin-top:2px;">' + esc(d.selEval) + '</div></div>' +
-          '<div><div class="cap" style="font-size:8.5px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; margin-bottom:5px;">Region</div><div class="mono" style="font-size:13px; color:#23285A; margin-top:5px;">' + esc(d.selCoords) + '</div></div>' +
+          '<div><div class="cap" style="font-size:10.5px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; margin-bottom:5px;">Identity</div><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:20px; font-weight:700; color:#23285A;">' + esc(d.selPct) + '</div></div>' +
+          '<div><div class="cap" style="font-size:10.5px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; margin-bottom:5px;">E-value</div><div class="mono" style="font-size:18px; font-weight:600; color:#23285A; margin-top:2px;">' + esc(d.selEval) + '</div></div>' +
+          '<div><div class="cap" style="font-size:10.5px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; margin-bottom:5px;">Region</div><div class="mono" style="font-size:15px; color:#23285A; margin-top:5px;">' + esc(d.selCoords) + '</div></div>' +
         '</div>' +
       '</div>';
     } else if (d.descMode) {
       hero = '<div style="margin:16px 0; padding:20px; background:#fff; border:1px solid #E4E7EE; border-radius:4px;">' +
-        '<div class="cap" style="font-size:9px; font-weight:700; letter-spacing:.12em; color:#8a8f9e;">Description</div>' +
-        '<div class="sans" style="font-size:13.5px; color:#3c4156; margin-top:8px; line-height:1.5;">' + esc(d.selDesc) + '</div>' +
+        '<div class="cap" style="font-size:11px; font-weight:700; letter-spacing:.12em; color:#8a8f9e;">Description</div>' +
+        '<div class="sans" style="font-size:15.5px; color:#3c4156; margin-top:8px; line-height:1.5;">' + esc(d.selDesc) + '</div>' +
         '<div style="display:flex; gap:44px; margin-top:16px; padding-top:15px; border-top:1px solid #E7EAF1;">' +
-          '<div><div class="cap" style="font-size:8.5px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; margin-bottom:5px;">E-value</div><div class="mono" style="font-size:16px; font-weight:600; color:#23285A; margin-top:2px;">' + esc(d.selEval) + '</div></div>' +
-          '<div><div class="cap" style="font-size:8.5px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; margin-bottom:5px;">Region</div><div class="mono" style="font-size:13px; color:#23285A; margin-top:5px;">' + esc(d.selCoords) + '</div></div>' +
+          '<div><div class="cap" style="font-size:10.5px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; margin-bottom:5px;">E-value</div><div class="mono" style="font-size:18px; font-weight:600; color:#23285A; margin-top:2px;">' + esc(d.selEval) + '</div></div>' +
+          '<div><div class="cap" style="font-size:10.5px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; margin-bottom:5px;">Region</div><div class="mono" style="font-size:15px; color:#23285A; margin-top:5px;">' + esc(d.selCoords) + '</div></div>' +
         '</div>' +
       '</div>';
     }
 
     var tagsBlock = "";
     if (d.showBest) {
-      tagsBlock = '<div class="cap" style="font-size:9px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; margin-bottom:9px;">' + esc(d.controlLabel) + '</div>' +
+      tagsBlock = '<div class="cap" style="font-size:11px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; margin-bottom:9px;">' + esc(d.controlLabel) + '</div>' +
         '<div style="display:flex; flex-wrap:wrap; gap:6px;">' +
           d.tags.map(function (t) {
             return '<div data-cb="' + self.cb(t.onSelect) + '" style="' + t.rowStyle + '">' +
-              '<span class="cap" style="font-size:9px; font-weight:700; letter-spacing:.05em; color:' + t.tagColor + ';">' + esc(t.tag) + '</span>' +
-              '<span class="sans" style="font-size:11px; color:#6b7080;">' + esc(t.name) + '</span>' +
+              '<span class="cap" style="font-size:11px; font-weight:700; letter-spacing:.05em; color:' + t.tagColor + ';">' + esc(t.tag) + '</span>' +
+              '<span class="sans" style="font-size:13px; color:#6b7080;">' + esc(t.name) + '</span>' +
             '</div>';
           }).join("") +
         '</div>';
@@ -612,13 +612,13 @@
     if (d.drill.show) {
       drill = '<div style="margin-top:13px; border:1px solid #D7DCE8; border-radius:4px; overflow:hidden;">' +
         '<div style="display:flex; align-items:center; gap:9px; padding:11px 14px; background:#23285A;">' +
-          '<span class="cap" style="font-size:9.5px; font-weight:700; letter-spacing:.05em; color:#23285A; background:#fff; padding:3px 7px; border-radius:2px;">' + esc(d.drill.tag) + '</span>' +
-          '<span class="sans" style="font-size:12.5px; font-weight:600; color:#fff;">' + esc(d.drill.name) + '</span>' +
+          '<span class="cap" style="font-size:11.5px; font-weight:700; letter-spacing:.05em; color:#23285A; background:#fff; padding:3px 7px; border-radius:2px;">' + esc(d.drill.tag) + '</span>' +
+          '<span class="sans" style="font-size:14.5px; font-weight:600; color:#fff;">' + esc(d.drill.name) + '</span>' +
         '</div>' +
         '<div style="padding:13px 15px; display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; background:#fff;">' +
-          '<div><div class="cap" style="font-size:8.5px; font-weight:700; letter-spacing:.1em; color:#9a9fb0; margin-bottom:3px;">Jurisdiction</div><div class="sans" style="font-size:12px; color:#23285A;">' + esc(d.drill.region) + '</div></div>' +
-          '<div><div class="cap" style="font-size:8.5px; font-weight:700; letter-spacing:.1em; color:#9a9fb0; margin-bottom:3px;">Control list</div><div class="sans" style="font-size:12px; color:#23285A; line-height:1.4;">' + esc(d.drill.authority) + '</div></div>' +
-          '<div><div class="cap" style="font-size:8.5px; font-weight:700; letter-spacing:.1em; color:#9a9fb0; margin-bottom:3px;">Listed entry</div><div class="sans" style="font-size:12px; color:#23285A; font-style:italic;">' + esc(d.drill.entry) + '</div></div>' +
+          '<div><div class="cap" style="font-size:10.5px; font-weight:700; letter-spacing:.1em; color:#9a9fb0; margin-bottom:3px;">Jurisdiction</div><div class="sans" style="font-size:14px; color:#23285A;">' + esc(d.drill.region) + '</div></div>' +
+          '<div><div class="cap" style="font-size:10.5px; font-weight:700; letter-spacing:.1em; color:#9a9fb0; margin-bottom:3px;">Control list</div><div class="sans" style="font-size:14px; color:#23285A; line-height:1.4;">' + esc(d.drill.authority) + '</div></div>' +
+          '<div><div class="cap" style="font-size:10.5px; font-weight:700; letter-spacing:.1em; color:#9a9fb0; margin-bottom:3px;">Listed entry</div><div class="sans" style="font-size:14px; color:#23285A; font-style:italic;">' + esc(d.drill.entry) + '</div></div>' +
         '</div>' +
       '</div>';
     }
@@ -627,7 +627,7 @@
       '<div style="padding:20px 26px 24px;">' +
         '<div style="display:flex; align-items:center; gap:9px; margin-bottom:9px;">' +
           '<span class="badge" style="background:' + d.selBadgeBg + '; color:#fff;">' + esc(d.selBadge) + '</span>' +
-          '<span class="sans" style="font-size:11px; color:#6b7080;">' + esc(d.selSearch) + '</span>' +
+          '<span class="sans" style="font-size:13px; color:#6b7080;">' + esc(d.selSearch) + '</span>' +
         '</div>' +
         '<div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:21px; font-weight:700; ' + d.selNameStyle + ' line-height:1.12;">' + esc(d.selName) + '</div>' +
         meta + hero + tagsBlock + drill +
@@ -638,31 +638,31 @@
 
   Report.prototype.howToRead = function () {
     return '<div style="padding:24px 40px 28px; background:#F8F9FC; border-top:1px solid #E4E7EE;">' +
-      '<div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:17px; font-weight:700; margin-bottom:10px;">How to read this report</div>' +
-      '<p style="font-family:\'Crimson Pro\',Georgia,serif; font-size:13.5px; line-height:1.6; color:#4c5262; margin:0 0 20px; max-width:840px;">Pick a status tab, then click any sequence to see its screening results, including matching HMM models or sequences, and the control list entries behind each hit.</p>' +
+      '<div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:19px; font-weight:700; margin-bottom:10px;">How to read this report</div>' +
+      '<p style="font-family:\'Crimson Pro\',Georgia,serif; font-size:15.5px; line-height:1.6; color:#4c5262; margin:0 0 20px; max-width:840px;">Pick a status tab, then click any sequence to see its screening results, including matching HMM models or sequences, and the control list entries behind each hit.</p>' +
       '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:26px;">' +
         '<div>' +
-          '<div class="cap" style="font-size:10px; font-weight:700; letter-spacing:.1em; color:#23285A; padding-bottom:7px; border-bottom:1px solid #E4E7EE; margin-bottom:12px;">Status</div>' +
+          '<div class="cap" style="font-size:12px; font-weight:700; letter-spacing:.1em; color:#23285A; padding-bottom:7px; border-bottom:1px solid #E4E7EE; margin-bottom:12px;">Status</div>' +
           '<div style="display:flex; flex-direction:column; gap:11px;">' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span class="badge" style="background:#F05023; color:#fff; margin-top:1px;">Flag</span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;">Found sequence of concern: biorisk or match to controlled pathogen. Follow-up screening recommended.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span class="badge" style="background:#D98A00; color:#fff; margin-top:1px;">Warning</span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;">Some signals of concern. Consider follow-up screening.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span class="badge" style="background:#419BB9; color:#fff; margin-top:1px;">Clear</span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;">Nothing of concern identified. All matches cleared or only regulated elsewhere.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span class="badge" style="background:#F05023; color:#fff; margin-top:1px;">Flag</span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;">Found sequence of concern: biorisk or match to controlled pathogen. Follow-up screening recommended.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span class="badge" style="background:#D98A00; color:#fff; margin-top:1px;">Warning</span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;">Some signals of concern. Consider follow-up screening.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span class="badge" style="background:#419BB9; color:#fff; margin-top:1px;">Clear</span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;">Nothing of concern identified. All matches cleared or only regulated elsewhere.</div></div>' +
           '</div>' +
         '</div>' +
         '<div>' +
-          '<div class="cap" style="font-size:10px; font-weight:700; letter-spacing:.1em; color:#23285A; padding-bottom:7px; border-bottom:1px solid #E4E7EE; margin-bottom:12px;">Screening lanes</div>' +
+          '<div class="cap" style="font-size:12px; font-weight:700; letter-spacing:.1em; color:#23285A; padding-bottom:7px; border-bottom:1px solid #E4E7EE; margin-bottom:12px;">Screening lanes</div>' +
           '<div style="display:flex; flex-direction:column; gap:11px;">' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#C23A14;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Biorisk</strong> — HMM screen for curated sequences of concern and virulence factors.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#F05023;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Best match</strong> — closest reference is an organism controlled in the selected regions.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#419BB9;margin-top:3px;flex-shrink:0;opacity:.7;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Annotations</strong> — regulated-elsewhere, cleared and low-concern context.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#C23A14;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Biorisk</strong> — HMM screen for curated sequences of concern and virulence factors.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#F05023;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Best match</strong> — closest reference is an organism controlled in the selected regions.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#419BB9;margin-top:3px;flex-shrink:0;opacity:.7;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Annotations</strong> — regulated-elsewhere, cleared and low-concern context.</div></div>' +
           '</div>' +
         '</div>' +
         '<div>' +
-          '<div class="cap" style="font-size:10px; font-weight:700; letter-spacing:.1em; color:#23285A; padding-bottom:7px; border-bottom:1px solid #E4E7EE; margin-bottom:12px;">Annotation types</div>' +
+          '<div class="cap" style="font-size:12px; font-weight:700; letter-spacing:.1em; color:#23285A; padding-bottom:7px; border-bottom:1px solid #E4E7EE; margin-bottom:12px;">Annotation types</div>' +
           '<div style="display:flex; flex-direction:column; gap:11px;">' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:#419BB9;opacity:.55;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Regulated elsewhere</strong> — controlled only under lists outside the screened regions.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:rgba(127,168,184,.55);margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Cleared</strong> — matched a controlled organism but cleared as common / low-concern.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:#B9C0CC;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Common / low-concern</strong> — housekeeping genes, rRNA, common vectors.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:#419BB9;opacity:.55;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Regulated elsewhere</strong> — controlled only under lists outside the screened regions.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:rgba(127,168,184,.55);margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Cleared</strong> — matched a controlled organism but cleared as common / low-concern.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:#B9C0CC;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Common / low-concern</strong> — housekeeping genes, rRNA, common vectors.</div></div>' +
           '</div>' +
         '</div>' +
       '</div>' +
