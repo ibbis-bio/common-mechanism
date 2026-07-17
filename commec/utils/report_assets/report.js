@@ -60,7 +60,6 @@
   //   cleared  — commec found a regulated match but cleared it as common / low-concern
   //              (rawStatus "Flag (Cleared)" / "Warning (Cleared)").
   //   exempt   — passed: matched only control lists outside the screened regions.
-  //   nondiag  — passed: match is shared with non-controlled taxa (non-diagnostic).
   //   common   — housekeeping / rRNA / common vector (low-concern search).
   Report.prototype.dispo = function (h) {
     if (h.step.indexOf("Biorisk") === 0) return (h.regulated === "Virulence Factor") ? "warning" : "flagbio";
@@ -70,14 +69,12 @@
     if (h.rawStatus === "Warning") return "warning";
     if (h.rawStatus === "Flag (Cleared)" || h.rawStatus === "Warning (Cleared)") return "cleared";
     // Pass:
-    if (hasLists && h.nNonControlled > 0) return "nondiag";
     if (hasLists) return "exempt";
-    if (h.nNonControlled > 0) return "nondiag";
     return "common";
   };
-  Report.prototype.prio = function (d) { return ["flagbio", "warning", "flagbest", "exempt", "nondiag", "cleared", "common"].indexOf(d); };
-  Report.prototype.dotFor = function (d) { return { flagbio: "#C23A14", warning: "#E0A020", flagbest: "#F05023", exempt: "#419BB9", nondiag: "#9aa0ad", cleared: "#7FA8B8", common: "#B9C0CC" }[d] || "#B9C0CC"; };
-  Report.prototype.dispoLabel = function (d) { return { flagbio: "Biorisk", warning: "Virulence factor", flagbest: "Flagged", exempt: "Regulated elsewhere", nondiag: "Non-unique match", cleared: "Cleared", common: "Common" }[d] || "Recorded"; };
+  Report.prototype.prio = function (d) { return ["flagbio", "warning", "flagbest", "exempt", "cleared", "common"].indexOf(d); };
+  Report.prototype.dotFor = function (d) { return { flagbio: "#C23A14", warning: "#E0A020", flagbest: "#F05023", exempt: "#419BB9", cleared: "#7FA8B8", common: "#B9C0CC" }[d] || "#B9C0CC"; };
+  Report.prototype.dispoLabel = function (d) { return { flagbio: "Biorisk", warning: "Virulence factor", flagbest: "Flagged", exempt: "Regulated elsewhere", cleared: "Cleared", common: "Common" }[d] || "Recorded"; };
   Report.prototype.dispoBadgeBg = function (d) {
     if (d === "flagbio" || d === "flagbest") return "#F05023";
     if (d === "warning") return "#D98A00";
@@ -177,7 +174,6 @@
       else if (x.d === "flagbest") { var b = mk(9, 22, "#F05023"); b.label = self.shortName(x.h.name); b.labelStyle = "position:absolute; top:12px; left:calc(" + g.left + "% + " + (g.w > 6 ? 8 : 9) + "px); font-family:Manrope,Arial,sans-serif; text-transform:uppercase; letter-spacing:.04em; font-size:8px; font-weight:700; color:#C23A14; white-space:nowrap; pointer-events:none;"; best.push(b); }
       else if (x.d === "exempt") ann.push(mk(9, 13, "rgba(65,155,185,.6)"));
       else if (x.d === "cleared") ann.push(mk(9, 13, "rgba(127,168,184,.45)"));
-      else if (x.d === "nondiag") ann.push(mk(24, 11, "repeating-linear-gradient(45deg,#9aa0ad,#9aa0ad 3px,#c3c8d2 3px,#c3c8d2 6px)"));
       else ann.push(mk(9, 13, "rgba(185,192,204,.85)"));
     });
 
@@ -233,7 +229,6 @@
     else if (d === "warning") { controlLabel = "Virulence factor"; }
     else if (d === "exempt") { controlLabel = "Controlled by " + listCount() + " — outside the screened regions"; }
     else if (d === "cleared") { controlLabel = allLists.length ? ("Cleared as common / low-concern · matched " + listCount()) : "Cleared as common / low-concern"; }
-    else if (d === "nondiag") { controlLabel = "Non-unique match"; }
     else { controlLabel = "Common / low-concern"; }
 
     return {
@@ -315,11 +310,10 @@
         else if (!mm.hits.length) { finding = s.rationale || "No hits"; }
         else {
           var count = function (dd) { return mm.groups.filter(function (g) { return g.dispo === dd; }).length; };
-          var cl = count("cleared"), ex = count("exempt"), nd = count("nondiag");
+          var cl = count("cleared"), ex = count("exempt");
           var bits = [];
           if (cl) bits.push(cl + " cleared");
           if (ex) bits.push(ex + " regulated elsewhere");
-          if (nd) bits.push(nd + " non-unique");
           finding = bits.length ? bits.join(" · ") : (s.rationale || "Nothing regulated in scope");
         }
       } else { finding = s.rationale || "Not screened"; }
@@ -582,7 +576,7 @@
           '<div style="display:flex; flex-direction:column; gap:11px;">' +
             '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#C23A14;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Biorisk</strong> — HMM screen for curated sequences of concern and virulence factors.</div></div>' +
             '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#F05023;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Best match</strong> — closest reference is an organism controlled in the selected regions.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#419BB9;margin-top:3px;flex-shrink:0;opacity:.7;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Annotations</strong> — regulated-elsewhere, non-unique and low-concern context.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#419BB9;margin-top:3px;flex-shrink:0;opacity:.7;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Annotations</strong> — regulated-elsewhere, cleared and low-concern context.</div></div>' +
           '</div>' +
         '</div>' +
         '<div>' +
@@ -590,7 +584,6 @@
           '<div style="display:flex; flex-direction:column; gap:11px;">' +
             '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:#419BB9;opacity:.55;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Regulated elsewhere</strong> — controlled only under lists outside the screened regions.</div></div>' +
             '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:rgba(127,168,184,.55);margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Cleared</strong> — matched a controlled organism but cleared as common / low-concern.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:repeating-linear-gradient(45deg,#9aa0ad,#9aa0ad 3px,#c3c8d2 3px,#c3c8d2 6px);margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Non-unique match</strong> — protein shared between controlled and non-controlled taxa.</div></div>' +
             '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:#B9C0CC;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:12.5px; line-height:1.5; color:#3c4156;"><strong>Common / low-concern</strong> — housekeeping genes, rRNA, common vectors.</div></div>' +
           '</div>' +
         '</div>' +
