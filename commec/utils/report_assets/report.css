@@ -2,9 +2,10 @@
  *
  * The brand fonts (Lyon Text / Acumin Pro) are not redistributable, so this report
  * uses the open-licensed (OFL) Google Fonts the brand falls back to — Crimson Pro
- * (serif) and Manrope (sans) — loaded via @import. If the network is unavailable the
- * stacks degrade gracefully to Georgia / Arial. */
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Manrope:wght@400;600;700&display=swap');
+ * (serif) and Manrope (sans). These are embedded as base64 @font-face rules at
+ * HTML-assembly time (see json_html_output.py) so the report renders identically
+ * offline, e.g. as an email attachment; the stacks still degrade to Georgia / Arial
+ * if the embedded fonts are ever unavailable. */
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }

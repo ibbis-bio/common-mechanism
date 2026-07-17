@@ -28,6 +28,7 @@ status, so the report always agrees with commec's flag counts.
 import os
 import math
 import json
+import base64
 import argparse
 import logging
 import importlib.resources
@@ -287,6 +288,32 @@ def _asset(name: str) -> str:
     )
 
 
+# Open-licensed variable fonts embedded so the report renders identically offline.
+# Each is a single variable woff2 covering the whole weight range used by the report.
+_FONTS = [
+    ("Manrope.woff2", "Manrope", "normal", "400 700"),
+    ("CrimsonPro.woff2", "Crimson Pro", "normal", "400 700"),
+    ("CrimsonPro-Italic.woff2", "Crimson Pro", "italic", "400 700"),
+]
+
+
+def _font_face_css() -> str:
+    """Emit @font-face rules with the woff2 files inlined as base64 data URIs."""
+    rules = []
+    for filename, family, style, weight in _FONTS:
+        data = (
+            importlib.resources.files("commec")
+            .joinpath("utils", "report_assets", "fonts", filename)
+            .read_bytes()
+        )
+        b64 = base64.b64encode(data).decode("ascii")
+        rules.append(
+            "@font-face{font-family:'%s';font-style:%s;font-weight:%s;font-display:swap;"
+            "src:url(data:font/woff2;base64,%s) format('woff2');}" % (family, style, weight, b64)
+        )
+    return "\n".join(rules)
+
+
 def _html_escape(text: str) -> str:
     return (
         str(text)
@@ -315,7 +342,7 @@ def render_report_html(screen: ScreenResult) -> str:
     # "</script>" inside a description can't break out of the data <script> block.
     data_json = json.dumps(model, allow_nan=False, ensure_ascii=False).replace("</", "<\\/")
 
-    css = _asset("report.css")
+    css = _font_face_css() + "\n" + _asset("report.css")
     # Inline the logo markup into the renderer (kept as a separate editable asset).
     js = _asset("report.js").replace('"__COMMEC_LOGO__"', json.dumps(_logo_svg()))
     title = _html_escape("Commec Screening Report — " + (model["meta"].get("file") or ""))
