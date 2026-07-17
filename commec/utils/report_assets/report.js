@@ -137,6 +137,7 @@
       return {
         axisMid: this.num(Math.round(len / 2)), axisEnd: this.num(len),
         bioBars: [], warnBars: [], bestBars: [], annBars: [], bioHas: false, warnHas: false, bioneither: true, bestEmpty: true, annEmpty: true,
+        bioH: 30, warnH: 30, bestH: 42, annH: 40, focus: false, bandLeft: 0, bandW: 0,
         railSections: [], railLabel: "All hits · 0", hasHits: false, noHits: true,
         selBadge: "Clear", selBadgeBg: "#419BB9", isBiorisk: false, descMode: false, showBest: true,
         selDesc: "", selDomain: "—", selSearch: "", selName: "No matches",
@@ -159,23 +160,54 @@
       self.setState({ selHit: sh, selList: sl });
     };
 
-    // lanes — one bar per hit, selection keyed to hit index
+    // lanes — one bar per hit. When a hit is explicitly selected we "pop it up":
+    // it keeps its own row while overlapping hits in the same lane drop to a row
+    // below it (and are highlighted); co-located hits in other lanes stay lit; and
+    // everything else dims. A coordinate band (rendered in detailTemplate) spans the
+    // lanes at the selected hit's range so you can see what sits under it (e.g. the
+    // low-concern region that cleared it).
+    var focus = (this.state.selHit[sid] != null && this.state.selHit[sid] >= 0 && this.state.selHit[sid] < hits.length);
+    var selH = hits[sel] ? hits[sel].h : null;
+    var selG = selH ? this.geom(selH, len) : null;
+    var laneOf = function (dd) { return dd === "flagbio" ? "bio" : (dd === "warning" ? "warn" : (dd === "flagbest" ? "best" : "ann")); };
+    var selLane = hits[sel] ? laneOf(hits[sel].d) : null;
+    var overlapsSel = function (hh) { return selH && hh.qs <= selH.qe && selH.qs <= hh.qe; };
+    var LANE = { bio: { top: 6, h: 22, drop: 28 }, warn: { top: 6, h: 22, drop: 28 }, best: { top: 9, h: 22, drop: 28 }, ann: { top: 9, h: 13, drop: 18 } };
+    var BG = { flagbio: "#C23A14", warning: "#E0A020", flagbest: "#F05023", exempt: "rgba(65,155,185,.6)", cleared: "rgba(127,168,184,.45)", common: "rgba(185,192,204,.85)" };
+    var laneBottom = { bio: 0, warn: 0, best: 0, ann: 0 };
+
     var bio = [], warn = [], best = [], ann = [];
     hits.forEach(function (x, i) {
       var on = i === sel;
       var g = self.geom(x.h, len);
-      var ring = on ? "box-shadow:0 0 0 2px #23285A;" : "";
-      var mk = function (top, h, bg, zBoost) {
-        var zi = on ? 9999 : Math.max(2, Math.round(300 - g.w * 2)) + (zBoost || 0);
-        return { style: "position:absolute; top:" + top + "px; height:" + h + "px; left:" + g.left + "%; width:" + g.w + "%; min-width:6px; background:" + bg + "; opacity:.82; border-radius:2px; z-index:" + zi + "; cursor:pointer; " + ring, title: self.shortName(x.h.name) + " · " + (x.h.pctId || "") + " · " + self.coord(x.h), onSelect: function () { selectHit(i); } };
+      var key = laneOf(x.d);
+      var L = LANE[key];
+      var ov = !on && overlapsSel(x.h);
+      var dropped = focus && ov && key === selLane;   // same lane as selection, overlaps it
+      var coLoc = focus && ov && key !== selLane;      // other lane, shares its coordinates
+      var dim = focus && !on && !dropped && !coLoc;
+      var top = L.top + (dropped ? L.drop : 0);
+      if (top + L.h > laneBottom[key]) laneBottom[key] = top + L.h;
+
+      var opacity, shadow, zi;
+      if (on) { opacity = "1"; shadow = "box-shadow:0 0 0 2px #23285A;"; zi = 9999; }
+      else if (dropped) { opacity = "1"; shadow = "box-shadow:0 0 0 1.5px " + self.dotFor(x.d) + ";"; zi = 800; }
+      else if (coLoc) { opacity = ".9"; shadow = "box-shadow:0 0 0 1px rgba(35,40,90,.3);"; zi = 500; }
+      else if (dim) { opacity = ".2"; shadow = ""; zi = 2; }
+      else { opacity = ".82"; shadow = ""; zi = Math.max(2, Math.round(300 - g.w * 2)); }
+
+      var bar = {
+        style: "position:absolute; top:" + top + "px; height:" + L.h + "px; left:" + g.left + "%; width:" + g.w + "%; min-width:6px; background:" + (BG[x.d] || BG.common) + "; opacity:" + opacity + "; border-radius:2px; z-index:" + zi + "; cursor:pointer; transition:top .15s ease, opacity .15s ease, box-shadow .15s ease; " + shadow,
+        title: self.shortName(x.h.name) + " · " + (x.h.pctId || "") + " · " + self.coord(x.h),
+        onSelect: function () { selectHit(i); }
       };
-      if (x.d === "flagbio") bio.push(mk(6, 22, "#C23A14", 500));
-      else if (x.d === "warning") warn.push(mk(6, 22, "#E0A020", 500));
-      else if (x.d === "flagbest") { var b = mk(9, 22, "#F05023"); b.label = self.shortName(x.h.name); b.labelStyle = "position:absolute; top:12px; left:calc(" + g.left + "% + " + (g.w > 6 ? 8 : 9) + "px); font-family:Manrope,Arial,sans-serif; text-transform:uppercase; letter-spacing:.04em; font-size:8px; font-weight:700; color:#C23A14; white-space:nowrap; pointer-events:none;"; best.push(b); }
-      else if (x.d === "exempt") ann.push(mk(9, 13, "rgba(65,155,185,.6)"));
-      else if (x.d === "cleared") ann.push(mk(9, 13, "rgba(127,168,184,.45)"));
-      else ann.push(mk(9, 13, "rgba(185,192,204,.85)"));
+      if (key === "bio") bio.push(bar);
+      else if (key === "warn") warn.push(bar);
+      else if (key === "best") best.push(bar);
+      else ann.push(bar);
     });
+
+    var laneH = function (key, orig) { return (focus && selLane === key) ? Math.max(orig, laneBottom[key] + 6) : orig; };
 
     // rail — one row per hit, split into Flag / Warning / Clear sections
     var mkRow = function (x, i) {
@@ -235,6 +267,8 @@
       axisMid: this.num(Math.round(len / 2)), axisEnd: this.num(len),
       bioBars: bio, warnBars: warn, bestBars: best, annBars: ann,
       bioHas: bio.length > 0, warnHas: warn.length > 0, bioneither: bio.length === 0 && warn.length === 0, bestEmpty: best.length === 0, annEmpty: ann.length === 0,
+      bioH: laneH("bio", 30), warnH: laneH("warn", 30), bestH: laneH("best", 42), annH: laneH("ann", 40),
+      focus: focus, bandLeft: selG ? selG.left : 0, bandW: selG ? selG.w : 0,
       railSections: railSections, railLabel: "All hits · " + hits.length, hasHits: true, noHits: false,
       selBadge: badge, selBadgeBg: this.dispoBadgeBg(d),
       isBiorisk: isBiorisk, descMode: descMode, showBest: !descMode,
@@ -433,11 +467,16 @@
   Report.prototype.detailTemplate = function (d) {
     var self = this;
 
+    // faint coordinate band spanning the selected hit's start–end across the lanes
+    var band = d.focus
+      ? '<div style="position:absolute; top:0; bottom:0; left:' + d.bandLeft + '%; width:' + d.bandW + '%; min-width:6px; background:rgba(35,40,90,.06); border-left:1px solid rgba(35,40,90,.18); border-right:1px solid rgba(35,40,90,.18); z-index:0; pointer-events:none;"></div>'
+      : "";
+
     var bioLane = d.bioHas
-      ? '<div style="position:relative; min-height:30px; display:flex; align-items:center;">' + d.bioBars.map(function (b) { return '<div title="' + esc(b.title) + '" data-cb="' + self.cb(b.onSelect) + '" style="' + b.style + '"></div>'; }).join("") + '</div>'
+      ? '<div style="position:relative; min-height:' + d.bioH + 'px; display:flex; align-items:center;">' + d.bioBars.map(function (b) { return '<div title="' + esc(b.title) + '" data-cb="' + self.cb(b.onSelect) + '" style="' + b.style + '"></div>'; }).join("") + '</div>'
       : "";
     var warnLane = d.warnHas
-      ? '<div style="position:relative; min-height:30px; display:flex; align-items:center;">' + d.warnBars.map(function (b) { return '<div title="' + esc(b.title) + '" data-cb="' + self.cb(b.onSelect) + '" style="' + b.style + '"></div>'; }).join("") + '</div>'
+      ? '<div style="position:relative; min-height:' + d.warnH + 'px; display:flex; align-items:center;">' + d.warnBars.map(function (b) { return '<div title="' + esc(b.title) + '" data-cb="' + self.cb(b.onSelect) + '" style="' + b.style + '"></div>'; }).join("") + '</div>'
       : "";
     var neitherLane = d.bioneither
       ? '<div style="position:relative; min-height:30px; display:flex; align-items:center;"><div style="position:absolute; left:0; right:0; top:50%; height:1px; background:repeating-linear-gradient(90deg,#E0E2EA,#E0E2EA 4px,transparent 4px,transparent 8px);"></div><span class="sans" style="position:relative; font-size:10px; color:#aab; background:#FBFCFE; padding-right:8px;">No biorisk models matched</span></div>'
@@ -460,15 +499,15 @@
         '</div>' +
         '<div style="display:flex; align-items:stretch; min-height:36px; border-bottom:1px solid #F2F3F7;">' +
           '<div style="width:132px; flex-shrink:0; display:flex; flex-direction:column; justify-content:center; gap:2px;"><div style="display:flex; align-items:center; gap:7px;"><span style="width:9px;height:9px;border-radius:2px;background:#C23A14;"></span><span class="cap" style="font-size:9.5px; font-weight:700; color:#23285A;">Biorisk</span></div></div>' +
-          '<div style="flex:1; display:flex; flex-direction:column; justify-content:center;">' + bioLane + warnLane + neitherLane + '</div>' +
+          '<div style="position:relative; flex:1; display:flex; flex-direction:column; justify-content:center;">' + band + bioLane + warnLane + neitherLane + '</div>' +
         '</div>' +
         '<div style="display:flex; align-items:stretch; min-height:42px; border-bottom:1px solid #F2F3F7;">' +
           '<div style="width:132px; flex-shrink:0; display:flex; flex-direction:column; justify-content:center; gap:2px;"><div style="display:flex; align-items:center; gap:7px;"><span style="width:9px;height:9px;border-radius:2px;background:#F05023;"></span><span class="cap" style="font-size:9.5px; font-weight:700; color:#23285A;">Best match</span></div><span class="sans" style="font-size:8.5px; color:#9a9fb0; padding-left:16px;">click a hit</span></div>' +
-          '<div style="position:relative; flex:1; min-height:42px;">' + bestEmpty + bestBars + '</div>' +
+          '<div style="position:relative; flex:1; min-height:' + d.bestH + 'px;">' + band + bestEmpty + bestBars + '</div>' +
         '</div>' +
         '<div style="display:flex; align-items:stretch; min-height:40px;">' +
           '<div style="width:132px; flex-shrink:0; display:flex; flex-direction:column; justify-content:center; gap:2px;"><div style="display:flex; align-items:center; gap:7px;"><span style="width:9px;height:9px;border-radius:2px;background:#419BB9;"></span><span class="cap" style="font-size:9.5px; font-weight:700; color:#23285A;">Annotations</span></div><span class="sans" style="font-size:8.5px; color:#9a9fb0; padding-left:16px;">context</span></div>' +
-          '<div style="position:relative; flex:1; min-height:40px; display:flex; align-items:center;">' + annEmpty + annBars + '</div>' +
+          '<div style="position:relative; flex:1; min-height:' + d.annH + 'px; display:flex; align-items:center;">' + band + annEmpty + annBars + '</div>' +
         '</div>' +
       '</div>';
 
