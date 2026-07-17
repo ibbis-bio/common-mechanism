@@ -171,8 +171,22 @@ def _build_meta(screen: ScreenResult, list_meta: list) -> dict:
     }
 
 
+def _list_code(includes, acronym: str) -> str:
+    """
+    Short chip preview for a control list: the two-letter ISO country code when the
+    list covers a single country (``includes`` is one alpha-2 code), otherwise the
+    list acronym (e.g. groupings like the Australia Group or the EU, which expand to
+    many countries).
+    """
+    if isinstance(includes, str):
+        parts = [p.strip() for p in includes.split(",") if p.strip()]
+        if len(parts) == 1 and len(parts[0]) == 2 and parts[0].isalpha():
+            return parts[0].upper()
+    return acronym
+
+
 def _build_list_meta(screen: ScreenResult) -> tuple:
-    """Return (``lists`` for the model, ``name -> {acronym, region}`` lookup)."""
+    """Return (``lists`` for the model, ``name -> {code, acronym, region}`` lookup)."""
     dbinfo = getattr(screen, "database_info", None)
     entries = getattr(dbinfo, "control_list_info", None) if dbinfo else None
     lists = []
@@ -182,9 +196,10 @@ def _build_list_meta(screen: ScreenResult) -> tuple:
         acronym = getattr(cl, "acronym", "") or ""
         region = getattr(cl, "region", "") or ""
         status = str(getattr(cl, "status", "") or "")
-        lists.append({"name": name, "acronym": acronym, "region": region, "status": status})
+        code = _list_code(getattr(cl, "includes", ""), acronym)
+        lists.append({"name": name, "code": code, "acronym": acronym, "region": region, "status": status})
         if name:
-            by_name[name] = {"acronym": acronym, "region": region}
+            by_name[name] = {"code": code, "acronym": acronym, "region": region}
     return lists, by_name
 
 
@@ -231,9 +246,11 @@ def _taxon_lists(taxon: dict, list_lookup: dict) -> list:
     for entry in taxon.get("controlled_by_lists", []) or []:
         name = entry.get("list", "") or ""
         meta = list_lookup.get(name, {})
+        acronym = meta.get("acronym", "")
         out.append({
             "name": name,
-            "acronym": meta.get("acronym", ""),
+            "code": meta.get("code", "") or acronym,
+            "acronym": acronym,
             "region": meta.get("region", ""),
             "source": _clean(entry.get("source")) or "",
         })

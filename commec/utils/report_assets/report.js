@@ -206,10 +206,10 @@
     var allLists = h.lists || [];
     var isFlag = d === "flagbio" || d === "flagbest" || d === "warning";
     var tagLists = allLists;
-    var tags = (tagLists.length ? tagLists : [{ acronym: "—", short: "—", name: "Shared protein · not diagnostic" }]).map(function (l, i) {
+    var tags = (tagLists.length ? tagLists : [{ code: "—", acronym: "—", name: "Shared protein · not diagnostic" }]).map(function (l, i) {
       var active = (i === selList) && tagLists.length > 0;
       return {
-        tag: l.acronym || l.short || "—", name: self.shortName(l.name), tagColor: active ? "#23285A" : "#8a8f9e",
+        tag: l.code || l.acronym || "—", name: self.shortName(l.name), tagColor: active ? "#23285A" : "#8a8f9e",
         rowStyle: "display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:3px; cursor:pointer; border:1px solid " + (active ? "#23285A" : "#E4E7EE") + "; background:" + (active ? "#F4F6FB" : "#fff") + ";",
         onSelect: function () {
           var sl = {}; var k; for (k in self.state.selList) sl[k] = self.state.selList[k];
@@ -220,8 +220,8 @@
     });
     var dl = (tagLists.length && selList >= 0 && selList < tagLists.length) ? tagLists[selList] : null;
     var drill = dl
-      ? { show: true, tag: dl.acronym || dl.short || "—", name: dl.acronym || dl.short || "—", region: dl.region || "—", code: dl.acronym || "—", authority: dl.name, entry: dl.source || "—" }
-      : { show: false, tag: "", name: "", region: "", code: "", authority: "", entry: "" };
+      ? { show: true, tag: dl.code || dl.acronym || "—", name: (dl.acronym ? dl.acronym + " - " + dl.name : dl.name), region: dl.region || "—", authority: dl.name, entry: dl.source || "—" }
+      : { show: false, tag: "", name: "", region: "", authority: "", entry: "" };
 
     var controlLabel, badge = this.dispoLabel(d);
     var listCount = function () { return allLists.length + " list" + (allLists.length > 1 ? "s" : ""); };
