@@ -308,21 +308,20 @@ class ScreenTesterFactory:
         biorisk_db_output_path.write_text(hmmer_biorisk_to_parse)
         print("writing biorisk hmm: \n", hmmer_biorisk_to_parse)
 
-        # TAXONOMY NR FILES
-        header = "#query acc.	    title   subject acc.    taxid	evalue	bit score	% identity	    q.len	q.start	q.end	s.len	s. start	s. end\n"
+        # TAXONOMY NR FILES (outfmt 6 tabular: no header lines)
         nr_db_output_path = self.tmp_path / f"output_{self.name}/{self.name}.nr.blastx"
-        blastnr_to_parse = header + "\n".join(self.protein_tx)
+        blastnr_to_parse = "\n".join(self.protein_tx)
         nr_db_output_path.write_text(blastnr_to_parse)
         print("writing blast nr: \n", blastnr_to_parse)
 
-        # TAXONOMY NT FILES:
+        # TAXONOMY NT FILES (outfmt 6 tabular: no header lines):
         nt_db_output_path = self.tmp_path / f"output_{self.name}/{self.name}.nt.blastn"
-        blastnt_to_parse = header + "\n".join(self.nucl_tx)
+        blastnt_to_parse = "\n".join(self.nucl_tx)
         nt_db_output_path.write_text(blastnt_to_parse)
         print("writing blast nt: \n", blastnt_to_parse)
 
         # LOW CONCERN FILES:
-        header = " #tname    accession        tlen qname        accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias    from    to  from    to  from    to  acc description of target\n"
+        header = "#tname    accession        tlen qname        accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias    from    to  from    to  from    to  acc description of target\n"
         low_concern_hmm_output_path = self.tmp_path / f"output_{self.name}/{self.name}.low_concern.hmmscan"
         low_concern_hmmscan_to_parse = header + "\n".join(self.lowconcern_protein)
         low_concern_hmm_output_path.write_text(low_concern_hmmscan_to_parse)
@@ -334,9 +333,8 @@ class ScreenTesterFactory:
         low_concern_cmscan_output_path.write_text(low_concern_cmscan_to_parse)
         print("writing lowconcern rna: \n", low_concern_cmscan_to_parse)
 
-        header = "#query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	    s.len	s. start	s. end\n"
         low_concern_nt_output_path = self.tmp_path / f"output_{self.name}/{self.name}.low_concern.blastn"
-        low_concern_blastnt_to_parse = header + "\n".join(self.lowconcern_dna)
+        low_concern_blastnt_to_parse = "\n".join(self.lowconcern_dna)
         low_concern_nt_output_path.write_text(low_concern_blastnt_to_parse)
         print("writing lowconcern dna: \n", low_concern_blastnt_to_parse)
 
