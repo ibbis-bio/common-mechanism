@@ -303,8 +303,10 @@
             b = e;
           }
         };
-        buildTrack(function (x) { return isBio(x) ? 0 : (x.d === "flagbest" ? 2 : 1); }, function (sev) { return sev === 2 ? "#F05023" : "rgba(65,155,185,.5)"; }, 2, 6);
-        buildTrack(function (x) { return !isBio(x) ? 0 : (x.d === "flagbio" ? 2 : 1); }, function (sev) { return sev === 2 ? "#C23A14" : "#E0A020"; }, 10, 3);
+        // Two equal-thickness tracks (taxonomy above, biorisk below) so an overlapping
+        // biorisk hit is never masked and neither lane looks less important than the other.
+        buildTrack(function (x) { return isBio(x) ? 0 : (x.d === "flagbest" ? 2 : 1); }, function (sev) { return sev === 2 ? "#F05023" : "rgba(65,155,185,.5)"; }, 4, 3);
+        buildTrack(function (x) { return !isBio(x) ? 0 : (x.d === "flagbio" ? 2 : 1); }, function (sev) { return sev === 2 ? "#C23A14" : "#E0A020"; }, 8, 3);
         if (t.status === "Flag") { var fg = mm.groups.filter(function (g) { return g.dispo === "flagbest" || g.dispo === "flagbio"; }).map(function (g) { return g.dispo === "flagbio" ? "Biorisk flag" : g.name; }); var uniq = []; fg.forEach(function (n) { if (uniq.indexOf(n) < 0) uniq.push(n); }); finding = uniq.slice(0, 3).join(", ") + (uniq.length > 3 ? " +" + (uniq.length - 3) : ""); }
         else if (t.status === "Warning") finding = mm.hasWarn ? "Virulence factor · review" : "No matches in scope · risk unknown";
         else if (!mm.hits.length) { finding = s.rationale || "No hits"; }
