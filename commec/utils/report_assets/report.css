@@ -1,0 +1,42 @@
+/* Commec Screening Report v5 — self-contained styles.
+ *
+ * The brand fonts (Lyon Text / Acumin Pro) are not redistributable, so this report
+ * uses the open-licensed (OFL) Google Fonts the brand falls back to — Crimson Pro
+ * (serif) and Manrope (sans) — loaded via @import. If the network is unavailable the
+ * stacks degrade gracefully to Georgia / Arial. */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Manrope:wght@400;600;700&display=swap');
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: #EEF0F5;
+  font-family: 'Manrope', Arial, sans-serif;
+  color: #23285A;
+}
+::selection { background: #FDE4DA; }
+
+#commec-report { max-width: 1200px; margin: 0 auto; }
+
+.report-card {
+  background: #fff;
+  overflow: hidden;
+}
+
+.cm { font-family: 'Crimson Pro', Georgia, serif; color: #23285A; -webkit-font-smoothing: antialiased; }
+.cap { font-family: 'Manrope', Arial, sans-serif; text-transform: uppercase; letter-spacing: .1em; }
+.sans { font-family: 'Manrope', Arial, sans-serif; }
+.mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+
+a { color: #419BB9; text-decoration: none; }
+a:hover { color: #2F7C97; text-decoration: underline; }
+
+.badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 21px; padding: 0 9px; border-radius: 2px;
+  font-family: 'Manrope', Arial, sans-serif; font-weight: 700; font-size: 10.5px;
+  letter-spacing: .05em; text-transform: uppercase; white-space: nowrap;
+}
+
+.row-hover:hover { background: #FAFBFD !important; }
+.tab-hover:hover { background: #F4F6FB !important; }
+.ghost:hover { filter: brightness(1.06); }
