@@ -1,4 +1,4 @@
-/* Commec Screening Report v5 — self-contained renderer.
+/* Commec Screening Report — self-contained renderer.
  *
  * Ported from the Claude Design "DCLogic" prototype. The interactive-framework
  * pieces (x-dc / sc-for / sc-if / {{ }} / props / scope toggle) are replaced by a

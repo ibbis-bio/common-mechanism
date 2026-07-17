@@ -1,6 +1,6 @@
 """
 Convert a Commec Screen JSON object (or a ScreenResult object) into a self-contained,
-interactive HTML report ("Commec Screening Report v5").
+interactive HTML report ("Commec Screening Report").
 
 The report is a single HTML file with no external framework and no CDN dependency
 (fonts are loaded from Google Fonts but degrade gracefully offline). It embeds a
