@@ -140,7 +140,7 @@
         railSections: [], railLabel: "All hits · 0", hasHits: false, noHits: true,
         selBadge: "Clear", selBadgeBg: "#419BB9", isBiorisk: false, descMode: false, showBest: true,
         selDesc: "", selDomain: "—", selSearch: "", selName: "No matches",
-        selNameStyle: "", selCategory: "—", selTaxid: "—", selTarget: "—", selTargetDesc: "",
+        selNameStyle: "", selCategory: "—", selTaxid: "—", selTarget: "—", selTargetUrl: "", selTargetDesc: "",
         selPct: "—", selEval: "—", selCoords: "—",
         controlLabel: "No regions of concern", tags: [],
         drill: { show: false, tag: "", name: "", region: "", code: "", authority: "", entry: "" }
@@ -242,7 +242,7 @@
       selSearch: this.stepShort(h.step), selName: this.shortName(h.name) || h.name,
       selNameStyle: (h.category === "Viruses" || h.category === "Bacteria") ? "font-style:italic;" : "",
       selCategory: h.category || "—", selTaxid: h.taxid || "—",
-      selTarget: h.target || "—", selTargetDesc: h.targetDesc || "", selPct: h.pctId || "—",
+      selTarget: h.target || "—", selTargetUrl: h.targetUrl || "", selTargetDesc: h.targetDesc || "", selPct: h.pctId || "—",
       selEval: h.eValue || "—", selCoords: this.coord(h),
       controlLabel: controlLabel, tags: tags, drill: drill
     };
@@ -518,7 +518,9 @@
     if (d.showBest) {
       hero = '<div style="margin:16px 0; padding:20px; background:#fff; border:1px solid #E4E7EE; border-radius:4px; text-align:center;">' +
         '<div class="cap" style="font-size:9px; font-weight:700; letter-spacing:.12em; color:#8a8f9e;">Best target</div>' +
-        '<div class="mono" style="font-size:23px; font-weight:600; color:#419BB9; margin-top:8px; letter-spacing:.01em;">' + esc(d.selTarget) + '</div>' +
+        '<div class="mono" style="font-size:23px; font-weight:600; color:#419BB9; margin-top:8px; letter-spacing:.01em;">' +
+          (d.selTargetUrl ? '<a href="' + esc(d.selTargetUrl) + '" target="_blank" rel="noopener noreferrer" style="color:#419BB9;">' + esc(d.selTarget) + '</a>' : esc(d.selTarget)) +
+        '</div>' +
         '<div class="sans" style="font-size:12.5px; color:#3c4156; margin-top:6px; max-width:520px; margin-left:auto; margin-right:auto; line-height:1.45;">' + esc(d.selTargetDesc) + '</div>' +
         '<div style="display:flex; justify-content:center; gap:34px; margin-top:16px; padding-top:15px; border-top:1px solid #E7EAF1;">' +
           '<div><div class="cap" style="font-size:8.5px; font-weight:700; letter-spacing:.1em; color:#8a8f9e; margin-bottom:5px;">Identity</div><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:20px; font-weight:700; color:#23285A;">' + esc(d.selPct) + '</div></div>' +

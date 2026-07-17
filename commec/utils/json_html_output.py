@@ -211,6 +211,20 @@ def _best_taxon(taxa: list):
     return sorted(taxa, key=key)[0]
 
 
+def _target_url(step: str, target: str):
+    """
+    Build a lookup URL for a best-match target accession: UniProt for protein
+    (UniRef) hits, NCBI nuccore for nucleotide hits. Returns None otherwise.
+    """
+    if not target:
+        return None
+    if step == ScreenStep.TAXONOMY_AA:
+        return "https://www.uniprot.org/uniprotkb/%s/" % target
+    if step == ScreenStep.TAXONOMY_NT:
+        return "https://www.ncbi.nlm.nih.gov/nuccore/%s/" % target
+    return None
+
+
 def _taxon_lists(taxon: dict, list_lookup: dict) -> list:
     """Join a taxon's ``controlled_by_lists`` (name + source) to run list metadata."""
     out = []
@@ -241,7 +255,7 @@ def _build_hit(hit, list_lookup: dict) -> dict:
         "qe": getattr(region, "query_end", None) if region else None,
         "eValue": _fmt_evalue(getattr(region, "e_value", None) if region else None),
         "regulated": None, "domain": None, "category": None,
-        "lists": [], "pctId": None, "target": None, "targetDesc": None,
+        "lists": [], "pctId": None, "target": None, "targetUrl": None, "targetDesc": None,
         "taxid": None, "genus": None, "species": None,
         "nControlled": 0, "nNonControlled": 0, "coverage": None,
     }
@@ -267,6 +281,7 @@ def _build_hit(hit, list_lookup: dict) -> dict:
         rep = _best_taxon(controlled) or _best_taxon(tax.get("non-controlled_taxa") or [])
         if rep:
             common["target"] = _clean(rep.get("target_hit"))
+            common["targetUrl"] = _target_url(step, common["target"])
             common["targetDesc"] = _clean_text(rep.get("target_description")) or ""
             common["pctId"] = _fmt_pct(rep.get("percent_identity"))
             common["taxid"] = _clean(rep.get("taxid"))
