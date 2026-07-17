@@ -26,12 +26,14 @@ status, so the report always agrees with commec's flag counts.
 """
 
 import os
+import re
 import math
 import json
 import base64
 import argparse
 import logging
 import importlib.resources
+from urllib.parse import unquote
 
 from commec.config.json_io import get_screen_data_from_json
 from commec.config.result import ScreenResult, ScreenStep
@@ -58,6 +60,26 @@ def _first(v):
     if isinstance(v, (list, tuple)):
         return v[0] if v else None
     return v
+
+
+_HTML_TAG_RE = re.compile(r"<[^>]*>")
+
+
+def _clean_text(v):
+    """
+    Tidy a display string coming from upstream databases. Some names carry markup
+    (sometimes URL-encoded, e.g. ``%3C/i%3E`` for ``</i>``), stray wrapping quotes,
+    or runs of whitespace. Decode, strip tags, and trim so it presents cleanly.
+    """
+    v = _clean(v)
+    if not isinstance(v, str):
+        return v
+    v = unquote(v)                       # %3C/i%3E -> </i>
+    v = _HTML_TAG_RE.sub("", v)          # drop <i>...</i> and similar markup
+    v = v.replace(" ", " ")         # non-breaking space -> space
+    v = re.sub(r"\s+", " ", v).strip()   # collapse internal whitespace
+    v = v.strip("\"“”").strip()  # strip wrapping straight/smart quotes
+    return v or None
 
 
 def _fmt_evalue(e) -> str:
@@ -213,8 +235,8 @@ def _build_hit(hit, list_lookup: dict) -> dict:
     common = {
         "step": step,
         "rawStatus": str(getattr(rec, "status", "") or ""),
-        "name": getattr(hit, "name", "") or "",
-        "desc": getattr(hit, "description", "") or "",
+        "name": _clean_text(getattr(hit, "name", "")) or "",
+        "desc": _clean_text(getattr(hit, "description", "")) or "",
         "qs": getattr(region, "query_start", None) if region else None,
         "qe": getattr(region, "query_end", None) if region else None,
         "eValue": _fmt_evalue(getattr(region, "e_value", None) if region else None),
@@ -245,11 +267,11 @@ def _build_hit(hit, list_lookup: dict) -> dict:
         rep = _best_taxon(controlled) or _best_taxon(tax.get("non-controlled_taxa") or [])
         if rep:
             common["target"] = _clean(rep.get("target_hit"))
-            common["targetDesc"] = _clean(rep.get("target_description")) or ""
+            common["targetDesc"] = _clean_text(rep.get("target_description")) or ""
             common["pctId"] = _fmt_pct(rep.get("percent_identity"))
             common["taxid"] = _clean(rep.get("taxid"))
-            common["genus"] = _clean(rep.get("genus"))
-            common["species"] = _clean(rep.get("species"))
+            common["genus"] = _clean_text(rep.get("genus"))
+            common["species"] = _clean_text(rep.get("species"))
             common["lists"] = _taxon_lists(rep, list_lookup)
         return common
 
