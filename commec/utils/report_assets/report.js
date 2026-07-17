@@ -336,6 +336,18 @@
       };
     });
 
+    // Expand / collapse every openable sequence in the current tab.
+    var expandable = filtered.filter(function (t) { return t.status !== "Skipped"; });
+    var openCount = 0;
+    expandable.forEach(function (t) { if (self.state.open[t.s.id]) openCount++; });
+    var allOpen = expandable.length > 0 && openCount === expandable.length;
+    var onToggleAll = function () {
+      if (allOpen) { self.setState({ open: {} }); return; }
+      var o = {};
+      expandable.forEach(function (t) { o[t.s.id] = true; });
+      self.setState({ open: o });
+    };
+
     return {
       mFile: m.file || "Screening report",
       mLine1: (m.nQueries != null ? m.nQueries : seqs.length) + " sequences · " + this.num(m.totalLen) + " bp · screened " + (m.date || "") + " · run " + (m.time || ""),
@@ -343,7 +355,10 @@
       tabs: tabs, rows: rows,
       hasRows: rows.length > 0, isEmpty: rows.length === 0,
       emptyText: "No sequences with " + tab.toLowerCase() + " status in this run.",
-      listCount: (ds.lists || []).length
+      listCount: (ds.lists || []).length,
+      showToggleAll: expandable.length > 0,
+      toggleAllLabel: allOpen ? "Collapse all" : "Expand all",
+      onToggleAll: onToggleAll
     };
   };
 
@@ -382,9 +397,12 @@
         '</div>' +
       '</div>';
 
+    var toggleAll = v.showToggleAll
+      ? '<span data-cb="' + self.cb(v.onToggleAll) + '" style="cursor:pointer; font-size:9px; font-weight:700; letter-spacing:.08em; color:#419BB9;">' + esc(v.toggleAllLabel) + '</span>'
+      : '';
     var tableHeader = v.hasRows ?
       '<div class="cap" style="display:grid; grid-template-columns:18px 3.1fr 2.4fr 3.0fr; align-items:center; gap:18px; padding:12px 40px 10px; font-size:10px; font-weight:700; letter-spacing:.1em; color:#9a9fb0; border-bottom:1px solid #E4E7EE;">' +
-        '<div></div><div>Sequence</div><div>Map</div><div>Finding</div></div>' : "";
+        '<div></div><div>Sequence</div><div>Map</div><div style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><span>Finding</span>' + toggleAll + '</div></div>' : "";
 
     var rows = v.rows.map(function (r) { return self.rowTemplate(r); }).join("");
 
