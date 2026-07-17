@@ -158,6 +158,16 @@ def _build_meta(screen: ScreenResult, list_meta: list) -> dict:
                 parts.append(short)
         tools = " · ".join(parts)
 
+    # Database component revisions (helps troubleshoot bug reports).
+    revisions = ""
+    revs = getattr(dbinfo, "revisions", None) if dbinfo else None
+    if isinstance(revs, dict) and revs:
+        labels = {"biorisk": "biorisk", "best_match": "best-match",
+                  "low_concern": "low-concern", "control_lists": "control-lists"}
+        order = ["biorisk", "best_match", "low_concern", "control_lists"]
+        keys = [k for k in order if k in revs] + [k for k in revs if k not in order]
+        revisions = " · ".join(labels.get(k, k) + " v" + str(revs[k]) for k in keys)
+
     file_path = getattr(qinfo, "file", "") if qinfo else ""
     return {
         "file": os.path.basename(file_path) if file_path else "Screening report",
@@ -168,6 +178,7 @@ def _build_meta(screen: ScreenResult, list_meta: list) -> dict:
         "date": getattr(info, "date_run", "") if info else "",
         "time": getattr(info, "time_taken", "") if info else "",
         "tools": tools,
+        "revisions": revisions,
     }
 
 
