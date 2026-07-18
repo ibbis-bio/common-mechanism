@@ -11,7 +11,6 @@ The `commec` package is a tool for DNA sequence screening that is part of the
     screen  Run Common Mechanism screening on an input FASTA.
     flag    Parse .screen or .json files in a directory and create CSVs of flags raised
     setup   Download or update the reference databases required for screening
-    split   Split a multi-record FASTA file into individual files, one for each record
     list    Display information on the annotated control lists used during screening
 
 The `commec screen` command runs an input FASTA through the following screening steps:
