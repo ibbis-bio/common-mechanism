@@ -145,7 +145,6 @@ class ScreenIO:
                 "*blastn",
                 "faa",
                 "*blastx",
-                "*dmnd",
                 "*.tmp",
             ]:
                 for file in glob.glob(f"{self.output_prefix}.{pattern}"):

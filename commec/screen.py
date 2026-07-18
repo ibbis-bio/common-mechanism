@@ -167,6 +167,15 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
               " identified based on biorisk database and protein hits)"),
     )
 
+    screen_logic_group.add_argument(
+        "-p",
+        "--protein-search-tool",
+        dest="protein_search_tool",
+        choices=["blastx", "diamond"],
+        deprecated = True,
+        help="(DEPRECATED) protein search now always uses BLASTX; DIAMOND is not supported in this version",
+    )
+
     parallel_group = parser.add_argument_group("Parallelisation")
     parallel_group.add_argument(
         "-t",
@@ -174,6 +183,14 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         dest="threads",
         type=int,
         help="Number of CPU threads to use. Passed to search tools.",
+    )
+    parallel_group.add_argument(
+        "-j",
+        "--diamond-jobs",
+        dest="diamond_jobs",
+        type=int,
+        deprecated = True,
+        help="(DEPRECATED) DIAMOND is not supported in this version, so this setting has no effect",
     )
     output_handling_group = parser.add_argument_group("Output file handling")
     output_exclusive_group = output_handling_group.add_mutually_exclusive_group()
@@ -546,7 +563,7 @@ class Screen:
 
     def screen_proteins(self):
         """
-        Call `run_blastx.sh` or `run_diamond.sh` followed by `check_reg_path.py` to add regulated
+        Call `run_blastx.sh` followed by `check_reg_path.py` to add regulated
         pathogen protein screening results to `screen_file`.
         """
         self.database_tools.regulated_protein.search()

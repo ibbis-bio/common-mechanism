@@ -137,7 +137,7 @@ class SearchHandler(ABC):
         """
         Check the output file contains something, indicating that the search ran.
         Can be overridden if more complex checks for a particular tool are desired.
-        Is overridden for BLAST/DIAMOND outputs (BlastHandler), which use tabular
+        Is overridden for BLAST outputs (BlastHandler), which use tabular
         output with no header information, and simply only check for file-existance,
         rather than lack of content, for example.
         """

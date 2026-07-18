@@ -2,7 +2,7 @@
 # Copyright (c) 2021-2024 International Biosecurity and Biosafety Initiative for Science
 """
 Module for Blast related tools, a library for dealing with general blast file parsing tasks.
-Useful for reading any blast related outputs, for example from Blastx, or Blastn.
+Useful for reading any blast related outputs, for example from Blastx or Blastn.
 
 Also contains the abstract base class for blastX/N database search handlers.
 """
@@ -73,7 +73,7 @@ def read_blast(blast_file: str | os.PathLike | BinaryIO | TextIO) -> pd.DataFram
     """
     Read in BLAST files and pre-format the data frame with essential info.
 
-    Both backends are run with tabular output (outfmt 6) which contains no comment
+    BLAST is run with tabular output (outfmt 6) which contains no comment
     lines, so the file can be handed to pandas directly.
     """
     blast = pd.read_csv(blast_file, sep="\t", header=None)
