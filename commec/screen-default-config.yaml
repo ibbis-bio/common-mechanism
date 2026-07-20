@@ -23,12 +23,10 @@ databases:
       path: "{default}control_lists/"
       regions : "all"
 threads: 1
-diamond_jobs: null
 blast_mt_mode: 1
 do_cleanup: False
 force: False
 skip_taxonomy_search: False
-protein_search_tool: 'blastx'
 resume: False
 skip_nt_search: False
 verbose: False

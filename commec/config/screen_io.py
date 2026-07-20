@@ -89,15 +89,6 @@ class ScreenIO:
                 f"but got {self.config['blast_mt_mode']!r}"
             )
 
-        if (
-            self.config["diamond_jobs"] is not None
-            and self.config["protein_search_tool"] == "blastx"
-        ):
-            logger.warning(
-                "--jobs is a diamond only parameter! Specifying -j (--jobs) without also"
-                " specifying -p (--protein-search-tool) as 'diamond' will have no effect!"
-            )
-
         # Write a clean FASTA that can be used downstream
         self._write_clean_fasta()
 
