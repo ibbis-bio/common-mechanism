@@ -7,7 +7,7 @@ Covers the functions that remain after the module refactor, in logical order:
 input validation, hit-info formatting, annotation-level outcome determination,
 cluster-level hit creation, per-query aggregation, and the main entry point.
 """
-import pytest
+
 from dataclasses import asdict
 import json
 import logging
@@ -30,14 +30,13 @@ from commec.config.result import (
     HitScreenStatus,
     MatchRange,
     QueryResult,
-    QueryScreenStatus,
 )
 from commec.control_list.containers import ControlListOutput, ListMode
 from commec.utils.logger import setup_console_logging
 
 
-
 # ── Helpers ────────────────────────────────────────────────────────────────────
+
 
 def _blast_row(**overrides) -> dict:
     """Return a minimal BLAST-output row dict suitable for building test DataFrames."""
@@ -114,8 +113,8 @@ def _make_match_range() -> MatchRange:
 
 # ── _create_hit_info ───────────────────────────────────────────────────────────
 
-class TestCreateHitInfo:
 
+class TestCreateHitInfo:
     def _row(self) -> pd.Series:
         return pd.Series(_blast_row())
 
@@ -156,6 +155,7 @@ class TestCreateHitInfo:
 
 # ── _create_hit_result_from_annotations ───────────────────────────────────────
 
+
 class TestCreateHitResultFromAnnotations:
     """
     Tests the outcome status and hit metadata produced from pre-built annotation
@@ -181,63 +181,99 @@ class TestCreateHitResultFromAnnotations:
 
     def test_compliance_mode_gives_flag(self):
         co = _mock_control_output()
-        hit, _ = _create_hit_result_from_annotations("12345",
-            [self._reg_ann()], [], [co], ListMode.COMPLIANCE,
-            ScreenStep.TAXONOMY_AA, _make_match_range(),
+        hit, _ = _create_hit_result_from_annotations(
+            "12345",
+            [self._reg_ann()],
+            [],
+            [co],
+            ListMode.COMPLIANCE,
+            ScreenStep.TAXONOMY_AA,
+            _make_match_range(),
         )
         assert hit.recommendation.status == ScreenStatus.FLAG
 
     def test_compliance_warn_mode_gives_warn(self):
         co = _mock_control_output()
-        hit, _ = _create_hit_result_from_annotations("12345",
-            [self._reg_ann()], [], [co], ListMode.COMPLIANCE_WARN,
-            ScreenStep.TAXONOMY_AA, _make_match_range(),
+        hit, _ = _create_hit_result_from_annotations(
+            "12345",
+            [self._reg_ann()],
+            [],
+            [co],
+            ListMode.COMPLIANCE_WARN,
+            ScreenStep.TAXONOMY_AA,
+            _make_match_range(),
         )
         assert hit.recommendation.status == ScreenStatus.WARN
 
     def test_conditional_num_mode_gives_pass(self):
         co = _mock_control_output()
-        hit, _ = _create_hit_result_from_annotations("12345",
-            [self._reg_ann()], [], [co], ListMode.CONDITIONAL_NUM,
-            ScreenStep.TAXONOMY_AA, _make_match_range(),
+        hit, _ = _create_hit_result_from_annotations(
+            "12345",
+            [self._reg_ann()],
+            [],
+            [co],
+            ListMode.CONDITIONAL_NUM,
+            ScreenStep.TAXONOMY_AA,
+            _make_match_range(),
         )
         assert hit.recommendation.status == ScreenStatus.PASS
 
     def test_non_empty_non_regulated_overrides_status_to_pass(self):
         co = _mock_control_output()
-        hit, _ = _create_hit_result_from_annotations("12345",
-            [self._reg_ann()], [self._non_reg_ann()], [co], ListMode.COMPLIANCE,
-            ScreenStep.TAXONOMY_AA, _make_match_range(),
+        hit, _ = _create_hit_result_from_annotations(
+            "12345",
+            [self._reg_ann()],
+            [self._non_reg_ann()],
+            [co],
+            ListMode.COMPLIANCE,
+            ScreenStep.TAXONOMY_AA,
+            _make_match_range(),
         )
         assert hit.recommendation.status == ScreenStatus.PASS
 
     def test_hit_name_uses_longest_compliance_display_name(self):
         co_short = _mock_control_output(name="Short")
         co_long = _mock_control_output(name="A Much Longer Name")
-        hit, _ = _create_hit_result_from_annotations("12345",
-            [self._reg_ann()], [], [co_short, co_long], ListMode.COMPLIANCE,
-            ScreenStep.TAXONOMY_AA, _make_match_range(),
+        hit, _ = _create_hit_result_from_annotations(
+            "12345",
+            [self._reg_ann()],
+            [],
+            [co_short, co_long],
+            ListMode.COMPLIANCE,
+            ScreenStep.TAXONOMY_AA,
+            _make_match_range(),
         )
         assert hit.name == "A Much Longer Name"
 
     def test_log_message_is_non_empty_string(self):
         co = _mock_control_output()
-        _, log = _create_hit_result_from_annotations("12345",
-            [self._reg_ann()], [], [co], ListMode.COMPLIANCE,
-            ScreenStep.TAXONOMY_AA, _make_match_range(),
+        _, log = _create_hit_result_from_annotations(
+            "12345",
+            [self._reg_ann()],
+            [],
+            [co],
+            ListMode.COMPLIANCE,
+            ScreenStep.TAXONOMY_AA,
+            _make_match_range(),
         )
         assert isinstance(log, str) and len(log) > 0
 
     def test_step_set_on_hit_recommendation(self):
         co = _mock_control_output()
-        hit, _ = _create_hit_result_from_annotations("12345",
-            [self._reg_ann()], [], [co], ListMode.COMPLIANCE,
-            ScreenStep.TAXONOMY_NT, _make_match_range(),
+        hit, _ = _create_hit_result_from_annotations(
+            "12345",
+            [self._reg_ann()],
+            [],
+            [co],
+            ListMode.COMPLIANCE,
+            ScreenStep.TAXONOMY_NT,
+            _make_match_range(),
         )
         assert hit.recommendation.from_step == ScreenStep.TAXONOMY_NT
 
 
 # ── _create_hit_result_for_cluster ────────────────────────────────────────────
+
 
 class TestCreateHitResultForCluster:
     """
@@ -247,10 +283,12 @@ class TestCreateHitResultForCluster:
     """
 
     def _cluster(self, taxid: int = 111) -> pd.DataFrame:
-        return pd.DataFrame([_blast_row(**{"subject tax ids": taxid, "regulated": True})])
+        return pd.DataFrame(
+            [_blast_row(**{"subject tax ids": taxid, "regulated": True})]
+        )
 
     def _non_reg(self) -> pd.DataFrame:
-        return pd.DataFrame([],columns=_blast_row().keys())
+        return pd.DataFrame([], columns=_blast_row().keys())
 
     @patch("commec.screeners.check_reg_path.get_regulation")
     @patch("commec.screeners.check_reg_path.get_control_lists")
@@ -262,7 +300,9 @@ class TestCreateHitResultForCluster:
             self._cluster(), pd.DataFrame([]), 100, 300, 111, ScreenStep.TAXONOMY_AA
         )
         assert hit is not None
-        assert hit.recommendation.status == ScreenStatus.FLAG, f"Expected a ScreenStatus FLAG: \n {json.dumps(asdict(hit), indent=2)}"
+        assert hit.recommendation.status == ScreenStatus.FLAG, (
+            f"Expected a ScreenStatus FLAG: \n {json.dumps(asdict(hit), indent=2)}"
+        )
 
     @patch("commec.screeners.check_reg_path.get_regulation")
     @patch("commec.screeners.check_reg_path.get_control_lists")
@@ -285,7 +325,12 @@ class TestCreateHitResultForCluster:
         mock_gr.return_value = [co]
         mock_gcl.return_value = _mock_control_list(ListMode.CONDITIONAL_NUM)
         hit, _ = _create_hit_result_for_cluster(
-            self._cluster(taxid=111), self._non_reg(), 100, 300, 111, ScreenStep.TAXONOMY_AA
+            self._cluster(taxid=111),
+            self._non_reg(),
+            100,
+            300,
+            111,
+            ScreenStep.TAXONOMY_AA,
         )
         assert hit is None
 
@@ -296,16 +341,26 @@ class TestCreateHitResultForCluster:
         co = _mock_control_output()
         mock_gr.return_value = [co]
         mock_gcl.return_value = _mock_control_list(ListMode.CONDITIONAL_NUM)
-        cluster = pd.DataFrame([
-            _blast_row(**{"subject tax ids": 111, "regulated": True}),
-            _blast_row(**{"subject tax ids": 222, "regulated": True, 
-                          "subject acc.": "NC_002", "subject title": "Unique Title"}),
-        ])
+        cluster = pd.DataFrame(
+            [
+                _blast_row(**{"subject tax ids": 111, "regulated": True}),
+                _blast_row(
+                    **{
+                        "subject tax ids": 222,
+                        "regulated": True,
+                        "subject acc.": "NC_002",
+                        "subject title": "Unique Title",
+                    }
+                ),
+            ]
+        )
         hit, _ = _create_hit_result_for_cluster(
             cluster, self._non_reg(), 100, 300, 111, ScreenStep.TAXONOMY_AA
         )
         assert hit is not None
-        assert hit.recommendation.status == ScreenStatus.PASS, f"Expected a ScreenStatus PASS: \n {json.dumps(asdict(hit))}"
+        assert hit.recommendation.status == ScreenStatus.PASS, (
+            f"Expected a ScreenStatus PASS: \n {json.dumps(asdict(hit))}"
+        )
 
     @patch("commec.screeners.check_reg_path.get_regulation")
     @patch("commec.screeners.check_reg_path.get_control_lists")
@@ -321,6 +376,7 @@ class TestCreateHitResultForCluster:
 
 
 # ── _get_hit_result_from_data ─────────────────────────────────────────────────
+
 
 class TestGetHitResultFromData:
     """
@@ -343,14 +399,19 @@ class TestGetHitResultFromData:
     @patch("commec.screeners.check_reg_path.find_clusters")
     @patch("commec.screeners.check_reg_path.get_controlled_labels")
     @patch("commec.screeners.check_reg_path.get_top_hits")
-    def test_regulated_hit_propagates_to_output(self, mock_gth, mock_gcl, mock_fc, mock_chrc):
+    def test_regulated_hit_propagates_to_output(
+        self, mock_gth, mock_gcl, mock_fc, mock_chrc
+    ):
         df = _make_df({"regulated": True, "subject tax ids": 111})
         mock_gth.return_value = df
         mock_gcl.return_value = df
         mock_fc.return_value = (df.assign(cluster=0), [(100, 300)])
         expected_hit = HitResult(
             HitScreenStatus(ScreenStatus.FLAG, ScreenStep.TAXONOMY_AA),
-            "Dangerous Virus", "controlled Viruses", _make_match_range(), {},
+            "Dangerous Virus",
+            "controlled Viruses",
+            _make_match_range(),
+            {},
         )
         mock_chrc.return_value = (expected_hit, "log line")
         hits, logs = _get_hit_result_from_data(df, ScreenStep.TAXONOMY_AA)
@@ -361,7 +422,9 @@ class TestGetHitResultFromData:
     @patch("commec.screeners.check_reg_path.find_clusters")
     @patch("commec.screeners.check_reg_path.get_controlled_labels")
     @patch("commec.screeners.check_reg_path.get_top_hits")
-    def test_none_hit_from_cluster_not_included(self, mock_gth, mock_gcl, mock_fc, mock_chrc):
+    def test_none_hit_from_cluster_not_included(
+        self, mock_gth, mock_gcl, mock_fc, mock_chrc
+    ):
         df = _make_df({"regulated": True, "subject tax ids": 111})
         mock_gth.return_value = df
         mock_gcl.return_value = df
@@ -373,14 +436,17 @@ class TestGetHitResultFromData:
 
 # ── _build_log_message ─────────────────────────────────────────────────────────
 
-class TestBuildLogMessage:
 
+class TestBuildLogMessage:
     def test_output_contains_status_and_taxids(self):
         msg = _build_log_message(
-            ScreenStatus.FLAG, "Viruses",
+            ScreenStatus.FLAG,
+            "Viruses",
             [MatchRange(1e-10, 100, 300)],
             "controlled Viruses",
-            ["111", "222"], [], ["Virus sp."],
+            ["111", "222"],
+            [],
+            ["Virus sp."],
         )
         assert ScreenStatus.FLAG in msg
         assert "111" in msg
@@ -388,24 +454,31 @@ class TestBuildLogMessage:
 
     def test_non_reg_taxids_appear_when_present(self):
         msg = _build_log_message(
-            ScreenStatus.WARN, "Viruses",
+            ScreenStatus.WARN,
+            "Viruses",
             [MatchRange(1e-10, 100, 300)],
             "mixed Viruses",
-            ["111"], ["9999"], ["Virus sp."],
+            ["111"],
+            ["9999"],
+            ["Virus sp."],
         )
         assert "9999" in msg
 
     def test_non_reg_taxids_absent_when_empty(self):
         msg = _build_log_message(
-            ScreenStatus.FLAG, "Viruses",
+            ScreenStatus.FLAG,
+            "Viruses",
             [MatchRange(1e-10, 100, 300)],
             "controlled Viruses",
-            ["111"], [], ["Virus sp."],
+            ["111"],
+            [],
+            ["Virus sp."],
         )
         assert "9999" not in msg
 
 
 # ── parse_taxonomy_hits (integration) ─────────────────────────────────────────
+
 
 class TestParseTaxonomyHits:
     """
@@ -430,7 +503,11 @@ class TestParseTaxonomyHits:
         result = ScreenResult()
         with patch("os.path.exists", return_value=True):
             ret = parse_taxonomy_hits(
-                handler, result, {}, self.STEP, 1,
+                handler,
+                result,
+                {},
+                self.STEP,
+                1,
             )
         assert ret == 1
 
@@ -439,7 +516,11 @@ class TestParseTaxonomyHits:
         data = _make_screen_result("seq1")
         with patch("os.path.exists", return_value=True):
             ret = parse_taxonomy_hits(
-                handler, data, {}, self.STEP, 1,
+                handler,
+                data,
+                {},
+                self.STEP,
+                1,
             )
         assert ret == 0
         assert data.queries["seq1"].status.protein_taxonomy == ScreenStatus.PASS
@@ -447,15 +528,29 @@ class TestParseTaxonomyHits:
     def test_returns_0_and_pass_when_no_regulated_hits(self):
         handler = self._make_handler(has_hits=True)
         data = _make_screen_result("seq1")
-        blast_df = _make_df({"query acc.": "seq1", "subject tax ids": 99999, "control_hash" : 12345, "regulated" : False})
+        blast_df = _make_df(
+            {
+                "query acc.": "seq1",
+                "subject tax ids": 99999,
+                "control_hash": 12345,
+                "regulated": False,
+            }
+        )
         with (
             patch("os.path.exists", return_value=True),
             patch("commec.screeners.check_reg_path.read_blast", return_value=blast_df),
             patch("commec.screeners.check_reg_path.is_regulated", return_value=False),
-            patch("commec.screeners.check_reg_path.get_controlled_labels", return_value=blast_df),
+            patch(
+                "commec.screeners.check_reg_path.get_controlled_labels",
+                return_value=blast_df,
+            ),
         ):
             ret = parse_taxonomy_hits(
-                handler, data, {}, self.STEP, 1,
+                handler,
+                data,
+                {},
+                self.STEP,
+                1,
             )
         assert ret == 0
         assert data.queries["seq1"].status.protein_taxonomy == ScreenStatus.PASS
@@ -464,29 +559,45 @@ class TestParseTaxonomyHits:
         setup_console_logging(logging.DEBUG)
         handler = self._make_handler(has_hits=True)
         data = _make_screen_result("seq1")
-        blast_df = _make_df({"query acc.": "seq1", "subject tax ids": 12345, "control_hash" : 12345})
+        blast_df = _make_df(
+            {"query acc.": "seq1", "subject tax ids": 12345, "control_hash": 12345}
+        )
         flag_hit = HitResult(
             HitScreenStatus(ScreenStatus.FLAG, self.STEP),
-            "Dangerous Virus", "controlled Viruses Dangerous Virus",
-            _make_match_range(), {},
+            "Dangerous Virus",
+            "controlled Viruses Dangerous Virus",
+            _make_match_range(),
+            {},
         )
         with (
             patch("os.path.exists", return_value=True),
             patch("commec.screeners.check_reg_path.read_blast", return_value=blast_df),
             patch("commec.screeners.check_reg_path.is_regulated", return_value=True),
-            patch("commec.screeners.check_reg_path.get_controlled_labels", return_value=blast_df),
+            patch(
+                "commec.screeners.check_reg_path.get_controlled_labels",
+                return_value=blast_df,
+            ),
             patch(
                 "commec.screeners.check_reg_path._get_hit_result_from_data",
                 return_value=([flag_hit], ["log"]),
             ),
         ):
             ret = parse_taxonomy_hits(
-                handler, data, {"seq1": MagicMock()}, self.STEP, 1,
+                handler,
+                data,
+                {"seq1": MagicMock()},
+                self.STEP,
+                1,
             )
         assert ret == 0
-        print(f"Expecting a Flag result for protein taxonomy: {json.dumps(asdict(data),indent=2)}")
-        assert data.queries["seq1"].hits[0].recommendation.status == ScreenStatus.FLAG, f"Expected a Flag result for protein taxonomy: {
-            json.dumps(asdict(data),indent=2)}"
+        print(
+            f"Expecting a Flag result for protein taxonomy: {json.dumps(asdict(data), indent=2)}"
+        )
+        assert (
+            data.queries["seq1"].hits[0].recommendation.status == ScreenStatus.FLAG
+        ), (
+            f"Expected a Flag result for protein taxonomy: {json.dumps(asdict(data), indent=2)}"
+        )
 
     def test_unknown_query_acc_in_blast_is_skipped_gracefully(self):
         """blast contains a query accession not present in the ScreenResult queries."""
@@ -503,7 +614,11 @@ class TestParseTaxonomyHits:
             ),
         ):
             ret = parse_taxonomy_hits(
-                handler, data, {}, self.STEP, 1,
+                handler,
+                data,
+                {},
+                self.STEP,
+                1,
             )
         assert ret == 0
         # seq1 was set to PASS by default; nothing should have changed it

@@ -74,11 +74,11 @@ def _clean_text(v):
     v = _clean(v)
     if not isinstance(v, str):
         return v
-    v = unquote(v)                       # %3C/i%3E -> </i>
-    v = _HTML_TAG_RE.sub("", v)          # drop <i>...</i> and similar markup
-    v = v.replace(" ", " ")         # non-breaking space -> space
-    v = re.sub(r"\s+", " ", v).strip()   # collapse internal whitespace
-    v = v.strip("\"“”").strip()  # strip wrapping straight/smart quotes
+    v = unquote(v)  # %3C/i%3E -> </i>
+    v = _HTML_TAG_RE.sub("", v)  # drop <i>...</i> and similar markup
+    v = v.replace(" ", " ")  # non-breaking space -> space
+    v = re.sub(r"\s+", " ", v).strip()  # collapse internal whitespace
+    v = v.strip('"“”').strip()  # strip wrapping straight/smart quotes
     return v or None
 
 
@@ -123,9 +123,16 @@ def _tool_short(tool_info: str) -> str:
     text = str(tool_info).strip().lstrip("#").strip()
     first_line = text.splitlines()[0].strip()
     # "blastx: 2.17.0+" style
-    if ":" in first_line and first_line.split(":", 1)[0].strip().lower().startswith("blast"):
+    if ":" in first_line and first_line.split(":", 1)[0].strip().lower().startswith(
+        "blast"
+    ):
         name, _, rest = first_line.partition(":")
-        name = name.strip().replace("blastx", "BLASTx").replace("blastn", "BLASTn").replace("blastp", "BLASTp")
+        name = (
+            name.strip()
+            .replace("blastx", "BLASTx")
+            .replace("blastn", "BLASTn")
+            .replace("blastp", "BLASTp")
+        )
         version = rest.strip().split()[0].rstrip("+") if rest.strip() else ""
         return f"{name} {version}".strip()
     # "HMMER 3.4 (...)" / "INFERNAL 1.1.5 (...)" style: take name + first version-ish token
@@ -150,8 +157,12 @@ def _build_meta(screen: ScreenResult, list_meta: list) -> dict:
     tool_info = getattr(dbinfo, "search_tool_info", None) if dbinfo else None
     if tool_info is not None:
         parts = []
-        for attr in ("biorisk_search_info", "protein_search_info",
-                     "nucleotide_search_info", "low_concern_rna_search_info"):
+        for attr in (
+            "biorisk_search_info",
+            "protein_search_info",
+            "nucleotide_search_info",
+            "low_concern_rna_search_info",
+        ):
             stv = getattr(tool_info, attr, None)
             short = _tool_short(getattr(stv, "tool_info", "")) if stv else ""
             if short:
@@ -162,8 +173,12 @@ def _build_meta(screen: ScreenResult, list_meta: list) -> dict:
     revisions = ""
     revs = getattr(dbinfo, "revisions", None) if dbinfo else None
     if isinstance(revs, dict) and revs:
-        labels = {"biorisk": "biorisk", "best_match": "best-match",
-                  "low_concern": "low-concern", "control_lists": "control-lists"}
+        labels = {
+            "biorisk": "biorisk",
+            "best_match": "best-match",
+            "low_concern": "low-concern",
+            "control_lists": "control-lists",
+        }
         order = ["biorisk", "best_match", "low_concern", "control_lists"]
         keys = [k for k in order if k in revs] + [k for k in revs if k not in order]
         revisions = " · ".join(labels.get(k, k) + " v" + str(revs[k]) for k in keys)
@@ -208,7 +223,15 @@ def _build_list_meta(screen: ScreenResult) -> tuple:
         region = getattr(cl, "region", "") or ""
         status = str(getattr(cl, "status", "") or "")
         code = _list_code(getattr(cl, "includes", ""), acronym)
-        lists.append({"name": name, "code": code, "acronym": acronym, "region": region, "status": status})
+        lists.append(
+            {
+                "name": name,
+                "code": code,
+                "acronym": acronym,
+                "region": region,
+                "status": status,
+            }
+        )
         if name:
             by_name[name] = {"code": code, "acronym": acronym, "region": region}
     return lists, by_name
@@ -258,13 +281,15 @@ def _taxon_lists(taxon: dict, list_lookup: dict) -> list:
         name = entry.get("list", "") or ""
         meta = list_lookup.get(name, {})
         acronym = meta.get("acronym", "")
-        out.append({
-            "name": name,
-            "code": meta.get("code", "") or acronym,
-            "acronym": acronym,
-            "region": meta.get("region", ""),
-            "source": _clean(entry.get("source")) or "",
-        })
+        out.append(
+            {
+                "name": name,
+                "code": meta.get("code", "") or acronym,
+                "acronym": acronym,
+                "region": meta.get("region", ""),
+                "source": _clean(entry.get("source")) or "",
+            }
+        )
     return out
 
 
@@ -282,10 +307,20 @@ def _build_hit(hit, list_lookup: dict) -> dict:
         "qs": getattr(region, "query_start", None) if region else None,
         "qe": getattr(region, "query_end", None) if region else None,
         "eValue": _fmt_evalue(getattr(region, "e_value", None) if region else None),
-        "regulated": None, "domain": None, "category": None,
-        "lists": [], "pctId": None, "target": None, "targetUrl": None, "targetDesc": None,
-        "taxid": None, "genus": None, "species": None,
-        "nControlled": 0, "nNonControlled": 0, "coverage": None,
+        "regulated": None,
+        "domain": None,
+        "category": None,
+        "lists": [],
+        "pctId": None,
+        "target": None,
+        "targetUrl": None,
+        "targetDesc": None,
+        "taxid": None,
+        "genus": None,
+        "species": None,
+        "nControlled": 0,
+        "nNonControlled": 0,
+        "coverage": None,
     }
 
     if step == ScreenStep.BIORISK:
@@ -293,8 +328,11 @@ def _build_hit(hit, list_lookup: dict) -> dict:
         common["domain"] = _first(ann.get("domain"))
         return common
 
-    if step in (ScreenStep.LOW_CONCERN_PROTEIN, ScreenStep.LOW_CONCERN_RNA,
-                ScreenStep.LOW_CONCERN_DNA):
+    if step in (
+        ScreenStep.LOW_CONCERN_PROTEIN,
+        ScreenStep.LOW_CONCERN_RNA,
+        ScreenStep.LOW_CONCERN_DNA,
+    ):
         common["coverage"] = _clean(ann.get("Coverage: "))
         return common
 
@@ -306,7 +344,9 @@ def _build_hit(hit, list_lookup: dict) -> dict:
         common["nNonControlled"] = stats.get("number_of_non-controlled_taxids", 0) or 0
 
         controlled = tax.get("controlled_taxa") or []
-        rep = _best_taxon(controlled) or _best_taxon(tax.get("non-controlled_taxa") or [])
+        rep = _best_taxon(controlled) or _best_taxon(
+            tax.get("non-controlled_taxa") or []
+        )
         if rep:
             common["target"] = _clean(rep.get("target_hit"))
             common["targetUrl"] = _target_url(step, common["target"])
@@ -329,15 +369,19 @@ def build_report_model(screen: ScreenResult) -> dict:
     sequences = []
     for query in getattr(screen, "queries", {}).values():
         status = getattr(query, "status", None)
-        sequences.append({
-            "id": getattr(query, "query", ""),
-            "name": getattr(query, "query", ""),
-            "desc": getattr(query, "description", "") or "",
-            "length": getattr(query, "length", 0),
-            "screenStatus": str(getattr(status, "screen_status", "") or ""),
-            "rationale": str(getattr(status, "rationale", "") or ""),
-            "hits": [_build_hit(h, list_lookup) for h in getattr(query, "hits", [])],
-        })
+        sequences.append(
+            {
+                "id": getattr(query, "query", ""),
+                "name": getattr(query, "query", ""),
+                "desc": getattr(query, "description", "") or "",
+                "length": getattr(query, "length", 0),
+                "screenStatus": str(getattr(status, "screen_status", "") or ""),
+                "rationale": str(getattr(status, "rationale", "") or ""),
+                "hits": [
+                    _build_hit(h, list_lookup) for h in getattr(query, "hits", [])
+                ],
+            }
+        )
 
     return {"meta": meta, "lists": lists, "sequences": sequences}
 
@@ -374,18 +418,14 @@ def _font_face_css() -> str:
         b64 = base64.b64encode(data).decode("ascii")
         rules.append(
             "@font-face{font-family:'%s';font-style:%s;font-weight:%s;font-display:swap;"
-            "src:url(data:font/woff2;base64,%s) format('woff2');}" % (family, style, weight, b64)
+            "src:url(data:font/woff2;base64,%s) format('woff2');}"
+            % (family, style, weight, b64)
         )
     return "\n".join(rules)
 
 
 def _html_escape(text: str) -> str:
-    return (
-        str(text)
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _logo_svg() -> str:
@@ -396,7 +436,9 @@ def _logo_svg() -> str:
         svg = svg[start:]
     opening_tag = svg.split(">", 1)[0]
     if "style=" not in opening_tag:
-        svg = svg.replace("<svg", '<svg style="height:24px;width:auto;display:block;"', 1)
+        svg = svg.replace(
+            "<svg", '<svg style="height:24px;width:auto;display:block;"', 1
+        )
     return svg.strip()
 
 
@@ -405,24 +447,28 @@ def render_report_html(screen: ScreenResult) -> str:
     model = build_report_model(screen)
     # allow_nan=False is safe because _clean() removed every NaN; escape "</" so a stray
     # "</script>" inside a description can't break out of the data <script> block.
-    data_json = json.dumps(model, allow_nan=False, ensure_ascii=False).replace("</", "<\\/")
+    data_json = json.dumps(model, allow_nan=False, ensure_ascii=False).replace(
+        "</", "<\\/"
+    )
 
     css = _font_face_css() + "\n" + _asset("report.css")
     # Inline the logo markup into the renderer (kept as a separate editable asset).
     js = _asset("report.js").replace('"__COMMEC_LOGO__"', json.dumps(_logo_svg()))
-    title = _html_escape("Commec Screening Report — " + (model["meta"].get("file") or ""))
+    title = _html_escape(
+        "Commec Screening Report — " + (model["meta"].get("file") or "")
+    )
 
     return (
         "<!DOCTYPE html>\n"
-        "<html lang=\"en\">\n<head>\n"
-        "<meta charset=\"utf-8\">\n"
-        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+        '<html lang="en">\n<head>\n'
+        '<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         "<title>" + title + "</title>\n"
         "<style>\n" + css + "\n</style>\n"
         "</head>\n<body>\n"
-        "<div id=\"commec-report\">"
-        "<noscript><div style=\"max-width:640px;margin:60px auto;padding:0 24px;"
-        "font-family:Arial,sans-serif;color:#23285A;line-height:1.6;\">"
+        '<div id="commec-report">'
+        '<noscript><div style="max-width:640px;margin:60px auto;padding:0 24px;'
+        'font-family:Arial,sans-serif;color:#23285A;line-height:1.6;">'
         "<strong>This Commec screening report needs JavaScript to display.</strong><br>"
         "It is a single self-contained file &mdash; save it and open it in a web browser "
         "(email clients block the embedded script when shown inline).</div></noscript>"
@@ -453,10 +499,16 @@ def generate_html_from_screen_json(input_file: str, output_file: str):
 def main():
     """Convert a JSON output from Commec Screen into an HTML data visualisation."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", dest="in_file",
-                        required=True, help="Input json file path")
-    parser.add_argument("-o", "--output", dest="out_file",
-                        required=True, help="Output html filepath, not including .html extension.")
+    parser.add_argument(
+        "-i", "--input", dest="in_file", required=True, help="Input json file path"
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        dest="out_file",
+        required=True,
+        help="Output html filepath, not including .html extension.",
+    )
     args = parser.parse_args()
     generate_html_from_screen_json(args.in_file, args.out_file)
 

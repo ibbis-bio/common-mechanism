@@ -10,7 +10,7 @@ A valid list folder may have the following layout:
 ```
 control-lists/  		     # This is the level at which pass to yaml / cli
 ├── region_definitions.json  # Additional regional mapping information, i.e. EU
-├── uk-coshh/			     # Arbitrary filename, contains 1x list.  
+├── uk-coshh/			     # Arbitrary filename, contains 1x list.
 ├── austgroup/               # The valid list folder layout:
 │   ├── regulated_taxids.csv                          # Taxid List annotations.
 │   ├── children_of_regulated_taxids.csv
@@ -37,18 +37,18 @@ from .containers import (
     ListMode,
     ListUseAcronym,
     Region,
-    Accession
-    )
+    Accession,
+)
 
 from . import list_data as ld
 from .region import get_regions_set
 
 logger = logging.getLogger(__name__)
 
+
 def import_control_lists(
-    input_path : str | os.PathLike,
-    regions_of_interest : set[str] = None
-    ) -> bool:
+    input_path: str | os.PathLike, regions_of_interest: set[str] = None
+) -> bool:
     """
     Given a directory, checks that the directory is valid,
     If the directory is valid, it will load the control list data.
@@ -56,11 +56,11 @@ def import_control_lists(
 
     ### Inputs:
     *input_path* : **PathLike | str**, Input directory to be searched.
-    *regions_of_interest* : **set[str]**, 
-        A set of alpha_2 country codes representing regions of interest. 
-        Control lists which share at least one of these codes will be 
+    *regions_of_interest* : **set[str]**,
+        A set of alpha_2 country codes representing regions of interest.
+        Control lists which share at least one of these codes will be
         marked for full compliance.
-    
+
     ### outputs:
         **Boolean**: Returns True if the correct list files were detected, and
             a Controlled List and annotatations were imported.
@@ -78,7 +78,7 @@ def import_control_lists(
             return False
 
     logger.debug("Importing Control List from %s", input_path)
-    _import_control_list_info(info_filename) # Always load first.
+    _import_control_list_info(info_filename)  # Always load first.
     _import_control_list_annotations(data_filename)
     _import_accession_mappings(child_lut_filename)
     _import_ignored_accessions(ignored_filename)
@@ -87,9 +87,8 @@ def import_control_lists(
 
 
 def update_regional_context(
-    regions_of_interest : set[str] = None,
-    alternative_mode = ListMode.CONDITIONAL_NUM
-    ):
+    regions_of_interest: set[str] = None, alternative_mode=ListMode.CONDITIONAL_NUM
+):
     """
     Updates all loaded Control lists based on a regional context.
     Control lists which affect the same regions as the context are
@@ -98,16 +97,16 @@ def update_regional_context(
     with the alternative mode, by default conditional based on number.
 
     ### inputs:
-    
-    *regions_of_interest* : **set[str]**, 
-        A set of alpha_2 country codes representing regions of interest. 
-        Control lists which share at least one of these codes will be 
+
+    *regions_of_interest* : **set[str]**,
+        A set of alpha_2 country codes representing regions of interest.
+        Control lists which share at least one of these codes will be
         marked for full compliance.
-    *alternative_mode* : **ListMode**, 
-        What mode the Control lists will be marked in the absence of 
-        affecting any region of interest. Defaults to conditional based on 
+    *alternative_mode* : **ListMode**,
+        What mode the Control lists will be marked in the absence of
+        affecting any region of interest. Defaults to conditional based on
         number of other lists also hit.
-    
+
     ### outputs:
         *None*
     """
@@ -115,7 +114,7 @@ def update_regional_context(
     if not regions_of_interest:
         regions_of_interest = set(["all"])
 
-    force_all_regions = ("all" in regions_of_interest)
+    force_all_regions = "all" in regions_of_interest
 
     if force_all_regions:
         logger.debug("Control list compliance set to affect all regions.")
@@ -132,64 +131,80 @@ def update_regional_context(
         common_regions = set(list_affected_regions) & set(regions_of_interest)
 
         if common_regions:
-            logger.debug("%s contains shared regions with context: %s",
-                         reg_list.name, str(common_regions))
+            logger.debug(
+                "%s contains shared regions with context: %s",
+                reg_list.name,
+                str(common_regions),
+            )
             reg_list.status = ListMode.COMPLIANCE
         else:
-            logger.debug("%s no regions of context: %s",
-                         reg_list.name, str(list_affected_regions))
+            logger.debug(
+                "%s no regions of context: %s",
+                reg_list.name,
+                str(list_affected_regions),
+            )
             reg_list.status = alternative_mode
 
-def import_ignored_accesions(input_filepath : str | os.PathLike) -> bool:
+
+def import_ignored_accesions(input_filepath: str | os.PathLike) -> bool:
     """
-    Imports the shred ignored taxids csv, which usually contains vaccine, and 
+    Imports the shred ignored taxids csv, which usually contains vaccine, and
     sythetic taxid targets - those which we want to exclude from our analysis
     when filtering data to be used in control list screening.
     """
     if os.path.isfile(input_filepath):
-        ignored_data = pd.read_csv(input_filepath, dtype = str, keep_default_na=False, na_values=[])
+        ignored_data = pd.read_csv(
+            input_filepath, dtype=str, keep_default_na=False, na_values=[]
+        )
         ld.add_ignored_accession_data(ignored_data)
 
 
-def _import_control_list_info(input_path : str | os.PathLike):
+def _import_control_list_info(input_path: str | os.PathLike):
     """
     Imports the info.csv file from a control list folder.
     Ensures that each control list information is appropriate keyed by
     acronym into the REG_LISTS data container.
-    Ensures that existing control lists are not overwritten, and 
+    Ensures that existing control lists are not overwritten, and
     warns the user if overwritting unique data (i.e. acroynym clash) has occured.
     """
-    list_info = pd.read_csv(input_path, dtype = str).fillna("")
+    list_info = pd.read_csv(input_path, dtype=str).fillna("")
     for _, row in list_info.iterrows():
         logger.debug("Parsing list information: %s", row)
 
         try:
             listuseacronym = ListUseAcronym(row["use"].strip())
         except ValueError as e:
-            logger.error("Invalid value used for control list \"use\" column from file %s, error: %s ",
-                         input_path, e)
+            logger.error(
+                'Invalid value used for control list "use" column from file %s, error: %s ',
+                input_path,
+                e,
+            )
             return
 
         try:
-            new_region = Region(name = row["region_name"].strip(),
-                    acronym = row["region_code"].strip())
+            new_region = Region(
+                name=row["region_name"].strip(), acronym=row["region_code"].strip()
+            )
         except ValueError as e:
-            logger.error("Invalid values used for region definitions from file %s, error: %s ",
-                         input_path, e)
+            logger.error(
+                "Invalid values used for region definitions from file %s, error: %s ",
+                input_path,
+                e,
+            )
             return
 
         # Optional.
         name_translated = row.get("list_name_translated", "").strip()
 
         new_list = ControlList(
-            name = row["list_name"].strip(),
-            name_translated = name_translated,
-            acronym = row["list_acronym"].strip(),
-            url = row["list_url"].strip(),
-            region = new_region,
-            status = ListMode.COMPLIANCE,
-            use = listuseacronym
-            )
+            name=row["list_name"].strip(),
+            name_translated=name_translated,
+            acronym=row["list_acronym"].strip(),
+            url=row["list_url"].strip(),
+            region=new_region,
+            status=ListMode.COMPLIANCE,
+            use=listuseacronym,
+        )
 
         if ld.add_control_list(new_list):
             continue
@@ -197,11 +212,16 @@ def _import_control_list_info(input_path : str | os.PathLike):
         # Error adding list, likely a bad duplicate, report to user.
         list_key = row["list_acronym"]
         existing_list = ld.CONTROL_LISTS.get(list_key)
-        logger.error("Error when importing lists from %s, shared acronym"
-                    " between existing list %s and %s, New list will be skipped.",
-                    input_path, existing_list, new_list)
+        logger.error(
+            "Error when importing lists from %s, shared acronym"
+            " between existing list %s and %s, New list will be skipped.",
+            input_path,
+            existing_list,
+            new_list,
+        )
 
-def _import_control_list_annotations(input_path : str | os.PathLike):
+
+def _import_control_list_annotations(input_path: str | os.PathLike):
     """
     Imports annotated controlled accession information from the regulated_taxids.csv file
     within a control list provided to commec.
@@ -210,8 +230,8 @@ def _import_control_list_annotations(input_path : str | os.PathLike):
     Concatenates the control taxid info into the global dataframe.
     """
 
-    taxid_info = pd.read_csv(input_path, dtype = str).fillna("")
-    
+    taxid_info = pd.read_csv(input_path, dtype=str).fillna("")
+
     # We detect multiple list acroynms in the format "ABC, DEF, GHI"
     # Result: cells become lists like ['ABC', 'DEF', 'GHI']
     taxid_info["list_acronym"] = (
@@ -234,37 +254,40 @@ def _import_control_list_annotations(input_path : str | os.PathLike):
 
     # Only include data whose list acronym exists.
     mask = taxid_info["list_acronym"].apply(
-        lambda list_key: ld.CONTROL_LISTS.get(list_key) is not None)
+        lambda list_key: ld.CONTROL_LISTS.get(list_key) is not None
+    )
     valid_list_taxid_info = taxid_info[mask]
 
     # Warn about dropped rows
     dropped = taxid_info[~mask]
     if not dropped.empty:
         logger.warning("The following list acronyms were not valid from %s", input_path)
-        logger.warning(dropped[["display_name","tax_id", "list_acronym"]].to_string())
+        logger.warning(dropped[["display_name", "tax_id", "list_acronym"]].to_string())
 
     # Append the new list data:
     ld.add_control_list_annotations(valid_list_taxid_info)
 
 
-def _import_accession_mappings(input_path : str | os.PathLike):
+def _import_accession_mappings(input_path: str | os.PathLike):
     """
-    Imports child to controlled accession look up data data from the 
+    Imports child to controlled accession look up data data from the
     children_of_regulated_taxids.csv file within a control list provided to commec.
     Concatenates the child LUT info into the global dataframe.
     """
-    child_lut = pd.read_csv(input_path, dtype = str, keep_default_na=False, na_values=[])
+    child_lut = pd.read_csv(input_path, dtype=str, keep_default_na=False, na_values=[])
     ld.add_child_lut_data(child_lut)
 
 
-def _import_ignored_accessions(input_path : str | os.PathLike):
+def _import_ignored_accessions(input_path: str | os.PathLike):
     """
-    Imports child to controlled accession look up data data from the 
+    Imports child to controlled accession look up data data from the
     ignored_taxids.csv file within a control list provided to commec.
     Concatenates the ignored info into the global dataframe.
     """
     if os.path.isfile(input_path):
-        ignored_data = pd.read_csv(input_path, dtype = str, keep_default_na=False, na_values=[])
+        ignored_data = pd.read_csv(
+            input_path, dtype=str, keep_default_na=False, na_values=[]
+        )
         ld.add_ignored_accession_data(ignored_data)
 
 
@@ -284,8 +307,7 @@ def tidy_control_list_data():
     # Currently taxid is used as the only accession format.
     # Future versions will index based on accession more generally here.
     ld.CONTROL_LIST_ANNOTATIONS["accession"] = ld.CONTROL_LIST_ANNOTATIONS.apply(
-        lambda row: Accession(accession=row["tax_id"]),
-        axis=1
+        lambda row: Accession(accession=row["tax_id"]), axis=1
     )
 
     # Standardize the Category field.
@@ -295,50 +317,69 @@ def tidy_control_list_data():
         except ValueError:
             return CategoryType.NONE
 
-    ld.CONTROL_LIST_ANNOTATIONS["category"] = ld.CONTROL_LIST_ANNOTATIONS["category"].map(safe_category)
+    ld.CONTROL_LIST_ANNOTATIONS["category"] = ld.CONTROL_LIST_ANNOTATIONS[
+        "category"
+    ].map(safe_category)
 
     # Report errors for bad entries
     bad_entries = ld.CONTROL_LIST_ANNOTATIONS[
-        ld.CONTROL_LIST_ANNOTATIONS["accession"] == Accession(None)]
+        ld.CONTROL_LIST_ANNOTATIONS["accession"] == Accession(None)
+    ]
     bad_entries.loc[bad_entries["display_name"].str.len() >= 57, "display_name"] = (
         bad_entries["display_name"].str[:57].str.strip() + "..."
     )
     if not bad_entries.empty:
-        logger.error("%i imported control list annotations"
-                       " were bad entries with no TaxID Accession:\n%s"
-                       "\n Run in --verbose mode for raw row input details.",
-                       len(bad_entries.index),
-                       bad_entries[["display_name","category","list_acronym"]].to_string(index = False))
+        logger.error(
+            "%i imported control list annotations"
+            " were bad entries with no TaxID Accession:\n%s"
+            "\n Run in --verbose mode for raw row input details.",
+            len(bad_entries.index),
+            bad_entries[["display_name", "category", "list_acronym"]].to_string(
+                index=False
+            ),
+        )
 
     # Drop duplicates before indexing, using strict and non-strict strategy.
     bad_duplicates = ld.CONTROL_LIST_ANNOTATIONS.drop_duplicates()
     ld.CONTROL_LIST_ANNOTATIONS.drop_duplicates(
-        subset=["list_acronym", "accession"], inplace=True)
+        subset=["list_acronym", "accession"], inplace=True
+    )
 
     # Index and drop bad entries.
     ld.CONTROL_LIST_ANNOTATIONS = ld.CONTROL_LIST_ANNOTATIONS[
-        ld.CONTROL_LIST_ANNOTATIONS["accession"] != Accession(None)]
-    ld.CONTROL_LIST_ANNOTATIONS.set_index("accession", inplace=True, drop = True)
+        ld.CONTROL_LIST_ANNOTATIONS["accession"] != Accession(None)
+    ]
+    ld.CONTROL_LIST_ANNOTATIONS.set_index("accession", inplace=True, drop=True)
     if Accession(None) in ld.CONTROL_LIST_ANNOTATIONS.index:
         ld.CONTROL_LIST_ANNOTATIONS.drop(Accession(None), inplace=True)
 
     # Remove bad entries, index for comparison.
     bad_duplicates = bad_duplicates[bad_duplicates["accession"] != Accession(None)]
-    bad_duplicates.set_index("accession", inplace=True, drop = False)
+    bad_duplicates.set_index("accession", inplace=True, drop=False)
 
     # Merge comparison
-    diff = pd.merge(bad_duplicates,
-                    ld.CONTROL_LIST_ANNOTATIONS,
-                    how="left", indicator=True).query(
-                        '_merge == "left_only"').drop(
-                            columns="_merge")
+    diff = (
+        pd.merge(
+            bad_duplicates, ld.CONTROL_LIST_ANNOTATIONS, how="left", indicator=True
+        )
+        .query('_merge == "left_only"')
+        .drop(columns="_merge")
+    )
     if not diff.empty:
-        logger.debug("The following imported control list annotations"
-                       " were duplicates with differing metadata:\n%s",
-                       diff[["accession","display_name","category","list_acronym"]].to_string(index = False))
+        logger.debug(
+            "The following imported control list annotations"
+            " were duplicates with differing metadata:\n%s",
+            diff[["accession", "display_name", "category", "list_acronym"]].to_string(
+                index=False
+            ),
+        )
 
-    logger.debug("Loaded the following control list dataset: Top 20:\n%s",
-                 ld.CONTROL_LIST_ANNOTATIONS.head(20).to_string())
+    logger.debug(
+        "Loaded the following control list dataset: Top 20:\n%s",
+        ld.CONTROL_LIST_ANNOTATIONS.head(20).to_string(),
+    )
 
-    logger.debug("Loaded the following child to parent mappings dataset: Top 20:\n%s",
-                 ld.ACCESSION_MAP.head(20).to_string())
+    logger.debug(
+        "Loaded the following child to parent mappings dataset: Top 20:\n%s",
+        ld.ACCESSION_MAP.head(20).to_string(),
+    )

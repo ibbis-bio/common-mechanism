@@ -1,6 +1,4 @@
-from io import StringIO
 import os
-import pandas as pd
 import pytest
 import textwrap
 from Bio.Seq import Seq
@@ -8,6 +6,7 @@ from Bio.SeqRecord import SeqRecord
 from commec.config.query import Query, QueryTranslation
 
 INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.fasta")
+
 
 def test_get_frame_length():
     # 11 nt query
@@ -27,6 +26,7 @@ def test_get_frame_length():
     assert 15 == query._get_frame_length(frame_offset=0)
     assert 15 == query._get_frame_length(frame_offset=1)
     assert 12 == query._get_frame_length(frame_offset=2)
+
 
 def test_translate_to_file(tmp_path):
     query = Query(SeqRecord(Seq("atgtgccatgg"), id="test"))
@@ -90,7 +90,6 @@ def test_translate():
     # 15nt query
     query = Query(SeqRecord(Seq("acgcacctgatcgct"), id="test"))
 
-
     # Input sequence: acgcacctgatcgct
     # Translations:
     # Frame   Pos     Codon split              Translation
@@ -152,9 +151,11 @@ def test_ambigious():
     | GTV   | V=A/C/G   | GTA, GTC, GTG      | Val        |
     """
     # 11nt query
-    #query = Query(SeqRecord(Seq("atntnccatgg"), id="test"))
-    #query = Query(SeqRecord(Seq("ATGAARTAYGCNAAYGARACNABGGADCAHGAVACNTGG"), id="test"))
-    query = Query(SeqRecord(Seq("ATGAARTAYGCNAAYGARACMCCSGGWGTKATHGTDCCBGTV"), id="test"))
+    # query = Query(SeqRecord(Seq("atntnccatgg"), id="test"))
+    # query = Query(SeqRecord(Seq("ATGAARTAYGCNAAYGARACNABGGADCAHGAVACNTGG"), id="test"))
+    query = Query(
+        SeqRecord(Seq("ATGAARTAYGCNAAYGARACMCCSGGWGTKATHGTDCCBGTV"), id="test")
+    )
 
     expected_translations = [
         QueryTranslation(frame=1, sequence="MKYANETPGVIVPV"),
@@ -172,12 +173,18 @@ def test_ambigious():
 @pytest.mark.parametrize(
     "input, expected_output",
     [
-        ("short_query_name","short_query_name"),
-        ("longquerynamewithnotokenstosplitonwowlookhowlongitistruelysomethingtobehold","longquerynamewithnotokenstosplitonwowlookhowlongitistruelysometh"),
-        ("long_query_name_with_common_tokens_to_split_on_wow_look_how_long_it_is_truly_something_to_behold", "long_query_name_with_common_tokens_to_split_on_wow_look_how_long")
+        ("short_query_name", "short_query_name"),
+        (
+            "longquerynamewithnotokenstosplitonwowlookhowlongitistruelysomethingtobehold",
+            "longquerynamewithnotokenstosplitonwowlookhowlongitistruelysometh",
+        ),
+        (
+            "long_query_name_with_common_tokens_to_split_on_wow_look_how_long_it_is_truly_something_to_behold",
+            "long_query_name_with_common_tokens_to_split_on_wow_look_how_long",
+        ),
     ],
 )
 def test_query_id_creation(input, expected_output):
-    """ Small tests to ensure the ID creation works to create IDS < 25 characters."""
+    """Small tests to ensure the ID creation works to create IDS < 25 characters."""
     output = Query.create_id(input)
     assert output == expected_output

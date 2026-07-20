@@ -3,6 +3,7 @@
 """
 Abstract base class defining a shared interface for search tools.
 """
+
 from abc import ABC, abstractmethod
 import os
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ import subprocess
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class SearchToolVersion:
@@ -21,6 +23,7 @@ class SearchToolVersion:
 
 class DatabaseValidationError(Exception):
     """Custom exception for database validation errors."""
+
 
 class SearchHandler(ABC):
     """
@@ -73,8 +76,8 @@ class SearchHandler(ABC):
         self.db_file = os.path.abspath(expanded_db)
         self.input_file = os.path.abspath(os.path.expanduser(input_file))
         self.out_file = os.path.abspath(os.path.expanduser(out_file))
-        self.threads = self._apply_thread_cap(kwargs.get('threads', 1))
-        self.force = kwargs.get('force', False)
+        self.threads = self._apply_thread_cap(kwargs.get("threads", 1))
+        self.force = kwargs.get("force", False)
         self.arguments_dictionary = {}
         self.successful = True
 
@@ -106,10 +109,12 @@ class SearchHandler(ABC):
         Wrapper for _search, skipping if existing output should not be overwritten.
         """
         if self.should_use_existing_output:
-            logger.warning("%s expected output data already exists, "
-                         "will use existing data found in:",
-                         self.__class__.__name__)
-            logger.warning(self.out_file, extra = {"no_prefix" : True, "cap":True})
+            logger.warning(
+                "%s expected output data already exists, "
+                "will use existing data found in:",
+                self.__class__.__name__,
+            )
+            logger.warning(self.out_file, extra={"no_prefix": True, "cap": True})
         else:
             self._search()
 
@@ -209,7 +214,7 @@ class SearchHandler(ABC):
         self.successful = False
 
         logger.debug("SUBPROCESS: %s", " ".join(command))
-        logger.debug(" ".join(command), extra = {"no_prefix":True,"cap":True})
+        logger.debug(" ".join(command), extra={"no_prefix": True, "cap": True})
 
         with open(out_file, "a", encoding="utf-8") as f:
             result = subprocess.run(
@@ -227,7 +232,7 @@ class SearchHandler(ABC):
                     f"subprocess.run of command '{command_str}' encountered error."
                     f" Check {out_file} for logs."
                 )
-            
+
         self.successful = True
 
     def __del__(self):

@@ -5,7 +5,6 @@ import pytest
 from commec.control_list.containers import (
     Accession,
     AccessionFormat,
-    CategoryType,
     ControlList,
     ControlListContext,
     ControlListOutput,
@@ -20,8 +19,8 @@ from commec.control_list.containers import (
 # Accession
 # ---------------------------------------------------------------------------
 
-class TestAccession:
 
+class TestAccession:
     def test_from_valid_taxid(self):
         acc = Accession("12345")
         assert acc.code == "12345"
@@ -80,16 +79,20 @@ class TestAccession:
 # derive_accession_format
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("input_val,expected", [
-    ("12345", AccessionFormat.TAXID),
-    ("0", AccessionFormat.TAXID),
-    ("999999999", AccessionFormat.TAXID),
-    ("abc", AccessionFormat.UNKNOWN),
-    ("12.34", AccessionFormat.UNKNOWN),
-    ("", AccessionFormat.UNKNOWN),
-    ("12 34", AccessionFormat.UNKNOWN),
-    ("ABC123", AccessionFormat.UNKNOWN),
-])
+
+@pytest.mark.parametrize(
+    "input_val,expected",
+    [
+        ("12345", AccessionFormat.TAXID),
+        ("0", AccessionFormat.TAXID),
+        ("999999999", AccessionFormat.TAXID),
+        ("abc", AccessionFormat.UNKNOWN),
+        ("12.34", AccessionFormat.UNKNOWN),
+        ("", AccessionFormat.UNKNOWN),
+        ("12 34", AccessionFormat.UNKNOWN),
+        ("ABC123", AccessionFormat.UNKNOWN),
+    ],
+)
 def test_derive_accession_format(input_val, expected):
     assert derive_accession_format(input_val) == expected
 
@@ -98,8 +101,8 @@ def test_derive_accession_format(input_val, expected):
 # Region
 # ---------------------------------------------------------------------------
 
-class TestRegion:
 
+class TestRegion:
     def test_str(self):
         assert str(Region("New Zealand", "NZ")) == "New Zealand"
 
@@ -130,6 +133,7 @@ class TestRegion:
 # ListMode
 # ---------------------------------------------------------------------------
 
+
 def test_list_mode_values():
     assert ListMode.COMPLIANCE == "Compliance"
     assert ListMode.CONDITIONAL_NUM == "Conditional Compliance"
@@ -146,6 +150,7 @@ def test_list_mode_is_str_enum():
 # ListUseAcronym
 # ---------------------------------------------------------------------------
 
+
 def test_list_use_acronym_values():
     assert ListUseAcronym.EXPORTCONTROLS == "EXPORT"
     assert ListUseAcronym.LICENCED == "LICENCE"
@@ -156,13 +161,17 @@ def test_list_use_acronym_values():
 # ControlList
 # ---------------------------------------------------------------------------
 
-class TestControlList:
 
+class TestControlList:
     def _make(self, **overrides):
         defaults = dict(
-            name="The List", name_translated="Listus", acronym="SCM", url="http://example.com",
+            name="The List",
+            name_translated="Listus",
+            acronym="SCM",
+            url="http://example.com",
             region=Region("European Union", "EU"),
-            status=ListMode.COMPLIANCE, use=ListUseAcronym.EXPORTCONTROLS,
+            status=ListMode.COMPLIANCE,
+            use=ListUseAcronym.EXPORTCONTROLS,
         )
         defaults.update(overrides)
         return ControlList(**defaults)
@@ -193,16 +202,15 @@ class TestControlList:
         assert self._make(acronym="X") != self._make(acronym="Y")
 
     def test_inequality_different_region(self):
-        assert (
-            self._make(region=Region("NZ", "NZ"))
-            != self._make(region=Region("AU", "AU"))
+        assert self._make(region=Region("NZ", "NZ")) != self._make(
+            region=Region("AU", "AU")
         )
-
 
 
 # ---------------------------------------------------------------------------
 # ControlListOutput
 # ---------------------------------------------------------------------------
+
 
 def test_control_list_output_defaults():
     out = ControlListOutput()
@@ -225,6 +233,7 @@ def test_control_list_output_fields():
 # ---------------------------------------------------------------------------
 # ControlListContext
 # ---------------------------------------------------------------------------
+
 
 def test_control_list_context_defaults():
     ctx = ControlListContext()

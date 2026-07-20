@@ -7,38 +7,35 @@ from commec.config.screen_io import ScreenIO
 from commec.config.yaml_io import YamlIOValidationError
 from commec.cli import ScreenArgumentParser
 from commec.screen import add_args
-from commec.utils.file_utils import expand_and_normalize
 
 INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.fasta")
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
 
+
 @pytest.fixture
 def expected_defaults():
     return {
-        "base_paths": {
-            "default": "/commec-dbs/"
-        },
+        "base_paths": {"default": "/commec-dbs/"},
         "databases": {
             "low_concern": {
-                "path" : "/commec-dbs/low_concern/",
+                "path": "/commec-dbs/low_concern/",
                 "rna": {"path": "/commec-dbs/low_concern/rna/low_concern.cm"},
                 "dna": {"path": "/commec-dbs/low_concern/dna/low_concern.fasta"},
                 "protein": {"path": "/commec-dbs/low_concern/protein/low_concern.hmm"},
-                "annotations": '/commec-dbs/low_concern/low_concern_annotations.csv',
+                "annotations": "/commec-dbs/low_concern/low_concern_annotations.csv",
             },
             "biorisk": {
                 "path": "/commec-dbs/biorisk/biorisk.hmm",
-                "annotations": '/commec-dbs/biorisk/biorisk_annotations.csv',
+                "annotations": "/commec-dbs/biorisk/biorisk_annotations.csv",
             },
             "best_match": {
                 "path": "/commec-dbs/best_match/",
                 "nucleotide": {"path": "/commec-dbs/best_match/nucleotide/nucl"},
-                "protein": {"path": "/commec-dbs/best_match/protein/prot",}
+                "protein": {
+                    "path": "/commec-dbs/best_match/protein/prot",
+                },
             },
-            "control_lists": {
-                "path": "/commec-dbs/control_lists/",
-                "regions": "all"
-            }
+            "control_lists": {"path": "/commec-dbs/control_lists/", "regions": "all"},
         },
         "threads": 1,
         "blast_mt_mode": 1,
@@ -48,36 +45,32 @@ def expected_defaults():
         "resume": False,
         "skip_nt_search": False,
         "verbose": False,
-        "auto_update_databases" : False
+        "auto_update_databases": False,
     }
+
 
 @pytest.fixture
 def custom_yaml_config():
     return {
         "base_paths": {"default": "/commec-dbs/"},
-        "databases": {
-            "biorisk": {
-                "annotations" : "/custom_path.txt"
-            }
-        },
+        "databases": {"biorisk": {"annotations": "/custom_path.txt"}},
         "skip_taxonomy_search": True,
         "force": True,
         "threads": 8,
     }
 
+
 @pytest.fixture
 def expected_updated_from_custom_yaml():
     return {
-        "base_paths": {
-            "default": "/commec-dbs/"
-        },
+        "base_paths": {"default": "/commec-dbs/"},
         "databases": {
             "low_concern": {
-                "path" : "/commec-dbs/low_concern/",
+                "path": "/commec-dbs/low_concern/",
                 "rna": {"path": "/commec-dbs/low_concern/rna/low_concern.cm"},
                 "dna": {"path": "/commec-dbs/low_concern/dna/low_concern.fasta"},
                 "protein": {"path": "/commec-dbs/low_concern/protein/low_concern.hmm"},
-                "annotations": '/commec-dbs/low_concern/low_concern_annotations.csv',
+                "annotations": "/commec-dbs/low_concern/low_concern_annotations.csv",
             },
             "biorisk": {
                 "path": "/commec-dbs/biorisk/biorisk.hmm",
@@ -86,12 +79,11 @@ def expected_updated_from_custom_yaml():
             "best_match": {
                 "path": "/commec-dbs/best_match/",
                 "nucleotide": {"path": "/commec-dbs/best_match/nucleotide/nucl"},
-                "protein": {"path": "/commec-dbs/best_match/protein/prot",}
+                "protein": {
+                    "path": "/commec-dbs/best_match/protein/prot",
+                },
             },
-            "control_lists": {
-                "path": "/commec-dbs/control_lists/",
-                "regions": "all"
-            }
+            "control_lists": {"path": "/commec-dbs/control_lists/", "regions": "all"},
         },
         "threads": 8,
         "blast_mt_mode": 1,
@@ -101,8 +93,9 @@ def expected_updated_from_custom_yaml():
         "resume": False,
         "skip_nt_search": False,
         "verbose": False,
-        "auto_update_databases" : False
+        "auto_update_databases": False,
     }
+
 
 def test_missing_input_file():
     args = ScreenArgumentParser()
@@ -110,20 +103,23 @@ def test_missing_input_file():
     with pytest.raises(SystemExit):
         args = args.parse_args()
         print("What got passed: ", args.fasta_file)
-    
+
+
 def test_default_config_only_raises():
     """Default config alone has no base_paths.default — must raise rather than fall back."""
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args([INPUT_QUERY])
-    with pytest.raises(YamlIOValidationError, match="base_paths.default is not configured"):
+    with pytest.raises(
+        YamlIOValidationError, match="base_paths.default is not configured"
+    ):
         ScreenIO(args)
 
 
 def test_default_config_with_yaml_base_path(tmp_path, expected_defaults):
     """When user YAML supplies only base_paths.default, packaged defaults populate everything else."""
     user_config_path = tmp_path / "user_config.yaml"
-    with open(user_config_path, 'w') as f:
+    with open(user_config_path, "w") as f:
         yaml.dump({"base_paths": {"default": "/commec-dbs/"}}, f)
 
     parser = ScreenArgumentParser()
@@ -134,26 +130,29 @@ def test_default_config_with_yaml_base_path(tmp_path, expected_defaults):
     assert expected_defaults == params.config
 
 
-def test_user_yaml_override(tmp_path, expected_updated_from_custom_yaml, custom_yaml_config):
+def test_user_yaml_override(
+    tmp_path, expected_updated_from_custom_yaml, custom_yaml_config
+):
     """Test that user YAML properly overrides default config"""
     # Create user config
     user_config_path = tmp_path / "user_config.yaml"
-    with open(user_config_path, 'w') as f:
+    with open(user_config_path, "w") as f:
         yaml.dump(custom_yaml_config, f)
-    
+
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
     params = ScreenIO(args)
-    
+
     # Check that user YAML values override defaults
     assert expected_updated_from_custom_yaml == params.config
+
 
 def test_cli_override(tmp_path, expected_updated_from_custom_yaml, custom_yaml_config):
     """Test that CLI args properly override both YAML configs"""
     # Create user config
     user_config_path = tmp_path / "user_config.yaml"
-    with open(user_config_path, 'w') as f:
+    with open(user_config_path, "w") as f:
         yaml.dump(custom_yaml_config, f)
 
     # Add CLI args
@@ -161,18 +160,18 @@ def test_cli_override(tmp_path, expected_updated_from_custom_yaml, custom_yaml_c
         INPUT_QUERY,
         "--config",
         str(user_config_path),
-        "--skip-tx", # skip taxonomy
-        "--skip-nt", # skip nt search
-        "-c", # do_cleanup
+        "--skip-tx",  # skip taxonomy
+        "--skip-nt",  # skip nt search
+        "-c",  # do_cleanup
         "-d",
-        str(tmp_path)
+        str(tmp_path),
     ]
 
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args(cli_args)
     params = ScreenIO(args)
-    
+
     # Override defaults with user YAML
     expected_updated_from_custom_yaml["skip_nt_search"] = True
     expected_updated_from_custom_yaml["do_cleanup"] = True
@@ -183,23 +182,26 @@ def test_cli_override(tmp_path, expected_updated_from_custom_yaml, custom_yaml_c
         Recursively apply string formatting to read paths from nested yaml config dicts.
         """
         if isinstance(dictionary, dict):
-            return {key : recursive_override(value, str_to_override, override_str) 
-                    for key, value in dictionary.items()}
+            return {
+                key: recursive_override(value, str_to_override, override_str)
+                for key, value in dictionary.items()
+            }
         if isinstance(dictionary, str):
-           return dictionary.replace(str_to_override, override_str)
+            return dictionary.replace(str_to_override, override_str)
         return dictionary
-    
+
     expected_defaults = recursive_override(
         expected_updated_from_custom_yaml, db_str_to_override, str(tmp_path) + "/"
     )
 
     assert expected_defaults == params.config
 
+
 def test_blast_mt_mode_override(tmp_path):
     """A user YAML can set blast_mt_mode (it must be a recognised default key,
     or the config merge would reject it). Default is 1; here we override to 0."""
     user_config_path = tmp_path / "user_config.yaml"
-    with open(user_config_path, 'w') as f:
+    with open(user_config_path, "w") as f:
         yaml.dump({"base_paths": {"default": "/commec-dbs/"}, "blast_mt_mode": 0}, f)
 
     parser = ScreenArgumentParser()
@@ -209,11 +211,12 @@ def test_blast_mt_mode_override(tmp_path):
 
     assert params.config["blast_mt_mode"] == 0
 
+
 def test_blast_mt_mode_invalid_rejected(tmp_path):
     """setup() must reject a blast_mt_mode that isn't one of the valid BLAST
     multithreading modes (0, 1, 2)."""
     user_config_path = tmp_path / "user_config.yaml"
-    with open(user_config_path, 'w') as f:
+    with open(user_config_path, "w") as f:
         yaml.dump({"base_paths": {"default": "/commec-dbs/"}, "blast_mt_mode": 3}, f)
 
     parser = ScreenArgumentParser()
@@ -224,6 +227,7 @@ def test_blast_mt_mode_invalid_rejected(tmp_path):
     with pytest.raises(RuntimeError, match="blast_mt_mode"):
         params.setup()
 
+
 def test_missing_default_config():
     """Test that missing default config raises appropriate error"""
     with patch("importlib.resources.files") as mock_files:
@@ -231,7 +235,7 @@ def test_missing_default_config():
         args = ScreenArgumentParser()
         add_args(args)
         args = args.parse_args([INPUT_QUERY])
-        
+
         with pytest.raises(FileNotFoundError, match="No default yaml found"):
             _ = ScreenIO(args)
 
@@ -240,7 +244,9 @@ def test_missing_user_yaml_raises(tmp_path):
     """-y pointed at a nonexistent file should fail loudly, not silently fall back."""
     parser = ScreenArgumentParser()
     add_args(parser)
-    args = parser.parse_args([INPUT_QUERY, "--config", str(tmp_path / "does_not_exist.yaml")])
+    args = parser.parse_args(
+        [INPUT_QUERY, "--config", str(tmp_path / "does_not_exist.yaml")]
+    )
     with pytest.raises(FileNotFoundError, match="--config YAML not found"):
         ScreenIO(args)
 
@@ -249,10 +255,13 @@ def test_unknown_yaml_key_raises(tmp_path):
     """A typo in user YAML (e.g. `databse:`) should abort with the rejected key listed."""
     user_config_path = tmp_path / "user_config.yaml"
     with open(user_config_path, "w") as f:
-        yaml.dump({
-            "base_paths": {"default": "/commec-dbs/"},
-            "databse": {"biorisk": {"path": "/ignored"}},  # typo
-        }, f)
+        yaml.dump(
+            {
+                "base_paths": {"default": "/commec-dbs/"},
+                "databse": {"biorisk": {"path": "/ignored"}},  # typo
+            },
+            f,
+        )
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
@@ -275,6 +284,7 @@ def test_relative_path_in_yaml_raises(tmp_path):
 def test_d_shadowing_yaml_logs_info(tmp_path, caplog):
     """When -d overrides a YAML-supplied base_paths.default, log it at INFO."""
     import logging
+
     user_config_path = tmp_path / "user_config.yaml"
     with open(user_config_path, "w") as f:
         yaml.dump({"base_paths": {"default": "/from-yaml/"}}, f)
@@ -296,17 +306,20 @@ def test_custom_base_paths(tmp_path):
     resolved against `default` if they reference it, and usable in database paths. (#105)"""
     user_config_path = tmp_path / "user_config.yaml"
     with open(user_config_path, "w") as f:
-        yaml.dump({
-            "base_paths": {
-                "default": "/commec-dbs/",
-                "lowconcernfiles": "{default}low_concern/",
-            },
-            "databases": {
-                "low_concern": {
-                    "rna": {"path": "{lowconcernfiles}rna/low_concern.cm"},
+        yaml.dump(
+            {
+                "base_paths": {
+                    "default": "/commec-dbs/",
+                    "lowconcernfiles": "{default}low_concern/",
+                },
+                "databases": {
+                    "low_concern": {
+                        "rna": {"path": "{lowconcernfiles}rna/low_concern.cm"},
+                    },
                 },
             },
-        }, f)
+            f,
+        )
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
@@ -323,37 +336,45 @@ def test_custom_base_paths(tmp_path):
     "base_path, low_concern_path, expected_path",
     [
         # Expected (basepath has terminal separator)
-        ("/commec-test/", "{default}low_concern/rna/test.cm", "/commec-test/low_concern/rna/test.cm"),
+        (
+            "/commec-test/",
+            "{default}low_concern/rna/test.cm",
+            "/commec-test/low_concern/rna/test.cm",
+        ),
         # No separators
-        ("/commec-test", "{default}low_concern/rna/test.cm", "/commec-test/low_concern/rna/test.cm"),
+        (
+            "/commec-test",
+            "{default}low_concern/rna/test.cm",
+            "/commec-test/low_concern/rna/test.cm",
+        ),
         # Subpath has separator
-        ("/commec-test", "{default}/low_concern/rna/test.cm", "/commec-test//low_concern/rna/test.cm"),
+        (
+            "/commec-test",
+            "{default}/low_concern/rna/test.cm",
+            "/commec-test//low_concern/rna/test.cm",
+        ),
         # Double separators
-        ("/commec-test/", "{default}/low_concern/rna/test.cm", "/commec-test//low_concern/rna/test.cm"),
+        (
+            "/commec-test/",
+            "{default}/low_concern/rna/test.cm",
+            "/commec-test//low_concern/rna/test.cm",
+        ),
     ],
 )
 def test_format_config_paths(tmp_path, base_path, low_concern_path, expected_path):
     config_yaml = {
-        "base_paths": {
-            "default": base_path
-        },
-        "databases": {
-            "low_concern" : {
-                "rna" : {
-                    "path": low_concern_path
-                }
-            }
-        }
+        "base_paths": {"default": base_path},
+        "databases": {"low_concern": {"rna": {"path": low_concern_path}}},
     }
     user_config_path = tmp_path / "user_config.yaml"
-    with open(user_config_path, 'w') as f:
+    with open(user_config_path, "w") as f:
         yaml.dump(config_yaml, f)
-    
+
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
     params = ScreenIO(args)
-    
+
     assert expected_path == params.config["databases"]["low_concern"]["rna"]["path"]
 
 
@@ -376,11 +397,13 @@ def test_format_config_paths(tmp_path, base_path, low_concern_path, expected_pat
 def test_get_output_prefix(
     mock_makedirs, input_file, prefix_arg, expected_prefix, is_makedirs_called
 ):
-    prefix, output_prefix, input_prefix = ScreenIO._get_output_prefixes(input_file, prefix_arg)
+    prefix, output_prefix, input_prefix = ScreenIO._get_output_prefixes(
+        input_file, prefix_arg
+    )
     assert expected_prefix == prefix, f"Expected: {expected_prefix}, got {prefix}"
 
     # Verify makedirs was called when appropriate
-    #if is_makedirs_called:
+    # if is_makedirs_called:
     #    mock_makedirs.assert_called_once_with(expand_and_normalize(prefix_arg), exist_ok=True)
-    #else:
+    # else:
     #    mock_makedirs.assert_not_called()

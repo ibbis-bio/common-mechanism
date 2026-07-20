@@ -21,31 +21,36 @@ from commec.config.result import MatchRange
 # 10------------------------------90 (different query)
 
 # Example DataFrame
-example_hmmer_01 = pd.DataFrame({
-    "q. start": [100,  50,   0,   0],
-    "q. end":   [200, 150, 100, 200],
-})
+example_hmmer_01 = pd.DataFrame(
+    {
+        "q. start": [100, 50, 0, 0],
+        "q. end": [200, 150, 100, 200],
+    }
+)
 
 # Example DataFrame
-example_hmmer_01_output = pd.DataFrame({
-    "q. start":    [100,  50,   0,   0],
-    "q. end":      [200, 150, 100, 200],
-    "coverage_nt": [100,  50,   0, 100],
-    "coverage_ratio": [1.0, 0.5, 0.0, 1.0]
-})
+example_hmmer_01_output = pd.DataFrame(
+    {
+        "q. start": [100, 50, 0, 0],
+        "q. end": [200, 150, 100, 200],
+        "coverage_nt": [100, 50, 0, 100],
+        "coverage_ratio": [1.0, 0.5, 0.0, 1.0],
+    }
+)
 
 reg_range_01 = MatchRange(0.0, 100, 200)
+
 
 @pytest.mark.parametrize(
     "input_hmmer, input_region, expected_output_hmmer",
     [
         (example_hmmer_01, reg_range_01, example_hmmer_01_output),
-    ]
+    ],
 )
 def test_coverage_overlaps(
-    input_hmmer : pd.DataFrame,
-    input_region : MatchRange,
-    expected_output_hmmer : pd.DataFrame
+    input_hmmer: pd.DataFrame,
+    input_region: MatchRange,
+    expected_output_hmmer: pd.DataFrame,
 ):
     """
     Checks common configurations that require trimming in Hmmer outputs,

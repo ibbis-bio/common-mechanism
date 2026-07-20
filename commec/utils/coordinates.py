@@ -1,14 +1,12 @@
 """
-Helper functions associated with the handling of 
+Helper functions associated with the handling of
 basepair|amino-acid, nucleotide|peptide coordinate systems.
 """
 
 import numpy as np
 
-def convert_protein_to_nucleotide_coords(frame,
-                                         protein_start,
-                                         protein_end,
-                                         seq_length):
+
+def convert_protein_to_nucleotide_coords(frame, protein_start, protein_end, seq_length):
     """
     Convert protein coordinates to nucleotide coordinates considering the reading frame.
 
@@ -38,8 +36,12 @@ def convert_protein_to_nucleotide_coords(frame,
 
     # Forward frames (1, 2, 3)
     forward_mask = frame <= 3
-    nucleotide_start[forward_mask] = (protein_start[forward_mask] * 3) + (frame[forward_mask] - 1)
-    nucleotide_end[forward_mask] = (protein_end[forward_mask] * 3) + 2 + (frame[forward_mask] - 1)
+    nucleotide_start[forward_mask] = (protein_start[forward_mask] * 3) + (
+        frame[forward_mask] - 1
+    )
+    nucleotide_end[forward_mask] = (
+        (protein_end[forward_mask] * 3) + 2 + (frame[forward_mask] - 1)
+    )
 
     # Reverse frames (4, 5, 6)
     reverse_mask = frame > 3
@@ -47,8 +49,12 @@ def convert_protein_to_nucleotide_coords(frame,
     nuc_start_reverse = (protein_start[reverse_mask] * 3) + (reverse_frame - 1)
     nuc_end_reverse = (protein_end[reverse_mask] * 3) + 2 + (reverse_frame - 1)
 
-    nucleotide_start[reverse_mask] = seq_length[reverse_mask] - nuc_end_reverse - 1 + reverse_offset[reverse_mask]
-    nucleotide_end[reverse_mask] = seq_length[reverse_mask] - nuc_start_reverse - 1 + reverse_offset[reverse_mask]
+    nucleotide_start[reverse_mask] = (
+        seq_length[reverse_mask] - nuc_end_reverse - 1 + reverse_offset[reverse_mask]
+    )
+    nucleotide_end[reverse_mask] = (
+        seq_length[reverse_mask] - nuc_start_reverse - 1 + reverse_offset[reverse_mask]
+    )
 
     # Convert to back to 1-based coordinates for reporting.
     nucleotide_start += 1
