@@ -34,6 +34,11 @@ requirements:
     - pandas
     - pytaxonkit
     - pyyaml
+    - pycountry
+    # commec gui (web kiosk) server deps
+    - flask
+    - werkzeug
+    - psutil
     # Runtime non-Python dependencies
     - blast >=2.16
     - hmmer
@@ -49,7 +54,9 @@ test:
   commands:
     - commec screen --help
     - commec flag --help
-    - commec split --help
+    - commec setup --help
+    - commec list --help
+    - commec gui --help
 
 about:
   home: https://github.com/ibbis-screening/common-mechanism
