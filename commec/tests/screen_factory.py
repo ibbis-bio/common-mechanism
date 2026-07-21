@@ -22,21 +22,16 @@ from commec.config.result import ScreenResult, ScreenStep
 from commec.config.json_io import get_screen_data_from_json
 
 from commec.control_list.region import Region
-from commec.control_list.containers import (
-    ControlList,
-    ListMode
-)
+from commec.control_list.containers import ControlList, ListMode
 import commec.control_list.list_data as ld
 from commec.control_list.initialisation import tidy_control_list_data
 
 
-def fake_full_coords(
-        _protein_search_handler,
-        queries
-        ):
+def fake_full_coords(_protein_search_handler, queries):
     for query in queries.values():
         query.non_coding_regions.append((1, query.length))
     return
+
 
 def skip_biorisk_annotations(_input_file):
     """
@@ -44,6 +39,7 @@ def skip_biorisk_annotations(_input_file):
     replaced with our own generated annotation data.
     """
     return BIORISK_ANNOTATIONS_DATA
+
 
 def skip_taxonomy_info(
     blast: pd.DataFrame,
@@ -53,29 +49,34 @@ def skip_taxonomy_info(
     _threads: int,
 ):
     """
-    Override the taxonomy database retrieval with our own information at a 
+    Override the taxonomy database retrieval with our own information at a
     per-hit basis.
     """
-    blast = blast.merge(TAXONOMY, on = "subject acc.", how = "left")
+    blast = blast.merge(TAXONOMY, on="subject acc.", how="left")
     return blast
 
+
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
-TAXONOMY = pd.DataFrame(columns=["subject acc.","regulated", "superkingdom", "phylum", "genus", "species"])
+TAXONOMY = pd.DataFrame(
+    columns=["subject acc.", "regulated", "superkingdom", "phylum", "genus", "species"]
+)
 BIORISK_ANNOTATIONS_DATA = pd.DataFrame(columns=["ID", "Description", "Must flag"])
+
 
 class ScreenTesterFactory:
     """
     Factory class, to easily create the data for a commec screen run,
     so we can more easily construct various testing scenarios without bloated
     code strings.
-    Simply create an instance, and call 
+    Simply create an instance, and call
         add_query, : Add queries to the screen
         add_hit,    : Add hits to the screen
         add_regulated_taxid, : Include informatiokn as to what taxids are regulated.
-    
+
     and then run(), which will return the ScreenResult object.
 
     """
+
     def __init__(self, test_name, tmp_path):
         # Containers to hold input hits.
         self.name = test_name
@@ -93,9 +94,20 @@ class ScreenTesterFactory:
         # We reset the globals when a new test is made - its just safer.
         global TAXONOMY
         global BIORISK_ANNOTATIONS_DATA
-        
-        TAXONOMY = pd.DataFrame(columns=["subject acc.","regulated", "superkingdom", "phylum", "genus", "species"])
-        BIORISK_ANNOTATIONS_DATA = pd.DataFrame(columns=["ID", "Description", "Must flag"])
+
+        TAXONOMY = pd.DataFrame(
+            columns=[
+                "subject acc.",
+                "regulated",
+                "superkingdom",
+                "phylum",
+                "genus",
+                "species",
+            ]
+        )
+        BIORISK_ANNOTATIONS_DATA = pd.DataFrame(
+            columns=["ID", "Description", "Must flag"]
+        )
         ld.clear()
 
     def run(self, *args):
@@ -107,17 +119,23 @@ class ScreenTesterFactory:
         tidy_control_list_data()
 
         arguments = [
-                "test.py", str(self.input_fasta_path), 
-                "-d", str(DATABASE_DIRECTORY), 
-                "-o", str(self.tmp_path), 
-                "--resume",
-                "--verbose"
-            ]
-        
+            "test.py",
+            str(self.input_fasta_path),
+            "-d",
+            str(DATABASE_DIRECTORY),
+            "-o",
+            str(self.tmp_path),
+            "--resume",
+            "--verbose",
+        ]
+
         arguments.extend(args)
 
         print("Using the following Control Lists: ", ld.CONTROL_LISTS)
-        print("Using the following control list annotations: ", ld.CONTROL_LIST_ANNOTATIONS)
+        print(
+            "Using the following control list annotations: ",
+            ld.CONTROL_LIST_ANNOTATIONS,
+        )
 
         if ld.CONTROL_LIST_ANNOTATIONS.size == 0:
             print("Using a run with no added control lists, adding dummy data...")
@@ -125,18 +143,26 @@ class ScreenTesterFactory:
 
         # We patch taxonomic labels to avoid having to make a mini-taxonomy database.
         # We also patch in the desired CLI arguments to avoid an input yaml, and control output.
-        with (patch("commec.screeners.check_biorisk.read_biorisk_annotations", new=skip_biorisk_annotations),
-              patch("commec.screen.calculate_noncoding_regions_per_query", new=fake_full_coords),
-             patch("sys.argv", arguments)):
+        with (
+            patch(
+                "commec.screeners.check_biorisk.read_biorisk_annotations",
+                new=skip_biorisk_annotations,
+            ),
+            patch(
+                "commec.screen.calculate_noncoding_regions_per_query",
+                new=fake_full_coords,
+            ),
+            patch("sys.argv", arguments),
+        ):
             parser = ScreenArgumentParser()
             add_args(parser)
             args = parser.parse_args()
             run(args)
-        
+
         # return the screen data output for checking:
         json_output_path = self.tmp_path / f"{self.name}.output.json"
         assert os.path.isfile(json_output_path)
-        actual_screen_result : ScreenResult = get_screen_data_from_json(json_output_path)
+        actual_screen_result: ScreenResult = get_screen_data_from_json(json_output_path)
 
         print(f"Raw {self.name} test output: ")
         print(json.dumps(asdict(actual_screen_result), indent=2))
@@ -144,66 +170,85 @@ class ScreenTesterFactory:
         return actual_screen_result
 
     def add_query(self, name, size):
-        self.queries[name] = "a"*size
+        self.queries[name] = "a" * size
 
     def add_dummy_cl_data(self):
-        ld.add_control_list(ControlList("dummy_list",
-                                        "Just a Dummy List",
-                                        "DUMMY","www.nourl.com",
-                                        Region("New Zealand","NZ"),
-                                        ListMode.COMPLIANCE,
-                                        "EXPORT"))
-        ld.add_control_list_annotations(pd.DataFrame([
-            {
-                "display_name": "Dummy entrant",
-                "tax_id": "DUMMY_TAXID",
-                "list_acronym": "DUMMY",
-                "category" : "Bacteria",
-                "species" : "Dummy Species",
-                "genus" : "Dummy genus",
-                "kingdom" : "Dummy Kingdom",
-            },
-        ]))
+        ld.add_control_list(
+            ControlList(
+                "dummy_list",
+                "Just a Dummy List",
+                "DUMMY",
+                "www.nourl.com",
+                Region("New Zealand", "NZ"),
+                ListMode.COMPLIANCE,
+                "EXPORT",
+            )
+        )
+        ld.add_control_list_annotations(
+            pd.DataFrame(
+                [
+                    {
+                        "display_name": "Dummy entrant",
+                        "tax_id": "DUMMY_TAXID",
+                        "list_acronym": "DUMMY",
+                        "category": "Bacteria",
+                        "species": "Dummy Species",
+                        "genus": "Dummy genus",
+                        "kingdom": "Dummy Kingdom",
+                    },
+                ]
+            )
+        )
 
-    def add_hit(self,
-        to_step,                    # Which step this hit belongs to...
-        to_query,                   # Which query this hit belongs to...
-        start,                      # Start Nucleotide in Query coords.
-        stop,                       # End Nucleotide in Query Coords...
-        title = "untitled",
-        accession = "12345",
-        taxid = 0,
-        species = "unclassified",
-        genus = "unclassified",
-        superkingdom = "unclassified",
-        phylum = "unclassified",
-        regulated = False,          # Used to update taxonomy, and also biorisk Must flag.
-        score = 1000,               # Used for HMMSCAN
-        evalue = 0.0,               # can affect order.
-        description = "no description",
-        ):
+    def add_hit(
+        self,
+        to_step,  # Which step this hit belongs to...
+        to_query,  # Which query this hit belongs to...
+        start,  # Start Nucleotide in Query coords.
+        stop,  # End Nucleotide in Query Coords...
+        title="untitled",
+        accession="12345",
+        taxid=0,
+        species="unclassified",
+        genus="unclassified",
+        superkingdom="unclassified",
+        phylum="unclassified",
+        regulated=False,  # Used to update taxonomy, and also biorisk Must flag.
+        score=1000,  # Used for HMMSCAN
+        evalue=0.0,  # can affect order.
+        description="no description",
+    ):
 
         assert start > 0
         assert stop > 0
 
         if regulated:
-            ld.add_control_list(ControlList("default_test_list",
-                                            "Index experimentorum communium",
-                                            "DTL","www.nourl.com",
-                                            Region("New Zealand","NZ"),
-                                            ListMode.COMPLIANCE,
-                                            "EXPORT"))
-            ld.add_control_list_annotations(pd.DataFrame([
-                {
-                    "display_name": title,
-                    "tax_id": taxid,
-                    "list_acronym": "DTL",
-                    "category" : superkingdom,
-                    "species" : species,
-                    "genus" : genus,
-                    "kingdom" : superkingdom,
-                },
-            ]))
+            ld.add_control_list(
+                ControlList(
+                    "default_test_list",
+                    "Index experimentorum communium",
+                    "DTL",
+                    "www.nourl.com",
+                    Region("New Zealand", "NZ"),
+                    ListMode.COMPLIANCE,
+                    "EXPORT",
+                )
+            )
+            ld.add_control_list_annotations(
+                pd.DataFrame(
+                    [
+                        {
+                            "display_name": title,
+                            "tax_id": taxid,
+                            "list_acronym": "DTL",
+                            "category": superkingdom,
+                            "species": species,
+                            "genus": genus,
+                            "kingdom": superkingdom,
+                        },
+                    ]
+                )
+            )
 
         # Ensure that the taxonomy LUT entry for this hit exists.
         if to_step in [ScreenStep.TAXONOMY_AA, ScreenStep.TAXONOMY_NT]:
@@ -213,11 +258,11 @@ class ScreenTesterFactory:
                 superkingdom,
                 phylum,
                 genus,
-                species
+                species,
             ]
 
         query_length = len(self.queries[to_query])
-        query_length_aa = math.floor(query_length/3)
+        query_length_aa = math.floor(query_length / 3)
         # Calculate frame if appropriate:
         frame = (start - 1) % 3 + 1
         if start > stop:
@@ -232,16 +277,19 @@ class ScreenTesterFactory:
 
         start_aa = math.floor(start / 3)
         end_aa = math.floor(stop / 3)
-        
+
         # Used if HMMSCAN i.e. protein based.
         query_name = f"{to_query}_{str(frame)}"
 
         length = abs(stop - start)
         length_aa = abs(end_aa - start_aa)
-        
+
         if to_step == ScreenStep.BIORISK:
             BIORISK_ANNOTATIONS_DATA.loc[len(BIORISK_ANNOTATIONS_DATA)] = [
-                title, description, regulated]
+                title,
+                description,
+                regulated,
+            ]
             print(f"Added Biorisk Annotation: {title},{description},{regulated}")
             self.biorisks.append(
                 f"{title}\t{accession}\t{length_aa}\t{query_name}\t999\t{query_length_aa}\t{evalue}\t{score}\t10.0\t1\t1\t0\t0\t{score}\t10.0\t1\t{length_aa}\t{start_aa}\t{end_aa}\t1\t{length_aa}\t1.00\t{description}"
@@ -253,7 +301,7 @@ class ScreenTesterFactory:
                 f"{to_query}\t{title}\t{accession}\t{taxid}\t{evalue}\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
             )
             return
-        
+
         if to_step == ScreenStep.TAXONOMY_NT:
             self.nucl_tx.append(
                 f"{to_query}_0\t{title}\t{accession}\t{taxid}\t{evalue}\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
@@ -270,12 +318,12 @@ class ScreenTesterFactory:
             self.lowconcern_rna.append(
                 f"{title}\t{accession}\t{to_query}\tQA999\t{length}\t1\t{length}\t{start}\t{stop}\tSTRAND\tTRUNC\tPASS\tGC\t10\t{score}\t{evalue}\t100\t{description}"
             )
-            #RNA, mdl = target, seq = query
-            #"""\
-            #target name         accession query name                accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value  inc description of target
-            #------------------- --------- ------------------------- --------- --- -------- -------- -------- -------- ------ ----- ---- ---- ----- ------ ---------  --- ---------------------
-            #BENIGNRNA            12346     FCTEST1	                 Q1         50	    100      200       50      150 STRAND TRUNC PASS   GC    10   1000       0.0  100    BenignCMTestOutput
-            #"""
+            # RNA, mdl = target, seq = query
+            # """\
+            # target name         accession query name                accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value  inc description of target
+            # ------------------- --------- ------------------------- --------- --- -------- -------- -------- -------- ------ ----- ---- ---- ----- ------ ---------  --- ---------------------
+            # BENIGNRNA            12346     FCTEST1	                 Q1         50	    100      200       50      150 STRAND TRUNC PASS   GC    10   1000       0.0  100    BenignCMTestOutput
+            # """
             return
 
         if to_step == ScreenStep.LOW_CONCERN_DNA:
@@ -284,13 +332,12 @@ class ScreenTesterFactory:
             )
             return
 
-
     def _create_temporary_files(self):
-        
+
         # Make the paths.
         os.mkdir(self.tmp_path / f"output_{self.name}")
         os.mkdir(self.tmp_path / f"input_{self.name}")
-        
+
         # Create input fasta:
         self.input_fasta_path = self.tmp_path / f"{self.name}.fasta"
         print("Using fasta file: " + str(self.input_fasta_path))
@@ -303,40 +350,45 @@ class ScreenTesterFactory:
         # --RESUME FILES::
         # BIORISK FILES
         header = "#tname    accession  tlen qname        accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias  from    to  from    to  from    to  acc description of target\n"
-        biorisk_db_output_path = self.tmp_path / f"output_{self.name}/{self.name}.biorisk.hmmscan"
+        biorisk_db_output_path = (
+            self.tmp_path / f"output_{self.name}/{self.name}.biorisk.hmmscan"
+        )
         hmmer_biorisk_to_parse = header + "\n".join(self.biorisks)
         biorisk_db_output_path.write_text(hmmer_biorisk_to_parse)
         print("writing biorisk hmm: \n", hmmer_biorisk_to_parse)
 
-        # TAXONOMY NR FILES
-        header = "#query acc.	    title   subject acc.    taxid	evalue	bit score	% identity	    q.len	q.start	q.end	s.len	s. start	s. end\n"
+        # TAXONOMY NR FILES (outfmt 6 tabular: no header lines)
         nr_db_output_path = self.tmp_path / f"output_{self.name}/{self.name}.nr.blastx"
-        blastnr_to_parse = header + "\n".join(self.protein_tx)
+        blastnr_to_parse = "\n".join(self.protein_tx)
         nr_db_output_path.write_text(blastnr_to_parse)
         print("writing blast nr: \n", blastnr_to_parse)
 
-        # TAXONOMY NT FILES:
+        # TAXONOMY NT FILES (outfmt 6 tabular: no header lines):
         nt_db_output_path = self.tmp_path / f"output_{self.name}/{self.name}.nt.blastn"
-        blastnt_to_parse = header + "\n".join(self.nucl_tx)
+        blastnt_to_parse = "\n".join(self.nucl_tx)
         nt_db_output_path.write_text(blastnt_to_parse)
         print("writing blast nt: \n", blastnt_to_parse)
 
         # LOW CONCERN FILES:
-        header = " #tname    accession        tlen qname        accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias    from    to  from    to  from    to  acc description of target\n"
-        low_concern_hmm_output_path = self.tmp_path / f"output_{self.name}/{self.name}.low_concern.hmmscan"
+        header = "#tname    accession        tlen qname        accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias    from    to  from    to  from    to  acc description of target\n"
+        low_concern_hmm_output_path = (
+            self.tmp_path / f"output_{self.name}/{self.name}.low_concern.hmmscan"
+        )
         low_concern_hmmscan_to_parse = header + "\n".join(self.lowconcern_protein)
         low_concern_hmm_output_path.write_text(low_concern_hmmscan_to_parse)
         print("writing lowconcern hmm: \n", low_concern_hmmscan_to_parse)
 
         header = "#target name         accession query name                accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value  inc description of target\n"
-        low_concern_cmscan_output_path = self.tmp_path / f"output_{self.name}/{self.name}.low_concern.cmscan"
+        low_concern_cmscan_output_path = (
+            self.tmp_path / f"output_{self.name}/{self.name}.low_concern.cmscan"
+        )
         low_concern_cmscan_to_parse = header + "\n".join(self.lowconcern_rna)
         low_concern_cmscan_output_path.write_text(low_concern_cmscan_to_parse)
         print("writing lowconcern rna: \n", low_concern_cmscan_to_parse)
 
-        header = "#query acc.	title	subject acc.taxid	evalue	bit score	% identity	    q.len	q.start	q.end	    s.len	s. start	s. end\n"
-        low_concern_nt_output_path = self.tmp_path / f"output_{self.name}/{self.name}.low_concern.blastn"
-        low_concern_blastnt_to_parse = header + "\n".join(self.lowconcern_dna)
+        low_concern_nt_output_path = (
+            self.tmp_path / f"output_{self.name}/{self.name}.low_concern.blastn"
+        )
+        low_concern_blastnt_to_parse = "\n".join(self.lowconcern_dna)
         low_concern_nt_output_path.write_text(low_concern_blastnt_to_parse)
         print("writing lowconcern dna: \n", low_concern_blastnt_to_parse)
-

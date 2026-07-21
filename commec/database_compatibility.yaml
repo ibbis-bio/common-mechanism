@@ -1,0 +1,5 @@
+supported_database_revisions:
+  "biorisk" : ">=1.0,<2.0"
+  "low_concern" : ">=1.0,<2.0"
+  "best_match" : ">=1.0,<2.0"
+  "control_lists" : ">=1.0,<2.0"

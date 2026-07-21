@@ -8,6 +8,18 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Ruff check
+        uses: astral-sh/ruff-action@v4.1.0
+      - name: Ruff isort
+        run: ruff check --select I --fix
+      - name: Ruff format
+        run: ruff format
+    
   test:
     runs-on: ubuntu-latest
 

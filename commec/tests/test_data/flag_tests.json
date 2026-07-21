@@ -1,39 +1,13 @@
 {
     "commec_info": {
         "commec_version": "",
-        "json_output_version": "0.5",
+        "json_output_version": "0.6",
         "time_taken": null,
-        "date_run": "",
-        "search_tool_info": {
-            "biorisk_search_info": {
-                "tool_info": "",
-                "database_info": ""
-            },
-            "protein_search_info": {
-                "tool_info": "",
-                "database_info": ""
-            },
-            "nucleotide_search_info": {
-                "tool_info": "",
-                "database_info": ""
-            },
-            "low_concern_protein_search_info": {
-                "tool_info": "",
-                "database_info": ""
-            },
-            "low_concern_rna_search_info": {
-                "tool_info": "",
-                "database_info": ""
-            },
-            "low_concern_dna_search_info": {
-                "tool_info": "",
-                "database_info": ""
-            }
-        }
+        "date_run": ""
     },
     "query_info": {
         "file": "n/a",
-        "number_of_queries": 1,
+        "number_of_queries": 8,
         "total_query_length": 600
     },
     "queries": {
@@ -302,6 +276,34 @@
                 "low_concern": "Pass"
             },
             "hits": {
+            }
+        }
+    },
+    "database_info" : {
+        "search_tool_info": {
+            "biorisk_search_info": {
+                "tool_info": "",
+                "database_info": ""
+            },
+            "protein_search_info": {
+                "tool_info": "",
+                "database_info": ""
+            },
+            "nucleotide_search_info": {
+                "tool_info": "",
+                "database_info": ""
+            },
+            "low_concern_protein_search_info": {
+                "tool_info": "",
+                "database_info": ""
+            },
+            "low_concern_rna_search_info": {
+                "tool_info": "",
+                "database_info": ""
+            },
+            "low_concern_dna_search_info": {
+                "tool_info": "",
+                "database_info": ""
             }
         }
     }

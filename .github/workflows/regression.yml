@@ -1,0 +1,43 @@
+name: Regression (trigger commec-test)
+
+# Maintainer-approval gate from the flowchart, rendered as an in-PR approval
+# button via a GitHub Environment with required reviewers. Runs on
+# pull_request_target so the dispatch token is available for fork PRs.
+#
+# SECURITY: pull_request_target runs in the BASE repo context with secrets.
+# This job must NEVER check out or execute PR code — it only reads PR metadata
+# and fires a cross-repo workflow_dispatch. Do not add `actions/checkout` of the
+# PR ref here.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: regression-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    environment: infohazard        # <-- the required-reviewers gate lives here
+    steps:
+      - name: Trigger commec-test regression
+        env:
+          # PAT / App token with actions:write on ibbis-bio/commec-test.
+          # The default GITHUB_TOKEN cannot dispatch another repo's workflow.
+          GH_TOKEN: ${{ secrets.COMMEC_TEST_DISPATCH_TOKEN }}
+          # Untrusted PR metadata — via env, never interpolated into the script.
+          COMMEC_GIT: ${{ github.event.pull_request.head.repo.clone_url }}
+          COMMEC_REF: ${{ github.event.pull_request.head.sha }}
+          COMMEC_PR:  ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh workflow run regression.yml \
+            --repo ibbis-bio/commec-test \
+            --ref main \
+            -f commec_git="$COMMEC_GIT" \
+            -f commec_ref="$COMMEC_REF" \
+            -f commec_pr="$COMMEC_PR"

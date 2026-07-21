@@ -134,35 +134,34 @@ def _custom_preset(text):
 DB_LABELS = {
     "biorisk": "biorisk",
     "low_concern": "low-concern",
-    "nr_blast": "regulated-protein (blastx)",
-    "nr_dmnd": "regulated-protein (diamond)",
-    "nt_blast": "regulated-nucleotide",
-    "taxonomy": "taxonomy",
+    "best_match_protein": "best-match protein (blastx)",
+    "best_match_nucleotide": "best-match nucleotide",
+    "control_lists": "control lists",
 }
 
 
 def _required_db_dirs(config):
     """Which db subdirectories a preset needs, derived from its skip flags.
 
-    Mirrors commec's gating: protein search runs unless taxonomy is skipped;
+    Mirrors commec's gating: best-match protein search runs unless taxonomy is
+    skipped (and needs the control lists for regulation calls); best-match
     nucleotide search runs only when neither taxonomy nor nt is skipped.
     """
     dirs = ["biorisk", "low_concern"]
     skip_tx = bool(config.get("skip_taxonomy_search", False))
     skip_nt = bool(config.get("skip_nt_search", False))
-    tool = config.get("protein_search_tool", "blastx")
     if not skip_tx:
-        dirs.append("nr_dmnd" if tool == "diamond" else "nr_blast")
-        dirs.append("taxonomy")
+        dirs.append("best_match_protein")
+        dirs.append("control_lists")
         if not skip_nt:
-            dirs.append("nt_blast")
+            dirs.append("best_match_nucleotide")
     return dirs
 
 
 def _db_present(path):
     """True if a commec database exists at `path`, which may be a directory
-    (taxonomy/ncbi_taxonomy/), an exact file (biorisk/biorisk.hmm), or a BLAST/DIAMOND
-    file *prefix* (taxonomy/protein/prot -> prot.00.pin, prot.00.phr, ...)."""
+    (control_lists/), an exact file (biorisk/biorisk.hmm), or a BLAST
+    file *prefix* (best_match/protein/prot -> prot.00.pin, prot.00.phr, ...)."""
     if not path:
         return False
     return os.path.isdir(path) or os.path.exists(path) or bool(glob.glob(path + "*"))
@@ -171,7 +170,7 @@ def _db_present(path):
 def _commec_db_paths():
     """Resolve each database to its ACTUAL on-disk path from commec's shipped
     screen-default-config.yaml ({default} expanded). Checking the real configured paths -
-    not hardcoded 'nr_blast'/'nt_blast' dir names - keeps availability correct whatever DB
+    not hardcoded 'best_match' dir names - keeps availability correct whatever DB
     layout the config points at. Falls back to <db_dir>/<name> for any database whose config
     carries no path."""
     db_dir = CFG.get("default_databases") or ""
@@ -199,12 +198,11 @@ def _commec_db_paths():
         return p.replace("{default}", base) if p else os.path.join(db_dir, name)
 
     return {
-        "biorisk":     resolve("biorisk", "biorisk"),
-        "low_concern": resolve("low_concern", "low_concern"),
-        "nr_blast":    resolve("nr_blast", "regulated_protein", "blast"),
-        "nr_dmnd":     resolve("nr_dmnd", "regulated_protein", "diamond"),
-        "nt_blast":    resolve("nt_blast", "regulated_nt"),
-        "taxonomy":    resolve("taxonomy", "taxonomy"),
+        "biorisk":               resolve("biorisk", "biorisk"),
+        "low_concern":           resolve("low_concern", "low_concern"),
+        "best_match_protein":    resolve("best_match/protein", "best_match", "protein"),
+        "best_match_nucleotide": resolve("best_match/nucleotide", "best_match", "nucleotide"),
+        "control_lists":         resolve("control_lists", "control_lists"),
     }
 
 

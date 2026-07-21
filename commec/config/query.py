@@ -5,8 +5,10 @@ import os
 from dataclasses import dataclass
 from Bio import Seq
 from Bio.SeqRecord import SeqRecord
-#from commec.config.result import QueryResult
+
+# from commec.config.result import QueryResult
 from commec.config.constants import MAXIMUM_QUERY_NAME_LENGTH
+
 
 class Query:
     """
@@ -21,11 +23,15 @@ class Query:
         Query.validate_sequence_record(seq_record)
         self._seq_record = seq_record
         self.name = self.create_id(seq_record.id)
-        self.description = seq_record.description[len(seq_record.id):].strip()
-        self.non_coding_regions : list[tuple[int, int]] = [] # 1 based coordinates for Non-Coding Regions.
-        #self.result : QueryResult = None
+        self.description = seq_record.description[len(seq_record.id) :].strip()
+        self.non_coding_regions: list[
+            tuple[int, int]
+        ] = []  # 1 based coordinates for Non-Coding Regions.
         self.result = None
         self.translations: list[QueryTranslation] = []
+
+    def __str__(self) -> str:
+        return self.name
 
     @property
     def original_name(self) -> str:
@@ -122,15 +128,15 @@ class Query:
             )
 
     @staticmethod
-    def create_id(input_name : str) -> str:
+    def create_id(input_name: str) -> str:
         """
-        Parse the Fasta SeqRecord string ID into 
+        Parse the Fasta SeqRecord string ID into
         a constant digit maximum Unique Identification.
         For internal Commec Screen Use only.
         Original Fasta name IDs are used during JSON output.
         """
         # Protections on split name conventions for translation output:
-        name = input_name.split('|')[0]
+        name = input_name.split("|")[0]
 
         # Protection on accidentally ending with _
         if name.endswith("_"):
@@ -152,26 +158,25 @@ class Query:
             output = testname
 
         return output
-    
 
     def get_non_coding_regions_as_fasta(self) -> list[str]:
-        """ 
+        """
         Return the concatenation of all non-coding regions as a string,
         to be appended to a non_coding fasta file.
         """
         if len(self.non_coding_regions) == 0:
             return ""
-        heading : str = f">{self.name}"
-        sequence : str = ""
+        heading: str = f">{self.name}"
+        sequence: str = ""
         outputs = []
         for i, nc in enumerate(self.non_coding_regions):
             start, stop = nc
-            heading=f">{self.name}_{i} ({start}-{stop})"
-            sequence=f"{self._seq_record.seq[int(start)-1: int(stop)]}"
+            heading = f">{self.name}_{i} ({start}-{stop})"
+            sequence = f"{self._seq_record.seq[int(start) - 1 : int(stop)]}"
             outputs.append(f"{heading}\n{sequence}\n")
         return outputs
 
-    def nc_to_nt_query_coords(self, coord : int, index : int) -> int:
+    def nc_to_nt_query_coords(self, coord: int, index: int) -> int:
         """
         Given a coord in non-coding coordinates, and an index for which
         non-coding start-stop site to use,
@@ -183,7 +188,7 @@ class Query:
             raise QueryValueError(
                 f"Non-coding index provided  ({index}) for {self.name}"
                 f"which is out-of-bounds for any known NC start-end tuple: {self.non_coding_regions}"
-                )
+            )
 
         # Range checking:
         start, stop = self.non_coding_regions[index]
@@ -192,10 +197,10 @@ class Query:
             raise QueryValueError(
                 f"Coordinate {coord} from Non-coding index provided  ({index}) for {self.name}"
                 f" is out-of-bounds for its NC start-end tuple: {start} - {stop}"
-                )
+            )
 
         return start + coord - 1
-    
+
 
 @dataclass
 class QueryTranslation:
@@ -209,6 +214,7 @@ class QueryTranslation:
 
     sequence: str
     frame: int
+
 
 class QueryValueError(ValueError):
     """Custom exception for errors when validating a `Query`."""

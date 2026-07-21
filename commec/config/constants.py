@@ -9,11 +9,13 @@ BAD_ACCESSIONS = [
 ]
 
 # CONTROL LISTS
-N_NON_REGIONAL_HITS_TO_WARN = 2 # How many non-regional hits you need before warnings start showing up.
+N_NON_REGIONAL_HITS_TO_WARN = (
+    2  # How many non-regional hits you need before warnings start showing up.
+)
 
 # NUCLEOTIDE TAXONOMY SCREEN
 # At what percent identity a protein hit must attain, to remove that region from non-coding label.
-NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD = 90
+NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD = 80
 
 # BIORISK E-VALUE FILTERING
 # Sequences shorter than this threshold use a length-dependent E-value cutoff.
@@ -29,6 +31,18 @@ CMSCAN_MAX_THREAD_LIMIT = 4
 
 # Valid values for the BLAST -mt_mode argument (0: auto, 1: split by database, 2: split by query)
 VALID_BLAST_MT_MODES = (0, 1, 2)
+
+# Config keys that are no longer valid but should not abort a run: if they appear in a user's
+# YAML we warn and ignore them, rather than rejecting them as unrecognized keys. Maps each
+# retired key to the explanation shown to the user.
+DEPRECATED_CONFIG_KEYS = {
+    "protein_search_tool": (
+        "protein search now always uses BLASTX; DIAMOND is not supported in this version"
+    ),
+    "diamond_jobs": (
+        "DIAMOND is not supported in this version, so this setting has no effect"
+    ),
+}
 
 # I/O
 DEFAULT_CONFIG_YAML_PATH = "screen-default-config.yaml"

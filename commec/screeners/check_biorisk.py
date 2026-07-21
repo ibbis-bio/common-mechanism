@@ -4,8 +4,9 @@
 Script that checks the output from hmmscan and prints to screen the results
 
 Usage:
- python check_biorisk.py -i INPUT.biorisk.hmmscan -d databases/biorisk_db/ 
+ python check_biorisk.py -i INPUT.biorisk.hmmscan -d databases/biorisk_db/
 """
+
 import logging
 import os
 import pandas as pd
@@ -20,7 +21,7 @@ from commec.tools.hmmer import (
     remove_overlaps,
     recalculate_hmmer_query_coordinates,
     append_nt_querylength_info,
-    HmmerHandler
+    HmmerHandler,
 )
 from commec.config.result import (
     ScreenResult,
@@ -29,18 +30,20 @@ from commec.config.result import (
     ScreenStatus,
     HitScreenStatus,
     MatchRange,
-    compare
+    compare,
 )
 
 logger = logging.getLogger(__name__)
 
-def _guess_domain(search_string : str) -> str:
-    """ 
-    Given a string description, try to determine 
+
+def _guess_domain(search_string: str) -> str:
+    """
+    Given a string description, try to determine
     which domain of life this has come from. Temporary work around
     until we can retrieve this data directly from biorisk outputs.
     """
-    def contains(search_string : str, search_terms):
+
+    def contains(search_string: str, search_terms):
         for token in search_terms:
             if search_string.find(token) == -1:
                 continue
@@ -49,25 +52,29 @@ def _guess_domain(search_string : str) -> str:
 
     search_token = search_string.lower()
     if contains(search_token, ["vir", "capsid", "RNA Polymerase"]):
-        logger.debug("Determined virus from \"%s\"", search_string)
+        logger.debug('Determined virus from "%s"', search_string)
         return "Virus"
-    if contains(search_token, ["cillus","bact","coccus","phila","ella","cocci","coli"]):
-        logger.debug("Determined bacteria from \"%s\"", search_string)
+    if contains(
+        search_token, ["cillus", "bact", "coccus", "phila", "ella", "cocci", "coli"]
+    ):
+        logger.debug('Determined bacteria from "%s"', search_string)
         return "Bacteria"
-    if contains(search_token, ["eukary","nucleus","sona","odium","myces"]):
-        logger.debug("Determined Eukaryote from \"%s\"", search_string)
+    if contains(search_token, ["eukary", "nucleus", "sona", "odium", "myces"]):
+        logger.debug('Determined Eukaryote from "%s"', search_string)
         return "Eukaryote"
-    logger.debug("Could not guess domain from \"%s\"", search_string)
+    logger.debug('Could not guess domain from "%s"', search_string)
     return "not assigned"
+
 
 def read_biorisk_annotations(hmm_folder_csv) -> pd.DataFrame:
     """
-    Import the biorisk annotations csv file, 
+    Import the biorisk annotations csv file,
     returns the file imported as a pandas DataFrame.
     """
-    lookup : pd.DataFrame = pd.read_csv(hmm_folder_csv)
+    lookup: pd.DataFrame = pd.read_csv(hmm_folder_csv)
     lookup.fillna(False, inplace=True)
     return lookup
+
 
 def biorisk_evalue_filter(hmmer: pd.DataFrame) -> pd.DataFrame:
     """
@@ -81,22 +88,25 @@ def biorisk_evalue_filter(hmmer: pd.DataFrame) -> pd.DataFrame:
     Returns a filtered copy of the input DataFrame.
     """
     df = hmmer.copy()
-    df['E-value'] = pd.to_numeric(df['E-value'], errors='coerce')
-    df['nt_qlen'] = pd.to_numeric(df['nt_qlen'], errors='coerce')
+    df["E-value"] = pd.to_numeric(df["E-value"], errors="coerce")
+    df["nt_qlen"] = pd.to_numeric(df["nt_qlen"], errors="coerce")
 
-    short_query = df['nt_qlen'] < BIORISK_SHORT_QUERY_NT_THRESHOLD
-    short_cutoff = 1 / (1 + df['nt_qlen'] ** BIORISK_SHORT_QUERY_EVALUE_EXPONENT)
+    short_query = df["nt_qlen"] < BIORISK_SHORT_QUERY_NT_THRESHOLD
+    short_cutoff = 1 / (1 + df["nt_qlen"] ** BIORISK_SHORT_QUERY_EVALUE_EXPONENT)
 
-    mask = (short_query & (df['E-value'] < short_cutoff)) | \
-           (~short_query & (df['E-value'] < BIORISK_LONG_QUERY_EVALUE_THRESHOLD))
+    mask = (short_query & (df["E-value"] < short_cutoff)) | (
+        ~short_query & (df["E-value"] < BIORISK_LONG_QUERY_EVALUE_THRESHOLD)
+    )
 
     return df[mask]
 
 
-def parse_biorisk_hits(search_handler : HmmerHandler,
-                                      biorisk_annotations_file : str | os.PathLike,
-                                      data : ScreenResult,
-                                      queries : dict[str, Query]):
+def parse_biorisk_hits(
+    search_handler: HmmerHandler,
+    biorisk_annotations_file: str | os.PathLike,
+    data: ScreenResult,
+    queries: dict[str, Query],
+):
     """
     Takes an input database, reads its outputs, and updates the input data to contain
     biorisk hits from the database. Also requires passing of the biorisk annotations CSV file.
@@ -114,11 +124,14 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
         logger.error("\t...biorisk_annotations.csv does not exist\n %s", hmm_folder_csv)
         return 1
     if not search_handler.validate_output():
-        logger.error("\t...database output file does not exist, or is empty\n %s", search_handler.out_file)
+        logger.error(
+            "\t...database output file does not exist, or is empty\n %s",
+            search_handler.out_file,
+        )
         return 1
 
     # We delay non-debug logging to sort messages via query.
-    log_container = {key : [] for key in data.queries.keys()}
+    log_container = {key: [] for key in data.queries.keys()}
 
     for query in data.queries.values():
         query.status.set_step_status(ScreenStep.BIORISK, ScreenStatus.PASS)
@@ -127,63 +140,93 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
         return 0
 
     # Read in Output, and parse.
-    hmmer : pd.DataFrame = readhmmer(search_handler.out_file)
+    hmmer: pd.DataFrame = readhmmer(search_handler.out_file)
     logger.debug("Biorisk Import: shape: %s preview:\n%s", hmmer.shape, hmmer.head())
     append_nt_querylength_info(hmmer, queries)
-    logger.debug("Appended Query NT length: shape: %s preview:\n%s", 
-                 hmmer.shape, hmmer[["query name","nt_qlen"]].head())
+    logger.debug(
+        "Appended Query NT length: shape: %s preview:\n%s",
+        hmmer.shape,
+        hmmer[["query name", "nt_qlen"]].head(),
+    )
     hmmer = biorisk_evalue_filter(hmmer)
-    logger.debug("Biorisk Filterd by E-Value: shape: %s preview:\n%s", 
-                 hmmer.shape, hmmer.head())
+    logger.debug(
+        "Biorisk Filterd by E-Value: shape: %s preview:\n%s", hmmer.shape, hmmer.head()
+    )
     recalculate_hmmer_query_coordinates(hmmer)
-    logger.debug("Recalculated AA to NT coords: shape: %s preview:\n%s", 
-                 hmmer.shape, hmmer[["ali from","ali to","q. start","q. end"]].head())
+    logger.debug(
+        "Recalculated AA to NT coords: shape: %s preview:\n%s",
+        hmmer.shape,
+        hmmer[["ali from", "ali to", "q. start", "q. end"]].head(),
+    )
     hmmer = remove_overlaps(hmmer)
     logger.debug("Removed overlaps: shape: %s preview:\n%s", hmmer.shape, hmmer.head())
 
     lookup = read_biorisk_annotations(hmm_folder_csv)
 
     # Append description, and must_flag columns from annotations:
-    hmmer['description'] = ''
-    hmmer['Must flag'] = False
+    hmmer["description"] = ""
+    hmmer["Must flag"] = False
     hmmer = hmmer.reset_index(drop=True)
     for model in range(hmmer.shape[0]):
-        name_index = [i for i, x in enumerate([lookup['ID'] == hmmer['target name'][model]][0]) if x]
-        hmmer.loc[model, 'description'] = lookup.iloc[name_index[0], 1]
-        hmmer.loc[model, 'Must flag'] = lookup.iloc[name_index[0], 2]
+        name_index = [
+            i
+            for i, x in enumerate([lookup["ID"] == hmmer["target name"][model]][0])
+            if x
+        ]
+        hmmer.loc[model, "description"] = lookup.iloc[name_index[0], 1]
+        hmmer.loc[model, "Must flag"] = lookup.iloc[name_index[0], 2]
 
     # Update the data state to capture the outputs from biorisk search:
-    unique_queries = hmmer['query name'].unique()
-    logger.debug("Unique Queries: shape: %s preview:\n%s", unique_queries.shape, unique_queries)
+    unique_queries = hmmer["query name"].unique()
+    logger.debug(
+        "Unique Queries: shape: %s preview:\n%s", unique_queries.shape, unique_queries
+    )
     for affected_query in unique_queries:
         logger.debug("\tProcessing query: %s", affected_query)
-        biorisk_overall : ScreenStatus = ScreenStatus.PASS
+        biorisk_overall: ScreenStatus = ScreenStatus.PASS
 
         query_data, _ = data.get_query(affected_query)
         if not query_data:
-            logger.error("Query during hmmscan could not be found! [%s]", affected_query)
+            logger.error(
+                "Query during hmmscan could not be found! [%s]", affected_query
+            )
             continue
 
         # Grab a list of unique queries, and targets for iteration.
-        unique_query_data : pd.DataFrame = hmmer[hmmer['query name'] == affected_query]
-        unique_targets = unique_query_data['target name'].unique()
-        
-        logger.debug("\tData for %s: shape: %s preview:\n%s", 
-                     affected_query, unique_query_data.shape, unique_query_data.head())
-        logger.debug("\tTargets (%i) hit by %s: %s", 
-                     len(unique_targets), affected_query , unique_targets)
+        unique_query_data: pd.DataFrame = hmmer[hmmer["query name"] == affected_query]
+        unique_targets = unique_query_data["target name"].unique()
+
+        logger.debug(
+            "\tData for %s: shape: %s preview:\n%s",
+            affected_query,
+            unique_query_data.shape,
+            unique_query_data.head(),
+        )
+        logger.debug(
+            "\tTargets (%i) hit by %s: %s",
+            len(unique_targets),
+            affected_query,
+            unique_targets,
+        )
 
         for affected_target in unique_targets:
             logger.debug("\t\tProcessing target %s", affected_target)
-            unique_target_data = unique_query_data[unique_query_data['target name'] == affected_target]
-            target_description = ", ".join(set(unique_target_data['description'])) # First should be unique.
-            must_flag = unique_target_data['Must flag'].iloc[0] # First should be unique.
+            unique_target_data = unique_query_data[
+                unique_query_data["target name"] == affected_target
+            ]
+            target_description = ", ".join(
+                set(unique_target_data["description"])
+            )  # First should be unique.
+            must_flag = unique_target_data["Must flag"].iloc[
+                0
+            ]  # First should be unique.
             match_ranges = []
             match_string = ""
             for _, region in unique_target_data.iterrows():
                 match_range = MatchRange(
-                    float(region['E-value']),
-                    int(region['q. start']), int(region['q. end'])
+                    float(region["E-value"]),
+                    int(region["q. start"]),
+                    int(region["q. end"]),
                 )
                 match_ranges.append(match_range)
                 match_string += f"{match_range.query_start}-{match_range.query_end}, "
@@ -191,14 +234,20 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
             # Remove final ", "
             match_string = match_string[:-2]
 
-            target_recommendation = ScreenStatus.FLAG if must_flag > 0 else ScreenStatus.WARN
-            logger.debug("\t\tTarget recommendation from this hit: %s", target_recommendation)
+            target_recommendation = (
+                ScreenStatus.FLAG if must_flag > 0 else ScreenStatus.WARN
+            )
+            logger.debug(
+                "\t\tTarget recommendation from this hit: %s", target_recommendation
+            )
 
             biorisk_overall = compare(target_recommendation, biorisk_overall)
 
             # Precalculate some logging information...
-            regulation_str : str = "Regulated Gene" if must_flag else "Virulence Factor"
-            log_message = f"\t --> {regulation_str} found at coordinates: {match_string}."
+            regulation_str: str = "Regulated Gene" if must_flag else "Virulence Factor"
+            log_message = (
+                f"\t --> {regulation_str} found at coordinates: {match_string}."
+            )
             logger.debug(f"{affected_query[:-2]:<25}" + log_message)
             log_container[affected_query[:-2]].append(log_message)
 
@@ -207,29 +256,28 @@ def parse_biorisk_hits(search_handler : HmmerHandler,
             # THIS NEEDS UPDATING, Biorisks should be unique no matter what after collapsing hits
             # with remove_overlaps()
 
-            #hit_data : HitResult = query_data.get_hit(affected_target)
-            #if hit_data:
+            # hit_data : HitResult = query_data.get_hit(affected_target)
+            # if hit_data:
             #    logger.debug("\t\tHit already existed! Extending hit data ranges only...")
             #    hit_data.region = match_ranges[0]
             #    logger.debug("Updated hit: %s", hit_data)
             #    continue
 
-            domain : str = _guess_domain(""+str(affected_target)+target_description)
+            domain: str = _guess_domain("" + str(affected_target) + target_description)
 
-            new_hit : HitResult = HitResult(
-                HitScreenStatus(
-                    target_recommendation,
-                    ScreenStep.BIORISK
-                ),
+            new_hit: HitResult = HitResult(
+                HitScreenStatus(target_recommendation, ScreenStep.BIORISK),
                 affected_target,
                 target_description,
                 match_ranges[0],
-                {"domain" : [domain],"regulated":[regulation_str]},
+                {"domain": [domain], "regulated": [regulation_str]},
             )
-            logger.debug("\t\tHit was unique, creating new hit result information...\n%s", new_hit)
+            logger.debug(
+                "\t\tHit was unique, creating new hit result information...\n%s",
+                new_hit,
+            )
             query_data.add_new_hit_information(new_hit)
-            #hits[affected_target] = new_hit
-
+            # hits[affected_target] = new_hit
 
         # Update the recommendation for this query for biorisk.
         query_data.status.set_step_status(ScreenStep.BIORISK, biorisk_overall)

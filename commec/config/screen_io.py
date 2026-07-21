@@ -5,6 +5,7 @@ Defines the `ScreenIO` class and associated dataclasses.
 Objects responsible for parsing and interpreting user input for
 the screen workflow of commec.
 """
+
 import os
 import sys
 import glob
@@ -12,6 +13,7 @@ import argparse
 import logging
 import multiprocessing
 from pprint import pformat
+from pathlib import Path
 from Bio import SeqIO
 import yaml
 from Bio.SeqRecord import SeqRecord
@@ -29,10 +31,12 @@ from commec.config.constants import (
 
 logger = logging.getLogger(__name__)
 
+
 class ScreenIO:
     """
     Container for input settings constructed from arguments to `screen`.
     """
+
     def __init__(self, args: argparse.Namespace):
         # Inputs that do no have a package-level default, since they are specific to each run
         self.db_dir = args.database_dir
@@ -40,7 +44,9 @@ class ScreenIO:
         output_prefix = args.output_prefix
 
         # Output folder hierarchy
-        base, outputs, inputs = self._get_output_prefixes(self.input_fasta_path, output_prefix)
+        base, outputs, inputs = self._get_output_prefixes(
+            self.input_fasta_path, output_prefix
+        )
         self.directory_prefix = base
         self.output_prefix = outputs
         self.input_prefix = inputs
@@ -55,16 +61,18 @@ class ScreenIO:
         # Get configuration based on defaults and CLI args (including YAML config if supplied)
         self.config = {}
         self._read_config(args)
-        
+
         # Check whether a .screen output file already exists.
         if os.path.exists(self.output_screen_file) and not (
-            self.config["force"] or self.config["resume"]):
+            self.config["force"] or self.config["resume"]
+        ):
             logger.error(
                 """Screen output %s already exists.
                 Either use a different output location, or use --force or --resume to override.
-                Aborting Screen.""", self.output_screen_file)
+                Aborting Screen.""",
+                self.output_screen_file,
+            )
             sys.exit(1)
-
 
     def setup(self) -> bool:
         """
@@ -88,19 +96,10 @@ class ScreenIO:
                 f"but got {self.config['blast_mt_mode']!r}"
             )
 
-        if (
-            self.config["diamond_jobs"] is not None
-            and self.config["protein_search_tool"] == "blastx"
-        ):
-            logger.warning(
-                "--jobs is a diamond only parameter! Specifying -j (--jobs) without also"
-                " specifying -p (--protein-search-tool) as 'diamond' will have no effect!"
-            )
-
         # Write a clean FASTA that can be used downstream
         self._write_clean_fasta()
-        return True
 
+        return True
 
     def parse_input_fasta(self) -> dict[str, Query]:
         """
@@ -111,35 +110,42 @@ class ScreenIO:
         queries = {}
 
         try:
-            with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
+            with open(self.nt_path, "r", encoding="utf-8") as fasta_file:
                 records = list(SeqIO.parse(fasta_file, "fasta"))
         except ValueError as e:
-            raise IoValidationError(f"Input FASTA file: {self.input_fasta_path} "
-                                    "is not a valid fasta file.") from e
+            raise IoValidationError(
+                f"Input FASTA file: {self.input_fasta_path} is not a valid fasta file."
+            ) from e
 
         if len(records) == 0:
-            raise IoValidationError(f"Input FASTA file: {self.input_fasta_path} "
-                                    " contains no records!")
+            raise IoValidationError(
+                f"Input FASTA file: {self.input_fasta_path}  contains no records!"
+            )
 
         for record in records:
             try:
                 query = Query(record)
                 if query.name in queries:
-                    raise ValueError(f"Duplicate sequence identifier generated: \"{query.name}\" from record: {record}\n"
-                                     f"Ensure that the first {MAXIMUM_QUERY_NAME_LENGTH} characters for each fasta record are unique.")
+                    raise ValueError(
+                        f'Duplicate sequence identifier generated: "{query.name}" from record: {record}\n'
+                        f"Ensure that the first {MAXIMUM_QUERY_NAME_LENGTH} characters for each fasta record are unique."
+                    )
                 queries[query.name] = query
                 # Override the original cleaned fasta, with queries above a given length and updated names
                 if MINIMUM_QUERY_LENGTH < len(record.seq) <= MAXIMUM_QUERY_LENGTH:
                     # Creating new SeqRecord to avoid overwriting the seq_record object inside query and preserve the original seq id
-                    updated_records.append(SeqRecord(record.seq, id=query.name, description=""))
+                    updated_records.append(
+                        SeqRecord(record.seq, id=query.name, description="")
+                    )
             except Exception as e:
-                raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}, {e}") from e
+                raise IoValidationError(
+                    f"Failed to parse input fasta: {self.nt_path}, {e}"
+                ) from e
 
-        with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
+        with open(self.nt_path, "w", encoding="utf-8") as fasta_file:
             SeqIO.write(updated_records, fasta_file, "fasta")
 
         return queries
-
 
     def clean(self):
         """
@@ -147,18 +153,15 @@ class ScreenIO:
         """
         if self.config.do_cleanup:
             for pattern in [
-                "reg_path_coords.csv",
                 "*hmmscan",
                 "*blastn",
                 "faa",
                 "*blastx",
-                "*dmnd",
                 "*.tmp",
             ]:
                 for file in glob.glob(f"{self.output_prefix}.{pattern}"):
                     if os.path.isfile(file):
                         os.remove(file)
-
 
     def _read_config(self, args: argparse.Namespace):
         """
@@ -174,22 +177,30 @@ class ScreenIO:
         self.config = YamlIO.get_defaults()
 
         # Import a config yaml file if provided.
-        cli_config_yaml=args.config_yaml.strip()
-        if os.path.exists(cli_config_yaml):
+        cli_config_yaml = args.config_yaml.strip()
+        if cli_config_yaml:
+            if not os.path.exists(cli_config_yaml):
+                raise FileNotFoundError(f"--config YAML not found: {cli_config_yaml}")
             logger.debug("Overriding defaults in with values from %s", cli_config_yaml)
             self.config = YamlIO.update_config_from_yaml(self.config, cli_config_yaml)
 
         # Override configuration with any user-provided CLI arguments
-        self.config = YamlIO.update_config_from_cli(self.config ,args)
+        self.config = YamlIO.update_config_from_cli(self.config, args)
 
         # Override the default base path with database directory from cli.
         base_paths = self.config["base_paths"]
         if self.db_dir is not None:
-            logger.debug("Command line arguments updated base databases directory: %s", self.db_dir)
-            base_paths["default"] = self.db_dir
+            base_paths["default"] = Path(expand_and_normalize(self.db_dir)).resolve()
+            logger.info(
+                "Command line arguments updated base databases directory: %s",
+                base_paths["default"],
+            )
         else:
             # Otherwise update the default database path if it wasn't defined.
             self.db_dir = base_paths["default"]
+
+        # CLI -d accepts relative paths for shell convenience; normalize to absolute.
+        # db_dir_override = expand_and_normalize(self.db_dir) if self.db_dir else None
 
         # Update paths in configuration using appropriate string substitution
         self.config = YamlIO.format_config_paths(self.config)
@@ -206,7 +217,7 @@ class ScreenIO:
             prefix/input_name/name
 
         - If no prefix was given, use the input filename as name.
-        - If a directory was given, use the input filename 
+        - If a directory was given, use the input filename
             as file prefix within that directory.
         """
         name = os.path.splitext(os.path.basename(input_file))[0]
@@ -233,28 +244,26 @@ class ScreenIO:
         for path in [base, outputs, inputs]:
             os.makedirs(expand_and_normalize(path), exist_ok=True)
 
-        base_prefix = os.path.join(base,name)
-        outputs_prefix =  os.path.join(outputs,name)
-        inputs_prefix =  os.path.join(inputs,name)
+        base_prefix = os.path.join(base, name)
+        outputs_prefix = os.path.join(outputs, name)
+        inputs_prefix = os.path.join(inputs, name)
 
         return base_prefix, outputs_prefix, inputs_prefix
 
-
-    def output_yaml(self, output_filepath : str | os.PathLike):
+    def output_yaml(self, output_filepath: str | os.PathLike):
         """
-            Takes the current state of the yaml configuration dictionary and 
-            outputs it to a file for posterity, er, reproducibility.
-            
-            Parameters:
-                output_filepath (str | os.PathLike): Path to the output YAML file.
+        Takes the current state of the yaml configuration dictionary and
+        outputs it to a file for posterity, er, reproducibility.
+
+        Parameters:
+            output_filepath (str | os.PathLike): Path to the output YAML file.
         """
         with open(output_filepath, "w", encoding="utf-8") as stream_out:
             yaml.safe_dump(self.config, stream_out, default_flow_style=False)
 
-
     def _write_clean_fasta(self) -> str:
         """
-        Write a FASTA in which whitespace (excluding in header), including non-breaking spaces and 
+        Write a FASTA in which whitespace (excluding in header), including non-breaking spaces and
         illegal characters are replaced with underscores.
         """
 
@@ -281,7 +290,9 @@ class ScreenIO:
 
     @property
     def should_do_nucleotide_screening(self) -> bool:
-        return not (self.config["skip_taxonomy_search"] or self.config["skip_nt_search"])
+        return not (
+            self.config["skip_taxonomy_search"] or self.config["skip_nt_search"]
+        )
 
     @property
     def should_do_low_concern_screening(self) -> bool:
