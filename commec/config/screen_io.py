@@ -153,12 +153,10 @@ class ScreenIO:
         """
         if self.config.do_cleanup:
             for pattern in [
-                "reg_path_coords.csv",
                 "*hmmscan",
                 "*blastn",
                 "faa",
                 "*blastx",
-                "*dmnd",
                 "*.tmp",
             ]:
                 for file in glob.glob(f"{self.output_prefix}.{pattern}"):

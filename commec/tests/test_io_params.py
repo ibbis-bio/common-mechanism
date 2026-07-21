@@ -269,6 +269,32 @@ def test_unknown_yaml_key_raises(tmp_path):
         ScreenIO(args)
 
 
+def test_deprecated_yaml_keys_warn_not_raise(tmp_path, caplog):
+    """Retired keys (protein_search_tool, diamond_jobs) must warn and be ignored, not abort
+    the run like an unrecognized key would."""
+    import logging
+    user_config_path = tmp_path / "user_config.yaml"
+    with open(user_config_path, "w") as f:
+        yaml.dump({
+            "base_paths": {"default": "/commec-dbs/"},
+            "protein_search_tool": "diamond",
+            "diamond_jobs": 4,
+        }, f)
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
+    with caplog.at_level(logging.WARNING, logger="commec.config.yaml_io"):
+        params = ScreenIO(args)
+
+    # The deprecated keys are dropped rather than carried into the resolved config.
+    assert "protein_search_tool" not in params.config
+    assert "diamond_jobs" not in params.config
+    # And the user is told why each one was ignored.
+    warnings = " ".join(rec.message for rec in caplog.records)
+    assert "protein_search_tool" in warnings
+    assert "diamond_jobs" in warnings
+
+
 def test_relative_path_in_yaml_raises(tmp_path):
     """YAML must use absolute paths — a relative base_paths.default should raise."""
     user_config_path = tmp_path / "user_config.yaml"
