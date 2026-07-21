@@ -586,7 +586,7 @@ def _parse_blocks_text(text):
     records = []
     for i, block in enumerate(re.split(r"\n\s*\n", text.strip())):
         # Join the block's (possibly wrapped) lines into one sequence WITHOUT sanitising content.
-        seq = "".join(l.strip() for l in block.splitlines())
+        seq = "".join(line.strip() for line in block.splitlines())
         if seq:
             records.append((f"sequence_{i + 1}", seq))
     return records
