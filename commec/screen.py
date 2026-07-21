@@ -180,7 +180,7 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--protein-search-tool",
         dest="protein_search_tool",
         choices=["blastx", "diamond"],
-        deprecated = True,
+        deprecated=True,
         help="(DEPRECATED) protein search now always uses BLASTX; DIAMOND is not supported in this version",
     )
 
@@ -197,7 +197,7 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--diamond-jobs",
         dest="diamond_jobs",
         type=int,
-        deprecated = True,
+        deprecated=True,
         help="(DEPRECATED) DIAMOND is not supported in this version, so this setting has no effect",
     )
     output_handling_group = parser.add_argument_group("Output file handling")

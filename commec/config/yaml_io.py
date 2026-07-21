@@ -46,7 +46,10 @@ def load_config_from_yaml(config_filepath: str | os.PathLike) -> dict:
         )
     return config_from_yaml
 
-def warn_and_strip_deprecated_keys(config_from_yaml: dict, config_filepath: str | os.PathLike):
+
+def warn_and_strip_deprecated_keys(
+    config_from_yaml: dict, config_filepath: str | os.PathLike
+):
     """
     Remove any retired top-level keys from a loaded config, warning (rather than erroring)
     for each one found. This keeps older configs runnable across a deprecation window: the
@@ -56,11 +59,16 @@ def warn_and_strip_deprecated_keys(config_from_yaml: dict, config_filepath: str 
         if key in config_from_yaml:
             logger.warning(
                 "Ignoring deprecated config key %r in %s: %s.",
-                key, config_filepath, reason,
+                key,
+                config_filepath,
+                reason,
             )
             del config_from_yaml[key]
 
-def update_config_from_yaml(existing_config : dict, config_filepath: str | os.PathLike) -> dict:
+
+def update_config_from_yaml(
+    existing_config: dict, config_filepath: str | os.PathLike
+) -> dict:
     """
     Override YAML configuration based on provided YAML file. Items in the provided file, but
     not in the default YAML, will be ignored.

@@ -273,13 +273,17 @@ def test_deprecated_yaml_keys_warn_not_raise(tmp_path, caplog):
     """Retired keys (protein_search_tool, diamond_jobs) must warn and be ignored, not abort
     the run like an unrecognized key would."""
     import logging
+
     user_config_path = tmp_path / "user_config.yaml"
     with open(user_config_path, "w") as f:
-        yaml.dump({
-            "base_paths": {"default": "/commec-dbs/"},
-            "protein_search_tool": "diamond",
-            "diamond_jobs": 4,
-        }, f)
+        yaml.dump(
+            {
+                "base_paths": {"default": "/commec-dbs/"},
+                "protein_search_tool": "diamond",
+                "diamond_jobs": 4,
+            },
+            f,
+        )
     parser = ScreenArgumentParser()
     add_args(parser)
     args = parser.parse_args([INPUT_QUERY, "--config", str(user_config_path)])
