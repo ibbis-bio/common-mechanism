@@ -6,6 +6,7 @@ Additional methods for reading handler output, readcmscan, which returns a panda
 Instantiate a CmscanHandler, with input local database, input fasta, and output file.
 Throws if inputs are invalid. Creates a temporary log file, which is deleted on completion.
 """
+
 import subprocess
 import re
 import pandas as pd
@@ -29,21 +30,22 @@ class CmscanHandler(SearchHandler):
             self.input_file,
         ]
         self.run_as_subprocess(command, self.temp_log_file)
-    
+
     def read_output(self):
         output_dataframe = readcmscan(self.out_file)
         # Standardize the output column names to be like blast:
-        output_dataframe = output_dataframe.rename(columns={
-            "seq from": "q. start",
-            "seq to": "q. end",
-            "coverage": "q. coverage",
-            "target name": "subject title",
-            "mdl from": "s. start",
-            "mdl to" : "s. end",
-            'E-value': "evalue",
-        })
+        output_dataframe = output_dataframe.rename(
+            columns={
+                "seq from": "q. start",
+                "seq to": "q. end",
+                "coverage": "q. coverage",
+                "target name": "subject title",
+                "mdl from": "s. start",
+                "mdl to": "s. end",
+                "E-value": "evalue",
+            }
+        )
         return output_dataframe
- 
 
     def get_version_information(self) -> SearchToolVersion:
         try:
@@ -56,11 +58,13 @@ class CmscanHandler(SearchHandler):
                     # Early exit if data has been found
                     if database_info:
                         break
-            
+
             result = subprocess.run(
                 ["cmscan", "-h"], capture_output=True, text=True, check=True
             )
-            tool_info = result.stdout.splitlines()[1].strip()[2:] or "error retrieving info"
+            tool_info = (
+                result.stdout.splitlines()[1].strip()[2:] or "error retrieving info"
+            )
 
             return SearchToolVersion(tool_info, database_info or "error")
 
@@ -97,9 +101,8 @@ def readcmscan(fileh):
 
     with open(fileh, "r", encoding="utf-8") as f:
         for line in f:
-            if "# Program:         cmscan" in line:
-                break
-            if "#" in line:
+            # Only treat a line as a comment when it *starts* with "#".
+            if line.startswith("#"):
                 continue
             bits = re.split(r"\s+", line)
             description = " ".join(bits[17:])

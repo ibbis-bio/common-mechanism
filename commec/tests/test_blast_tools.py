@@ -1,7 +1,6 @@
 from io import StringIO
 import pytest
 import textwrap
-from unittest.mock import patch
 import numpy as np
 import pandas as pd
 from commec.tools.blast_tools import read_blast
@@ -13,13 +12,9 @@ def blast_df():
     Return a dataframe containing 3 BLAST hits, 2 with multiple taxids, 1 of which is invalid and 1
     of which is a synthetic taxid
     """
+    # outfmt 6 tabular output: data rows only, no comment/header lines.
     blast_to_parse = textwrap.dedent(
         """\
-        # BLASTX 2.15.0+
-        # Query: NC_TEST
-        # Database: /root/commec-dbs/mock
-        #query acc.	subject title	subject acc.	subject tax ids	evalue	bit score	% identity	query length	q. start	q. end	subject length	s. start	s. end
-        # 3 hits found
         BT_01	SUBJECT	SUBJECT_ACC	2371;644357	0.0	BITSCORE	99.999	300	101	200	500	1	100
         BT_01	SUBJECT	SUBJECT_ACC	10760;110011001100	0.0	BITSCORE	99.999	300	25	80	500	1	100
         BT_01	SUBJECT	SUBJECT_ACC	32630	0.0	BITSCORE	99.999	300	275	300	500	1	100

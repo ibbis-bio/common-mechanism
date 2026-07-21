@@ -36,13 +36,14 @@ requirements:
     - pyyaml
     # Runtime non-Python dependencies
     - blast >=2.16
-    - diamond >=2.1
     - hmmer
     - infernal
     - wget
     - plotly
     - yaml
     - mako
+    - tar
+    - zstd
 
 test:
   commands:

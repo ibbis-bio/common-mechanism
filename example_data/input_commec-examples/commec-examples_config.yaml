@@ -19,14 +19,10 @@ databases:
   regulated_protein:
     blast:
       path: /mnt/data/home/ec2-user/cm-dbs/nr_blast/nr
-    diamond:
-      path: /mnt/data/home/ec2-user/cm-dbs/nr_dmnd/nr.dmnd
   taxonomy:
     path: /mnt/data/home/ec2-user/cm-dbs/taxonomy/
-diamond_jobs: null
 do_cleanup: false
 force: false
-protein_search_tool: blastx
 resume: false
 skip_nt_search: false
 skip_taxonomy_search: false

@@ -43,11 +43,17 @@ def region_file(tmp_path):
 # load_region_list_data
 # ---------------------------------------------------------------------------
 
+
 def test_load_region_list_data_populates_lut(region_file):
     load_region_list_data(region_file)
     assert "EU" in region_module.REGION_DATA_LUT
     assert region_module.REGION_DATA_LUT["EU"]["name"] == "European Union"
-    assert set(region_module.REGION_DATA_LUT["EU"]["regions"]) == {"AT", "BE", "DE", "FR"}
+    assert set(region_module.REGION_DATA_LUT["EU"]["regions"]) == {
+        "AT",
+        "BE",
+        "DE",
+        "FR",
+    }
 
 
 def test_load_region_list_data_missing_file(tmp_path):
@@ -86,6 +92,7 @@ def test_load_region_list_data_multiple_groups(tmp_path):
 # ---------------------------------------------------------------------------
 # get_regions_set — edge cases not covered by test_regions.py
 # ---------------------------------------------------------------------------
+
 
 def test_get_regions_set_none_returns_all():
     """None input should map to the special 'all' sentinel."""

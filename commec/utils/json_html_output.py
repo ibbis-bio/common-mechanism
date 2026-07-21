@@ -1,478 +1,517 @@
 """
-Used to convert a json object created from Commec Screen, or a ScreenResult object,
-into a visual HTML representation of the Commec output. Which can be embedded into
-any other HTML document as appropriate.
+Convert a Commec Screen JSON object (or a ScreenResult object) into a self-contained,
+interactive HTML report ("Commec Screening Report").
+
+Division of responsibilities (Python vs. browser)
+-------------------------------------------------
+This module is deliberately thin and only does two things:
+
+  1. :func:`build_report_model` flattens the nested ``ScreenResult``
+     (queries -> hits -> free-form ``annotations``) into a plain per-hit data model.
+  2. :func:`render_report_html` assembles a single HTML file: it embeds that model as
+     ``window.COMMEC_REPORT`` and inlines the CSS / JS / logo assets.
+
+Almost all of the actual report *construction* happens in the browser, in
+``report_assets/report.js`` (styled by ``report.css``): grouping hits per organism,
+deciding each hit's disposition, the status tabs, the sequence table, the expandable
+detail view (swimlane lanes, hit rail, best-target card, control-list drill-down) and
+all interactivity. If you are changing what the report looks like or does, that is
+almost certainly a report.js / report.css change -- this module only governs what
+*data* reaches the page.
+
+The report is a single HTML file with no external framework and no CDN dependency
+(fonts are loaded from Google Fonts but degrade gracefully offline). Hit disposition
+and tab status are derived (in report.js) from commec's own authoritative per-hit
+status, so the report always agrees with commec's flag counts.
 """
 
-import textwrap
-import argparse
 import os
-import plotly.graph_objects as go
-import pandas as pd
+import re
+import math
+import json
+import base64
+import argparse
+import logging
 import importlib.resources
-from mako.template import Template
-from dataclasses import asdict
+from urllib.parse import unquote
+
 from commec.config.json_io import get_screen_data_from_json
-from commec.config.result import (
-    ScreenResult,
-    QueryResult,
-    HitResult,
-    ScreenStep,
-    ScreenStatus,
-)
-import commec.control_list as cl
+from commec.config.result import ScreenResult, ScreenStep
 
-class CommecPalette():
-    """ 
-    Static Container for colours used in Commec.
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Small value helpers
+# ---------------------------------------------------------------------------
+def _is_nan(v) -> bool:
+    return isinstance(v, float) and math.isnan(v)
+
+
+def _clean(v):
+    """Normalise pandas/JSON ``NaN`` and empty values to ``None``."""
+    if v is None or _is_nan(v):
+        return None
+    return v
+
+
+def _first(v):
+    """Several annotation fields (regulated / domain / category) are one-item lists."""
+    if isinstance(v, (list, tuple)):
+        return v[0] if v else None
+    return v
+
+
+_HTML_TAG_RE = re.compile(r"<[^>]*>")
+
+
+def _clean_text(v):
     """
-    WHITE = [255,255,255]
-    DK_BLUE = [35,42,88]
-    LT_BLUE = [66,155,185]
-    ORANGE = [241,80,36]
-    # Yellow and Red are not official Commec colours.
-    YELLOW = [241,168,29]
-    RED = [207,27,81]
-    BLACK = [0,0,0]
-
-    @staticmethod
-    def mod(modulate, alpha: int = 255, multiplier : float = 1.0) -> str:
-        m : float = multiplier
-        return str(f'rgba({round(modulate[0]*m)},{round(modulate[1]*m)},{round(modulate[2]*m)},{alpha})')
-
-    rgba_WHITE = 'rgba(255,255,255,255)'
-    rgba_DK_BLUE = 'rgba(35,42,88,255)'
-    rgba_LT_BLUE = 'rgba(66,155,185,255)'
-    rgba_ORANGE = 'rgba(241,80,36,255)'
-    # Yellow and Red are not official Commec colours,
-    rgba_YELLOW = 'rgba(241,80,36,255)'
-    rgba_RED = 'rgba(207,27,81,255)'
-
-def color_from_status(status : ScreenStatus) -> CommecPalette:
-    """ 
-    Convert a Screen step into an associated Colour.
-    Previously, colours were based on step, now they are based on outcome.
+    Tidy a display string coming from upstream databases. Some names carry markup
+    (sometimes URL-encoded, e.g. ``%3C/i%3E`` for ``</i>``), stray wrapping quotes,
+    or runs of whitespace. Decode, strip tags, and trim so it presents cleanly.
     """
-    if status >= ScreenStatus.FLAG:
-        return CommecPalette.RED
-    if status == ScreenStatus.WARN:
-        return CommecPalette.ORANGE
-    return CommecPalette.LT_BLUE
+    v = _clean(v)
+    if not isinstance(v, str):
+        return v
+    v = unquote(v)  # %3C/i%3E -> </i>
+    v = _HTML_TAG_RE.sub("", v)  # drop <i>...</i> and similar markup
+    v = v.replace(" ", " ")  # non-breaking space -> space
+    v = re.sub(r"\s+", " ", v).strip()  # collapse internal whitespace
+    v = v.strip('"“”').strip()  # strip wrapping straight/smart quotes
+    return v or None
 
-def color_from_hit(hit : HitResult) -> CommecPalette:
-    """ 
-    Convert a Screen step into an associated Colour.
-    Previously, colours were based on step, now they are based on outcome.
+
+def _fmt_evalue(e) -> str:
+    """Format an e-value the way the report shows it (e.g. ``4.66e-19``, ``0``)."""
+    e = _clean(e)
+    if e is None:
+        return ""
+    try:
+        e = float(e)
+    except (TypeError, ValueError):
+        return str(e)
+    if math.isnan(e):
+        return ""
+    if e == 0:
+        return "0"
+    return f"{e:g}"
+
+
+def _fmt_pct(p) -> str:
+    p = _clean(p)
+    if p is None:
+        return None
+    try:
+        return f"{float(p):.1f}%"
+    except (TypeError, ValueError):
+        return str(p)
+
+
+def _tool_short(tool_info: str) -> str:
     """
-    return color_from_status(hit.recommendation.status)
+    Reduce a verbose tool banner to a short ``Name Version`` label.
 
-    if hit.recommendation.from_step == ScreenStep.BIORISK:
-        return CommecPalette.RED
-    if (hit.recommendation.from_step == ScreenStep.LOW_CONCERN_PROTEIN or
-        hit.recommendation.from_step == ScreenStep.LOW_CONCERN_RNA or
-        hit.recommendation.from_step == ScreenStep.LOW_CONCERN_DNA):
-        return CommecPalette.LT_BLUE
-    if hit.recommendation.from_step == ScreenStep.TAXONOMY_AA:
-        return CommecPalette.ORANGE
-    if hit.recommendation.from_step == ScreenStep.TAXONOMY_NT:
-        return CommecPalette.YELLOW
-    return CommecPalette.DK_BLUE
+    Handles the shapes commec records, e.g.::
 
-def constrast_color_from_hit(hit : HitResult):
-    """ 
-    Convert a Screen step into an associated Colour.
-    This is now always white, which works well with all outcome colours.
-    As this colour is meant for text, and not box objects, its associated
-    allowed values are restricted to hex, or built-in strings.
+        "# HMMER 3.4 (Aug 2023); http://hmmer.org/"      -> "HMMER 3.4"
+        "blastx: 2.17.0+\\n Package: blast 2.17.0, ..."   -> "BLASTx 2.17.0"
+        "INFERNAL 1.1.5 (Sep 2023)"                       -> "INFERNAL 1.1.5"
     """
-    return "#FFFFFF"
-    if (hit.recommendation.from_step == ScreenStep.TAXONOMY_NT):
-        return "#000000"
-    return "#FFFFFF"
+    if not tool_info:
+        return ""
+    text = str(tool_info).strip().lstrip("#").strip()
+    first_line = text.splitlines()[0].strip()
+    # "blastx: 2.17.0+" style
+    if ":" in first_line and first_line.split(":", 1)[0].strip().lower().startswith(
+        "blast"
+    ):
+        name, _, rest = first_line.partition(":")
+        name = (
+            name.strip()
+            .replace("blastx", "BLASTx")
+            .replace("blastn", "BLASTn")
+            .replace("blastp", "BLASTp")
+        )
+        version = rest.strip().split()[0].rstrip("+") if rest.strip() else ""
+        return f"{name} {version}".strip()
+    # "HMMER 3.4 (...)" / "INFERNAL 1.1.5 (...)" style: take name + first version-ish token
+    tokens = first_line.split()
+    if not tokens:
+        return ""
+    name = tokens[0]
+    version = tokens[1] if len(tokens) > 1 else ""
+    version = version.strip("(),")
+    return f"{name} {version}".strip()
 
-def overlay_text_from_hit(hit : HitResult):
-    outcome = str(hit.recommendation.status)
-    outcome = outcome.replace("Warning", "Warn")
-    outcome = outcome.replace("(Cleared)","")
-    step = hit.recommendation.from_step
-    match step:
-        case ScreenStep.BIORISK:
-            return "Biorisk "+outcome
-        case ScreenStep.TAXONOMY_AA:
-            return "Protein "+outcome
-        case ScreenStep.TAXONOMY_NT:
-            return "Nucl. "+outcome
-        case ScreenStep.LOW_CONCERN_PROTEIN:
-            return "Low Concern Protein"
-        case ScreenStep.LOW_CONCERN_RNA:
-            return "Low Concern RNA"
-        case ScreenStep.LOW_CONCERN_DNA:
-            return "Low Concern DNA"
 
-def generate_html_from_screen_data(input_data : ScreenResult, output_file : str):
-    """
-    Interpret the ScreenResult from Commec Screen output as a visualisation, in 
-    the form on an HTML output.
-    If Commec Screen handled multiple Queries, then they are combined in the HTML output.
-    """
+# ---------------------------------------------------------------------------
+# Data model construction
+# ---------------------------------------------------------------------------
+def _build_meta(screen: ScreenResult, list_meta: list) -> dict:
+    info = getattr(screen, "commec_info", None)
+    qinfo = getattr(screen, "query_info", None)
+    dbinfo = getattr(screen, "database_info", None)
 
-    figures_html = []
-    query_toc = []
+    tools = ""
+    tool_info = getattr(dbinfo, "search_tool_info", None) if dbinfo else None
+    if tool_info is not None:
+        parts = []
+        for attr in (
+            "biorisk_search_info",
+            "protein_search_info",
+            "nucleotide_search_info",
+            "low_concern_rna_search_info",
+        ):
+            stv = getattr(tool_info, attr, None)
+            short = _tool_short(getattr(stv, "tool_info", "")) if stv else ""
+            if short:
+                parts.append(short)
+        tools = " · ".join(parts)
 
-    status_counts = {'flag': 0, 'warning': 0, 'pass': 0, 'error' : 0}
-    
-    # Simply don't count skips or stops.
-    NORMALISE_STATUS = {
-        ScreenStatus.NULL : "error",
-        #ScreenStatus.SKIP : "error",
-        #ScreenStatus.STOP : "error",
-        ScreenStatus.PASS : "pass",
-        ScreenStatus.CLEARED_FLAG : "pass",
-        ScreenStatus.CLEARED_WARN : "pass",
-        ScreenStatus.WARN : "warning",
-        ScreenStatus.FLAG : "flag",
-        ScreenStatus.ERROR : "error",
+    # Database component revisions (helps troubleshoot bug reports).
+    revisions = ""
+    revs = getattr(dbinfo, "revisions", None) if dbinfo else None
+    if isinstance(revs, dict) and revs:
+        labels = {
+            "biorisk": "biorisk",
+            "best_match": "best-match",
+            "low_concern": "low-concern",
+            "control_lists": "control-lists",
+        }
+        order = ["biorisk", "best_match", "low_concern", "control_lists"]
+        keys = [k for k in order if k in revs] + [k for k in revs if k not in order]
+        revisions = " · ".join(labels.get(k, k) + " v" + str(revs[k]) for k in keys)
+
+    file_path = getattr(qinfo, "file", "") if qinfo else ""
+    return {
+        "file": os.path.basename(file_path) if file_path else "Screening report",
+        "nQueries": getattr(qinfo, "number_of_queries", None) if qinfo else None,
+        "totalLen": getattr(qinfo, "total_query_length", None) if qinfo else None,
+        "version": getattr(info, "commec_version", "") if info else "",
+        "output": getattr(info, "json_output_version", "") if info else "",
+        "date": getattr(info, "date_run", "") if info else "",
+        "time": getattr(info, "time_taken", "") if info else "",
+        "tools": tools,
+        "revisions": revisions,
     }
 
-    # Render each query as its own Plotly HTML visualisation:
-    for i, query in enumerate(input_data.queries.values()):
-        fig = go.Figure()
-        vertical_stack_count : int = draw_query_to_plot(fig, query)
-        update_layout(fig, query, vertical_stack_count)
-        file_name = output_file.strip()+"_"+str(i)+".html"
-        html = fig.to_html(file_name, full_html = False, include_plotlyjs='cdn')
-        figures_html.append(html)
-        
-        # Collect full query data for template
-        query_toc.append({
-            'name': query.query,
-            'description': query.description,
-            'status': query.status.screen_status,
-            'length': query.length,
-            'rationale': query.status.rationale
-        })
-        
-        # Count statuses
-        bucket = NORMALISE_STATUS.get(query.status.screen_status)
-        if bucket:
-            status_counts[bucket] += 1
 
-    # Additional template information
-    n_query = input_data.query_info.number_of_queries
-    plural = "y" if n_query == 1 else "ies"
-    html_title = f"Commec Screen Summary: {n_query} Quer{plural}."
-    
-    # Extract basenames for template
-    input_filename = os.path.basename(input_data.query_info.file) if hasattr(input_data.query_info, 'file') else 'N/A'
-
-    # Construct the composite HTML
-    template_path = str(importlib.resources.files("commec").joinpath("utils").joinpath("template.html"))
-    template = Template(filename = template_path)
-    rendered_html = template.render(
-        figures_html=figures_html, 
-        page_title=html_title,
-        commec_info=input_data.commec_info,
-        query_info=input_data.query_info,
-        query_toc=query_toc,
-        input_filename=input_filename,
-        status_counts=status_counts
-    )
-
-    # Save the combined HTML output
-    output_filename = output_file.strip()+".html"
-    with open(output_filename, "w", encoding = "utf-8") as output_file:
-        output_file.write(rendered_html)
-
-
-def update_layout(fig, query_to_draw : QueryResult, stacks):
-    """ 
-    Applies some default settings to the plotly figure,
-    also adjusts the figure height based on the number of vertically stacking bars.
+def _list_code(includes, acronym: str) -> str:
     """
-
-    figure_base_height = 180
-    figure_stack_height = 30
-
-    r,g,b = color_from_status(query_to_draw.status.screen_status)
-    css_color = f"rgb({r},{g},{b})"
-
-    fig.update_layout(showlegend=False)
-    # Update layout to display X-axis on top and hide Y-axis labels for specified subplot
-    fig.update_layout({
-        # General layout properties
-        'height': figure_base_height + (figure_stack_height * stacks),
-        'barmode': 'overlay',
-        'template': 'plotly_white',
-        'plot_bgcolor': 'rgba(0,0,0,0)',  # Transparent plot area
-        'paper_bgcolor': 'rgba(0,0,0,0)',  # Transparent outer area
-        "xaxis": dict(
-            #title="Query Basepairs (bp)",
-            showline=True,
-            constrain="domain",
-            ticks='outside',
-            showgrid=True,
-            fixedrange=True,
-            zeroline=False,
-            side="top",
-        ),
-        "yaxis": dict(
-            title="",
-            showticklabels=False,
-            autorange='reversed',
-            range=[-0.5, stacks + 0.5],
-            fixedrange=True,
-            tickmode="linear",
-            zeroline=False,
-        ),
-        'bargap': 0.01,
-    })
-
-
-def generate_outcome_string(query : QueryResult, hit : HitResult) -> str:
+    Short chip preview for a control list: the two-letter ISO country code when the
+    list covers a single country (``includes`` is one alpha-2 code), otherwise the
+    list acronym (e.g. groupings like the Australia Group or the EU, which expand to
+    many countries).
     """
-    Takes a Query, and associated hit, and formats a human readable output string,
-    handling associated construction logic.
-    """
-    if "Biorisk" in hit.recommendation.from_step:
-        if "regulated" in hit.annotations:
-            return hit.annotations["regulated"][0]
-        return ""
-    
-    if "Benign" in hit.recommendation.from_step:
-        return ""
+    if isinstance(includes, str):
+        parts = [p.strip() for p in includes.split(",") if p.strip()]
+        if len(parts) == 1 and len(parts[0]) == 2 and parts[0].isalpha():
+            return parts[0].upper()
+    return acronym
 
-    # If Blast NR or NT result:
-    if "Taxonomy" in hit.recommendation.from_step:
-        output_string = ""
 
-        n_regulated_fungi = 0
-        n_regulated_parasites = 0
-        n_regulated_bacteria = 0
-        n_regulated_viruses = 0
-        regulated_taxids = []
-        non_regulated_taxids = []
-        regulated_species = []
-        regulated_names = []
-        controlled_lists = []
-
-        if "controlled_taxonomy" in hit.annotations:
-            reg = hit.annotations["controlled_taxonomy"]
-
-            r = reg.get("statistics")
-            if r:
-                n_regulated_fungi += int(r["controlled_fungi"])
-                n_regulated_parasites += int(r["controlled_parasites"])
-                n_regulated_bacteria += int(r["controlled_bacteria"])
-                n_regulated_viruses += int(r["controlled_viruses"])
-            
-            regulated_taxids.extend(reg["controlled_taxa"])
-            non_regulated_taxids.extend(reg["non-controlled_taxa"])
-            
-            for anno_data in regulated_taxids:
-                regulated_species.append(anno_data["species"])
-                controlled_lists.extend([a["list"] for a in anno_data["controlled_by_lists"]])
-                regulated_names.extend([a["list"] + ":" + a["source"] for a in anno_data["controlled_by_lists"]])
-
-            controlled_lists = set(controlled_lists)
-            regulated_species = set(regulated_species)
-            regulated_names = set(regulated_names)
-
-            domain_string = " across multiple domains."
-
-            no_non_bacteria = n_regulated_fungi + n_regulated_parasites + n_regulated_viruses == 0
-            no_non_fungi = n_regulated_bacteria + n_regulated_parasites + n_regulated_viruses == 0
-            no_non_viruses = n_regulated_fungi + n_regulated_parasites + n_regulated_bacteria == 0
-            no_non_parasites = n_regulated_fungi + n_regulated_bacteria + n_regulated_viruses == 0
-
-            if n_regulated_bacteria > 0 and no_non_bacteria:
-                domain_string = " bacteria"
-            if n_regulated_parasites > 0 and no_non_parasites:
-                domain_string = " human parasites"
-            if n_regulated_fungi > 0 and no_non_fungi:
-                domain_string = " human parasites"
-            if n_regulated_viruses > 0 and no_non_viruses:
-                domain_string = " viruses"
-
-            total_hits : int = len(regulated_taxids) + len(non_regulated_taxids)
-            peptide_type = "protein" if "Protein" in hit.recommendation.from_step else "nucleotides"
-
-            if len(non_regulated_taxids) > 0:
-                output_string += "Mix of regulated and non-regulated" + domain_string + ".<br>"
-            else:
-                output_string += "Best match to regulated" + domain_string + ".<br>"
-
-            output_string += str(total_hits) + " best match hits to " if total_hits > 1 else "Best hit to "
-            plural_species = len(regulated_species) > 1
-            plural_lists = len(controlled_lists) > 1
-            output_string += (
-                f"{peptide_type} found {"over" if plural_species else "in"} {len(regulated_species)} "
-                f"species {"across" if plural_lists else "from"} "
-                f"{len(controlled_lists)} control list{"s" if plural_lists else ""}: <br>"
-                )
-            #output_string += "lineage " if len(regulated_names) == 1 else "lineages "
-
-            species_list = textwrap.fill(
-                ", ".join(regulated_names), 100
-            ).replace("\n", "<br>")
-        
-            output_string += "<br>" + species_list
-
-            return output_string
-            #Best match to regulated viruses. 2 best match hits to nucleotides found in 1 species, 2 with regulated pathogen taxId in lineage (Influenza A)
-        return "No Annotations."
-
-#@pytest.mark.filterwarnings("ignore")
-def draw_query_to_plot(fig : go.Figure, query_to_draw : QueryResult):
-    """ 
-    Write the data from a single query into the figure for plotly. 
-    """
-    # Interpret the QueryResult into bars for the plot.
-    graph_data = [
-        {"label": query_to_draw.query, 
-         "label_verbose": query_to_draw.query, 
-         "outcome" : f"Commec Recommendation for this query: {query_to_draw.status.screen_status}",
-         "outcome_verbose":f"{query_to_draw.status.rationale}",
-         "start": 1, "stop": query_to_draw.length,
-         "color" : CommecPalette.DK_BLUE, 
-         "stack" : 0,
-         "text" : query_to_draw.query[:25],
-         "text_color" : "#FFFFFF",}
-    ]
-
-    # Keep track of how many vertical stacks this image has.
-    n_stacks = 1
-
-    for hit in query_to_draw.hits:
-        # Find the best vertical position to reduce collisions, and fill all space.
-        collision_free = False
-        stack_write = 1 # 1 gives a bit of space between the query and the data.
-        while not collision_free:
-            stack_write += 1
-            collision_free = True
-            for entry in graph_data:
-                if entry["stack"] == stack_write:
-                    collision_free = (collision_free and
-                                        (hit.region.query_start > entry["stop"] 
-                                        or hit.region.query_end < entry["start"])
-                                        )
-
-        n_stacks = max(n_stacks, stack_write + 1)
-
-        graph_data.append(
+def _build_list_meta(screen: ScreenResult) -> tuple:
+    """Return (``lists`` for the model, ``name -> {code, acronym, region}`` lookup)."""
+    dbinfo = getattr(screen, "database_info", None)
+    entries = getattr(dbinfo, "control_list_info", None) if dbinfo else None
+    lists = []
+    by_name = {}
+    for cl in entries or []:
+        name = getattr(cl, "name", "") or ""
+        acronym = getattr(cl, "acronym", "") or ""
+        region = getattr(cl, "region", "") or ""
+        status = str(getattr(cl, "status", "") or "")
+        code = _list_code(getattr(cl, "includes", ""), acronym)
+        lists.append(
             {
-                "label" : hit.description[:25] + "...",
-                "label_verbose" : hit.description[:],
-                "outcome" : f"{hit.recommendation.status} from {hit.recommendation.from_step}",
-                "outcome_verbose" : generate_outcome_string(query_to_draw, hit),
-                "start" : hit.region.query_start,
-                "stop" : hit.region.query_end,
-                "color" : color_from_hit(hit),
-                "stack" : stack_write,
-                "text" : overlay_text_from_hit(hit),
-                "text_color" : constrast_color_from_hit(hit),
+                "name": name,
+                "code": code,
+                "acronym": acronym,
+                "region": region,
+                "status": status,
+            }
+        )
+        if name:
+            by_name[name] = {"code": code, "acronym": acronym, "region": region}
+    return lists, by_name
+
+
+def _best_taxon(taxa: list):
+    """Pick the most significant taxon (lowest e-value, tie-break highest identity)."""
+    if not taxa:
+        return None
+
+    def key(t):
+        ev = _clean(t.get("evalue"))
+        try:
+            ev = float(ev)
+        except (TypeError, ValueError):
+            ev = float("inf")
+        if math.isnan(ev):
+            ev = float("inf")
+        pid = _clean(t.get("percent_identity")) or 0
+        try:
+            pid = float(pid)
+        except (TypeError, ValueError):
+            pid = 0
+        return (ev, -pid)
+
+    return sorted(taxa, key=key)[0]
+
+
+def _target_url(step: str, target: str):
+    """
+    Build a lookup URL for a best-match target accession: UniProt for protein
+    (UniRef) hits, NCBI nuccore for nucleotide hits. Returns None otherwise.
+    """
+    if not target:
+        return None
+    if step == ScreenStep.TAXONOMY_AA:
+        return "https://www.uniprot.org/uniprotkb/%s/" % target
+    if step == ScreenStep.TAXONOMY_NT:
+        return "https://www.ncbi.nlm.nih.gov/nuccore/%s/" % target
+    return None
+
+
+def _taxon_lists(taxon: dict, list_lookup: dict) -> list:
+    """Join a taxon's ``controlled_by_lists`` (name + source) to run list metadata."""
+    out = []
+    for entry in taxon.get("controlled_by_lists", []) or []:
+        name = entry.get("list", "") or ""
+        meta = list_lookup.get(name, {})
+        acronym = meta.get("acronym", "")
+        out.append(
+            {
+                "name": name,
+                "code": meta.get("code", "") or acronym,
+                "acronym": acronym,
+                "region": meta.get("region", ""),
+                "source": _clean(entry.get("source")) or "",
+            }
+        )
+    return out
+
+
+def _build_hit(hit, list_lookup: dict) -> dict:
+    rec = getattr(hit, "recommendation", None)
+    step = str(getattr(rec, "from_step", "") or "")
+    region = getattr(hit, "region", None)
+    ann = getattr(hit, "annotations", None) or {}
+
+    common = {
+        "step": step,
+        "rawStatus": str(getattr(rec, "status", "") or ""),
+        "name": _clean_text(getattr(hit, "name", "")) or "",
+        "desc": _clean_text(getattr(hit, "description", "")) or "",
+        "qs": getattr(region, "query_start", None) if region else None,
+        "qe": getattr(region, "query_end", None) if region else None,
+        "eValue": _fmt_evalue(getattr(region, "e_value", None) if region else None),
+        "regulated": None,
+        "domain": None,
+        "category": None,
+        "lists": [],
+        "pctId": None,
+        "target": None,
+        "targetUrl": None,
+        "targetDesc": None,
+        "taxid": None,
+        "genus": None,
+        "species": None,
+        "nControlled": 0,
+        "nNonControlled": 0,
+        "coverage": None,
+    }
+
+    if step == ScreenStep.BIORISK:
+        common["regulated"] = _first(ann.get("regulated"))
+        common["domain"] = _first(ann.get("domain"))
+        return common
+
+    if step in (
+        ScreenStep.LOW_CONCERN_PROTEIN,
+        ScreenStep.LOW_CONCERN_RNA,
+        ScreenStep.LOW_CONCERN_DNA,
+    ):
+        common["coverage"] = _clean(ann.get("Coverage: "))
+        return common
+
+    if step in (ScreenStep.TAXONOMY_AA, ScreenStep.TAXONOMY_NT):
+        common["category"] = _first(ann.get("category"))
+        tax = ann.get("controlled_taxonomy") or {}
+        stats = tax.get("statistics") or {}
+        common["nControlled"] = stats.get("number_of_controlled_taxids", 0) or 0
+        common["nNonControlled"] = stats.get("number_of_non-controlled_taxids", 0) or 0
+
+        controlled = tax.get("controlled_taxa") or []
+        rep = _best_taxon(controlled) or _best_taxon(
+            tax.get("non-controlled_taxa") or []
+        )
+        if rep:
+            common["target"] = _clean(rep.get("target_hit"))
+            common["targetUrl"] = _target_url(step, common["target"])
+            common["targetDesc"] = _clean_text(rep.get("target_description")) or ""
+            common["pctId"] = _fmt_pct(rep.get("percent_identity"))
+            common["taxid"] = _clean(rep.get("taxid"))
+            common["genus"] = _clean_text(rep.get("genus"))
+            common["species"] = _clean_text(rep.get("species"))
+            common["lists"] = _taxon_lists(rep, list_lookup)
+        return common
+
+    return common
+
+
+def build_report_model(screen: ScreenResult) -> dict:
+    """Flatten a :class:`ScreenResult` into the model consumed by ``report.js``."""
+    lists, list_lookup = _build_list_meta(screen)
+    meta = _build_meta(screen, lists)
+
+    sequences = []
+    for query in getattr(screen, "queries", {}).values():
+        status = getattr(query, "status", None)
+        sequences.append(
+            {
+                "id": getattr(query, "query", ""),
+                "name": getattr(query, "query", ""),
+                "desc": getattr(query, "description", "") or "",
+                "length": getattr(query, "length", 0),
+                "screenStatus": str(getattr(status, "screen_status", "") or ""),
+                "rationale": str(getattr(status, "rationale", "") or ""),
+                "hits": [
+                    _build_hit(h, list_lookup) for h in getattr(query, "hits", [])
+                ],
             }
         )
 
-    df = pd.DataFrame(graph_data)
-
-    # Convert RGB colors to hex format
-    def rgb_to_hex(rgb):
-        return '#{:02x}{:02x}{:02x}'.format(rgb[0], rgb[1], rgb[2])
-    df['color'] = df['color'].apply(rgb_to_hex)
+    return {"meta": meta, "lists": lists, "sequences": sequences}
 
 
-    df['hovertext'] = df.apply(lambda bar_data: 
-                               f"{bar_data["outcome"]}<br>"
-                               f"bases {bar_data['start']}-{bar_data['stop']}<br>"
-                               f"{bar_data['label_verbose']}<br>"
-                               f"{bar_data["outcome_verbose"]}", axis=1)
-
-    # Add each bar to the existing figure
-    for _i, bar_data in df.iterrows():
-
-        marker_dictionary = {"color" : bar_data["color"]}
-        if "Cleared" in bar_data["outcome"]:
-            marker_dictionary["pattern"] = dict(shape="/")  # Options: "/", "\\", "x", "-", "|", ".", "+"
-
-        fig.add_trace(
-            go.Bar(
-                x=[bar_data['stop'] - (bar_data['start'] - 1)],  # Width of bar as timedelta
-                y=[bar_data['stack']],  # Stack position
-                base=bar_data['start']-1,  # Starting point on x-axis
-                orientation='h',
-                marker=marker_dictionary,
-                hovertext=bar_data['hovertext'],
-                hoverinfo='text',
-                #customdata=df['clicktext'],
-                name=bar_data['label'],
-                width = 1.0,
-            ),
-        )
-
-        # Compute x center for horizontal bar
-        bar_center_x = (bar_data['start']-1) + (bar_data['stop'] - (bar_data['start']-1)) / 2
-        bar_y = bar_data['stack']
-
-        fig.add_annotation(
-            x=bar_center_x,
-            y=bar_y,
-            text=f"<b>{bar_data['text']}</b>",
-            showarrow=False,
-            font=dict(
-                color=bar_data['text_color'],
-                size=13,
-            ),
-            xanchor='center',
-            yanchor='middle',
-            align='center',
-            xref='x',
-            yref='y',
-        )
-
-    return n_stacks
-
-def generate_rounded_rect(x0,y0,x1,y1,rx,ry):
-    """ 
-    Creates an SVG path for a rounded rectangle given the following dimensions:
-    xy0: Top Left Corner
-    xy1: Bottom Right Corner.
-    rxy: Radius of curvature for each axis.
-
-    Currently unused.
-    """
-    # Create an SVG path for the rounded rectangle:
-    path = (
-        f'M {x0 + rx},{y0} '
-        f'L {x1 - rx},{y0} '
-        f'Q {x1},{y0} {x1},{y0 + ry} '
-        f'L {x1},{y1 - ry} '
-        f'Q {x1},{y1} {x1 - rx},{y1} '
-        f'L {x0 + rx},{y1} '
-        f'Q {x0},{y1} {x0},{y1 - ry} '
-        f'L {x0},{y0 + ry} '
-        f'Q {x0},{y0} {x0 + rx},{y0}'
-        f'Z'
+# ---------------------------------------------------------------------------
+# HTML assembly
+# ---------------------------------------------------------------------------
+def _asset(name: str) -> str:
+    return (
+        importlib.resources.files("commec")
+        .joinpath("utils", "report_assets", name)
+        .read_text(encoding="utf-8")
     )
-    return path
 
-def generate_html_from_screen_json(input_file : str, output_file : str):
-    """ 
-    Wrapper for input filepath, rather than screen data object.
+
+# Open-licensed variable fonts embedded so the report renders identically offline.
+# Each is a single variable woff2 covering the whole weight range used by the report.
+_FONTS = [
+    ("Manrope.woff2", "Manrope", "normal", "400 700"),
+    ("CrimsonPro.woff2", "Crimson Pro", "normal", "400 700"),
+    ("CrimsonPro-Italic.woff2", "Crimson Pro", "italic", "400 700"),
+]
+
+
+def _font_face_css() -> str:
+    """Emit @font-face rules with the woff2 files inlined as base64 data URIs."""
+    rules = []
+    for filename, family, style, weight in _FONTS:
+        data = (
+            importlib.resources.files("commec")
+            .joinpath("utils", "report_assets", "fonts", filename)
+            .read_bytes()
+        )
+        b64 = base64.b64encode(data).decode("ascii")
+        rules.append(
+            "@font-face{font-family:'%s';font-style:%s;font-weight:%s;font-display:swap;"
+            "src:url(data:font/woff2;base64,%s) format('woff2');}"
+            % (family, style, weight, b64)
+        )
+    return "\n".join(rules)
+
+
+def _html_escape(text: str) -> str:
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _logo_svg() -> str:
+    """Load the masthead logo, strip any XML prolog, and give it a display size."""
+    svg = _asset("commec-logo.svg")
+    start = svg.find("<svg")
+    if start > 0:
+        svg = svg[start:]
+    opening_tag = svg.split(">", 1)[0]
+    if "style=" not in opening_tag:
+        svg = svg.replace(
+            "<svg", '<svg style="height:24px;width:auto;display:block;"', 1
+        )
+    return svg.strip()
+
+
+def render_report_html(screen: ScreenResult) -> str:
+    """Build the complete self-contained HTML document for a screen result."""
+    model = build_report_model(screen)
+    # allow_nan=False is safe because _clean() removed every NaN; escape "</" so a stray
+    # "</script>" inside a description can't break out of the data <script> block.
+    data_json = json.dumps(model, allow_nan=False, ensure_ascii=False).replace(
+        "</", "<\\/"
+    )
+
+    css = _font_face_css() + "\n" + _asset("report.css")
+    # Inline the logo markup into the renderer (kept as a separate editable asset).
+    js = _asset("report.js").replace('"__COMMEC_LOGO__"', json.dumps(_logo_svg()))
+    title = _html_escape(
+        "Commec Screening Report — " + (model["meta"].get("file") or "")
+    )
+
+    return (
+        "<!DOCTYPE html>\n"
+        '<html lang="en">\n<head>\n'
+        '<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        "<title>" + title + "</title>\n"
+        "<style>\n" + css + "\n</style>\n"
+        "</head>\n<body>\n"
+        '<div id="commec-report">'
+        '<noscript><div style="max-width:640px;margin:60px auto;padding:0 24px;'
+        'font-family:Arial,sans-serif;color:#23285A;line-height:1.6;">'
+        "<strong>This Commec screening report needs JavaScript to display.</strong><br>"
+        "It is a single self-contained file &mdash; save it and open it in a web browser "
+        "(email clients block the embedded script when shown inline).</div></noscript>"
+        "</div>\n"
+        "<script>window.COMMEC_REPORT = " + data_json + ";</script>\n"
+        "<script>\n" + js + "\n</script>\n"
+        "</body>\n</html>\n"
+    )
+
+
+def generate_html_from_screen_data(input_data: ScreenResult, output_file: str):
     """
-    input_data : ScreenResult = get_screen_data_from_json(input_file)
+    Render the ScreenResult from Commec Screen as an interactive HTML report.
+    Combines all queries from a single run into one HTML document.
+    """
+    html = render_report_html(input_data)
+    output_filename = output_file.strip() + ".html"
+    with open(output_filename, "w", encoding="utf-8") as handle:
+        handle.write(html)
+
+
+def generate_html_from_screen_json(input_file: str, output_file: str):
+    """Wrapper accepting an input JSON filepath rather than a ScreenResult object."""
+    input_data: ScreenResult = get_screen_data_from_json(input_file)
     generate_html_from_screen_data(input_data, output_file)
 
+
 def main():
-    '''
-    Convert a JSON output from Commec Screen, into a HTML data visualisation.
-    '''
+    """Convert a JSON output from Commec Screen into an HTML data visualisation."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i","--input", dest="in_file",
-        required=True, help="Input json file path")
-    parser.add_argument("-o","--output", dest="out_file",
-        required=True, help="Output html filepath, not including .html extension.")
+    parser.add_argument(
+        "-i", "--input", dest="in_file", required=True, help="Input json file path"
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        dest="out_file",
+        required=True,
+        help="Output html filepath, not including .html extension.",
+    )
     args = parser.parse_args()
     generate_html_from_screen_json(args.in_file, args.out_file)
+
 
 if __name__ == "__main__":
     main()

@@ -20,6 +20,7 @@ Each line in the CSV corresponds to a .screen file. The full paths to the files 
 Additionally, it includes three columns indicating whether the sequence was flagged as a regulated
 virus, bacteria, or eukaryote.
 """
+
 import os
 import csv
 import argparse

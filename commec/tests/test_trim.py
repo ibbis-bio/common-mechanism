@@ -20,31 +20,33 @@ from commec.tools.hmmer import remove_overlaps
 # 10------------------------------90 (different query)
 
 # Example DataFrame
-example_hmmer_01 = pd.DataFrame({
-    "query name": ["one","one","one","one","two", "two"],
-    "q. start": [10, 40, 20, 10, 20, 10],
-    "q. end":   [50, 60, 40, 50, 30, 90],
-    "score":    [3, 5, 6, 1, 1, 2]
-})
+example_hmmer_01 = pd.DataFrame(
+    {
+        "query name": ["one", "one", "one", "one", "two", "two"],
+        "q. start": [10, 40, 20, 10, 20, 10],
+        "q. end": [50, 60, 40, 50, 30, 90],
+        "score": [3, 5, 6, 1, 1, 2],
+    }
+)
 
 # Example DataFrame
-example_hmmer_01_output = pd.DataFrame({
-    "query name": ["one","one", "one", "two"],
-    "q. start": [10, 40, 20, 10],
-    "q. end":   [50, 60, 40, 90],
-    "score":    [3, 5, 6, 2]
-})
+example_hmmer_01_output = pd.DataFrame(
+    {
+        "query name": ["one", "one", "one", "two"],
+        "q. start": [10, 40, 20, 10],
+        "q. end": [50, 60, 40, 90],
+        "score": [3, 5, 6, 2],
+    }
+)
+
 
 @pytest.mark.parametrize(
     "input_hmmer, expected_output_hmmer",
     [
         (example_hmmer_01, example_hmmer_01_output),
-    ]
+    ],
 )
-def test_hmmer_overlaps(
-    input_hmmer : pd.DataFrame,
-    expected_output_hmmer : pd.DataFrame
-):
+def test_hmmer_overlaps(input_hmmer: pd.DataFrame, expected_output_hmmer: pd.DataFrame):
     """
     Checks common configurations that require trimming in Hmmer outputs,
     In particular partial overlaps, full encapsulations, score differences, and different queries.

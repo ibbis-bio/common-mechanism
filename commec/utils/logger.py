@@ -8,13 +8,16 @@ import logging
 import sys
 import textwrap
 
+
 class TextWrapFormatter(logging.Formatter):
     """
-    Format multi-line log messages with proper vertical alignment, 
+    Format multi-line log messages with proper vertical alignment,
     configurable styling, and text wrapping for longer messages.
     """
 
-    def __init__(self, *args, fmt=None, continuation_marker="│ ", line_width=120, **kwargs):
+    def __init__(
+        self, *args, fmt=None, continuation_marker="│ ", line_width=120, **kwargs
+    ):
         if fmt is None:
             fmt = f"%(levelname)-8s{continuation_marker}%(message)s"
         super().__init__(fmt, *args, **kwargs)
@@ -50,10 +53,10 @@ class TextWrapFormatter(logging.Formatter):
 
         - **no_wrap**:
         Skips text wrapping.
-        
+
         - **no_prefix**:
         Skips the `INFO    │ ` prefixes.
-        
+
         - **box**, **box_up**, **box_down**:
         Use Unicode box-drawing characters (e.g., `"─┘"` or `"─┐"`) to tie off
         formatted prefixes when switching to no-prefix lines.
@@ -70,7 +73,7 @@ class TextWrapFormatter(logging.Formatter):
             prefix = self.indent_size * "─" + "┘\n" if box_up else ""
             suffix = "\n" + self.indent_size * "─" + "┐" if box_down else ""
 
-            return prefix + record.getMessage() + suffix # No formatting
+            return prefix + record.getMessage() + suffix  # No formatting
 
         message = super().format(record)
 
@@ -134,7 +137,7 @@ def setup_file_logging(filename, log_level=logging.INFO, log_mode="w"):
         formatter = TextWrapFormatter(
             fmt="%(asctime)s│ %(levelname)-8s│ %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",  # Full ISO-like format
-            line_width = 300, # Longer lines for debug purposes.
+            line_width=300,  # Longer lines for debug purposes.
         )
     else:
         formatter = TextWrapFormatter("%(levelname)-8s│ %(message)s")

@@ -1,4 +1,3 @@
-
 """
 The Region module handles the sanitization, and import, of counties
 and regions. Supports all current alpha2 country codes through pycountry
@@ -25,38 +24,39 @@ logger = logging.getLogger(__name__)
 
 REGION_DATA_LUT = {}
 
-def load_region_list_data(input_filepath : str | os.PathLike):
+
+def load_region_list_data(input_filepath: str | os.PathLike):
     """
     Load the region to country data based on input filepath.
-    Input filepath contains a json list containing mapping of 
+    Input filepath contains a json list containing mapping of
     two letter codes and names, to a list of affected regions.
     """
 
     if not os.path.isfile(input_filepath):
-        logger.warning("No additional region definitions found at expected location: %s",
-        input_filepath)
+        logger.warning(
+            "No additional region definitions found at expected location: %s",
+            input_filepath,
+        )
         return
 
     region_array = []
     global REGION_DATA_LUT
 
-    with open(input_filepath, encoding = "utf-8") as f:
+    with open(input_filepath, encoding="utf-8") as f:
         region_array = json.load(f)
 
     for r_data in region_array:
         name = r_data.get("name")
         acronym = r_data.get("acronym")
         region_codes = r_data.get("regions")
-        
-        if not REGION_DATA_LUT.get(acronym):
-            REGION_DATA_LUT[acronym] = {
-                "name" : name,
-                "regions" : region_codes
-            }
 
-def get_regions_set(region_info : str | list[str] | list[Region]) -> set[str]:
+        if not REGION_DATA_LUT.get(acronym):
+            REGION_DATA_LUT[acronym] = {"name": name, "regions": region_codes}
+
+
+def get_regions_set(region_info: str | list[str] | list[Region]) -> set[str]:
     """
-    Takes a single, or list of, region information in the form of 
+    Takes a single, or list of, region information in the form of
     * alpha-2 codes (i.e. UK, DE, FR)
     * Country names United Kingdom, Germany, France.
     * Region objects Region(name, acronym)
@@ -66,14 +66,15 @@ def get_regions_set(region_info : str | list[str] | list[Region]) -> set[str]:
     """
     if not isinstance(region_info, list):
         return set(_return_country_set_from_unknown(region_info))
-    
+
     # Deal with listed inputs.
     flattened = []
     for a in region_info:
         flattened.extend(_return_country_set_from_unknown(a))
     return set(flattened)
 
-def _return_country_set_from_unknown(region_info : str | Region = "") -> set[str]:
+
+def _return_country_set_from_unknown(region_info: str | Region = "") -> set[str]:
     """
     Given a String or Region object, return a set of alpha-2 country codes.
     The input is checked if it is a ...
@@ -83,7 +84,7 @@ def _return_country_set_from_unknown(region_info : str | Region = "") -> set[str
 
     The use of an arbitrary string is typically unhelpful, unless
     the search term was specific enough to disambigiously identify a single
-    region, or small number of regions (<=3 currently). 
+    region, or small number of regions (<=3 currently).
     Otherwise, an error is printed, and no country is chosen.
     This is mainly chosen because United States as a search term
     returns 3 [US, UM, VI] (US minor islands, and Virgin Islands)
@@ -108,13 +109,13 @@ def _return_country_set_from_unknown(region_info : str | Region = "") -> set[str
 
     # Try 2 letter code retrieval
     if len(search_string) == 2:
-        retrieved_country = pc.countries.get(alpha_2 = search_string)
+        retrieved_country = pc.countries.get(alpha_2=search_string)
         if retrieved_country:
             return set([search_string])
 
     # Try 3 letter code retrieval
     if len(search_string) == 3:
-        retrieved_country = pc.countries.get(alpha_3 = search_string)
+        retrieved_country = pc.countries.get(alpha_3=search_string)
         if retrieved_country:
             return set([retrieved_country.alpha_2])
 
@@ -122,14 +123,15 @@ def _return_country_set_from_unknown(region_info : str | Region = "") -> set[str
     try:
         countries = pc.countries.search_fuzzy(search_string)
     except LookupError:
-        logger.error("Unrecognised region data: \"%s\"", search_string)
+        logger.error('Unrecognised region data: "%s"', search_string)
         return set()
 
     # If the search returned with 3 or less outcomes its probably right.
     # This IF statement can be deleted if this behaviour is undesired.
     if len(countries) > 1 and len(countries) <= 3:
-        logger.warning("%i countries were returned for input \"%s\".",
-                     len(countries), search_string)
+        logger.warning(
+            '%i countries were returned for input "%s".', len(countries), search_string
+        )
         country_list = ",".join([country.alpha_2 for country in countries])
         logger.warning("Countries from search: %s", country_list)
         logger.warning("Using first country: %s", countries[0].name)
@@ -137,14 +139,14 @@ def _return_country_set_from_unknown(region_info : str | Region = "") -> set[str
 
     # If too many values returned, annoy the user.
     if len(countries) > 1:
-        logger.error("%i countries were returned for input \"%s\".",
-                     len(countries), search_string)
+        logger.error(
+            '%i countries were returned for input "%s".', len(countries), search_string
+        )
         country_list = ",".join([country.alpha_2 for country in countries])
         logger.error("Countries from search: %s", country_list)
-        logger.error("Please refine your input to disambigiously identify a specific country.")
+        logger.error(
+            "Please refine your input to disambigiously identify a specific country."
+        )
         return set()
 
     return set([countries[0].alpha_2])
-
-
-
