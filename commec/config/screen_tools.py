@@ -13,7 +13,6 @@ import sys
 from commec.config.screen_io import ScreenIO
 from commec.tools.blastn import BlastNHandler
 from commec.tools.blastx import BlastXHandler
-from commec.tools.diamond import DiamondHandler
 from commec.tools.cmscan import CmscanHandler
 from commec.tools.hmmer import HmmerHandler
 from commec.tools.search_handler import DatabaseValidationError
@@ -27,7 +26,7 @@ class ScreenTools:
     """
     def __init__(self, params: ScreenIO):
         self.biorisk: HmmerHandler = None
-        self.regulated_protein : BlastXHandler | DiamondHandler = None
+        self.regulated_protein : BlastXHandler = None
         self.regulated_nt: BlastNHandler = None
         self.low_concern_hmm: HmmerHandler = None
         self.low_concern_blastn: BlastNHandler = None
@@ -53,31 +52,14 @@ class ScreenTools:
                 )
 
         if params.should_do_protein_screening:
-            if params.config["protein_search_tool"] == "blastx":
-                self.regulated_protein = BlastXHandler(
-                    params.config["databases"]["best_match"]["protein"]["path"],
-                    input_file=params.nt_path,
-                    out_file=f"{params.output_prefix}.nr.blastx",
-                    threads=params.config["threads"],
-                    force=params.config["force"],
-                )
-                self.regulated_protein.arguments_dictionary["-mt_mode"] = params.config["blast_mt_mode"]
-            elif params.config["protein_search_tool"] in ("nr.dmnd", "diamond"):
-                self.regulated_protein = DiamondHandler(
-                    params.config["databases"]["best_match"]["protein"]["path"],
-                    input_file=params.nt_path,
-                    out_file=f"{params.output_prefix}.nr.dmnd",
-                    threads=params.config["threads"],
-                    force=params.config["force"],
-                )
-                self.regulated_protein.jobs = params.config["diamond_jobs"]
-                if params.config["protein_search_tool"] == "nr.dmnd":
-                    logger.info(
-                        "Using old \"nr.dmnd\" keyword for search tool will not be supported"
-                        " in future releases,consider using \"diamond\" instead."
-                    )
-            else:
-                raise RuntimeError('Search tool not defined as "blastx" or "diamond"')
+            self.regulated_protein = BlastXHandler(
+                params.config["databases"]["best_match"]["protein"]["path"],
+                input_file=params.nt_path,
+                out_file=f"{params.output_prefix}.nr.blastx",
+                threads=params.config["threads"],
+                force=params.config["force"],
+            )
+            self.regulated_protein.arguments_dictionary["-mt_mode"] = params.config["blast_mt_mode"]
 
         if params.should_do_nucleotide_screening:
             self.regulated_nt = BlastNHandler(

@@ -29,8 +29,6 @@ options:
   -v, --verbose         Output verbose (i.e. DEBUG-level) logs
 
 Screen run logic:
-  -p {blastx,diamond}, --protein-search-tool {blastx,diamond}
-                        Tool for protein homology search to identify regulated pathogens
   --skip-tx             Skip taxonomy homology search (only toxins and other proteins included in the biorisk database will be flagged)
   --skip-nt             Skip nucleotide search (regulated pathogens will only be identified based on
                         protein hits)
@@ -38,8 +36,6 @@ Screen run logic:
 Parallelisation:
   -t THREADS, --threads THREADS
                         Number of CPU threads to use. Passed to search tools.
-  -j DIAMOND_JOBS, --diamond-jobs DIAMOND_JOBS
-                        Diamond-only: number of runs to do in parallel on split Diamond databases
 
 Output file handling:
   -o OUTPUT_PREFIX, --output OUTPUT_PREFIX
@@ -176,14 +172,9 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--protein-search-tool",
         dest="protein_search_tool",
         choices=["blastx", "diamond"],
-        help="Tool for protein homology search to identify regulated pathogens",
+        deprecated = True,
+        help="(DEPRECATED) protein search now always uses BLASTX; DIAMOND is not supported in this version",
     )
-
-    screen_logic_group.add_argument('-f', '--fast-mode', action="store_true", deprecated=True,
-                                    help=("(DEPRECATED: legacy commands for --fast-mode, please use"
-                                          " --skip-tx to skip the taxonomy step instead.)"))
-    screen_logic_group.add_argument('-n', action = "store_true", deprecated=True,
-                                    help="(DEPRECATED: shorthand for --skip-nt, use --skip-nt instead.)")
 
     parallel_group = parser.add_argument_group("Parallelisation")
     parallel_group.add_argument(
@@ -198,7 +189,8 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--diamond-jobs",
         dest="diamond_jobs",
         type=int,
-        help="Diamond-only: number of runs to do in parallel on split Diamond databases",
+        deprecated = True,
+        help="(DEPRECATED) DIAMOND is not supported in this version, so this setting has no effect",
     )
     output_handling_group = parser.add_argument_group("Output file handling")
     output_exclusive_group = output_handling_group.add_mutually_exclusive_group()
@@ -571,10 +563,9 @@ class Screen:
 
     def screen_proteins(self):
         """
-        Call `run_blastx.sh` or `run_diamond.sh` followed by `check_reg_path.py` to add regulated
+        Call `run_blastx.sh` followed by `check_reg_path.py` to add regulated
         pathogen protein screening results to `screen_file`.
         """
-        logger.debug("\t...running %s", self.params.config["protein_search_tool"])
         self.database_tools.regulated_protein.search()
         if not self.database_tools.regulated_protein.validate_output():
             self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.ERROR)
@@ -582,10 +573,6 @@ class Screen:
                 "ERROR: Expected protein search output not created: "
                 + self.database_tools.regulated_protein.out_file
             )
-
-        logger.debug(
-            "\t...checking %s results", self.params.config["protein_search_tool"]
-        )
 
         exit_status = parse_taxonomy_hits(
             self.database_tools.regulated_protein,

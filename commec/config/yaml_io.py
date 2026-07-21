@@ -16,7 +16,7 @@ import importlib.resources
 import yaml
 from yaml.parser import ParserError
 
-from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
+from commec.config.constants import DEFAULT_CONFIG_YAML_PATH, DEPRECATED_CONFIG_KEYS
 from commec.utils.file_utils import expand_and_normalize
 from commec.utils.dict_utils import deep_update
 
@@ -39,12 +39,27 @@ def load_config_from_yaml(config_filepath: str | os.PathLike) -> dict:
         raise TypeError(f"Loaded configuration file did not result in a dictionary: {file}")
     return config_from_yaml
 
+def warn_and_strip_deprecated_keys(config_from_yaml: dict, config_filepath: str | os.PathLike):
+    """
+    Remove any retired top-level keys from a loaded config, warning (rather than erroring)
+    for each one found. This keeps older configs runnable across a deprecation window: the
+    deprecated key is ignored instead of being rejected as an unrecognized key.
+    """
+    for key, reason in DEPRECATED_CONFIG_KEYS.items():
+        if key in config_from_yaml:
+            logger.warning(
+                "Ignoring deprecated config key %r in %s: %s.",
+                key, config_filepath, reason,
+            )
+            del config_from_yaml[key]
+
 def update_config_from_yaml(existing_config : dict, config_filepath: str | os.PathLike) -> dict:
     """
     Override YAML configuration based on provided YAML file. Items in the provided file, but
     not in the default YAML, will be ignored.
     """
     config_from_yaml = load_config_from_yaml(config_filepath)
+    warn_and_strip_deprecated_keys(config_from_yaml, config_filepath)
     updated_config, rejected = deep_update(existing_config, config_from_yaml)
     if rejected:
         keys = ", ".join(f"{k}={v!r}" for k, v in rejected)
