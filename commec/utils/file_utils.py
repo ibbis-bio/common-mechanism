@@ -8,6 +8,7 @@ import argparse
 import os
 from pathlib import Path
 
+
 # Below go to config parameters.
 @staticmethod
 def directory_arg(path):
@@ -15,6 +16,7 @@ def directory_arg(path):
     if not os.path.isdir(path):
         raise argparse.ArgumentTypeError(f"{path} is not a valid directory path")
     return path
+
 
 @staticmethod
 def file_arg(path):
@@ -25,10 +27,12 @@ def file_arg(path):
         raise argparse.ArgumentTypeError(f"{path} is an empty file")
     return path
 
+
 @staticmethod
 def expand_and_normalize(path):
     """Expand ~ and $var path elements, and normalize path, removing double slashes, etc."""
     return os.path.normpath(os.path.expandvars(os.path.expanduser(path)))
+
 
 @staticmethod
 def remove_filename_from_path(input_filepath):

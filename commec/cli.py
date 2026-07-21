@@ -14,6 +14,7 @@ Command-line usage examples:
     - commec -h, --help
     - commec -v, --version
 """
+
 from commec.control_list import (
     DESCRIPTION as list_DESCRIPTION,
     add_args as list_add_args,
@@ -28,7 +29,7 @@ from commec.screen import (
     DESCRIPTION as screen_DESCRIPTION,
     add_args as screen_add_args,
     run as screen_run,
-    ScreenArgumentParser
+    ScreenArgumentParser,
 )
 from commec.setup import (
     DESCRIPTION as setup_DESCRIPTION,
@@ -37,6 +38,7 @@ from commec.setup import (
 )
 
 from commec import __version__ as COMMEC_VERSION
+
 
 def main():
     """
@@ -85,10 +87,12 @@ def main():
     elif args.command == "list":
         list_run(args)
     elif args.version:
-        print( "Commec  : The Common Mechanism\n"
-              f"Version : {COMMEC_VERSION}\n"
-              "Copyright IBBIS (c) 2021-2025\n"
-              "International Biosecurity and Biosafety Initiative for Science")
+        print(
+            "Commec  : The Common Mechanism\n"
+            f"Version : {COMMEC_VERSION}\n"
+            "Copyright IBBIS (c) 2021-2025\n"
+            "International Biosecurity and Biosafety Initiative for Science"
+        )
     else:
         parser.print_help()
 

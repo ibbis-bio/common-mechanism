@@ -25,7 +25,10 @@ from commec.utils.file_utils import directory_arg
 from commec.config.result import ScreenStatus, ScreenResult, ScreenStep, Rationale
 from commec.config.json_io import get_screen_data_from_json, IoVersionError
 
-DESCRIPTION = "Parse all .screen, or .json files in a directory and create CSVs of flags raised"
+DESCRIPTION = (
+    "Parse all .screen, or .json files in a directory and create CSVs of flags raised"
+)
+
 
 def add_args(parser: argparse.ArgumentParser):
     """
@@ -60,13 +63,14 @@ def add_args(parser: argparse.ArgumentParser):
     )
     return parser
 
+
 def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
     """
     Read JSON screen output and prepare screen_pipline_status CSV.
     """
     results = []
     try:
-        screen_data : ScreenResult = get_screen_data_from_json(file_path)
+        screen_data: ScreenResult = get_screen_data_from_json(file_path)
     except (KeyError, AttributeError, JSONDecodeError):
         return []
     except IoVersionError as e:
@@ -84,19 +88,28 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
 
         qs = query.status
 
-        if (qs.protein_taxonomy
-            not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
+        if qs.protein_taxonomy not in [
+            ScreenStatus.SKIP,
+            ScreenStatus.ERROR,
+            ScreenStatus.NULL,
+        ]:
             for hit in query.hits:
-                if hit.recommendation.from_step in {ScreenStep.TAXONOMY_AA, ScreenStep.TAXONOMY_NT}:
+                if hit.recommendation.from_step in {
+                    ScreenStep.TAXONOMY_AA,
+                    ScreenStep.TAXONOMY_NT,
+                }:
                     info = hit.annotations["controlled_taxonomy"]["statistics"]
-                    bacteria_flag  |= (int(info["controlled_bacteria"]) > 0)
-                    virus_flag     |= (int(info["controlled_viruses"]) > 0)
-                    eukaryote_flag |= (int(info["controlled_fungi"]) > 0)
-                    eukaryote_flag |= (int(info["controlled_parasites"]) > 0)
+                    bacteria_flag |= int(info["controlled_bacteria"]) > 0
+                    virus_flag |= int(info["controlled_viruses"]) > 0
+                    eukaryote_flag |= int(info["controlled_fungi"]) > 0
+                    eukaryote_flag |= int(info["controlled_parasites"]) > 0
 
         # Which forms of low_concern hits are present?
-        if (qs.low_concern
-            not in [ScreenStatus.SKIP, ScreenStatus.ERROR, ScreenStatus.NULL]):
+        if qs.low_concern not in [
+            ScreenStatus.SKIP,
+            ScreenStatus.ERROR,
+            ScreenStatus.NULL,
+        ]:
             for hit in query.hits:
                 match hit.recommendation.from_step:
                     case ScreenStep.LOW_CONCERN_PROTEIN:
@@ -115,14 +128,31 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         for hit in query.hits:
             match hit.recommendation.from_step:
                 case ScreenStep.TAXONOMY_AA:
-                    if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN, ScreenStatus.PASS]:
-                        if hit.annotations["controlled_taxonomy"]["statistics"]["number_of_non-controlled_taxids"] > 0:
+                    if hit.recommendation.status in [
+                        ScreenStatus.FLAG,
+                        ScreenStatus.WARN,
+                        ScreenStatus.PASS,
+                    ]:
+                        if (
+                            hit.annotations["controlled_taxonomy"]["statistics"][
+                                "number_of_non-controlled_taxids"
+                            ]
+                            > 0
+                        ):
                             mixed_aa_taxonomy = True
 
                 case ScreenStep.TAXONOMY_NT:
-                    if hit.recommendation.status in [ScreenStatus.FLAG, ScreenStatus.WARN]:
-                        if hit.annotations["controlled_taxonomy"]["statistics"]["number_of_non-controlled_taxids"] > 0:
-                                mixed_nt_taxonomy = True
+                    if hit.recommendation.status in [
+                        ScreenStatus.FLAG,
+                        ScreenStatus.WARN,
+                    ]:
+                        if (
+                            hit.annotations["controlled_taxonomy"]["statistics"][
+                                "number_of_non-controlled_taxids"
+                            ]
+                            > 0
+                        ):
+                            mixed_nt_taxonomy = True
                 case _:
                     continue
 
@@ -137,32 +167,38 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
 
         # We don't like "-" characters (typically representing an error or unset value) being dragged
         # into commec flag outputs when rationale is not present - for backwards tidyness.
-        output_rationale = query.status.rationale if query.status.rationale != Rationale.NULL else ""
+        output_rationale = (
+            query.status.rationale if query.status.rationale != Rationale.NULL else ""
+        )
 
         overall_flag = query.status.screen_status
-        
-        results.append({
-        "name": query.query,
-        "description": query.description,
-        "filepath": file_path,
-        "flag": overall_flag,
-        "biorisk": query.status.biorisk,
-        "protein": protein_status,
-        "nucleotide": nucleotide_status,
-        "low_concern": query.status.low_concern,
-        "virus_flag": virus_flag,
-        "bacteria_flag": bacteria_flag,
-        "eukaryote_flag": eukaryote_flag,
-        "low_concern_protein": low_concern_protein,
-        "low_concern_rna": low_concern_rna,
-        "low_concern_dna": low_concern_synbio,
-        "rationale": output_rationale,
-        })
+
+        results.append(
+            {
+                "name": query.query,
+                "description": query.description,
+                "filepath": file_path,
+                "flag": overall_flag,
+                "biorisk": query.status.biorisk,
+                "protein": protein_status,
+                "nucleotide": nucleotide_status,
+                "low_concern": query.status.low_concern,
+                "virus_flag": virus_flag,
+                "bacteria_flag": bacteria_flag,
+                "eukaryote_flag": eukaryote_flag,
+                "low_concern_protein": low_concern_protein,
+                "low_concern_rna": low_concern_rna,
+                "low_concern_dna": low_concern_synbio,
+                "rationale": output_rationale,
+            }
+        )
 
     return results
 
 
-def write_output_csv(output_dir: str | os.PathLike, status: dict, evalportal_format: bool):
+def write_output_csv(
+    output_dir: str | os.PathLike, status: dict, evalportal_format: bool
+):
     """
     Write flag data results to an output CSV file.
     -----
@@ -172,12 +208,15 @@ def write_output_csv(output_dir: str | os.PathLike, status: dict, evalportal_for
     """
     status_file = os.path.join(output_dir, "screen_pipeline_status.csv")
     status_df = pd.DataFrame(status)
-    status_df = status_df.map(lambda x: ";".join(sorted(x)) if isinstance(x, set) else x)
+    status_df = status_df.map(
+        lambda x: ";".join(sorted(x)) if isinstance(x, set) else x
+    )
 
     if evalportal_format:
         # Using a "strict" mode converting Flag/Warning to 1, and everything else to 0.
         status_df["Flag"] = status_df["flag"].map(
-            lambda x: 1 if x == "Flag" or x == "Warning" else 0)
+            lambda x: 1 if x == "Flag" or x == "Warning" else 0
+        )
         status_df = status_df.rename(columns={"name": "UUID"})
         status_df = status_df[["UUID", "Flag"]]
 
@@ -198,7 +237,9 @@ def run(args: argparse.Namespace):
     evalportal_format = args.evalportal_format
 
     search_pattern = "**/*.json" if search_recursive else "*.json"
-    screen_paths = glob.glob(os.path.join(search_dir, search_pattern), recursive=search_recursive)
+    screen_paths = glob.glob(
+        os.path.join(search_dir, search_pattern), recursive=search_recursive
+    )
 
     if not screen_paths:
         raise FileNotFoundError(f"No .json files were found in directory: {search_dir}")

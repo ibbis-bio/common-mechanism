@@ -6,6 +6,7 @@ Script that concatenates all sequences in a FASTA file.
 Usage:
     concat_seqs.py input.fasta
 """
+
 import sys
 
 # read in the file based on the command line argument

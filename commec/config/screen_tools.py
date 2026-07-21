@@ -7,9 +7,7 @@ Sets and alters defaults based on input parameters.
 """
 
 import logging
-import os
 import argparse
-import sys
 from commec.config.screen_io import ScreenIO
 from commec.tools.blastn import BlastNHandler
 from commec.tools.blastx import BlastXHandler
@@ -20,13 +18,15 @@ from commec.utils.file_utils import file_arg
 
 logger = logging.getLogger(__name__)
 
+
 class ScreenTools:
     """
     Using parameters and filenames in `ScreenIo`, set up the tools needed to search datbases.
     """
+
     def __init__(self, params: ScreenIO):
         self.biorisk: HmmerHandler = None
-        self.regulated_protein : BlastXHandler = None
+        self.regulated_protein: BlastXHandler = None
         self.regulated_nt: BlastNHandler = None
         self.low_concern_hmm: HmmerHandler = None
         self.low_concern_blastn: BlastNHandler = None
@@ -34,7 +34,9 @@ class ScreenTools:
 
         # Paths for annotations still used in the Biorisk, and Low Concern databases.
         self.biorisk_annotations = params.config["databases"]["biorisk"]["annotations"]
-        self.low_concern_annotations = params.config["databases"]["low_concern"]["annotations"]
+        self.low_concern_annotations = params.config["databases"]["low_concern"][
+            "annotations"
+        ]
 
         # Database tools for Biorisks / Protein and NT screens / Benign screen:
         self.biorisk = HmmerHandler(
@@ -46,10 +48,10 @@ class ScreenTools:
         )
         try:
             file_arg(params.config["databases"]["biorisk"]["annotations"])
-        except(argparse.ArgumentTypeError):
+        except argparse.ArgumentTypeError:
             raise DatabaseValidationError(
-                f"{params.config["databases"]["biorisk"]["annotations"]} expected file does not exist."
-                )
+                f"{params.config['databases']['biorisk']['annotations']} expected file does not exist."
+            )
 
         if params.should_do_protein_screening:
             self.regulated_protein = BlastXHandler(
@@ -59,7 +61,9 @@ class ScreenTools:
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
-            self.regulated_protein.arguments_dictionary["-mt_mode"] = params.config["blast_mt_mode"]
+            self.regulated_protein.arguments_dictionary["-mt_mode"] = params.config[
+                "blast_mt_mode"
+            ]
 
         if params.should_do_nucleotide_screening:
             self.regulated_nt = BlastNHandler(
@@ -69,7 +73,9 @@ class ScreenTools:
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
-            self.regulated_nt.arguments_dictionary["-mt_mode"] = params.config["blast_mt_mode"]
+            self.regulated_nt.arguments_dictionary["-mt_mode"] = params.config[
+                "blast_mt_mode"
+            ]
 
         if params.should_do_low_concern_screening:
             self.low_concern_hmm = HmmerHandler(
@@ -86,7 +92,9 @@ class ScreenTools:
                 threads=params.config["threads"],
                 force=params.config["force"],
             )
-            self.low_concern_blastn.arguments_dictionary["-mt_mode"] = params.config["blast_mt_mode"]
+            self.low_concern_blastn.arguments_dictionary["-mt_mode"] = params.config[
+                "blast_mt_mode"
+            ]
             self.low_concern_cmscan = CmscanHandler(
                 params.config["databases"]["low_concern"]["rna"]["path"],
                 input_file=params.nt_path,
@@ -96,7 +104,7 @@ class ScreenTools:
             )
             try:
                 file_arg(params.config["databases"]["low_concern"]["annotations"])
-            except(argparse.ArgumentTypeError):
+            except argparse.ArgumentTypeError:
                 raise DatabaseValidationError(
-                    f"{params.config["databases"]["low_concern"]["annotations"]} expected file does not exist."
-                    )
+                    f"{params.config['databases']['low_concern']['annotations']} expected file does not exist."
+                )

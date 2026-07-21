@@ -1,9 +1,7 @@
-from io import StringIO
 import os
 import pandas as pd
 import pytest
 import textwrap
-from Bio import SeqIO
 from unittest.mock import patch
 
 from commec.tools.fetch_nc_bits import (
@@ -17,6 +15,7 @@ from commec.screen import add_args, ScreenArgumentParser
 from commec.tools.blastx import BlastXHandler
 
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs")
+
 
 @pytest.mark.parametrize(
     "hits, query_length, nc_ranges",
@@ -118,7 +117,15 @@ def test_fetch_nocoding_regions(tmp_path):
     # Create Dictionary of queries for funciton input.
     with patch(
         "sys.argv",
-        ["test.py", "--skip-tx", str(input_fasta), "-d", str(DATABASE_DIRECTORY), "-o", str(tmp_path)],
+        [
+            "test.py",
+            "--skip-tx",
+            str(input_fasta),
+            "-d",
+            str(DATABASE_DIRECTORY),
+            "-o",
+            str(tmp_path),
+        ],
     ):
         parser = ScreenArgumentParser()
         add_args(parser)

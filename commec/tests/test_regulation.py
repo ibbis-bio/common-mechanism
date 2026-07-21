@@ -6,7 +6,7 @@ from commec.control_list.containers import (
     AccessionFormat,
     derive_accession_format,
     ControlList,
-    ListMode
+    ListMode,
 )
 import commec.control_list.list_data as ld
 from commec.control_list import get_regulation
@@ -14,23 +14,56 @@ from commec.control_list.initialisation import tidy_control_list_data
 
 from commec.utils.logger import setup_console_logging
 
-@pytest.mark.parametrize("new_list,expected_outcome", [
-    pytest.param(*case) for case in [
-        (ControlList("list01","Listus Singlus","L1","www.l1.com","NZ",1,"EXPORT"), True), # Duplicate
-        (ControlList("list01","Listus Singlus","L2","www.l1.com","NZ",0,"EXPORT"), True), # Non-Duplicate
-        (ControlList("list01","Listus Singlus","L1","www.l2.com","NZ",0,"EXPORT"), False), # Wrong URL
-        (ControlList("list01","Listus Singlus","L1","www.l1.com","AU",0,"EXPORT"), False), # Wrong Region
-        (ControlList("list02","Listus Singlus","L1","www.l1.com","NZ",0,"EXPORT"), False), # Wrong Name
-    ]
-])
+
+@pytest.mark.parametrize(
+    "new_list,expected_outcome",
+    [
+        pytest.param(*case)
+        for case in [
+            (
+                ControlList(
+                    "list01", "Listus Singlus", "L1", "www.l1.com", "NZ", 1, "EXPORT"
+                ),
+                True,
+            ),  # Duplicate
+            (
+                ControlList(
+                    "list01", "Listus Singlus", "L2", "www.l1.com", "NZ", 0, "EXPORT"
+                ),
+                True,
+            ),  # Non-Duplicate
+            (
+                ControlList(
+                    "list01", "Listus Singlus", "L1", "www.l2.com", "NZ", 0, "EXPORT"
+                ),
+                False,
+            ),  # Wrong URL
+            (
+                ControlList(
+                    "list01", "Listus Singlus", "L1", "www.l1.com", "AU", 0, "EXPORT"
+                ),
+                False,
+            ),  # Wrong Region
+            (
+                ControlList(
+                    "list02", "Listus Singlus", "L1", "www.l1.com", "NZ", 0, "EXPORT"
+                ),
+                False,
+            ),  # Wrong Name
+        ]
+    ],
+)
 def test_list_overwrite_protections(new_list, expected_outcome):
     """
     Tests what occurs when two lists share an acronym that should not be concatenated.
     """
     setup_console_logging(logging.DEBUG)
-    existing_list = ControlList("list01","Lista Prima","L1","www.l1.com","NZ",0,"EXPORT")
+    existing_list = ControlList(
+        "list01", "Lista Prima", "L1", "www.l1.com", "NZ", 0, "EXPORT"
+    )
     ld.add_control_list(existing_list)
     assert expected_outcome == ld.add_control_list(new_list)
+
 
 def test_multiple_entrys():
     """
@@ -38,63 +71,87 @@ def test_multiple_entrys():
     """
     ld.clear()
     setup_console_logging(logging.DEBUG)
-    assert ld.add_control_list(ControlList("List01","Listus Singlus","L1","www.list1.com","NZ",ListMode.COMPLIANCE,"EXPORT"))
-    assert ld.add_control_list(ControlList("List02","Listus Duplo","L2","www.list2.com","AU",ListMode.COMPLIANCE,"EXPORT"))
+    assert ld.add_control_list(
+        ControlList(
+            "List01",
+            "Listus Singlus",
+            "L1",
+            "www.list1.com",
+            "NZ",
+            ListMode.COMPLIANCE,
+            "EXPORT",
+        )
+    )
+    assert ld.add_control_list(
+        ControlList(
+            "List02",
+            "Listus Duplo",
+            "L2",
+            "www.list2.com",
+            "AU",
+            ListMode.COMPLIANCE,
+            "EXPORT",
+        )
+    )
 
-    input_list1_data = pd.DataFrame([
-        {
-            "category": "Viruses",
-            "display_name": "Influenza A virus",
-            "derived_from": "",
-            "preferred_taxonomy_name": "Influenza A virus",
-            "other_taxonomy_name": "Flu A",
-            "tax_id": "11320",
-            "list_acronym": "L1",
-            "target": "Human",
-            "hazard_group": "HG2",
-        },
-        {
-            "category": "Viruses",
-            "display_name": "Influenza B virus",
-            "derived_from": "",
-            "preferred_taxonomy_name": "Influenza B virus",
-            "other_taxonomy_name": "Flu B",
-            "tax_id": "11321",
-            "list_acronym": "L1",
-            "target": "Human",
-            "hazard_group": "HG2",
-        },
-    ])
+    input_list1_data = pd.DataFrame(
+        [
+            {
+                "category": "Viruses",
+                "display_name": "Influenza A virus",
+                "derived_from": "",
+                "preferred_taxonomy_name": "Influenza A virus",
+                "other_taxonomy_name": "Flu A",
+                "tax_id": "11320",
+                "list_acronym": "L1",
+                "target": "Human",
+                "hazard_group": "HG2",
+            },
+            {
+                "category": "Viruses",
+                "display_name": "Influenza B virus",
+                "derived_from": "",
+                "preferred_taxonomy_name": "Influenza B virus",
+                "other_taxonomy_name": "Flu B",
+                "tax_id": "11321",
+                "list_acronym": "L1",
+                "target": "Human",
+                "hazard_group": "HG2",
+            },
+        ]
+    )
 
-    input_list2_data = pd.DataFrame([
-        {
-            "category": "Viruses",
-            "display_name": "Influenza A virus",
-            "derived_from": "",
-            "preferred_taxonomy_name": "Influenza A virus",
-            "other_taxonomy_name": "Flu A",
-            "tax_id": "11320",
-            "list_acronym": "L2",
-            "target": "Human",
-            "hazard_group": "HG2",
-        },
-        {   # Same as above, for L1, but differing input values, bare minimum
-            #"name": "Influenza B virus",
-            "tax_id": "11321",
-            "list_acronym": "L1",
-        },
-        {   # Fully Duplicate entry
-            "category": "Viruses",
-            "display_name": "Influenza B virus",
-            "derived_from": "",
-            "preferred_taxonomy_name": "Influenza B virus",
-            "other_taxonomy_name": "Flu B",
-            "tax_id": "11321",
-            "list_acronym": "L1",
-            "target": "Human",
-            "hazard_group": "HG2",
-        },
-    ])
+    input_list2_data = pd.DataFrame(
+        [
+            {
+                "category": "Viruses",
+                "display_name": "Influenza A virus",
+                "derived_from": "",
+                "preferred_taxonomy_name": "Influenza A virus",
+                "other_taxonomy_name": "Flu A",
+                "tax_id": "11320",
+                "list_acronym": "L2",
+                "target": "Human",
+                "hazard_group": "HG2",
+            },
+            {  # Same as above, for L1, but differing input values, bare minimum
+                # "name": "Influenza B virus",
+                "tax_id": "11321",
+                "list_acronym": "L1",
+            },
+            {  # Fully Duplicate entry
+                "category": "Viruses",
+                "display_name": "Influenza B virus",
+                "derived_from": "",
+                "preferred_taxonomy_name": "Influenza B virus",
+                "other_taxonomy_name": "Flu B",
+                "tax_id": "11321",
+                "list_acronym": "L1",
+                "target": "Human",
+                "hazard_group": "HG2",
+            },
+        ]
+    )
 
     print("Input data 1")
     print(input_list1_data.to_string())
@@ -114,16 +171,23 @@ def test_multiple_entrys():
 
     # Twelve headings, however should only have 3 entries from the above 5 entries.
     # There are 13 entries for a control_list/list_data/CONTROL_LIST_ANNOTATIONS
-    assert ld.CONTROL_LIST_ANNOTATIONS.shape == (3,9), f"Incorrect shape of imported Regulation Annotations. Got {ld.CONTROL_LIST_ANNOTATIONS.shape}"
+    assert ld.CONTROL_LIST_ANNOTATIONS.shape == (3, 9), (
+        f"Incorrect shape of imported Regulation Annotations. Got {ld.CONTROL_LIST_ANNOTATIONS.shape}"
+    )
 
     output = get_regulation("11320")
-    assert len(output) == 2, f"Incorrect number of returned Regulations. Expected 2, got {output}"
+    assert len(output) == 2, (
+        f"Incorrect number of returned Regulations. Expected 2, got {output}"
+    )
 
-@pytest.mark.parametrize("accessions,expected_outcome", [
-    pytest.param(*case) for case in [
-        (["111","4","11084", 444], AccessionFormat.TAXID)
-    ]
-])
+
+@pytest.mark.parametrize(
+    "accessions,expected_outcome",
+    [
+        pytest.param(*case)
+        for case in [(["111", "4", "11084", 444], AccessionFormat.TAXID)]
+    ],
+)
 def test_accession_identification_format(accessions, expected_outcome):
     """
     Tests some TaxIDs, Genbank records, and Uniprot accessions to ensure
@@ -133,4 +197,6 @@ def test_accession_identification_format(accessions, expected_outcome):
     setup_console_logging(logging.DEBUG)
     for accession in accessions:
         outcome = derive_accession_format(accession)
-        assert expected_outcome == outcome, f"{accession} failed to be identified. Expected {expected_outcome}, got {outcome}"
+        assert expected_outcome == outcome, (
+            f"{accession} failed to be identified. Expected {expected_outcome}, got {outcome}"
+        )

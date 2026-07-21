@@ -4,7 +4,11 @@ import pandas as pd
 import os
 from Bio.SeqRecord import SeqRecord, Seq
 
-from commec.screeners.check_biorisk import biorisk_evalue_filter, parse_biorisk_hits, HmmerHandler
+from commec.screeners.check_biorisk import (
+    biorisk_evalue_filter,
+    parse_biorisk_hits,
+    HmmerHandler,
+)
 from commec.config.result import ScreenResult
 from commec.config.query import Query
 from commec.config.constants import (
@@ -15,6 +19,7 @@ from commec.config.constants import (
 
 INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.fasta")
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
+
 
 @pytest.mark.parametrize(
     "annotations_exists, has_empty_output, has_hits, expected_return",
@@ -29,7 +34,9 @@ DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
         (True, False, True, 0),
     ],
 )
-def test_check_biorisk_return_codes(annotations_exists, has_empty_output, has_hits, expected_return):
+def test_check_biorisk_return_codes(
+    annotations_exists, has_empty_output, has_hits, expected_return
+):
     mock_hit_df = pd.DataFrame(
         {
             "target name": ["test_id"],
@@ -38,7 +45,7 @@ def test_check_biorisk_return_codes(annotations_exists, has_empty_output, has_hi
             "ali from": [100],
             "ali to": [200],
             "qlen": [1000],
-            "frame" : 1
+            "frame": 1,
         }
     )
 
@@ -51,15 +58,33 @@ def test_check_biorisk_return_codes(annotations_exists, has_empty_output, has_hi
         patch("os.path.exists", return_value=annotations_exists),
         patch("pandas.read_csv", return_value=mock_annot_df),
         patch("commec.screeners.check_biorisk.readhmmer", return_value=mock_hit_df),
-        patch("commec.screeners.check_biorisk.remove_overlaps", return_value=mock_hit_df),
-        patch("commec.screeners.check_biorisk.HmmerHandler.has_empty_output", return_value=has_empty_output),
-        patch("commec.screeners.check_biorisk.HmmerHandler.has_hits", return_value=has_hits),
+        patch(
+            "commec.screeners.check_biorisk.remove_overlaps", return_value=mock_hit_df
+        ),
+        patch(
+            "commec.screeners.check_biorisk.HmmerHandler.has_empty_output",
+            return_value=has_empty_output,
+        ),
+        patch(
+            "commec.screeners.check_biorisk.HmmerHandler.has_hits",
+            return_value=has_hits,
+        ),
     ):
-        handler = HmmerHandler(DATABASE_DIRECTORY + "biorisk/biorisk.hmm", INPUT_QUERY, "/mock/path/test.hmmscan")
+        handler = HmmerHandler(
+            DATABASE_DIRECTORY + "biorisk/biorisk.hmm",
+            INPUT_QUERY,
+            "/mock/path/test.hmmscan",
+        )
         results = ScreenResult()
-        queries : dict[str,Query] = {"testname" : Query(SeqRecord(Seq("atgatgatgatgatgatgatg"),"testname","testname"))}
+        queries: dict[str, Query] = {
+            "testname": Query(
+                SeqRecord(Seq("atgatgatgatgatgatgatg"), "testname", "testname")
+            )
+        }
         # Run the function - input paths are unused given all the mocking above
-        result = parse_biorisk_hits(handler, "/mock/path/biorisk/biorisk_annotations.csv", results, queries)
+        result = parse_biorisk_hits(
+            handler, "/mock/path/biorisk/biorisk_annotations.csv", results, queries
+        )
 
         # Check the result
         assert result == expected_return
@@ -69,6 +94,7 @@ def test_check_biorisk_return_codes(annotations_exists, has_empty_output, has_hi
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_hmmer(nt_qlen: int, evalue: float) -> pd.DataFrame:
     """Return a minimal single-row hmmscan DataFrame."""
     return pd.DataFrame({"E-value": [evalue], "nt_qlen": [nt_qlen]})
@@ -76,12 +102,13 @@ def _make_hmmer(nt_qlen: int, evalue: float) -> pd.DataFrame:
 
 def _short_cutoff(nt_qlen: float) -> float:
     """Length-dependent E-value cutoff for short queries."""
-    return 1 / (1 + nt_qlen ** BIORISK_SHORT_QUERY_EVALUE_EXPONENT)
+    return 1 / (1 + nt_qlen**BIORISK_SHORT_QUERY_EVALUE_EXPONENT)
 
 
 # ---------------------------------------------------------------------------
 # biorisk_evalue_filter — short-query regime (nt_qlen < threshold)
 # ---------------------------------------------------------------------------
+
 
 class TestBioriskEvalueFilterShortQuery:
     """nt_qlen below BIORISK_SHORT_QUERY_NT_THRESHOLD uses the power-law cutoff."""
@@ -116,6 +143,7 @@ class TestBioriskEvalueFilterShortQuery:
         result = biorisk_evalue_filter(_make_hmmer(nt_qlen, evalue))
         assert len(result) == 1
 
+
 class TestBioriskEvalueFilterLongQuery:
     """nt_qlen at or above BIORISK_SHORT_QUERY_NT_THRESHOLD uses the fixed cutoff."""
 
@@ -131,21 +159,24 @@ class TestBioriskEvalueFilterLongQuery:
         result = biorisk_evalue_filter(_make_hmmer(nt_qlen, evalue))
         assert len(result) == 0
 
+
 class TestBioriskEvalueFilterMultiRow:
     """Tests covering mixed DataFrames and edge cases."""
 
     def test_mixed_rows_only_passing_rows_retained(self):
         nt_qlen_short = 100
         nt_qlen_long = 500
-        df = pd.DataFrame({
-            "E-value": [
-                _short_cutoff(nt_qlen_short) * 0.5,   # short, passes
-                _short_cutoff(nt_qlen_short) * 2.0,   # short, filtered
-                BIORISK_LONG_QUERY_EVALUE_THRESHOLD * 0.1,  # long, passes
-                BIORISK_LONG_QUERY_EVALUE_THRESHOLD * 10,   # long, filtered
-            ],
-            "nt_qlen": [nt_qlen_short, nt_qlen_short, nt_qlen_long, nt_qlen_long],
-        })
+        df = pd.DataFrame(
+            {
+                "E-value": [
+                    _short_cutoff(nt_qlen_short) * 0.5,  # short, passes
+                    _short_cutoff(nt_qlen_short) * 2.0,  # short, filtered
+                    BIORISK_LONG_QUERY_EVALUE_THRESHOLD * 0.1,  # long, passes
+                    BIORISK_LONG_QUERY_EVALUE_THRESHOLD * 10,  # long, filtered
+                ],
+                "nt_qlen": [nt_qlen_short, nt_qlen_short, nt_qlen_long, nt_qlen_long],
+            }
+        )
         result = biorisk_evalue_filter(df)
         assert len(result) == 2
 
@@ -181,12 +212,14 @@ class TestBioriskEvalueFilterMultiRow:
         """Columns beyond E-value and nt_qlen must survive the filter unchanged."""
         nt_qlen = 100
         evalue = _short_cutoff(nt_qlen) * 0.5
-        df = pd.DataFrame({
-            "E-value": [evalue],
-            "nt_qlen": [nt_qlen],
-            "target name": ["some_target"],
-            "query name": ["some_query"],
-        })
+        df = pd.DataFrame(
+            {
+                "E-value": [evalue],
+                "nt_qlen": [nt_qlen],
+                "target name": ["some_target"],
+                "query name": ["some_query"],
+            }
+        )
         result = biorisk_evalue_filter(df)
         assert "target name" in result.columns
         assert result["target name"].iloc[0] == "some_target"

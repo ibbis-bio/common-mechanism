@@ -1,7 +1,8 @@
 """
 Command-line-interface (cli) functionality for the Regulation module.
-Argument declarations and 
+Argument declarations and
 """
+
 import os
 import argparse
 import pandas as pd
@@ -12,10 +13,10 @@ import commec.config.yaml_io as YamlIO
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
 from .containers import (
     ControlListOutput,
-    ControlListContext,
     ListMode,
 )
 from . import list_data as data
+
 
 def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
@@ -27,7 +28,7 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--databases",
         dest="database_dir",
         type=directory_arg,
-        #required = False,
+        # required = False,
         help="Path to parent directory containing Control List databases,"
         " the head of which should contain a region_definitions.json file",
     )
@@ -36,7 +37,7 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--config",
         dest="yaml_file",
         type=file_arg,
-        #required = True,
+        # required = True,
         help="Path to config file used by commec screen, to use the control list"
         " configuration as determined from that config yaml file.",
     )
@@ -46,7 +47,7 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         dest="verbose",
         help="Output additional debug logs.",
         default=False,
-        action="store_true"
+        action="store_true",
     )
     parser_obj.add_argument(
         "-l",
@@ -82,7 +83,8 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
     return parser_obj
 
-def format_control_lists(verbosity = False):
+
+def format_control_lists(verbosity=False):
     """
     Summarises all loaded regulation list information,
     as well as their compliance under regional context.
@@ -91,31 +93,44 @@ def format_control_lists(verbosity = False):
     if verbosity:
         output = "The following Control Lists apply: "
         for _, value in data.CONTROL_LISTS.items():
-            number_of_regulated_taxids = (data.CONTROL_LIST_ANNOTATIONS["list_acronym"] == value.acronym).sum()
+            number_of_regulated_taxids = (
+                data.CONTROL_LIST_ANNOTATIONS["list_acronym"] == value.acronym
+            ).sum()
             output += f"\n{value.description()}\nRegulated Taxid Entries: {number_of_regulated_taxids}, Status : {value.status}"
-        output += f"\n\n[Total number of Taxid Relationships:{data.ACCESSION_MAP.shape[0]}]"
+        output += (
+            f"\n\n[Total number of Taxid Relationships:{data.ACCESSION_MAP.shape[0]}]"
+        )
         return output + "\n"
 
     # Table based output for reduced verbosity.
     rows = []
     for _, value in data.CONTROL_LISTS.items():
-        rows.append({
-            "Control List": value.name,# if len(value.name) < 50 else value.name[:50]+"...",
-            "Acronym": value.acronym,
-            "Region": value.region.acronym,
-            "# Entries": (data.CONTROL_LIST_ANNOTATIONS["list_acronym"] == value.acronym).sum(),
-            "Status": value.status
-        })
-    output = pd.DataFrame(rows, columns=["Control List", "Acronym", "# Entries","Region", "Status"])
-    output["Status"] = pd.Categorical(output["Status"], categories=list(ListMode), ordered=True)
+        rows.append(
+            {
+                "Control List": value.name,  # if len(value.name) < 50 else value.name[:50]+"...",
+                "Acronym": value.acronym,
+                "Region": value.region.acronym,
+                "# Entries": (
+                    data.CONTROL_LIST_ANNOTATIONS["list_acronym"] == value.acronym
+                ).sum(),
+                "Status": value.status,
+            }
+        )
+    output = pd.DataFrame(
+        rows, columns=["Control List", "Acronym", "# Entries", "Region", "Status"]
+    )
+    output["Status"] = pd.Categorical(
+        output["Status"], categories=list(ListMode), ordered=True
+    )
     output = output.sort_values("Status")
-    return output.to_string(index = False)
+    return output.to_string(index=False)
 
-def format_control_list_annotation(input_data : list[ControlListOutput]):
+
+def format_control_list_annotation(input_data: list[ControlListOutput]):
     """
     Returns a formatted string of the controlled taxid information for logging purposes.
     """
-    plural = (len(input_data) > 1)
+    plural = len(input_data) > 1
     output = "Controlled by the following lists:\n" if plural else ""
     offset = "       > " if plural else ""
     for i, output_info in enumerate(input_data):
@@ -125,7 +140,8 @@ def format_control_list_annotation(input_data : list[ControlListOutput]):
         output += f"{offset}{derived_string}, {output_info.name}: {output_info.list} : {output_info.source_text}\n"
     return output
 
-def generate_output_summary_csv(output_filepath : str | os.PathLike):
+
+def generate_output_summary_csv(output_filepath: str | os.PathLike):
     """
     Generates an output csv of the current controlled Annotations data
     imported into commec.
@@ -136,9 +152,13 @@ def generate_output_summary_csv(output_filepath : str | os.PathLike):
     from .control_list import get_regulation
 
     # One row per accession (there may be multiple rows per index, one per list).
-    output_data = data.CONTROL_LIST_ANNOTATIONS.drop(
-        columns=["list_acronym", "list_item", "kingdom"]).groupby(
-        data.CONTROL_LIST_ANNOTATIONS.index, sort=False).first()
+    output_data = (
+        data.CONTROL_LIST_ANNOTATIONS.drop(
+            columns=["list_acronym", "list_item", "kingdom"]
+        )
+        .groupby(data.CONTROL_LIST_ANNOTATIONS.index, sort=False)
+        .first()
+    )
 
     # Add a column for each Control List, defaulted to False.
     for list_acronym in data.CONTROL_LISTS.keys():
@@ -155,14 +175,15 @@ def generate_output_summary_csv(output_filepath : str | os.PathLike):
     output_path = Path(output_filepath).resolve()
     if output_path.suffix != ".csv":
         output_path = output_path.with_suffix(".csv")
-    output_data.to_csv(output_path, index = False)
+    output_data.to_csv(output_path, index=False)
 
-def read_config_yaml_for_control_list_info(config_yaml_filepath : os.PathLike | str):
+
+def read_config_yaml_for_control_list_info(config_yaml_filepath: os.PathLike | str):
     """
     Reads a config yaml, updated from the defaults, and parses the output for
     the control_list directory as per a commec screen run. Used instead of passing
     the directory of the control list
-    
+
     :param config_yaml_filepath: Description
     :type config_yaml_filepath: os.PathLike | str
     """
@@ -170,17 +191,21 @@ def read_config_yaml_for_control_list_info(config_yaml_filepath : os.PathLike | 
     output_config = None
 
     # Read package-level configuration defaults
-    default_yaml = importlib.resources.files("commec").joinpath(DEFAULT_CONFIG_YAML_PATH)
+    default_yaml = importlib.resources.files("commec").joinpath(
+        DEFAULT_CONFIG_YAML_PATH
+    )
     if default_yaml.exists():
         output_config = YamlIO.load_config_from_yaml(str(default_yaml))
     else:
         raise FileNotFoundError(
             f"No default yaml found. Expected at {DEFAULT_CONFIG_YAML_PATH}"
-            )
+        )
 
     # Override configuration with any in user-provided YAML file
     if os.path.exists(config_yaml_filepath):
-        output_config = YamlIO.update_config_from_yaml(output_config, config_yaml_filepath)
+        output_config = YamlIO.update_config_from_yaml(
+            output_config, config_yaml_filepath
+        )
 
     output_config = YamlIO.format_config_paths(output_config)
 

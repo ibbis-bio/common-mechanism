@@ -6,17 +6,19 @@ Useful for reading any blast related outputs, for example from Blastx or Blastn.
 
 Also contains the abstract base class for blastX/N database search handlers.
 """
+
 import os
 import logging
 from typing import BinaryIO, TextIO
-import pytaxonkit
 import pandas as pd
 import numpy as np
+import glob
 import commec.control_list as cl
 from commec.tools.search_handler import SearchHandler, DatabaseValidationError
 from commec.config.constants import NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD
 
 logger = logging.getLogger(__name__)
+
 
 class BlastHandler(SearchHandler):
     """
@@ -63,10 +65,14 @@ class BlastHandler(SearchHandler):
 
         # Search for files of provided prefix.
         filename, extension = os.path.splitext(self.db_file)
-        search_file = os.path.join(self.db_directory, "*" + os.path.basename(filename) + "*" + extension)
+        search_file = os.path.join(
+            self.db_directory, "*" + os.path.basename(filename) + "*" + extension
+        )
         files = glob.glob(search_file)
         if len(files) == 0:
-            raise DatabaseValidationError(f"Mandatory screening files with {filename}* not found.")
+            raise DatabaseValidationError(
+                f"Mandatory screening files with {filename}* not found."
+            )
 
 
 def read_blast(blast_file: str | os.PathLike | BinaryIO | TextIO) -> pd.DataFrame:
@@ -96,8 +102,12 @@ def read_blast(blast_file: str | os.PathLike | BinaryIO | TextIO) -> pd.DataFram
     blast.columns = columns
     blast = blast.sort_values(by=["% identity"], ascending=False)
     blast["log evalue"] = -np.log10(pd.to_numeric(blast["evalue"]) + 1e-300)
-    blast["q. coverage"] = abs(blast["q. end"] - blast["q. start"]) / blast["query length"].max()
-    blast["s. coverage"] = abs(blast["s. end"] - blast["s. start"]) / blast["subject length"]
+    blast["q. coverage"] = (
+        abs(blast["q. end"] - blast["q. start"]) / blast["query length"].max()
+    )
+    blast["s. coverage"] = (
+        abs(blast["s. end"] - blast["s. start"]) / blast["subject length"]
+    )
     blast["query acc."] = blast["query acc."].astype(str)
 
     blast = blast[blast["subject tax ids"].notna()]
@@ -105,12 +115,15 @@ def read_blast(blast_file: str | os.PathLike | BinaryIO | TextIO) -> pd.DataFram
 
     return blast
 
+
 def get_top_hits(blast: pd.DataFrame):
     """
     Trim BLAST results down to the top hit for each base.
     """
 
-    assert isinstance(blast, pd.DataFrame), "get_top_hits expects a pandas dataframe object."
+    assert isinstance(blast, pd.DataFrame), (
+        "get_top_hits expects a pandas dataframe object."
+    )
     if "query acc." in blast.columns:
         assert len(blast["query acc."].unique() == 1)
 
@@ -146,9 +159,11 @@ def get_top_hits(blast: pd.DataFrame):
     return top_hits
 
 
-def get_high_identity_hits(blast_output_file, threshold=NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD):
+def get_high_identity_hits(
+    blast_output_file, threshold=NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD
+):
     """
-    Read all hits with high sequence identity above a given threshold from a 
+    Read all hits with high sequence identity above a given threshold from a
     BLAST results file. This is current used to quickly grab candidates from the
     Protein Taxonomy search to identify non-coding regions of a query.
     """
@@ -158,10 +173,10 @@ def get_high_identity_hits(blast_output_file, threshold=NON_CODING_REGION_PERCEN
     )
     return hits[hits["% identity"] >= threshold]
 
+
 def get_controlled_labels(
-        blast : pd.DataFrame,
-        taxids_column_name = "subject tax ids"
-        ) -> pd.DataFrame:
+    blast: pd.DataFrame, taxids_column_name="subject tax ids"
+) -> pd.DataFrame:
     """
     Uses the Control Lists to label each taxid/accession supplied from imported
     blast outputs to label as regulated True/False, depending on its existance
@@ -179,24 +194,33 @@ def get_controlled_labels(
     blast = split_by_tax_id(blast, taxids_column_name)
 
     # Build a mapping {taxid: ignoriness} and Map back to the dataframe
-    taxids_to_ignore = {taxid: cl.should_ignore(taxid) for taxid in blast[taxids_column_name].unique()}
-    logger.debug("Removing %s ignored taxids: \n%s", len(taxids_to_ignore), taxids_to_ignore)
+    taxids_to_ignore = {
+        taxid: cl.should_ignore(taxid) for taxid in blast[taxids_column_name].unique()
+    }
+    logger.debug(
+        "Removing %s ignored taxids: \n%s", len(taxids_to_ignore), taxids_to_ignore
+    )
     ignored_mask = blast[taxids_column_name].map(taxids_to_ignore)
     blast = blast[~ignored_mask]
 
     # Build a mapping {taxid: truthiness} and Map back to the dataframe
-    taxid_to_regulated = {taxid: cl.is_regulated(taxid) for taxid in blast[taxids_column_name].unique()}
+    taxid_to_regulated = {
+        taxid: cl.is_regulated(taxid) for taxid in blast[taxids_column_name].unique()
+    }
     blast["regulated"] = blast[taxids_column_name].map(taxid_to_regulated)
 
     # Get unique taxids
     unique_taxids = blast[taxids_column_name].dropna().unique()
-    logger.debug("Checking %s unique taxids: \n%s", len(unique_taxids), unique_taxids)    
-    taxid_to_controlhash = {taxid: cl.get_cluster_hash(taxid) for taxid in unique_taxids}
+    logger.debug("Checking %s unique taxids: \n%s", len(unique_taxids), unique_taxids)
+    taxid_to_controlhash = {
+        taxid: cl.get_cluster_hash(taxid) for taxid in unique_taxids
+    }
 
     # Map control status hash to the dataframe
     blast["control_hash"] = blast[taxids_column_name].map(taxid_to_controlhash)
 
     return blast
+
 
 def split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
     """
@@ -210,7 +234,6 @@ def split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
     # Create a list to hold all rows, including split ones
     new_rows = []
     for _, row in blast.iterrows():
-
         tax_ids = str(row[taxids_col_name]).split(";")
 
         # We don't care for any multiple taxid entry that hits an ignored taxid.
@@ -218,14 +241,19 @@ def split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
             continue
 
         if str(row["subject title"]).startswith("MULTISPECIES:"):
-            logger.debug("     Treating labelled MULTISPECIES:, %i multi-taxid entry, as MULTISPECIES", len(tax_ids))
+            logger.debug(
+                "     Treating labelled MULTISPECIES:, %i multi-taxid entry, as MULTISPECIES",
+                len(tax_ids),
+            )
             new_row = row.copy()
             new_row[taxids_col_name] = "MULTISPECIES"
             new_rows.append(new_row)
             continue
 
         if len(tax_ids) > 100:
-            logger.debug("     Treating %i multi-taxid entry as MULTISPECIES", len(tax_ids))
+            logger.debug(
+                "     Treating %i multi-taxid entry as MULTISPECIES", len(tax_ids)
+            )
             new_row = row.copy()
             new_row[taxids_col_name] = "MULTISPECIES"
             new_rows.append(new_row)
@@ -242,10 +270,11 @@ def split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
 
         # If there's only one tax ID, keep the original row
         new_rows.append(row)
-    
+
     # Create a new DataFrame from the list of rows
     split = pd.DataFrame(new_rows)
     return split
+
 
 def find_clusters(
     input_data: pd.DataFrame,
@@ -290,6 +319,7 @@ def find_clusters(
 
     return output_data, clusters
 
+
 def _trim_overlapping(blast: pd.DataFrame):
     """
     Remove any hits that are completely overlapped by another, higher-quality hit.
@@ -311,20 +341,23 @@ def _trim_overlapping(blast: pd.DataFrame):
     for i in blast.index:  # run through each hit from the top
         for j in blast.index[(i + 1) :]:  # compare to each below
             if j in blast2.index:
-                i_envelopes_j = (blast.loc[i, "q. start"] <= blast.loc[j, "q. start"]
-                                and blast.loc[i, "q. end"] >= blast.loc[j, "q. end"])
+                i_envelopes_j = (
+                    blast.loc[i, "q. start"] <= blast.loc[j, "q. start"]
+                    and blast.loc[i, "q. end"] >= blast.loc[j, "q. end"]
+                )
                 not_shared_coords_or_identity = (
-                        blast.loc[i, "q. start"] < blast.loc[j, "q. start"]
-                        or blast.loc[i, "q. end"] > blast.loc[j, "q. end"]
-                        or blast.loc[i, "% identity"] > blast.loc[j, "% identity"]
-                    )
-                
+                    blast.loc[i, "q. start"] < blast.loc[j, "q. start"]
+                    or blast.loc[i, "q. end"] > blast.loc[j, "q. end"]
+                    or blast.loc[i, "% identity"] > blast.loc[j, "% identity"]
+                )
+
                 if i_envelopes_j and not_shared_coords_or_identity:
                     blast2 = blast2.drop([j])
 
     blast2 = blast2.reset_index(drop=True)
 
     return blast2
+
 
 def _shift_hits_pos_strand(blast):
     for j in blast.index:
@@ -335,7 +368,8 @@ def _shift_hits_pos_strand(blast):
             blast.loc[j, "q. end"] = end
     return blast
 
-def _trim_edges(df : pd.DataFrame) -> tuple[pd.DataFrame, int]:
+
+def _trim_edges(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
     """
     Function for filtering a Blast derived dataframe, removes weaker hits
     (based on % identity) that have extents within that of stronger hits.
@@ -350,22 +384,24 @@ def _trim_edges(df : pd.DataFrame) -> tuple[pd.DataFrame, int]:
     """
 
     assert "q. start" in df.columns, (
-        "Expected column \"q. start\" does not exist for _trim_edges().\n"
+        'Expected column "q. start" does not exist for _trim_edges().\n'
         f"Existing columns: {', '.join(df.columns)}"
     )
 
     assert "q. end" in df.columns, (
-        "Expected column \"q. end\" does not exist for _trim_edges().\n"
+        'Expected column "q. end" does not exist for _trim_edges().\n'
         f"Existing columns: {', '.join(df.columns)}"
     )
 
     assert "% identity" in df.columns, (
-        "Expected column \"query length\" does not exist for _trim_edges().\n"
+        'Expected column "query length" does not exist for _trim_edges().\n'
         f"Existing columns: {', '.join(df.columns)}"
     )
 
     for top, i in enumerate(df.index):  # run through each hit from the top
-        for _, j in enumerate(df.index[top + 1:], start=top + 1):  # compare to each below
+        for _, j in enumerate(
+            df.index[top + 1 :], start=top + 1
+        ):  # compare to each below
             i_start = df.loc[i, "q. start"]
             i_end = df.loc[i, "q. end"]
             j_start = df.loc[j, "q. start"]
@@ -379,7 +415,10 @@ def _trim_edges(df : pd.DataFrame) -> tuple[pd.DataFrame, int]:
                 # if the hit extends past the end of the earlier one
                 elif i_end + 1 < j_end:
                     df.loc[j, "q. start"] = i_end + 1
-                elif i_end == j_end and df.loc[j, "% identity"] == df.loc[i, "% identity"]:
+                elif (
+                    i_end == j_end
+                    and df.loc[j, "% identity"] == df.loc[i, "% identity"]
+                ):
                     pass
                 # remove if the hit is contained in the earlier one
                 else:
@@ -393,7 +432,10 @@ def _trim_edges(df : pd.DataFrame) -> tuple[pd.DataFrame, int]:
                     pass
                 elif i_start - 1 > j_start:
                     df.loc[j, "q. end"] = i_start - 1
-                elif i_start == j_start and df.loc[j, "% identity"] == df.loc[i, "% identity"]:
+                elif (
+                    i_start == j_start
+                    and df.loc[j, "% identity"] == df.loc[i, "% identity"]
+                ):
                     pass
                 else:
                     df.loc[j, "q. start"] = 0
