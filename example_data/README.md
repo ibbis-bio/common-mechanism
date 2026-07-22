@@ -20,5 +20,5 @@ These examples show some differences between Jurisdictions, we recommend running
 
 * **Cadang-cadang** (`FLAG` (Brazil)): Cadang-cadang is a disease caused by Coconut cadang-cadang viroid (CCCVd, Cocadviroid cadangi), a lethal viroid of several palms including coconut, African oil palm , anahaw , and buri. It is of concern for Brazil.
 * **Paenibacillus** (`FLAG` (European Union)): Bacterium causative agent of American Foulbrood, a disease that is fatal for larval honey bees, and a part of the European Union List of Animal Pathogens.
-* **pUC19** (`FLAG` (United Kingdom, China)): A pUC19 vector containing the spike protein from SARS-CoV2.
+* **pUC19** (`FLAG` (United Kingdom, China)): A pUC19 vector containing the spike protein from SARS-CoV-2. Although SARS-CoV-2 is a pandemic pathogen, its endemicity and frequent use in research means it is not controlled in every jurisdiction.
 * **addgene-plasmid-111773** (`FLAG`): This sequence contains a fragment of Porcine Teschovirus, controlled by a wide variety of lists under various terms.
