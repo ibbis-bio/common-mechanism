@@ -16,7 +16,7 @@ A guide to interpreting these results is provided in the [Tutorial](https://gith
 
 ### Regional Examples-2
 
-These examples show some differences between Jurisdictions, we recommend running the examples yourself using `--region EU, US`, or `--region BR` for examples on how commec captures and reports on the unique requirements across jurisdictions. The default resuts have been generated with no jurisdiction filter.
+These examples show some differences between control lists tracked by `commec`. We recommend screening the examples yourself using `--region EU, US`, or `--region BR` to see how commec captures and reports on the unique requirements across jurisdictions. The default results have been generated with no jurisdiction filter.
 
 * **Cadang-cadang** (`FLAG` (Brazil)): Cadang-cadang is a disease caused by Coconut cadang-cadang viroid (CCCVd, Cocadviroid cadangi), a lethal viroid of several palms including coconut, African oil palm , anahaw , and buri. It is of concern for Brazil.
 * **Paenibacillus** (`FLAG` (European Union)): Bacterium causative agent of American Foulbrood, a disease that is fatal for larval honey bees, and a part of the European Union List of Animal Pathogens.
