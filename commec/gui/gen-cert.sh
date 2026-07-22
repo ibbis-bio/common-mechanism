@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Generate a TLS certificate for serving commec-gui over the LAN, writing
-# certs/server.crt and certs/server.key beside this script.
+# server.crt and server.key into $COMMEC_GUI_CERT_DIR (default: certs/ beside
+# this script). The server (--tls-auto) sets COMMEC_GUI_CERT_DIR to a per-user,
+# writable location, because a conda/pip install's own dir is typically not
+# writable; the beside-the-script default is only for running gen-cert.sh by
+# hand from a source checkout.
 #
 # Requires mkcert: the issued cert is trusted by browsers on machines where the
 # mkcert root CA is installed (-> no warning). If mkcert is missing this errors
@@ -18,7 +22,7 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OUT="$HERE/certs"
+OUT="${COMMEC_GUI_CERT_DIR:-$HERE/certs}"
 mkdir -p "$OUT"
 CRT="$OUT/server.crt"
 KEY="$OUT/server.key"

@@ -1504,8 +1504,9 @@ def add_args(parser):
     ap.add_argument("--tls-key", default="",
                     help="Path to the TLS private key (PEM) matching --tls-cert.")
     ap.add_argument("--tls-auto", action="store_true",
-                    help="Serve HTTPS, generating certs/server.{crt,key} on "
-                         "first startup (via gen-cert.sh) if they don't exist.")
+                    help="Serve HTTPS, generating a per-user cert "
+                         "(~/.local/share/commec-gui/certs) on first startup "
+                         "(via gen-cert.sh) if it doesn't exist.")
     return parser
 
 
@@ -1557,15 +1558,22 @@ def run(args):
     here = Path(__file__).parent
     cert, key = args.tls_cert, args.tls_key
 
-    # --tls-auto: default to certs/server.{crt,key}, generating them on first
-    # startup if absent. Explicit --tls-cert/--tls-key still take precedence.
+    # --tls-auto: default to a per-user, writable cert dir (XDG data home, i.e.
+    # ~/.local/share/commec-gui/certs), generating the pair on first startup if
+    # absent. NOT the package dir: a conda/pip install lives in a root-owned or
+    # read-only site-packages the server user cannot write. Explicit
+    # --tls-cert/--tls-key still take precedence.
     if args.tls_auto and not (cert or key):
-        cert = str(here / "certs" / "server.crt")
-        key = str(here / "certs" / "server.key")
+        cert_dir = (Path(os.environ.get("XDG_DATA_HOME")
+                         or Path.home() / ".local" / "share")
+                    / "commec-gui" / "certs")
+        cert = str(cert_dir / "server.crt")
+        key = str(cert_dir / "server.key")
         if not (os.path.isfile(cert) and os.path.isfile(key)):
-            print("No TLS cert found; generating one with gen-cert.sh ...")
+            print(f"No TLS cert found; generating one with gen-cert.sh into {cert_dir} ...")
             try:
-                subprocess.run(["bash", str(here / "gen-cert.sh")], check=True)
+                subprocess.run(["bash", str(here / "gen-cert.sh")], check=True,
+                               env={**os.environ, "COMMEC_GUI_CERT_DIR": str(cert_dir)})
             except (subprocess.CalledProcessError, OSError) as exc:
                 raise SystemExit(f"commec gui: error: automatic cert generation "
                                  f"failed: {exc}")
