@@ -11,9 +11,9 @@ COG2814              -          19741 addgene-plasmid-36399_3 -           5014  
 # Program:         hmmscan
 # Version:         3.4 (Aug 2023)
 # Pipeline mode:   SCAN
-# Query file:      /mnt/data/ibbis/repo/example_data/examples-1/input_commec-examples-1/commec-examples-1.faa
+# Query file:      /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/input_commec-examples/commec-examples.faa
 # Target file:     /mnt/data/ibbis/commec-databases/low_concern/protein/low_concern.hmm
-# Option settings: hmmscan --domtblout /mnt/data/ibbis/repo/example_data/examples-1/output_commec-examples-1/commec-examples-1.low_concern.hmmscan --cpu 1 /mnt/data/ibbis/commec-databases/low_concern/protein/low_concern.hmm /mnt/data/ibbis/repo/example_data/examples-1/input_commec-examples-1/commec-examples-1.faa 
-# Current dir:     /mnt/data/ibbis/repo/example_data
-# Date:            Wed Jul 22 13:41:35 2026
+# Option settings: hmmscan --domtblout /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/output_commec-examples/commec-examples.low_concern.hmmscan --cpu 1 /mnt/data/ibbis/commec-databases/low_concern/protein/low_concern.hmm /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/input_commec-examples/commec-examples.faa 
+# Current dir:     /mnt/data/ibbis/repo/common-mechanism/example_data
+# Date:            Wed Jul 22 17:39:48 2026
 # [ok]

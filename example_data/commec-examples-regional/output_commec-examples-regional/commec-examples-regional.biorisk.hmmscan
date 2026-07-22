@@ -9,9 +9,9 @@ VFG001999gbWP010946957 -            616 pUC19_2              -           2169   
 # Program:         hmmscan
 # Version:         3.4 (Aug 2023)
 # Pipeline mode:   SCAN
-# Query file:      /mnt/data/ibbis/repo/example_data/examples-2/input_commec-examples-2/commec-examples-2.faa
+# Query file:      /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/input_commec-examples-regional/commec-examples-regional.faa
 # Target file:     /mnt/data/ibbis/commec-databases/biorisk/biorisk.hmm
-# Option settings: hmmscan --domtblout /mnt/data/ibbis/repo/example_data/examples-2/output_commec-examples-2/commec-examples-2.biorisk.hmmscan --cpu 1 /mnt/data/ibbis/commec-databases/biorisk/biorisk.hmm /mnt/data/ibbis/repo/example_data/examples-2/input_commec-examples-2/commec-examples-2.faa 
-# Current dir:     /mnt/data/ibbis/repo/example_data
-# Date:            Wed Jul 22 13:47:53 2026
+# Option settings: hmmscan --domtblout /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/output_commec-examples-regional/commec-examples-regional.biorisk.hmmscan --cpu 4 /mnt/data/ibbis/commec-databases/biorisk/biorisk.hmm /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/input_commec-examples-regional/commec-examples-regional.faa 
+# Current dir:     /mnt/data/ibbis/repo/common-mechanism/example_data
+# Date:            Wed Jul 22 17:40:26 2026
 # [ok]

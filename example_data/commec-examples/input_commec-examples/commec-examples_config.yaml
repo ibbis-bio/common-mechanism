@@ -25,7 +25,7 @@ databases:
     rna:
       path: /mnt/data/ibbis/commec-databases/low_concern/rna/low_concern.cm
 do_cleanup: false
-force: true
+force: false
 resume: false
 skip_nt_search: false
 skip_taxonomy_search: false

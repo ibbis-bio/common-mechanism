@@ -20,9 +20,9 @@ CRISPR-DR20          RF01333   addgene-plasmid-111773 -          cm        1    
 # Program:         cmscan
 # Version:         1.1.5 (Sep 2023)
 # Pipeline mode:   SCAN
-# Query file:      /mnt/data/ibbis/repo/example_data/examples-2/input_commec-examples-2/commec-examples-2.cleaned.fasta
+# Query file:      /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/input_commec-examples-regional/commec-examples-regional.cleaned.fasta
 # Target file:     /mnt/data/ibbis/commec-databases/low_concern/rna/low_concern.cm
-# Option settings: cmscan --tblout /mnt/data/ibbis/repo/example_data/examples-2/output_commec-examples-2/commec-examples-2.low_concern.cmscan --cpu 1 /mnt/data/ibbis/commec-databases/low_concern/rna/low_concern.cm /mnt/data/ibbis/repo/example_data/examples-2/input_commec-examples-2/commec-examples-2.cleaned.fasta 
-# Current dir:     /mnt/data/ibbis/repo/example_data
-# Date:            Wed Jul 22 13:53:58 2026
+# Option settings: cmscan --tblout /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/output_commec-examples-regional/commec-examples-regional.low_concern.cmscan --cpu 4 /mnt/data/ibbis/commec-databases/low_concern/rna/low_concern.cm /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/input_commec-examples-regional/commec-examples-regional.cleaned.fasta 
+# Current dir:     /mnt/data/ibbis/repo/common-mechanism/example_data
+# Date:            Wed Jul 22 17:46:45 2026
 # [ok]

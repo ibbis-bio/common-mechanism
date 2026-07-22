@@ -1,7 +1,10 @@
 INFO    │ Validating input query, regulations, and databases...
+WARNING │ HmmerHandler: requested 8 threads; capping at 4 for optimal performance.
+WARNING │ HmmerHandler: requested 8 threads; capping at 4 for optimal performance.
+WARNING │ CmscanHandler: requested 8 threads; capping at 4 for optimal performance.
 INFO    │ Input query file:
 ────────┘
-/mnt/data/ibbis/repo/example_data/commec-examples-2.fasta
+/mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional.fasta
 ────────┐
 INFO    │ Using Control Lists:
 ────────┘
@@ -32,7 +35,7 @@ Cadang-cadang, Paenibacillus, pUC19, addgene-plasmid-111773
 ────────┐
 INFO    │ Total length of all queries : 11353 b.p.
 INFO    │  >> STEP 1: Checking for biorisk genes...
-INFO    │ STEP 1 completed at 2026-07-22 13:47:53
+INFO    │ STEP 1 completed at 2026-07-22 17:40:26
 INFO    │  >> STEP 2: Checking regulated pathogen proteins...
 INFO    │     Identifying controlled taxa ...
 INFO    │     Processing query: pUC19
@@ -44,7 +47,7 @@ INFO    │     Processing query: Paenibacillus
 INFO    │        --> Flag at bases (1-1323) controlled Bacteria Paenibacillus larvae.
         │            (Regulated Species: Paenibacillus larvae.
         │             Regulated TaxID: 741161)
-INFO    │ STEP 2 completed at 2026-07-22 13:50:23
+INFO    │ STEP 2 completed at 2026-07-22 17:42:57
 INFO    │  >> STEP 3: Checking regulated pathogen nucleotides...
 INFO    │ No protein hits found for Cadang-cadang, screening entire sequence.
 INFO    │        --> no noncoding regions >= 50 bases found for Paenibacillus, skipping nt scan for query.
@@ -76,7 +79,7 @@ INFO    │     Processing query: addgene-plasmid-111773
 INFO    │     for the non-coding region: 1424-1596
 INFO    │     Processing query: addgene-plasmid-111773
 INFO    │     for the non-coding region: 2455-3089
-INFO    │ STEP 3 completed at 2026-07-22 13:53:55
+INFO    │ STEP 3 completed at 2026-07-22 17:46:43
 INFO    │  >> STEP 4: Checking any pathogen regions for low-concern components...
 INFO    │  Low-concern checks for Cadang-cadang
 INFO    │        ... no housekeeping protein hits.
@@ -99,8 +102,8 @@ INFO    │  Low-concern checks for addgene-plasmid-111773
 INFO    │        ... no housekeeping protein hits.
 INFO    │        ... no low-concern RNA hits.
 INFO    │        ... no low-concern DNA hits.
-INFO    │ STEP 4 completed at 2026-07-22 13:53:58
-INFO    │  >> Commec Screen completed at 2026-07-22 13:53:58
+INFO    │ STEP 4 completed at 2026-07-22 17:46:46
+INFO    │  >> Commec Screen completed at 2026-07-22 17:46:46
 ────────┘
 
  >> SUMMARY : 

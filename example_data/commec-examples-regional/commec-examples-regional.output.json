@@ -2,11 +2,11 @@
   "commec_info": {
     "commec_version": "1.1.0",
     "json_output_version": "0.6",
-    "time_taken": "00:06:09",
-    "date_run": "2026-07-22 13:47:51"
+    "time_taken": "00:06:22",
+    "date_run": "2026-07-22 17:40:24"
   },
   "query_info": {
-    "file": "/mnt/data/ibbis/repo/example_data/commec-examples-2.fasta",
+    "file": "/mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional.fasta",
     "number_of_queries": 4,
     "total_query_length": 11353
   },
@@ -422,7 +422,7 @@
         "name": "Australia Group Common Control List Human and Animal Pathogens",
         "acronym": "CCL",
         "region": "Australia Group",
-        "includes": "SI,GB,IT,GR,MX,AT,BG,SE,RO,MT,HR,CZ,FI,US,AU,AR,KR,IN,CY,DK,BE,LT,HU,IS,SK,LV,JP,PT,DE,TR,FR,NO,CA,NZ,NL,CH,EE,IE,ES,LU,UA,PL",
+        "includes": "FI,US,GR,AU,PT,ES,EE,NO,UA,LV,RO,NL,IE,LU,FR,IS,JP,AT,HU,SE,SI,AR,KR,IN,SK,CA,PL,CZ,MT,GB,BG,NZ,LT,CY,DE,MX,IT,BE,TR,HR,CH,DK",
         "status": "Compliance",
         "url": "https://www.dfat.gov.au/publications/minisite/theaustraliagroupnet/site/en/controllists.html"
       },
@@ -430,7 +430,7 @@
         "name": "Australia Group Common Control List Plant Pathogens",
         "acronym": "PPCCL",
         "region": "Australia Group",
-        "includes": "SI,GB,IT,GR,MX,AT,BG,SE,RO,MT,HR,CZ,FI,US,AU,AR,KR,IN,CY,DK,BE,LT,HU,IS,SK,LV,JP,PT,DE,TR,FR,NO,CA,NZ,NL,CH,EE,IE,ES,LU,UA,PL",
+        "includes": "FI,US,GR,AU,PT,ES,EE,NO,UA,LV,RO,NL,IE,LU,FR,IS,JP,AT,HU,SE,SI,AR,KR,IN,SK,CA,PL,CZ,MT,GB,BG,NZ,LT,CY,DE,MX,IT,BE,TR,HR,CH,DK",
         "status": "Compliance",
         "url": "https://www.dfat.gov.au/publications/minisite/theaustraliagroupnet/site/en/controllists.html"
       },
@@ -446,7 +446,7 @@
         "name": "EU List of Animal Pathogens",
         "acronym": "EULAP",
         "region": "European Union",
-        "includes": "SI,HU,IT,GR,SK,AT,LV,PT,DE,BG,PL,FR,SE,RO,MT,BE,HR,CZ,NL,FI,EE,IE,ES,LU,CY,DK,LT",
+        "includes": "FI,SK,PL,CZ,MT,GR,BG,PT,LT,ES,EE,LV,RO,DK,NL,IE,LU,CY,FR,DE,AT,HU,IT,SE,SI,HR,BE",
         "status": "Compliance",
         "url": "https://eur-lex.europa.eu/eli/reg_impl/2018/1882/oj/eng"
       },
@@ -454,7 +454,7 @@
         "name": "EU Dual-Use Export Control Regime",
         "acronym": "EUDUECR",
         "region": "European Union",
-        "includes": "SI,HU,IT,GR,SK,AT,LV,PT,DE,BG,PL,FR,SE,RO,MT,BE,HR,CZ,NL,FI,EE,IE,ES,LU,CY,DK,LT",
+        "includes": "FI,SK,PL,CZ,MT,GR,BG,PT,LT,ES,EE,LV,RO,DK,NL,IE,LU,CY,FR,DE,AT,HU,IT,SE,SI,HR,BE",
         "status": "Compliance",
         "url": "https://eur-lex.europa.eu/eli/reg/2021/821/oj/eng"
       },

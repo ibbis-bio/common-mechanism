@@ -12,9 +12,9 @@ CRISPR-DR36          RF01346   RVFV                 -          cm        1      
 # Program:         cmscan
 # Version:         1.1.5 (Sep 2023)
 # Pipeline mode:   SCAN
-# Query file:      /mnt/data/ibbis/repo/example_data/examples-1/input_commec-examples-1/commec-examples-1.cleaned.fasta
+# Query file:      /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/input_commec-examples/commec-examples.cleaned.fasta
 # Target file:     /mnt/data/ibbis/commec-databases/low_concern/rna/low_concern.cm
-# Option settings: cmscan --tblout /mnt/data/ibbis/repo/example_data/examples-1/output_commec-examples-1/commec-examples-1.low_concern.cmscan --cpu 1 /mnt/data/ibbis/commec-databases/low_concern/rna/low_concern.cm /mnt/data/ibbis/repo/example_data/examples-1/input_commec-examples-1/commec-examples-1.cleaned.fasta 
-# Current dir:     /mnt/data/ibbis/repo/example_data
-# Date:            Wed Jul 22 13:41:39 2026
+# Option settings: cmscan --tblout /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/output_commec-examples/commec-examples.low_concern.cmscan --cpu 1 /mnt/data/ibbis/commec-databases/low_concern/rna/low_concern.cm /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/input_commec-examples/commec-examples.cleaned.fasta 
+# Current dir:     /mnt/data/ibbis/repo/common-mechanism/example_data
+# Date:            Wed Jul 22 17:39:53 2026
 # [ok]

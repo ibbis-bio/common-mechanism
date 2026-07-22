@@ -21,9 +21,9 @@ gi3006115embCAA73290.1 -            200 RVFV_2               -            563  2
 # Program:         hmmscan
 # Version:         3.4 (Aug 2023)
 # Pipeline mode:   SCAN
-# Query file:      /mnt/data/ibbis/repo/example_data/examples-1/input_commec-examples-1/commec-examples-1.faa
+# Query file:      /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/input_commec-examples/commec-examples.faa
 # Target file:     /mnt/data/ibbis/commec-databases/biorisk/biorisk.hmm
-# Option settings: hmmscan --domtblout /mnt/data/ibbis/repo/example_data/examples-1/output_commec-examples-1/commec-examples-1.biorisk.hmmscan --cpu 1 /mnt/data/ibbis/commec-databases/biorisk/biorisk.hmm /mnt/data/ibbis/repo/example_data/examples-1/input_commec-examples-1/commec-examples-1.faa 
-# Current dir:     /mnt/data/ibbis/repo/example_data
-# Date:            Wed Jul 22 13:30:17 2026
+# Option settings: hmmscan --domtblout /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/output_commec-examples/commec-examples.biorisk.hmmscan --cpu 1 /mnt/data/ibbis/commec-databases/biorisk/biorisk.hmm /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/input_commec-examples/commec-examples.faa 
+# Current dir:     /mnt/data/ibbis/repo/common-mechanism/example_data
+# Date:            Wed Jul 22 17:29:13 2026
 # [ok]

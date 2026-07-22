@@ -1,7 +1,7 @@
 INFO    │ Validating input query, regulations, and databases...
 INFO    │ Input query file:
 ────────┘
-/mnt/data/ibbis/repo/example_data/commec-examples-1.fasta
+/mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples.fasta
 ────────┐
 INFO    │ Using Control Lists:
 ────────┘
@@ -38,7 +38,7 @@ INFO    │        --> Virulence Factor found at coordinates: 1383-4385.
 INFO    │  Biorisks in RVFV:
 INFO    │        --> Regulated Gene found at coordinates: 35-778.
 INFO    │        --> Regulated Gene found at coordinates: 35-829.
-INFO    │ STEP 1 completed at 2026-07-22 13:30:18
+INFO    │ STEP 1 completed at 2026-07-22 17:29:13
 INFO    │  >> STEP 2: Checking regulated pathogen proteins...
 INFO    │     Identifying controlled taxa ...
 INFO    │     Processing query: BBa_K209429_A_15261_Composite_SSFYFP-hM2D-Tuba
@@ -68,7 +68,7 @@ INFO    │        --> Flag at bases (961-1653) controlled Viruses Phlebovirus r
         │             Regulated TaxID: 11588)
 INFO    │     Processing query: M14107.1
 INFO    │     Processing query: xylanase_zero_shot_des31_bioalign_bening_non_chimeric
-INFO    │ STEP 2 completed at 2026-07-22 13:37:51
+INFO    │ STEP 2 completed at 2026-07-22 17:36:02
 INFO    │  >> STEP 3: Checking regulated pathogen nucleotides...
 INFO    │        --> Identified noncoding regions for query M14107.1: [356-687, 4392-4480]
 INFO    │ No protein hits found for xylanase_zero_shot_des31_bioalign_bening_non_chimeric, screening entire sequence.
@@ -121,7 +121,7 @@ INFO    │     for the non-coding region: 1-84
 INFO    │        --> Flag at bases (1-65) controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal).
         │            (Regulated Species: Vesiculovirus indiana.
         │             Regulated TaxID: 11277)
-INFO    │ STEP 3 completed at 2026-07-22 13:41:32
+INFO    │ STEP 3 completed at 2026-07-22 17:39:46
 INFO    │  >> STEP 4: Checking any pathogen regions for low-concern components...
 INFO    │  Low-concern checks for M14107.1
 INFO    │        ... no housekeeping protein hits.
@@ -146,8 +146,8 @@ INFO    │ Clear failed for Phlebovirus riftense (Rift Valley fever virus) (Fla
 INFO    │        ... no housekeeping protein hits.
 INFO    │        ... no low-concern RNA hits.
 INFO    │        ... no low-concern DNA hits.
-INFO    │ STEP 4 completed at 2026-07-22 13:41:39
-INFO    │  >> Commec Screen completed at 2026-07-22 13:41:39
+INFO    │ STEP 4 completed at 2026-07-22 17:39:53
+INFO    │  >> Commec Screen completed at 2026-07-22 17:39:53
 ────────┘
 
  >> SUMMARY : 
