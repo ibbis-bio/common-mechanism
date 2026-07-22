@@ -1,6 +1,11 @@
-name,filepath,flag,biorisk,protein,nucleotide,low_concern,virus_flag,bacteria_flag,eukaryote_flag,low_concern_protein,low_concern_rna,low_concern_dna
-Part:BBa_K5108009_creA_-,2025-08-06/commec-examples.output.json,Warning,Warning,Pass,Skip,Warning,False,False,False,False,False,False
-encrypted,2025-08-06/commec-examples.output.json,Warning,Pass,Pass,Pass,Pass,False,False,False,False,False,False
-xylanase_zero_shot_des31,2025-08-06/commec-examples.output.json,Pass,Pass,Pass,Pass,Pass,False,False,False,False,False,False
-RVFV_Rift_valley_fever,2025-08-06/commec-examples.output.json,Flag,Warning,Flag,Flag,Flag,True,False,False,False,False,False
-BBa_K209429_A_15261,2025-08-06/commec-examples.output.json,Pass,Pass,Mixed,Pass,Pass,False,True,False,False,False,False
+name,description,filepath,flag,biorisk,protein,nucleotide,low_concern,virus_flag,bacteria_flag,eukaryote_flag,low_concern_protein,low_concern_rna,low_concern_dna,rationale
+Cadang-cadang,viroid,./commec-examples-regional/commec-examples-regional.output.json,Flag,Pass,Pass,Flag,Flag,True,False,False,False,False,False,Matches nucleotide sequence with regulated organisms.
+Paenibacillus,larvae,./commec-examples-regional/commec-examples-regional.output.json,Flag,Pass,Flag,Skip,Flag,False,True,False,False,False,False,Matches protein sequence with regulated organisms.
+pUC19,SARS Cov-2 Spike  (6508 bp),./commec-examples-regional/commec-examples-regional.output.json,Flag,Pass,Flag,Flag (Cleared),Flag,True,False,False,False,False,True,Matches protein sequence with regulated organisms; as well as flags cleared as common or non-hazardous.
+addgene-plasmid-111773,(3232 bp),./commec-examples-regional/commec-examples-regional.output.json,Flag,Pass,Pass,Flag,Flag,True,False,False,False,False,False,Matches nucleotide sequence with regulated organisms.
+M14107.1,"Plasmid pHly152 (from E.coli) hly A, B",./commec-examples/commec-examples.output.json,Warning,Warning,Pass,Pass,Warning,False,False,False,False,False,False,Matches sequence with virulence factor.
+xylanase_zero_shot_des31_bioalign_bening_non_chimeric,,./commec-examples/commec-examples.output.json,Pass,Pass,Pass,Pass,Pass,False,False,False,False,False,False,No regions of concern.
+BBa_K209429_A_15261_Composite_SSFYFP-hM2D-Tuba,,./commec-examples/commec-examples.output.json,Flag (Cleared),Pass,Pass,Flag (Cleared),Flag (Cleared),True,False,False,False,False,True,No regions of concern flags cleared as common or non-hazardous
+addgene-plasmid-36399,"(15,045 bp)",./commec-examples/commec-examples.output.json,Flag,Pass,Flag,Flag,Flag,True,False,False,False,False,True,Matches protein and nucleotide sequence with regulated organisms; as well as flags cleared as common or non-hazardous.
+RVFV,Rift valley fever virus,./commec-examples/commec-examples.output.json,Flag,Flag,Flag,Flag,Flag,True,False,False,False,False,False,"Matches sequence with pathogenic or toxin function, and protein and nucleotide sequence with regulated organisms."
+encrypted,,./commec-examples/commec-examples.output.json,Pass,Pass,Pass,Pass,Pass,False,False,False,False,False,False,No regions of concern.

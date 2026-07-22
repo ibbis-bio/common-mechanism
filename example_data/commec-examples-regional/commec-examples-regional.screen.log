@@ -1,0 +1,121 @@
+INFO    │ Validating input query, regulations, and databases...
+WARNING │ HmmerHandler: requested 8 threads; capping at 4 for optimal performance.
+WARNING │ HmmerHandler: requested 8 threads; capping at 4 for optimal performance.
+WARNING │ CmscanHandler: requested 8 threads; capping at 4 for optimal performance.
+INFO    │ Input query file:
+────────┘
+/mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional.fasta
+────────┐
+INFO    │ Using Control Lists:
+────────┘
+                                                                 Control List  Acronym  # Entries Region     Status
+         Dual-Use Items Export Control List of the People’s Republic of China    DUPRC        153     CN Compliance
+                Schedule 5 of the Anti-terrorism, Crime and Security Act 2001    ATCSA         63     UK Compliance
+                                              Specified Animal Pathogen Order     SAPO         37     UK Compliance
+Lista de Bens Relacionados à Área Biológica e Serviços Diretamente Vinculados    CIBES        318     BR Compliance
+                                                United States Munitions Lists     USML         11     US Compliance
+                                                    The Commerce Control List    USCCL        138     US Compliance
+      United States Department of Agriculture Plant Protection and Quarantine  PPQUSDA          6     US Compliance
+                                         Select Agents and Toxins List (USDA) BSATUSDA         84     US Compliance
+                   Control of Substances Hazardous to Health Regulations 2002    COSHH        154     UK Compliance
+                                          Select Agents and Toxins List (HHS)  BSATHHS         35     US Compliance
+                       Russian Federation Export Control (Humans and animals)   RFECHA         54     RU Compliance
+                                            EU Dual-Use Export Control Regime  EUDUECR        143     EU Compliance
+                                                  EU List of Animal Pathogens    EULAP        131     EU Compliance
+                                          India Export Controls (SCOMET List)   SCOMET        235     IN Compliance
+                          Australia Group Common Control List Plant Pathogens    PPCCL         22     AG Compliance
+               Australia Group Common Control List Human and Animal Pathogens      CCL        142     AG Compliance
+ Declaration of Certain Biological Goods and Technologies as Controlled Goods     ZAEC        180     ZA Compliance
+                                  Russian Federation Export Control (Animals)    RFECA         23     RU Compliance
+                                             UK Strategic Export Control List   UKSECL        158     UK Compliance
+────────┐
+INFO    │ Commec will screen the following 4 queries:
+────────┘
+Cadang-cadang, Paenibacillus, pUC19, addgene-plasmid-111773
+────────┐
+INFO    │ Total length of all queries : 11353 b.p.
+INFO    │  >> STEP 1: Checking for biorisk genes...
+INFO    │ STEP 1 completed at 2026-07-22 17:40:26
+INFO    │  >> STEP 2: Checking regulated pathogen proteins...
+INFO    │     Identifying controlled taxa ...
+INFO    │     Processing query: pUC19
+INFO    │        --> Flag at bases (665-4450) controlled Viruses Severe acute respiratory syndrome coronavirus 2.
+        │            (Regulated Species: Betacoronavirus pandemicum.
+        │             Regulated TaxID: 2697049)
+INFO    │     Processing query: addgene-plasmid-111773
+INFO    │     Processing query: Paenibacillus
+INFO    │        --> Flag at bases (1-1323) controlled Bacteria Paenibacillus larvae.
+        │            (Regulated Species: Paenibacillus larvae.
+        │             Regulated TaxID: 741161)
+INFO    │ STEP 2 completed at 2026-07-22 17:42:57
+INFO    │  >> STEP 3: Checking regulated pathogen nucleotides...
+INFO    │ No protein hits found for Cadang-cadang, screening entire sequence.
+INFO    │        --> no noncoding regions >= 50 bases found for Paenibacillus, skipping nt scan for query.
+INFO    │        --> Identified noncoding regions for query pUC19: [366-664, 4451-4508, 4906-5105, 5964-6136]
+INFO    │        --> Identified noncoding regions for query addgene-plasmid-111773: [1-791, 1424-1596, 2455-3089]
+INFO    │     Identifying controlled taxa ...
+INFO    │     Processing query: Cadang-cadang
+INFO    │     for the non-coding region: 1-287
+INFO    │        --> Flag at bases (1-287) controlled Viruses Coconut cadang-cadang viroid.
+        │            (Regulated Species: Cocadviroid cadangi.
+        │             Regulated TaxID: 36453)
+INFO    │     Processing query: pUC19
+INFO    │     for the non-coding region: 366-664
+INFO    │     Processing query: pUC19
+INFO    │     for the non-coding region: 4451-4508
+INFO    │     Processing query: pUC19
+INFO    │     for the non-coding region: 4906-5105
+INFO    │        --> Flag at bases (4906-4975) controlled Viruses Human immunodeficiency virus 1.
+        │            (Regulated Species: Lentivirus humimdef1.
+        │             Regulated TaxID: 11676)
+INFO    │     Processing query: pUC19
+INFO    │     for the non-coding region: 5964-6136
+INFO    │     Processing query: addgene-plasmid-111773
+INFO    │     for the non-coding region: 1-791
+INFO    │        --> Flag at bases (114-176) controlled Viruses Teschovirus asilesi (Porcine Teschovirus).
+        │            (Regulated Species: Teschovirus asilesi.
+        │             Regulated TaxID: 118140)
+INFO    │     Processing query: addgene-plasmid-111773
+INFO    │     for the non-coding region: 1424-1596
+INFO    │     Processing query: addgene-plasmid-111773
+INFO    │     for the non-coding region: 2455-3089
+INFO    │ STEP 3 completed at 2026-07-22 17:46:43
+INFO    │  >> STEP 4: Checking any pathogen regions for low-concern components...
+INFO    │  Low-concern checks for Cadang-cadang
+INFO    │        ... no housekeeping protein hits.
+INFO    │        ... no low-concern RNA hits.
+INFO    │        ... no low-concern DNA hits.
+INFO    │  Low-concern checks for Paenibacillus
+INFO    │ Clear failed for Paenibacillus larvae (Flag) as RNA of low-concern has >50 bases unaccounted for.
+INFO    │        ... no housekeeping protein hits.
+INFO    │        ... no low-concern RNA hits.
+INFO    │        ... no low-concern DNA hits.
+INFO    │  Low-concern checks for pUC19
+INFO    │ Clear failed for Severe acute respiratory syndrome coronavirus 2 (Flag) as RNA of low-concern has >50 bases
+        │ unaccounted for.
+INFO    │        --> Clearing Flag at bases (4906-4975) as low-concern DNA: "Human immunodeficiency virus 1" matched
+        │ synthetic biology part "BBa_K802003 P 26298 Plasmid "Shuttle vector for %3Ci%3E E. coli%3C/i%3E and %3Ci%3EB.
+        │ subtilis%3C/i%3E""
+INFO    │        ... no housekeeping protein hits.
+INFO    │        ... no low-concern RNA hits.
+INFO    │  Low-concern checks for addgene-plasmid-111773
+INFO    │        ... no housekeeping protein hits.
+INFO    │        ... no low-concern RNA hits.
+INFO    │        ... no low-concern DNA hits.
+INFO    │ STEP 4 completed at 2026-07-22 17:46:46
+INFO    │  >> Commec Screen completed at 2026-07-22 17:46:46
+────────┘
+
+ >> SUMMARY : 
+                 query      overall      biorisk  taxonomy_aa    taxonomy_nt      cleared
+         Cadang-cadang         Flag         Pass         Pass           Flag         Flag
+         Paenibacillus         Flag         Pass         Flag           Skip         Flag
+                 pUC19         Flag         Pass         Flag Flag (Cleared)         Flag
+addgene-plasmid-111773         Flag         Pass         Pass           Flag         Flag
+
+ >> RATIONALE : 
+Cadang-cadang             : Flag         --> Matches nucleotide sequence with regulated organisms.
+Paenibacillus             : Flag         --> Matches protein sequence with regulated organisms.
+pUC19                     : Flag         --> Matches protein sequence with regulated organisms; as well as flags cleared as common or non-hazardous.
+addgene-plasmid-111773    : Flag         --> Matches nucleotide sequence with regulated organisms.
+

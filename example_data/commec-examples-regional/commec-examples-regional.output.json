@@ -1,0 +1,559 @@
+{
+  "commec_info": {
+    "commec_version": "1.1.0",
+    "json_output_version": "0.6",
+    "time_taken": "00:06:22",
+    "date_run": "2026-07-22 17:40:24"
+  },
+  "query_info": {
+    "file": "/mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional.fasta",
+    "number_of_queries": 4,
+    "total_query_length": 11353
+  },
+  "queries": {
+    "Cadang-cadang": {
+      "query": "Cadang-cadang",
+      "description": "viroid",
+      "length": 287,
+      "status": {
+        "screen_status": "Flag",
+        "biorisk": "Pass",
+        "protein_taxonomy": "Pass",
+        "nucleotide_taxonomy": "Flag",
+        "low_concern": "Flag",
+        "rationale": "Matches nucleotide sequence with regulated organisms."
+      },
+      "hits": [
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Nucleotide Taxonomy Search"
+          },
+          "name": "Coconut cadang-cadang viroid",
+          "description": "controlled Viruses Coconut cadang-cadang viroid",
+          "region": {
+            "e_value": 1.4e-143,
+            "query_start": 1,
+            "query_end": 287
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 1.4e-143,
+                  "percent_identity": 100.0,
+                  "query_start": 1,
+                  "query_end": 287,
+                  "match_start": 1,
+                  "match_end": 287,
+                  "target_hit": "J02051",
+                  "target_description": "Cadang-cadang coconut viroid, RNA 1 slow, complete genome",
+                  "taxid": 36453,
+                  "genus": "Cocadviroid",
+                  "species": "Cocadviroid cadangi",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.4.Cadang-cadang viroid"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Paenibacillus": {
+      "query": "Paenibacillus",
+      "description": "larvae",
+      "length": 1326,
+      "status": {
+        "screen_status": "Flag",
+        "biorisk": "Pass",
+        "protein_taxonomy": "Flag",
+        "nucleotide_taxonomy": "Skip",
+        "low_concern": "Flag",
+        "rationale": "Matches protein sequence with regulated organisms."
+      },
+      "hits": [
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Protein Taxonomy Search"
+          },
+          "name": "Paenibacillus larvae",
+          "description": "controlled Bacteria Paenibacillus larvae",
+          "region": {
+            "e_value": 0.0,
+            "query_start": 1,
+            "query_end": 1323
+          },
+          "annotations": {
+            "category": [
+              "Bacteria"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 0.0,
+                  "percent_identity": 99.773,
+                  "query_start": 1,
+                  "query_end": 1323,
+                  "match_start": 1,
+                  "match_end": 441,
+                  "target_hit": "A0A2A5K5H4",
+                  "target_description": "Nucleobase transporter PlAzg1",
+                  "taxid": 741161,
+                  "genus": "Paenibacillus",
+                  "species": "Paenibacillus larvae",
+                  "controlled_by_lists": [
+                    {
+                      "list": "EU List of Animal Pathogens",
+                      "source": "Paenibacillus larvae"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 1,
+                "controlled_viruses": 0,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "pUC19": {
+      "query": "pUC19",
+      "description": "SARS Cov-2 Spike  (6508 bp)",
+      "length": 6508,
+      "status": {
+        "screen_status": "Flag",
+        "biorisk": "Pass",
+        "protein_taxonomy": "Flag",
+        "nucleotide_taxonomy": "Flag (Cleared)",
+        "low_concern": "Flag",
+        "rationale": "Matches protein sequence with regulated organisms; as well as flags cleared as common or non-hazardous."
+      },
+      "hits": [
+        {
+          "recommendation": {
+            "status": "Flag (Cleared)",
+            "from_step": "Nucleotide Taxonomy Search"
+          },
+          "name": "Human immunodeficiency virus 1",
+          "description": "controlled Viruses Human immunodeficiency virus 1",
+          "region": {
+            "e_value": 6.66e-57,
+            "query_start": 4906,
+            "query_end": 4975
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 6.66e-57,
+                  "percent_identity": 99.242,
+                  "query_start": 4906,
+                  "query_end": 4975,
+                  "match_start": 9674,
+                  "match_end": 9804,
+                  "target_hit": "KC503852",
+                  "target_description": "HIV-1 isolate pXJDC6291-2-6 from China, complete genome",
+                  "taxid": 11676,
+                  "genus": "Lentivirus",
+                  "species": "Lentivirus humimdef1",
+                  "controlled_by_lists": [
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D018 HIV-1 & HIV-2 and other strains of SIV"
+                    },
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.6.Retroviruses including Human Immunodeficiency Viruses (HIV-1 and HIV-2)"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Protein Taxonomy Search"
+          },
+          "name": "Severe acute respiratory syndrome coronavirus 2",
+          "description": "controlled Viruses Severe acute respiratory syndrome coronavirus 2",
+          "region": {
+            "e_value": 0.0,
+            "query_start": 665,
+            "query_end": 4450
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 0.0,
+                  "percent_identity": 100.0,
+                  "query_start": 665,
+                  "query_end": 4450,
+                  "match_start": 12,
+                  "match_end": 1273,
+                  "target_hit": "P0DTC2",
+                  "target_description": "Spike glycoprotein",
+                  "taxid": 2697049,
+                  "genus": "Betacoronavirus",
+                  "species": "Betacoronavirus pandemicum",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+                      "source": "1C351.a.33 SARS-CoV-2"
+                    },
+                    {
+                      "list": "Control of Substances Hazardous to Health Regulations 2002",
+                      "source": "Severe-acute respiratory syndrome-related coronavirus 2 (SARS-CoV-2)"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag (Cleared)",
+            "from_step": "Low Concern DNA Search"
+          },
+          "name": "BBa_K802003 P 26298 Plasmid \"Shuttle vector for %3Ci%3E E. coli%3C/i%3E and %3Ci%3EB. subtilis%3C/i%3E\"",
+          "description": "BBa_K802003 P 26298 Plasmid \"Shuttle vector for %3Ci%3E E. coli%3C/i%3E and %3Ci%3EB. subtilis%3C/i%3E\"",
+          "region": {
+            "e_value": 0.0,
+            "query_start": 4504,
+            "query_end": 6508
+          },
+          "annotations": {}
+        }
+      ]
+    },
+    "addgene-plasmid-111773": {
+      "query": "addgene-plasmid-111773",
+      "description": "(3232 bp)",
+      "length": 3232,
+      "status": {
+        "screen_status": "Flag",
+        "biorisk": "Pass",
+        "protein_taxonomy": "Pass",
+        "nucleotide_taxonomy": "Flag",
+        "low_concern": "Flag",
+        "rationale": "Matches nucleotide sequence with regulated organisms."
+      },
+      "hits": [
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Nucleotide Taxonomy Search"
+          },
+          "name": "Teschovirus asilesi (Porcine Teschovirus)",
+          "description": "controlled Viruses Teschovirus asilesi (Porcine Teschovirus)",
+          "region": {
+            "e_value": 1.92e-14,
+            "query_start": 114,
+            "query_end": 176
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 1.92e-14,
+                  "percent_identity": 92.063,
+                  "query_start": 114,
+                  "query_end": 176,
+                  "match_start": 3267,
+                  "match_end": 3329,
+                  "target_hit": "NC_003985",
+                  "target_description": "Porcine teschovirus 1, complete genome",
+                  "taxid": 118140,
+                  "genus": "Teschovirus",
+                  "species": "Teschovirus asilesi",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+                      "source": "1C351.a.47 Teschen disease virus / Porcine teschovirus"
+                    },
+                    {
+                      "list": "Australia Group Common Control List Human and Animal Pathogens",
+                      "source": "V.38. Porcine Teschovirus"
+                    },
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D036 Teschen disease virus (Porcine entero virus type 1)"
+                    },
+                    {
+                      "list": "EU Dual-Use Export Control Regime",
+                      "source": "Porcine enterovirus 1 (see Porcine Teschovirus)"
+                    },
+                    {
+                      "list": "Russian Federation Export Control (Animals)",
+                      "source": "Porcine teschovirus 1"
+                    },
+                    {
+                      "list": "The Commerce Control List",
+                      "source": "V.38. Porcine Teschovirus"
+                    },
+                    {
+                      "list": "UK Strategic Export Control List",
+                      "source": "Porcine Teschovirus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "database_info": {
+    "search_tool_info": {
+      "biorisk_search_info": {
+        "tool_info": "HMMER 3.4 (Aug 2023); http://hmmer.org/",
+        "database_info": "HMMER3 [3.4 | Aug 2023]"
+      },
+      "protein_search_info": {
+        "tool_info": "blastx: 2.17.0+  Package: blast 2.17.0, build Aug 11 2025 09:46:06",
+        "database_info": "BLASTDB Version: 5 Date: Jul 6, 2026  12:04 PM Longest sequence: 46,734 residues"
+      },
+      "nucleotide_search_info": {
+        "tool_info": "blastn: 2.17.0+  Package: blast 2.17.0, build Aug 11 2025 09:46:06",
+        "database_info": "BLASTDB Version: 5 Date: Jul 7, 2026  5:52 PM Longest sequence: 1,991,922 bases"
+      },
+      "low_concern_protein_search_info": {
+        "tool_info": "HMMER 3.4 (Aug 2023); http://hmmer.org/",
+        "database_info": "HMMER3 [3.1b2 | February 2015]"
+      },
+      "low_concern_rna_search_info": {
+        "tool_info": "INFERNAL 1.1.5 (Sep 2023)",
+        "database_info": "INFERNAL1/a [1.1.5 | Sep 2023]"
+      },
+      "low_concern_dna_search_info": {
+        "tool_info": "blastn: 2.17.0+  Package: blast 2.17.0, build Aug 11 2025 09:46:06",
+        "database_info": "BLASTDB Version: 5 Date: Dec 5, 2025  4:10 PM Longest sequence: 66,879 bases"
+      }
+    },
+    "revisions": {
+      "biorisk": "1.1",
+      "best_match": "1.0",
+      "low_concern": "1.1",
+      "control_lists": "1.0"
+    },
+    "control_list_info": [
+      {
+        "name": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+        "acronym": "DUPRC",
+        "region": "People's Republic of China",
+        "includes": "CN",
+        "status": "Compliance",
+        "url": "https://www.china-briefing.com/news/china-issues-new-export-control-regulations/"
+      },
+      {
+        "name": "Declaration of Certain Biological Goods and Technologies as Controlled Goods",
+        "acronym": "ZAEC",
+        "region": "South Africa",
+        "includes": "ZA",
+        "status": "Compliance",
+        "url": "https://bwcimplementation.org/sites/default/files/resource/SouthAfrica_WMDAct2024.pdf"
+      },
+      {
+        "name": "Australia Group Common Control List Human and Animal Pathogens",
+        "acronym": "CCL",
+        "region": "Australia Group",
+        "includes": "FI,US,GR,AU,PT,ES,EE,NO,UA,LV,RO,NL,IE,LU,FR,IS,JP,AT,HU,SE,SI,AR,KR,IN,SK,CA,PL,CZ,MT,GB,BG,NZ,LT,CY,DE,MX,IT,BE,TR,HR,CH,DK",
+        "status": "Compliance",
+        "url": "https://www.dfat.gov.au/publications/minisite/theaustraliagroupnet/site/en/controllists.html"
+      },
+      {
+        "name": "Australia Group Common Control List Plant Pathogens",
+        "acronym": "PPCCL",
+        "region": "Australia Group",
+        "includes": "FI,US,GR,AU,PT,ES,EE,NO,UA,LV,RO,NL,IE,LU,FR,IS,JP,AT,HU,SE,SI,AR,KR,IN,SK,CA,PL,CZ,MT,GB,BG,NZ,LT,CY,DE,MX,IT,BE,TR,HR,CH,DK",
+        "status": "Compliance",
+        "url": "https://www.dfat.gov.au/publications/minisite/theaustraliagroupnet/site/en/controllists.html"
+      },
+      {
+        "name": "India Export Controls (SCOMET List)",
+        "acronym": "SCOMET",
+        "region": "India",
+        "includes": "IN",
+        "status": "Compliance",
+        "url": "https://www.mea.gov.in/Portal/Images/SCOMET-List-2021.pdf"
+      },
+      {
+        "name": "EU List of Animal Pathogens",
+        "acronym": "EULAP",
+        "region": "European Union",
+        "includes": "FI,SK,PL,CZ,MT,GR,BG,PT,LT,ES,EE,LV,RO,DK,NL,IE,LU,CY,FR,DE,AT,HU,IT,SE,SI,HR,BE",
+        "status": "Compliance",
+        "url": "https://eur-lex.europa.eu/eli/reg_impl/2018/1882/oj/eng"
+      },
+      {
+        "name": "EU Dual-Use Export Control Regime",
+        "acronym": "EUDUECR",
+        "region": "European Union",
+        "includes": "FI,SK,PL,CZ,MT,GR,BG,PT,LT,ES,EE,LV,RO,DK,NL,IE,LU,CY,FR,DE,AT,HU,IT,SE,SI,HR,BE",
+        "status": "Compliance",
+        "url": "https://eur-lex.europa.eu/eli/reg/2021/821/oj/eng"
+      },
+      {
+        "name": "Russian Federation Export Control (Humans and animals)",
+        "acronym": "RFECHA",
+        "region": "Russian Federation",
+        "includes": "RU",
+        "status": "Compliance",
+        "url": "http://www.tsouz.ru/db/exportcontrol/tpek/Documents/%D0%B2%D0%BE%D0%B7%D0%B1%D1%83%D0%B4%D0%B8%D1%82%D0%B5%D0%BB%D0%B8.pdf"
+      },
+      {
+        "name": "Russian Federation Export Control (Animals)",
+        "acronym": "RFECA",
+        "region": "Russian Federation",
+        "includes": "RU",
+        "status": "Compliance",
+        "url": "http://www.tsouz.ru/db/exportcontrol/tpek/Documents/%D0%B2%D0%BE%D0%B7%D0%B1%D1%83%D0%B4%D0%B8%D1%82%D0%B5%D0%BB%D0%B8.pdf"
+      },
+      {
+        "name": "Select Agents and Toxins List (HHS)",
+        "acronym": "BSATHHS",
+        "region": "United States of America",
+        "includes": "US",
+        "status": "Compliance",
+        "url": "https://www.selectagents.gov/sat/list.htm"
+      },
+      {
+        "name": "Select Agents and Toxins List (USDA)",
+        "acronym": "BSATUSDA",
+        "region": "United States of America",
+        "includes": "US",
+        "status": "Compliance",
+        "url": "https://www.selectagents.gov/sat/list.htm"
+      },
+      {
+        "name": "United States Department of Agriculture Plant Protection and Quarantine",
+        "acronym": "PPQUSDA",
+        "region": "United States of America",
+        "includes": "US",
+        "status": "Compliance",
+        "url": "https://www.selectagents.gov/sat/list.htm"
+      },
+      {
+        "name": "The Commerce Control List",
+        "acronym": "USCCL",
+        "region": "United States of America",
+        "includes": "US",
+        "status": "Compliance",
+        "url": "https://www.bis.gov/regulations/ear/774"
+      },
+      {
+        "name": "United States Munitions Lists",
+        "acronym": "USML",
+        "region": "United States of America",
+        "includes": "US",
+        "status": "Compliance",
+        "url": "https://www.ecfr.gov/current/title-22/chapter-I/subchapter-M/part-121#121.1"
+      },
+      {
+        "name": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+        "acronym": "CIBES",
+        "region": "Brazil",
+        "includes": "BR",
+        "status": "Compliance",
+        "url": "https://bwcimplementation.org/sites/default/files/resource/resolucao-cibes-ndeg-13-10-03-2010%5B1%5D.pdf"
+      },
+      {
+        "name": "Specified Animal Pathogen Order",
+        "acronym": "SAPO",
+        "region": "United Kingdom",
+        "includes": "GB",
+        "status": "Compliance",
+        "url": "https://www.hse.gov.uk/pubns/books/hsg280.htm"
+      },
+      {
+        "name": "Schedule 5 of the Anti-terrorism, Crime and Security Act 2001",
+        "acronym": "ATCSA",
+        "region": "United Kingdom",
+        "includes": "GB",
+        "status": "Compliance",
+        "url": "https://www.legislation.gov.uk/ukpga/2001/24/2002-05-31/data.pdf"
+      },
+      {
+        "name": "Control of Substances Hazardous to Health Regulations 2002",
+        "acronym": "COSHH",
+        "region": "United Kingdom",
+        "includes": "GB",
+        "status": "Compliance",
+        "url": "https://www.hse.gov.uk/pubns/misc208.htm"
+      },
+      {
+        "name": "UK Strategic Export Control List",
+        "acronym": "UKSECL",
+        "region": "United Kingdom",
+        "includes": "GB",
+        "status": "Compliance",
+        "url": "https://assets.publishing.service.gov.uk/media/660d281067958c001f365abe/uk-strategic-export-control-list.pdf"
+      }
+    ]
+  }
+}
