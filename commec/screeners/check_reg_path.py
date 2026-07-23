@@ -307,50 +307,49 @@ def _create_hit_result_for_cluster(
             regulated_for_region["subject tax ids"] == candidate_taxid
         ]
 
-        compliances.extend(
-            [
-                output
-                for output in control_output
-                if get_control_lists(output.list).status == ListMode.COMPLIANCE
-            ]
-        )
-        conditional_compliances.extend(
-            [
-                output
-                for output in control_output
-                if get_control_lists(output.list).status == ListMode.CONDITIONAL_NUM
-            ]
-        )
-        warn_compliances.extend(
-            [
-                output
-                for output in control_output
-                if get_control_lists(output.list).status == ListMode.COMPLIANCE_WARN
-            ]
-        )
+        new_compliances = [
+            output
+            for output in control_output
+            if get_control_lists(output.list).status == ListMode.COMPLIANCE
+        ]
+        compliances.extend(new_compliances)
+
+        new_conditional_compliances = [
+            output
+            for output in control_output
+            if get_control_lists(output.list).status == ListMode.CONDITIONAL_NUM
+        ]
+        conditional_compliances.extend(new_conditional_compliances)
+
+        new_warn_compliances = [
+            output
+            for output in control_output
+            if get_control_lists(output.list).status == ListMode.COMPLIANCE_WARN
+        ]
+        warn_compliances.extend(new_warn_compliances)
 
         logger.debug(
             "Parsed %s: [%i Control outputs, %i Compliances, %i Conditional, %i Warns]",
             candidate_taxid,
             len(control_output),
-            len(compliances),
-            len(conditional_compliances),
-            len(warn_compliances),
+            len(new_compliances),
+            len(new_conditional_compliances),
+            len(new_warn_compliances),
         )
 
-        if len(compliances) > 0:
+        if len(new_compliances) > 0:
             regulated_annotations.extend(
                 [_create_hit_info(row, compliances) for i, row in data.iterrows()]
             )
             continue
 
-        if len(warn_compliances) > 0:
+        if len(new_warn_compliances) > 0:
             warn_regulated_annotations.extend(
                 [_create_hit_info(row, warn_compliances) for i, row in data.iterrows()]
             )
             continue
 
-        if len(conditional_compliances) > 0:
+        if len(new_conditional_compliances) > 0:
             regionally_regulated_annotations.extend(
                 [
                     _create_hit_info(row, conditional_compliances)
@@ -384,6 +383,7 @@ def _create_hit_result_for_cluster(
             ListMode.COMPLIANCE,
             step,
             match_range,
+            len(warn_regulated_annotations),
         )
 
     if is_warning_controlled:
@@ -451,6 +451,7 @@ def _create_hit_result_from_annotations(
     mode,
     step,
     match_range,
+    warns_in_the_non_reg=0,  # Int count of how many warns are in the non-reg-anno
 ):
 
     status = ScreenStatus.ERROR
@@ -477,14 +478,29 @@ def _create_hit_result_from_annotations(
 
     if len(non_regulated_annotations) > 0:
         status = ScreenStatus.PASS
+        hit_description = (
+            f"Mix of {len(regulated_annotations)} {control_text} {domains_text}"
+            f" and {len(non_regulated_annotations)} non-controlled {domains_text}"
+        )
+        # When there are warns in the non-reg, we don't fully Pass as mixed.
+        if warns_in_the_non_reg > 0:
+            status = ScreenStatus.WARN
+            true_non_reg_count = len(non_regulated_annotations) - warns_in_the_non_reg
+            non_reg_text = f" and {true_non_reg_count} non-controlled {domains_text}"
+            hit_description = (
+                f"Mix of {len(regulated_annotations)} {control_text} {domains_text}"
+                f" and {warns_in_the_non_reg} observed {domains_text}{non_reg_text if true_non_reg_count > 0 else ''}"
+            )
+            logger.debug(
+                "Mixed result: %d regulated, %i/%i warn annotations.",
+                len(regulated_annotations),
+                warns_in_the_non_reg,
+                len(non_regulated_annotations),
+            )
         logger.debug(
             "Mixed result: %d regulated, %d non-regulated annotations.",
             len(regulated_annotations),
             len(non_regulated_annotations),
-        )
-        hit_description = (
-            f"Mix of {len(regulated_annotations)} {control_text} {domains_text}"
-            f" and {len(non_regulated_annotations)} non-controlled {domains_text}"
         )
 
     reg_species = list(set([ra["species"] for ra in regulated_annotations]))
