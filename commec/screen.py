@@ -235,9 +235,8 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "-r",
         "--regions",
         dest="regions",
-        nargs="+",
         default=[],
-        help="A list of countries or regions to add context to list compliance i.e. NZ US CH",
+        help="A comma separated list of countries or regions to add context to list compliance i.e. NZ,US,CH",
     )
     return parser
 
@@ -379,6 +378,8 @@ class Screen:
                 args.regions
                 or self.params.config["databases"]["control_lists"]["regions"]
             )
+            # Cli and yaml expect comma separated entries.
+            region_context = [r.strip() for r in region_context.split(",")]
             if not control_list.import_data(regulation_path, region_context):
                 logger.error(
                     "Control list import failed. Check the import path used %s,"
