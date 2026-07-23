@@ -1,0 +1,19 @@
+#                                                                            --- full sequence --- -------------- this domain -------------   hmm coord   ali coord   env coord
+# target name        accession   tlen query name           accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias  from    to  from    to  from    to  acc description of target
+#------------------- ---------- ----- -------------------- ---------- ----- --------- ------ ----- --- --- --------- --------- ------ ----- ----- ----- ----- ----- ----- ----- ---- ---------------------
+COG0771              -           2356 M14107.1_3           -           1492   8.9e-11   33.9  30.1   1   1     1e-10   3.7e-08   25.2  30.6  1784  1975  1056  1409  1054  1412 0.55 -
+COG0042              -            326 xylanase_zero_shot_des31_bioalign_bening_non_chimeric_1 -            252    0.0017   12.0   0.0   1   2      0.58     1e+02   -3.7   0.0    70    88   136   155   129   163 0.73 -
+COG0042              -            326 xylanase_zero_shot_des31_bioalign_bening_non_chimeric_1 -            252    0.0017   12.0   0.0   2   2   1.7e-05    0.0031   11.2   0.0   184   240   193   250   180   252 0.82 -
+COG0516              -            472 xylanase_zero_shot_des31_bioalign_bening_non_chimeric_1 -            252    0.0027   11.1   0.0   1   1   2.1e-05    0.0037   10.6   0.0   225   283   156   237   115   241 0.72 -
+COG2814              -          19741 addgene-plasmid-36399_3 -           5014   8.9e-10   27.6   3.3   1   2         1   3.5e+02  -13.5   9.8  2666  2836    74   256    34   328 0.36 -
+COG2814              -          19741 addgene-plasmid-36399_3 -           5014   8.9e-10   27.6   3.3   2   2   2.5e-12   8.9e-10   27.6   3.3  2335  2400  4163  4226  4128  4344 0.66 -
+#
+# Program:         hmmscan
+# Version:         3.4 (Aug 2023)
+# Pipeline mode:   SCAN
+# Query file:      /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/input_commec-examples/commec-examples.faa
+# Target file:     /mnt/data/ibbis/commec-databases/low_concern/protein/low_concern.hmm
+# Option settings: hmmscan --domtblout /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/output_commec-examples/commec-examples.low_concern.hmmscan --cpu 1 /mnt/data/ibbis/commec-databases/low_concern/protein/low_concern.hmm /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/input_commec-examples/commec-examples.faa 
+# Current dir:     /mnt/data/ibbis/repo/common-mechanism/example_data
+# Date:            Wed Jul 22 17:39:48 2026
+# [ok]

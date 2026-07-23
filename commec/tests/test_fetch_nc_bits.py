@@ -1,9 +1,7 @@
-from io import StringIO
 import os
 import pandas as pd
 import pytest
 import textwrap
-from Bio import SeqIO
 from unittest.mock import patch
 
 from commec.tools.fetch_nc_bits import (
@@ -17,6 +15,7 @@ from commec.screen import add_args, ScreenArgumentParser
 from commec.tools.blastx import BlastXHandler
 
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs")
+
 
 @pytest.mark.parametrize(
     "hits, query_length, nc_ranges",
@@ -91,13 +90,9 @@ def test_fetch_nocoding_regions(tmp_path):
         """
     )
 
+    # outfmt 6 tabular output: data rows only, no comment/header lines.
     blast_to_parse = textwrap.dedent(
         """\
-        # BLASTX 2.15.0+
-        # Query: NC_TEST
-        # Database: /root/commec-dbs/mock
-        #query acc.	subject title	subject acc.	subject tax ids	evalue	bit score	% identity	query length	q. start	q. end	subject length	s. start	s. end
-        # 3 hits found
         NC_TEST01	SUBJECT	SUBJECT_ACC	TAXID	0.0	BITSCORE	99.999	300	101	200	500	1	100
         NC_TEST02	SUBJECT	SUBJECT_ACC	TAXID	0.0	BITSCORE	99.999	300	25	80	500	1	100
         NC_TEST02	SUBJECT	SUBJECT_ACC	TAXID	0.0	BITSCORE	99.999	300	100	300	500	1	100
@@ -106,8 +101,10 @@ def test_fetch_nocoding_regions(tmp_path):
 
     expected_output = textwrap.dedent(
         """\
-        >NC_TEST01 (1-100) (201-300)
-        ggtagttccctaaacttatcattaagcgatcttcatcgtcaggtatctcgattggtgcagcaagagagcggtgattgtaccgggaaattaagaggtaacgaaatgttgttctaactcaagaagataccgctaagctattgcaaagtacggtaaagcataatttgaataattatgacttaagaagtgtcggcaatggtaat
+        >NC_TEST01_0 (1-100)
+        ggtagttccctaaacttatcattaagcgatcttcatcgtcaggtatctcgattggtgcagcaagagagcggtgattgtaccgggaaattaagaggtaacg
+        >NC_TEST01_1 (201-300)
+        aaatgttgttctaactcaagaagataccgctaagctattgcaaagtacggtaaagcataatttgaataattatgacttaagaagtgtcggcaatggtaat
         """
     )
 
@@ -120,7 +117,15 @@ def test_fetch_nocoding_regions(tmp_path):
     # Create Dictionary of queries for funciton input.
     with patch(
         "sys.argv",
-        ["test.py", "--skip-tx", str(input_fasta), "-d", str(DATABASE_DIRECTORY), "-o", str(tmp_path)],
+        [
+            "test.py",
+            "--skip-tx",
+            str(input_fasta),
+            "-d",
+            str(DATABASE_DIRECTORY),
+            "-o",
+            str(tmp_path),
+        ],
     ):
         parser = ScreenArgumentParser()
         add_args(parser)
@@ -132,7 +137,7 @@ def test_fetch_nocoding_regions(tmp_path):
         query.result = QueryResult()
 
     # Setup result handler for function input.
-    db_file = os.path.join(DATABASE_DIRECTORY, "nr_blast/nr")
+    db_file = os.path.join(DATABASE_DIRECTORY, "best_match/protein/nr")
     handler = BlastXHandler(db_file, input_fasta, input_blast, force=True)
 
     calculate_noncoding_regions_per_query(handler, queries)
@@ -142,6 +147,6 @@ def test_fetch_nocoding_regions(tmp_path):
     for query in queries.values():
         if query.result.status.nucleotide_taxonomy == ScreenStatus.SKIP:
             continue
-        actual_output += query.get_non_coding_regions_as_fasta()
+        actual_output += "".join(query.get_non_coding_regions_as_fasta())
 
     assert actual_output.strip() == expected_output.strip()
