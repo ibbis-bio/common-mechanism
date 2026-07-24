@@ -1,0 +1,17 @@
+#                                                                            --- full sequence --- -------------- this domain -------------   hmm coord   ali coord   env coord
+# target name        accession   tlen query name           accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias  from    to  from    to  from    to  acc description of target
+#------------------- ---------- ----- -------------------- ---------- ----- --------- ------ ----- --- --- --------- --------- ------ ----- ----- ----- ----- ----- ----- ----- ---- ---------------------
+gi16764754refNP460369.1 -            260 Paenibacillus_1      -            442     0.014   12.3   0.5   1   1   1.3e-05     0.039   10.9   0.3    76   134    57   115    39   126 0.88 -
+VFG001999gbWP010946957 -            616 pUC19_2              -           2169    0.0045   13.0   2.4   1   1   2.4e-06    0.0074   12.3   2.4   131   205  1123  1197  1114  1213 0.92 -
+3ZUS_5ExtractedfromPDB -           2332 addgene-plasmid-111773_3 -           1076   1.5e-05   19.2   0.0   1   2   5.4e-05      0.17    5.8   0.0   936   955    39    58    30    64 0.89 -
+3ZUS_5ExtractedfromPDB -           2332 addgene-plasmid-111773_3 -           1076   1.5e-05   19.2   0.0   2   2   1.3e-06     0.004   11.2   0.0   934   954    93   113    87   122 0.90 -
+#
+# Program:         hmmscan
+# Version:         3.4 (Aug 2023)
+# Pipeline mode:   SCAN
+# Query file:      /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/input_commec-examples-regional/commec-examples-regional.faa
+# Target file:     /mnt/data/ibbis/commec-databases/biorisk/biorisk.hmm
+# Option settings: hmmscan --domtblout /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/output_commec-examples-regional/commec-examples-regional.biorisk.hmmscan --cpu 4 /mnt/data/ibbis/commec-databases/biorisk/biorisk.hmm /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/input_commec-examples-regional/commec-examples-regional.faa 
+# Current dir:     /mnt/data/ibbis/repo/common-mechanism/example_data
+# Date:            Wed Jul 22 17:40:26 2026
+# [ok]

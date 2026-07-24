@@ -1,0 +1,28 @@
+#target name         accession query name           accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value inc description of target
+#------------------- --------- -------------------- --------- --- -------- -------- -------- -------- ------ ----- ---- ---- ----- ------ --------- --- ---------------------
+CRISPR-DR38          RF01348   Paenibacillus        -          cm        1       35      726      692      -    no    1 0.37   0.0   17.7      0.12 ?   CRISPR RNA direct repeat element
+CRISPR-DR2           RF01315   Paenibacillus        -          cm        1       30       39       65      +    no    1 0.41   0.0   13.0       1.5 ?   CRISPR RNA direct repeat element
+CRISPR-DR2           RF01315   Paenibacillus        -          cm        1       30      791      781      -    no    1 0.27   0.0   12.4       2.2 ?   CRISPR RNA direct repeat element
+CRISPR-DR23          RF01336   Paenibacillus        -          cm       13       24      157      146      -    no    1 0.58   0.0   10.7       3.1 ?   CRISPR RNA direct repeat element
+Histone3             RF00032   pUC19                -          cm        1       46     1990     1946      -    no    1 0.29   0.0   16.0     0.041 ?   Histone 3' UTR stem-loop
+Histone3             RF00032   pUC19                -          cm        1       46     6053     6007      -    no    1 0.23   0.0   15.6     0.062 ?   Histone 3' UTR stem-loop
+CRISPR-DR18          RF01331   pUC19                -          cm        1       37     2150     2118      -    no    1 0.45   0.0   13.8       3.1 ?   CRISPR RNA direct repeat element
+CRISPR-DR33          RF01343   pUC19                -          cm        1       37     3220     3183      -    no    1 0.45   0.0   12.7       3.9 ?   CRISPR RNA direct repeat element
+CRISPR-DR63          RF01376   pUC19                -          cm        1       37     3362     3394      +    no    1 0.33   0.0   14.8       4.5 ?   CRISPR RNA direct repeat element
+CRISPR-DR15          RF01329   pUC19                -          cm        1       37     2119     2146      +    no    1 0.43   0.0   12.4       5.5 ?   CRISPR RNA direct repeat element
+CRISPR-DR36          RF01346   pUC19                -          cm        1       36     4058     4040      -    no    1 0.37   0.0    9.7       6.4 ?   CRISPR RNA direct repeat element
+CRISPR-DR22          RF01335   pUC19                -          cm        2       19     4156     4173      +    no    1 0.22   0.0   10.4       6.5 ?   CRISPR RNA direct repeat element
+CRISPR-DR20          RF01333   pUC19                -          cm        1       36      386      348      -    no    1 0.72   0.0   11.7       7.3 ?   CRISPR RNA direct repeat element
+CRISPR-DR49          RF01362   pUC19                -          cm        1       47     3978     3914      -    no    1 0.32   0.0   12.5       8.2 ?   CRISPR RNA direct repeat element
+Histone3             RF00032   addgene-plasmid-111773 -          cm        1       46     1507     1553      +    no    1 0.23   0.0   15.6     0.031 ?   Histone 3' UTR stem-loop
+CRISPR-DR20          RF01333   addgene-plasmid-111773 -          cm        1       36      666      704      +    no    1 0.72   0.0   11.7       3.6 ?   CRISPR RNA direct repeat element
+#
+# Program:         cmscan
+# Version:         1.1.5 (Sep 2023)
+# Pipeline mode:   SCAN
+# Query file:      /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/input_commec-examples-regional/commec-examples-regional.cleaned.fasta
+# Target file:     /mnt/data/ibbis/commec-databases/low_concern/rna/low_concern.cm
+# Option settings: cmscan --tblout /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/output_commec-examples-regional/commec-examples-regional.low_concern.cmscan --cpu 4 /mnt/data/ibbis/commec-databases/low_concern/rna/low_concern.cm /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/input_commec-examples-regional/commec-examples-regional.cleaned.fasta 
+# Current dir:     /mnt/data/ibbis/repo/common-mechanism/example_data
+# Date:            Wed Jul 22 17:46:45 2026
+# [ok]

@@ -1,0 +1,20 @@
+#target name         accession query name           accession mdl mdl from   mdl to seq from   seq to strand trunc pass   gc  bias  score   E-value inc description of target
+#------------------- --------- -------------------- --------- --- -------- -------- -------- -------- ------ ----- ---- ---- ----- ------ --------- --- ---------------------
+Histone3             RF00032   M14107.1             -          cm        1       46      736      780      +    no    1 0.20   0.1   17.4    0.0088 !   Histone 3' UTR stem-loop
+CRISPR-DR10          RF01323   M14107.1             -          cm        1       37     1432     1460      +    no    1 0.59   0.0   11.0       4.8 ?   CRISPR RNA direct repeat element
+CRISPR-DR53          RF01366   M14107.1             -          cm        1       37     2553     2577      +    no    1 0.44   0.0   11.5       9.4 ?   CRISPR RNA direct repeat element
+CRISPR-DR12          RF01325   BBa_K209429_A_15261_Composite_SSFYFP-hM2D-Tuba -          cm        1       30      818      796      -    no    1 0.30   0.0   13.0       4.6 ?   CRISPR RNA direct repeat element
+CRISPR-DR32          RF01342   BBa_K209429_A_15261_Composite_SSFYFP-hM2D-Tuba -          cm        1       37     1091     1060      -    no    1 0.28   0.0   14.1       6.9 ?   CRISPR RNA direct repeat element
+CRISPR-DR12          RF01325   BBa_K209429_A_15261_Composite_SSFYFP-hM2D-Tuba -          cm        1       30      607      629      +    no    1 0.39   0.0   12.4       6.9 ?   CRISPR RNA direct repeat element
+CRISPR-DR20          RF01333   RVFV                 -          cm        1       36     1573     1604      +    no    1 0.53   0.0   10.0       5.5 ?   CRISPR RNA direct repeat element
+CRISPR-DR36          RF01346   RVFV                 -          cm        1       36     1567     1533      -    no    1 0.43   0.0    7.3       7.1 ?   CRISPR RNA direct repeat element
+#
+# Program:         cmscan
+# Version:         1.1.5 (Sep 2023)
+# Pipeline mode:   SCAN
+# Query file:      /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/input_commec-examples/commec-examples.cleaned.fasta
+# Target file:     /mnt/data/ibbis/commec-databases/low_concern/rna/low_concern.cm
+# Option settings: cmscan --tblout /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/output_commec-examples/commec-examples.low_concern.cmscan --cpu 1 /mnt/data/ibbis/commec-databases/low_concern/rna/low_concern.cm /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples/input_commec-examples/commec-examples.cleaned.fasta 
+# Current dir:     /mnt/data/ibbis/repo/common-mechanism/example_data
+# Date:            Wed Jul 22 17:39:53 2026
+# [ok]
