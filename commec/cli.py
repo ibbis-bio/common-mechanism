@@ -15,6 +15,7 @@ Command-line usage examples:
     - commec -v, --version
 """
 
+from commec import __version__ as COMMEC_VERSION
 from commec.control_list import (
     DESCRIPTION as list_DESCRIPTION,
     add_args as list_add_args,
@@ -26,18 +27,16 @@ from commec.flag import (
     run as flag_run,
 )
 from commec.screen import (
+    ScreenArgumentParser,
     DESCRIPTION as screen_DESCRIPTION,
     add_args as screen_add_args,
     run as screen_run,
-    ScreenArgumentParser,
 )
 from commec.setup import (
     DESCRIPTION as setup_DESCRIPTION,
     add_args as setup_add_args,
     run as setup_run,
 )
-
-from commec import __version__ as COMMEC_VERSION
 
 # The GUI subcommand pulls in Flask (an optional dependency). Import it
 # defensively so a missing Flask disables only `commec gui`, rather than
