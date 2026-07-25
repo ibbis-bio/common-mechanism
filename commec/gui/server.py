@@ -859,9 +859,11 @@ def _kill_running_jobs():
 
 
 # ---------------------------------------------------------------------------
-# Authentication. When a password hash is configured, every NON-localhost
-# request needs a valid session. The walk-up kiosk (127.0.0.1) is exempt --
-# physical presence is the trust -- unless --require-local-auth is set.
+# Authentication. The walk-up kiosk (127.0.0.1) may run without a hash because
+# physical presence is the trust. A non-localhost client is never allowed in
+# until a password hash exists: otherwise a failed first-run password setup
+# would silently expose the LAN GUI. Once a hash exists, every non-localhost
+# request needs a valid session (and --require-local-auth includes the kiosk).
 # Only meaningful over HTTPS (login/cookie would otherwise be cleartext).
 # ---------------------------------------------------------------------------
 _LOCAL_ADDRS = {"127.0.0.1", "::1", "localhost"}
@@ -886,6 +888,11 @@ def _safe_next(target):
 
 @app.before_request
 def _gate():
+    # Do this before the login/assets exemption: there is no credential a remote
+    # client could submit until first-run setup has written a hash, so expose no
+    # part of the GUI over LAN in that state.
+    if not CFG["password_hash"] and request.remote_addr not in _LOCAL_ADDRS:
+        return jsonify({"error": "Remote access is unavailable until an operator password is set."}), 503
     if request.endpoint in _AUTH_EXEMPT:
         return
     if _auth_required() and not session.get("authed"):
@@ -1486,8 +1493,8 @@ def add_args(parser):
     ap.add_argument("--password-file",
                     default=str(Path.home() / ".config" / "commec-gui" / "password.hash"),
                     help="File holding the access-password hash (werkzeug "
-                         "format). If present + non-empty, non-localhost "
-                         "requests must log in. Default: "
+                         "format). Non-localhost access is blocked until it is "
+                         "present + non-empty, then requires login. Default: "
                          "~/.config/commec-gui/password.hash")
     ap.add_argument("--require-local-auth", action="store_true",
                     help="Also require the password from localhost (the walk-up "
@@ -1526,7 +1533,8 @@ def run(args):
         CFG["password_hash"] = None
     print("Auth: " + ("ON (password required for "
           + ("all clients" if args.require_local_auth else "non-localhost")
-          + ")" if CFG["password_hash"] else "off (no password file)"))
+          + ")" if CFG["password_hash"] else
+          "LAN blocked (no password file; localhost only)"))
     # 0 => all logical cores (one screen at a time, so dedicate the box to it).
     CFG["threads"] = args.threads or (os.cpu_count() or 1)
     # presets.yaml is deployment-specific (gitignored; the kiosk image provisions

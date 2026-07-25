@@ -55,7 +55,7 @@ Read by `kiosk.sh` / `lan.sh`. Copy `.env.example` to `.env` (gitignored):
 | `COMMEC_CONDA_ENV` | Conda env with commec + flask (default `commec-dev`) |
 | `COMMEC_GUI_PORT` | Port to listen on (default `443`; privileged — see TLS/deploy notes. Use a high port like `8765` without a bind grant) |
 | `COMMEC_GUI_THREADS` | CPU threads for commec's search tools (`-t`); unset = all cores |
-| `COMMEC_GUI_PASSWORD_FILE` | Path to the access-password hash file (default `~/.config/commec-gui/password.hash`); if present, non-localhost clients must log in |
+| `COMMEC_GUI_PASSWORD_FILE` | Path to the access-password hash file (default `~/.config/commec-gui/password.hash`); non-localhost access is blocked until it exists, then clients must log in |
 | `COMMEC_TLS` | Set to `0` to force plain HTTP in `lan.sh` |
 | `COMMEC_TLS_CERT` / `COMMEC_TLS_KEY` | Use a specific cert/key instead of auto-gen |
 
