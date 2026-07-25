@@ -200,10 +200,10 @@ CA -- no shared key to leak across the fleet.
 ## Authentication (GUI password)
 
 The GUI has no login of its own; access control reuses the **kiosk password**.
-**Implemented** in `server.py`: when a password-hash file exists and is
-non-empty, every **non-localhost** request (LAN / Tailscale / remote) must log
-in via `/login`; the walk-up kiosk on `127.0.0.1` is exempt -- physical presence
-is the trust (override with `--require-local-auth`). No file -> no auth.
+**Implemented** in `server.py`: every **non-localhost** request (LAN /
+Tailscale / remote) is blocked until a password-hash file exists and is
+non-empty, then must log in via `/login`. The walk-up kiosk on `127.0.0.1` is
+exempt -- physical presence is the trust (override with `--require-local-auth`).
 
 The hash file location is configurable -- `COMMEC_GUI_PASSWORD_FILE` (or
 `--password-file`), **default `~/.config/commec-gui/password.hash`** so a
@@ -211,6 +211,12 @@ standalone (non-image) install needs no root. The box image can point it at a
 system path (e.g. `/etc/commec-gui/password.hash`) if preferred. (A bad actor
 who can rewrite that path/env is already inside the box, so the configurability
 isn't a meaningful weakening.)
+
+For a standalone GUI, run `./set-password.sh` from the `commec/gui` directory.
+It sources the same `.env` file as `kiosk.sh` and `lan.sh`, prompts twice without
+echoing the password, and atomically writes the hash with mode 0600. Restart the
+GUI after changing the hash because it is read only at server startup. Pass an
+alternate `.env` path as the script's first argument, just like the launchers.
 
 The first-boot setup that sets the kiosk user-account password must ALSO write
 a **hash** of that same password to that file (you can't read the account

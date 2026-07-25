@@ -59,6 +59,20 @@ Read by `kiosk.sh` / `lan.sh`. Copy `.env.example` to `.env` (gitignored):
 | `COMMEC_TLS` | Set to `0` to force plain HTTP in `lan.sh` |
 | `COMMEC_TLS_CERT` / `COMMEC_TLS_KEY` | Use a specific cert/key instead of auto-gen |
 
+## Set the LAN password
+
+LAN access stays blocked until a password hash exists. From the `commec/gui`
+directory, run:
+
+```bash
+./set-password.sh
+```
+
+The helper sources `.env`, prompts twice without echoing the password, and writes
+the hash to `COMMEC_GUI_PASSWORD_FILE` (or the default path) with mode 0600.
+Pass another `.env` file as its first argument. Restart the GUI after changing
+the password because the server reads the hash at startup.
+
 ## TLS / encryption
 
 LAN traffic (including the FASTA sequences) is encrypted over HTTPS. TLS only
