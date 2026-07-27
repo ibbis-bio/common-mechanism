@@ -266,8 +266,8 @@ def test_add_args_accessions():
 def test_add_args_regions():
     parser = argparse.ArgumentParser()
     add_args(parser)
-    args = parser.parse_args(["--regions", "NZ", "AU"])
-    assert args.regions == ["NZ", "AU"]
+    args = parser.parse_args(["--regions", "NZ,AU"])
+    assert args.regions == "NZ,AU"
 
 
 def test_add_args_verbose():

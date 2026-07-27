@@ -67,9 +67,8 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "-r",
         "--regions",
         dest="regions",
-        nargs="+",
-        default=[],
-        help="A list of countries or regions to add context to control list compliance",
+        default="",
+        help="A comma-separated list of countries or regions to add context to list compliance, e.g. 'NZ,EU'",
     )
     parser_obj.add_argument(
         "-o",
