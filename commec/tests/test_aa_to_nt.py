@@ -8,8 +8,9 @@ The following behaviour is expected:
 """
 
 import pandas as pd
-from pandas.testing import assert_frame_equal
 import pytest
+from pandas.testing import assert_frame_equal
+
 from commec.tools.hmmer import recalculate_hmmer_query_coordinates
 
 # Example DataFrame

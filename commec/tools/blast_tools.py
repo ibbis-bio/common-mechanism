@@ -7,15 +7,17 @@ Useful for reading any blast related outputs, for example from Blastx or Blastn.
 Also contains the abstract base class for blastX/N database search handlers.
 """
 
-import os
-import logging
-from typing import BinaryIO, TextIO
-import pandas as pd
-import numpy as np
 import glob
+import logging
+import os
+from typing import BinaryIO, TextIO
+
+import numpy as np
+import pandas as pd
+
 import commec.control_list as cl
-from commec.tools.search_handler import SearchHandler, DatabaseValidationError
 from commec.config.constants import NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD
+from commec.tools.search_handler import DatabaseValidationError, SearchHandler
 
 logger = logging.getLogger(__name__)
 

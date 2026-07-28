@@ -1,20 +1,21 @@
-import pytest
-from unittest.mock import patch
-import pandas as pd
 import os
-from Bio.SeqRecord import SeqRecord, Seq
+from unittest.mock import patch
 
+import pandas as pd
+import pytest
+from Bio.SeqRecord import Seq, SeqRecord
+
+from commec.config.constants import (
+    BIORISK_LONG_QUERY_EVALUE_THRESHOLD,
+    BIORISK_SHORT_QUERY_EVALUE_EXPONENT,
+    BIORISK_SHORT_QUERY_NT_THRESHOLD,
+)
+from commec.config.query import Query
+from commec.config.result import ScreenResult
 from commec.screeners.check_biorisk import (
+    HmmerHandler,
     biorisk_evalue_filter,
     parse_biorisk_hits,
-    HmmerHandler,
-)
-from commec.config.result import ScreenResult
-from commec.config.query import Query
-from commec.config.constants import (
-    BIORISK_SHORT_QUERY_NT_THRESHOLD,
-    BIORISK_SHORT_QUERY_EVALUE_EXPONENT,
-    BIORISK_LONG_QUERY_EVALUE_THRESHOLD,
 )
 
 INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.fasta")

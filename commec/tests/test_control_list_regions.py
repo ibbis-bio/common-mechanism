@@ -6,14 +6,15 @@ internals, edge-case inputs, and the REGION_DATA_LUT global.
 """
 
 import json
+
 import pytest
 
 import commec.control_list.region as region_module
+from commec.control_list.containers import Region
 from commec.control_list.region import (
     get_regions_set,
     load_region_list_data,
 )
-from commec.control_list.containers import Region
 
 
 @pytest.fixture(autouse=True)

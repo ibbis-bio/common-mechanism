@@ -20,10 +20,12 @@ import argparse
 import glob
 import os
 from json import JSONDecodeError
+
 import pandas as pd
+
+from commec.config.json_io import IoVersionError, get_screen_data_from_json
+from commec.config.result import Rationale, ScreenResult, ScreenStatus, ScreenStep
 from commec.utils.file_utils import directory_arg
-from commec.config.result import ScreenStatus, ScreenResult, ScreenStep, Rationale
-from commec.config.json_io import get_screen_data_from_json, IoVersionError
 
 DESCRIPTION = (
     "Parse all .screen, or .json files in a directory and create CSVs of flags raised"

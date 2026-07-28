@@ -7,9 +7,11 @@ Instantiate a CmscanHandler, with input local database, input fasta, and output 
 Throws if inputs are invalid. Creates a temporary log file, which is deleted on completion.
 """
 
-import subprocess
 import re
+import subprocess
+
 import pandas as pd
+
 from commec.config.constants import CMSCAN_MAX_THREAD_LIMIT
 from commec.tools.search_handler import SearchHandler, SearchToolVersion
 

@@ -9,17 +9,18 @@ The yaml config file import involves the following features:
 - Ability to parse additional path substitution
 """
 
-import os
-from pprint import pformat
-import logging
 import argparse
 import importlib.resources
+import logging
+import os
+from pprint import pformat
+
 import yaml
 from yaml.parser import ParserError
 
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH, DEPRECATED_CONFIG_KEYS
-from commec.utils.file_utils import expand_and_normalize
 from commec.utils.dict_utils import deep_update
+from commec.utils.file_utils import expand_and_normalize
 
 logger = logging.getLogger(__name__)
 

@@ -6,28 +6,29 @@ Objects responsible for parsing and interpreting user input for
 the screen workflow of commec.
 """
 
-import os
-import sys
-import glob
 import argparse
+import glob
 import logging
 import multiprocessing
-from pprint import pformat
+import os
+import sys
 from pathlib import Path
-from Bio import SeqIO
+from pprint import pformat
+
 import yaml
+from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
 import commec.config.yaml_io as YamlIO
-from commec.config.query import Query
-from commec.utils.file_utils import expand_and_normalize
 from commec.config.constants import (
-    MINIMUM_QUERY_LENGTH,
-    MAXIMUM_QUERY_LENGTH,
     MAXIMUM_FILENAME_SIZE,
+    MAXIMUM_QUERY_LENGTH,
     MAXIMUM_QUERY_NAME_LENGTH,
+    MINIMUM_QUERY_LENGTH,
     VALID_BLAST_MT_MODES,
 )
+from commec.config.query import Query
+from commec.utils.file_utils import expand_and_normalize
 
 logger = logging.getLogger(__name__)
 

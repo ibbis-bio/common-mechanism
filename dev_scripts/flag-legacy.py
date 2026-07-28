@@ -21,10 +21,12 @@ import glob
 import os
 import re
 from enum import StrEnum
+
 import pandas as pd
-from commec.utils.file_utils import directory_arg
+
 from commec.config.result import ScreenStatus
 from commec.flag import read_flags_from_json
+from commec.utils.file_utils import directory_arg
 
 DESCRIPTION = (
     "Parse all .screen, or .json files in a directory and create CSVs of flags raised"

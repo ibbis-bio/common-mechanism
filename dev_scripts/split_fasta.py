@@ -8,9 +8,10 @@ Command-line usage:
     split_fasta.py --i input_fasta -n num_seqs
 """
 
+import argparse
 import os
 import sys
-import argparse
+
 from Bio import SeqIO
 
 
