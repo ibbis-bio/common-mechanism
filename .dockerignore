@@ -1,0 +1,45 @@
+# Build context exclusions for Containerfile (honoured by both podman and docker).
+#
+# Without this file the context is ~1 GB, dominated by a local .pixi/ conda
+# environment. Only what is needed to build the package and run the test suite
+# should reach the daemon.
+
+# Local development environments (.pixi alone is ~1 GB)
+.pixi/
+.venv
+venv/
+.conda
+.devcontainer/
+
+# Version control and CI
+.git/
+.gitignore
+.github/
+
+# Caches and build artefacts
+.ruff_cache/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+build/
+dist/
+
+# Editor / OS cruft
+.vscode/
+.idea/
+.DS_Store
+*:Zone.Identifier
+
+# Docs, examples and helper scripts: not needed at build or test time
+docs/
+example_data/
+dev_scripts/
+conda-recipe/
+
+# Markdown, except README.md — pyproject.toml sets readme = "README.md", so the
+# build fails without it.
+*.md
+!README.md
