@@ -1,0 +1,33 @@
+auto_update_databases: false
+base_paths:
+  default: /mnt/data/ibbis/commec-databases/
+blast_mt_mode: 1
+databases:
+  best_match:
+    nucleotide:
+      path: /mnt/data/ibbis/commec-databases/best_match/nucleotide/nucl
+    path: /mnt/data/ibbis/commec-databases/best_match/
+    protein:
+      path: /mnt/data/ibbis/commec-databases/best_match/protein/prot
+  biorisk:
+    annotations: /mnt/data/ibbis/commec-databases/biorisk/biorisk_annotations.csv
+    path: /mnt/data/ibbis/commec-databases/biorisk/biorisk.hmm
+  control_lists:
+    path: /mnt/data/ibbis/commec-databases/control_lists/
+    regions: all
+  low_concern:
+    annotations: /mnt/data/ibbis/commec-databases/low_concern/low_concern_annotations.csv
+    dna:
+      path: /mnt/data/ibbis/commec-databases/low_concern/dna/low_concern.fasta
+    path: /mnt/data/ibbis/commec-databases/low_concern/
+    protein:
+      path: /mnt/data/ibbis/commec-databases/low_concern/protein/low_concern.hmm
+    rna:
+      path: /mnt/data/ibbis/commec-databases/low_concern/rna/low_concern.cm
+do_cleanup: false
+force: false
+resume: false
+skip_nt_search: false
+skip_taxonomy_search: false
+threads: 1
+verbose: false

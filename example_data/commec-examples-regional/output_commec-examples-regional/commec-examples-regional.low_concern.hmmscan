@@ -1,0 +1,16 @@
+#                                                                            --- full sequence --- -------------- this domain -------------   hmm coord   ali coord   env coord
+# target name        accession   tlen query name           accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias  from    to  from    to  from    to  acc description of target
+#------------------- ---------- ----- -------------------- ---------- ----- --------- ------ ----- --- --- --------- --------- ------ ----- ----- ----- ----- ----- ----- ----- ---- ---------------------
+COG1196              -           1972 pUC19_2              -           2169    0.0061    9.9   0.0   1   1   2.4e-05    0.0084    9.4   0.0   636  1774  1140  1218  1076  1415 0.61 -
+COG0707              -            319 addgene-plasmid-111773_4 -           1077    0.0023   12.3   0.1   1   2   6.7e-05     0.024    9.0   0.0   202   247    37    81    18   106 0.78 -
+COG0707              -            319 addgene-plasmid-111773_4 -           1077    0.0023   12.3   0.1   2   2     0.026         9    0.5   0.0   134   176   470   537   427   552 0.67 -
+#
+# Program:         hmmscan
+# Version:         3.4 (Aug 2023)
+# Pipeline mode:   SCAN
+# Query file:      /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/input_commec-examples-regional/commec-examples-regional.faa
+# Target file:     /mnt/data/ibbis/commec-databases/low_concern/protein/low_concern.hmm
+# Option settings: hmmscan --domtblout /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/output_commec-examples-regional/commec-examples-regional.low_concern.hmmscan --cpu 4 /mnt/data/ibbis/commec-databases/low_concern/protein/low_concern.hmm /mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples-regional/input_commec-examples-regional/commec-examples-regional.faa 
+# Current dir:     /mnt/data/ibbis/repo/common-mechanism/example_data
+# Date:            Wed Jul 22 17:46:44 2026
+# [ok]

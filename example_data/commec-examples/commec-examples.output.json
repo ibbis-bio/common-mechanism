@@ -1,0 +1,1651 @@
+{
+  "commec_info": {
+    "commec_version": "1.1.0",
+    "json_output_version": "0.6",
+    "time_taken": "00:10:50",
+    "date_run": "2026-07-22 17:29:06"
+  },
+  "query_info": {
+    "file": "/mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples.fasta",
+    "number_of_queries": 6,
+    "total_query_length": 32170
+  },
+  "queries": {
+    "M14107.1": {
+      "query": "M14107.1",
+      "description": "Plasmid pHly152 (from E.coli) hly A, B",
+      "length": 4480,
+      "status": {
+        "screen_status": "Warning",
+        "biorisk": "Warning",
+        "protein_taxonomy": "Pass",
+        "nucleotide_taxonomy": "Pass",
+        "low_concern": "Warning",
+        "rationale": "Matches sequence with virulence factor."
+      },
+      "hits": [
+        {
+          "recommendation": {
+            "status": "Warning",
+            "from_step": "Biorisk Search"
+          },
+          "name": "gi260763803refYP003237842.1",
+          "description": "hemolysin C [Escherichia coli O26:H11 str. 11368]",
+          "region": {
+            "e_value": 1.5e-81,
+            "query_start": 814,
+            "query_end": 1299
+          },
+          "annotations": {
+            "domain": [
+              "Bacteria"
+            ],
+            "regulated": [
+              "Virulence Factor"
+            ]
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Warning",
+            "from_step": "Biorisk Search"
+          },
+          "name": "gi260763804refYP003237843.1",
+          "description": "hemolysin A [Escherichia coli O26:H11 str. 11368]",
+          "region": {
+            "e_value": 0.0,
+            "query_start": 1383,
+            "query_end": 4385
+          },
+          "annotations": {
+            "domain": [
+              "Bacteria"
+            ],
+            "regulated": [
+              "Virulence Factor"
+            ]
+          }
+        }
+      ]
+    },
+    "xylanase_zero_shot_des31_bioalign_bening_non_chimeric": {
+      "query": "xylanase_zero_shot_des31_bioalign_bening_non_chimeric",
+      "description": "",
+      "length": 756,
+      "status": {
+        "screen_status": "Pass",
+        "biorisk": "Pass",
+        "protein_taxonomy": "Pass",
+        "nucleotide_taxonomy": "Pass",
+        "low_concern": "Pass",
+        "rationale": "No regions of concern."
+      },
+      "hits": []
+    },
+    "BBa_K209429_A_15261_Composite_SSFYFP-hM2D-Tuba": {
+      "query": "BBa_K209429_A_15261_Composite_SSFYFP-hM2D-Tuba",
+      "description": "",
+      "length": 9646,
+      "status": {
+        "screen_status": "Flag (Cleared)",
+        "biorisk": "Pass",
+        "protein_taxonomy": "Pass",
+        "nucleotide_taxonomy": "Flag (Cleared)",
+        "low_concern": "Flag (Cleared)",
+        "rationale": "No regions of concern flags cleared as common or non-hazardous"
+      },
+      "hits": [
+        {
+          "recommendation": {
+            "status": "Flag (Cleared)",
+            "from_step": "Nucleotide Taxonomy Search"
+          },
+          "name": "Cytomegalovirus humanbeta5",
+          "description": "controlled Viruses Cytomegalovirus humanbeta5",
+          "region": {
+            "e_value": 9.39e-39,
+            "query_start": 926,
+            "query_end": 1025
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 9.39e-39,
+                  "percent_identity": 98.0,
+                  "query_start": 926,
+                  "query_end": 1025,
+                  "match_start": 116592,
+                  "match_end": 116493,
+                  "target_hit": "GU980198",
+                  "target_description": "Human herpesvirus 5 transgenic strain CINCY+Towne, complete genome",
+                  "taxid": 10359,
+                  "genus": "Cytomegalovirus",
+                  "species": "Cytomegalovirus humanbeta5",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.4.Herpesviruses including rhadinoviruses"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag (Cleared)",
+            "from_step": "Low Concern DNA Search"
+          },
+          "name": "BBa_K209429 A 15261 Composite \"SSFYFP-hM2D-Tuba\"",
+          "description": "BBa_K209429 A 15261 Composite \"SSFYFP-hM2D-Tuba\"",
+          "region": {
+            "e_value": 0.0,
+            "query_start": 1,
+            "query_end": 9646
+          },
+          "annotations": {}
+        }
+      ]
+    },
+    "addgene-plasmid-36399": {
+      "query": "addgene-plasmid-36399",
+      "description": "(15,045 bp)",
+      "length": 15045,
+      "status": {
+        "screen_status": "Flag",
+        "biorisk": "Pass",
+        "protein_taxonomy": "Flag",
+        "nucleotide_taxonomy": "Flag",
+        "low_concern": "Flag",
+        "rationale": "Matches protein and nucleotide sequence with regulated organisms; as well as flags cleared as common or non-hazardous."
+      },
+      "hits": [
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Nucleotide Taxonomy Search"
+          },
+          "name": "Orthopoxvirus monkeypox",
+          "description": "controlled Viruses Orthopoxvirus monkeypox",
+          "region": {
+            "e_value": 6.59e-15,
+            "query_start": 12203,
+            "query_end": 12260
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 6.59e-15,
+                  "percent_identity": 95.0,
+                  "query_start": 12203,
+                  "query_end": 12260,
+                  "match_start": 67870,
+                  "match_end": 67929,
+                  "target_hit": "PX454710",
+                  "target_description": "Mutant Monkeypox virus clone MPXV2b-BAC9, complete sequence",
+                  "taxid": 10244,
+                  "genus": "Orthopoxvirus",
+                  "species": "Orthopoxvirus monkeypox",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+                      "source": "1C351.a.12 Monkeypox virus"
+                    },
+                    {
+                      "list": "Declaration of Certain Biological Goods and Technologies as Controlled Goods",
+                      "source": "Monkey pox virus;"
+                    },
+                    {
+                      "list": "Australia Group Common Control List Human and Animal Pathogens",
+                      "source": "V.31. Monkeypox virus"
+                    },
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D032 Monkey pox virus"
+                    },
+                    {
+                      "list": "EU Dual-Use Export Control Regime",
+                      "source": "Monkeypox virus"
+                    },
+                    {
+                      "list": "Russian Federation Export Control (Humans and animals)",
+                      "source": "Monkey pox virus"
+                    },
+                    {
+                      "list": "Select Agents and Toxins List (HHS)",
+                      "source": "15) Monkeypox virus"
+                    },
+                    {
+                      "list": "The Commerce Control List",
+                      "source": "V.31. Monkeypox virus"
+                    },
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.54.Monkeypox virus"
+                    },
+                    {
+                      "list": "UK Strategic Export Control List",
+                      "source": "Monkeypox virus"
+                    },
+                    {
+                      "list": "Schedule 5 of the Anti-terrorism, Crime and Security Act 2001",
+                      "source": "Monkeypox virus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Nucleotide Taxonomy Search"
+          },
+          "name": "Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "description": "controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "region": {
+            "e_value": 3.9e-22,
+            "query_start": 1,
+            "query_end": 65
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 3.9e-22,
+                  "percent_identity": 98.462,
+                  "query_start": 1,
+                  "query_end": 65,
+                  "match_start": 1,
+                  "match_end": 65,
+                  "target_hit": "NC_001560",
+                  "target_description": "Vesicular stomatitis Indiana virus, complete genome",
+                  "taxid": 11277,
+                  "genus": "Vesiculovirus",
+                  "species": "Vesiculovirus indiana",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+                      "source": "1C351.a.48 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Declaration of Certain Biological Goods and Technologies as Controlled Goods",
+                      "source": "Vesicular stomatitis virus;"
+                    },
+                    {
+                      "list": "Australia Group Common Control List Human and Animal Pathogens",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D052 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "EU Dual-Use Export Control Regime",
+                      "source": "Vesicular stomatitis virus (Alagoas vesiculovirus, Cocal vesiculovirus', Indiana vesiculovirus, New Jersey vesiculovirus)"
+                    },
+                    {
+                      "list": "Russian Federation Export Control (Animals)",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "The Commerce Control List",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.28.Vesicular stomatitis virus (Alagoas VSV-3, Caraj\u00e1s, Cocal VSV-2, Indiana VSV-1, Juruna, Marab\u00e1, Marab\u00e1 VSV-4, Piry)"
+                    },
+                    {
+                      "list": "Specified Animal Pathogen Order",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Control of Substances Hazardous to Health Regulations 2002",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "UK Strategic Export Control List",
+                      "source": "Vesicular stomatitis virus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Nucleotide Taxonomy Search"
+          },
+          "name": "Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "description": "controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "region": {
+            "e_value": 1.74e-24,
+            "query_start": 2131,
+            "query_end": 2196
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 1.74e-24,
+                  "percent_identity": 100.0,
+                  "query_start": 2131,
+                  "query_end": 2196,
+                  "match_start": 1330,
+                  "match_end": 1395,
+                  "target_hit": "NC_001560",
+                  "target_description": "Vesicular stomatitis Indiana virus, complete genome",
+                  "taxid": 11277,
+                  "genus": "Vesiculovirus",
+                  "species": "Vesiculovirus indiana",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+                      "source": "1C351.a.48 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Declaration of Certain Biological Goods and Technologies as Controlled Goods",
+                      "source": "Vesicular stomatitis virus;"
+                    },
+                    {
+                      "list": "Australia Group Common Control List Human and Animal Pathogens",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D052 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "EU Dual-Use Export Control Regime",
+                      "source": "Vesicular stomatitis virus (Alagoas vesiculovirus, Cocal vesiculovirus', Indiana vesiculovirus, New Jersey vesiculovirus)"
+                    },
+                    {
+                      "list": "Russian Federation Export Control (Animals)",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "The Commerce Control List",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.28.Vesicular stomatitis virus (Alagoas VSV-3, Caraj\u00e1s, Cocal VSV-2, Indiana VSV-1, Juruna, Marab\u00e1, Marab\u00e1 VSV-4, Piry)"
+                    },
+                    {
+                      "list": "Specified Animal Pathogen Order",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Control of Substances Hazardous to Health Regulations 2002",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "UK Strategic Export Control List",
+                      "source": "Vesicular stomatitis virus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Nucleotide Taxonomy Search"
+          },
+          "name": "Hepatitis D virus",
+          "description": "controlled Viruses Hepatitis D virus",
+          "region": {
+            "e_value": 8.03e-33,
+            "query_start": 11975,
+            "query_end": 12060
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 8.03e-33,
+                  "percent_identity": 96.774,
+                  "query_start": 11975,
+                  "query_end": 12060,
+                  "match_start": 916,
+                  "match_end": 826,
+                  "target_hit": "OR613625",
+                  "target_description": "Hepatitis delta virus isolate dFr230892, complete genome",
+                  "taxid": 12475,
+                  "genus": "Deltavirus",
+                  "species": "Deltavirus italiense",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.44.Hepatitis D virus (Delta virus)"
+                    },
+                    {
+                      "list": "Control of Substances Hazardous to Health Regulations 2002",
+                      "source": "Hepatitis D virus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Nucleotide Taxonomy Search"
+          },
+          "name": "Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "description": "controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "region": {
+            "e_value": 2.02e-40,
+            "query_start": 11872,
+            "query_end": 11974
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 2.02e-40,
+                  "percent_identity": 99.029,
+                  "query_start": 11872,
+                  "query_end": 11974,
+                  "match_start": 11060,
+                  "match_end": 11161,
+                  "target_hit": "KF935251",
+                  "target_description": "Vesicular stomatitis Indiana virus isolate VSVwtP0, complete genome",
+                  "taxid": 11277,
+                  "genus": "Vesiculovirus",
+                  "species": "Vesiculovirus indiana",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+                      "source": "1C351.a.48 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Declaration of Certain Biological Goods and Technologies as Controlled Goods",
+                      "source": "Vesicular stomatitis virus;"
+                    },
+                    {
+                      "list": "Australia Group Common Control List Human and Animal Pathogens",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D052 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "EU Dual-Use Export Control Regime",
+                      "source": "Vesicular stomatitis virus (Alagoas vesiculovirus, Cocal vesiculovirus', Indiana vesiculovirus, New Jersey vesiculovirus)"
+                    },
+                    {
+                      "list": "Russian Federation Export Control (Animals)",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "The Commerce Control List",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.28.Vesicular stomatitis virus (Alagoas VSV-3, Caraj\u00e1s, Cocal VSV-2, Indiana VSV-1, Juruna, Marab\u00e1, Marab\u00e1 VSV-4, Piry)"
+                    },
+                    {
+                      "list": "Specified Animal Pathogen Order",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Control of Substances Hazardous to Health Regulations 2002",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "UK Strategic Export Control List",
+                      "source": "Vesicular stomatitis virus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag (Cleared)",
+            "from_step": "Nucleotide Taxonomy Search"
+          },
+          "name": "Human immunodeficiency virus 1",
+          "description": "controlled Viruses Human immunodeficiency virus 1",
+          "region": {
+            "e_value": 6.66e-57,
+            "query_start": 12949,
+            "query_end": 13018
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 6.66e-57,
+                  "percent_identity": 99.242,
+                  "query_start": 12949,
+                  "query_end": 13018,
+                  "match_start": 9674,
+                  "match_end": 9804,
+                  "target_hit": "KC503852",
+                  "target_description": "HIV-1 isolate pXJDC6291-2-6 from China, complete genome",
+                  "taxid": 11676,
+                  "genus": "Lentivirus",
+                  "species": "Lentivirus humimdef1",
+                  "controlled_by_lists": [
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D018 HIV-1 & HIV-2 and other strains of SIV"
+                    },
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.6.Retroviruses including Human Immunodeficiency Viruses (HIV-1 and HIV-2)"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Protein Taxonomy Search"
+          },
+          "name": "Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "description": "controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "region": {
+            "e_value": 4.7e-136,
+            "query_start": 3117,
+            "query_end": 3761
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 4.7e-136,
+                  "percent_identity": 96.279,
+                  "query_start": 3117,
+                  "query_end": 3761,
+                  "match_start": 23,
+                  "match_end": 237,
+                  "target_hit": "P04876",
+                  "target_description": "Matrix protein",
+                  "taxid": 11278,
+                  "genus": "Vesiculovirus",
+                  "species": "Vesiculovirus indiana",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+                      "source": "1C351.a.48 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Declaration of Certain Biological Goods and Technologies as Controlled Goods",
+                      "source": "Vesicular stomatitis virus;"
+                    },
+                    {
+                      "list": "Australia Group Common Control List Human and Animal Pathogens",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D052 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "EU Dual-Use Export Control Regime",
+                      "source": "Vesicular stomatitis virus (Alagoas vesiculovirus, Cocal vesiculovirus', Indiana vesiculovirus, New Jersey vesiculovirus)"
+                    },
+                    {
+                      "list": "Russian Federation Export Control (Animals)",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "The Commerce Control List",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.28.Vesicular stomatitis virus (Alagoas VSV-3, Caraj\u00e1s, Cocal VSV-2, Indiana VSV-1, Juruna, Marab\u00e1, Marab\u00e1 VSV-4, Piry)"
+                    },
+                    {
+                      "list": "Specified Animal Pathogen Order",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Control of Substances Hazardous to Health Regulations 2002",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "UK Strategic Export Control List",
+                      "source": "Vesicular stomatitis virus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag (Cleared)",
+            "from_step": "Protein Taxonomy Search"
+          },
+          "name": "Orthopneumovirus hominis (Human Respiratory syncitial virus)",
+          "description": "controlled Viruses Orthopneumovirus hominis (Human Respiratory syncitial virus)",
+          "region": {
+            "e_value": 4.4e-137,
+            "query_start": 85,
+            "query_end": 864
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 4.4e-137,
+                  "percent_identity": 88.346,
+                  "query_start": 85,
+                  "query_end": 864,
+                  "match_start": 1740,
+                  "match_end": 2005,
+                  "target_hit": "A0A5P9VSM8",
+                  "target_description": "Replicase",
+                  "taxid": 11250,
+                  "genus": "Orthopneumovirus",
+                  "species": "Orthopneumovirus hominis",
+                  "controlled_by_lists": [
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D039 Respiratory syncitial virus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Protein Taxonomy Search"
+          },
+          "name": "Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "description": "controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "region": {
+            "e_value": 6.39e-175,
+            "query_start": 2197,
+            "query_end": 2991
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 6.39e-175,
+                  "percent_identity": 100.0,
+                  "query_start": 2197,
+                  "query_end": 2991,
+                  "match_start": 1,
+                  "match_end": 265,
+                  "target_hit": "P04880",
+                  "target_description": "Phosphoprotein",
+                  "taxid": 11279,
+                  "genus": "Vesiculovirus",
+                  "species": "Vesiculovirus indiana",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+                      "source": "1C351.a.48 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Declaration of Certain Biological Goods and Technologies as Controlled Goods",
+                      "source": "Vesicular stomatitis virus;"
+                    },
+                    {
+                      "list": "Australia Group Common Control List Human and Animal Pathogens",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D052 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "EU Dual-Use Export Control Regime",
+                      "source": "Vesicular stomatitis virus (Alagoas vesiculovirus, Cocal vesiculovirus', Indiana vesiculovirus, New Jersey vesiculovirus)"
+                    },
+                    {
+                      "list": "Russian Federation Export Control (Animals)",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "The Commerce Control List",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.28.Vesicular stomatitis virus (Alagoas VSV-3, Caraj\u00e1s, Cocal VSV-2, Indiana VSV-1, Juruna, Marab\u00e1, Marab\u00e1 VSV-4, Piry)"
+                    },
+                    {
+                      "list": "Specified Animal Pathogen Order",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Control of Substances Hazardous to Health Regulations 2002",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "UK Strategic Export Control List",
+                      "source": "Vesicular stomatitis virus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Protein Taxonomy Search"
+          },
+          "name": "Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "description": "controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "region": {
+            "e_value": 0.0,
+            "query_start": 865,
+            "query_end": 2130
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 0.0,
+                  "percent_identity": 100.0,
+                  "query_start": 865,
+                  "query_end": 2130,
+                  "match_start": 1,
+                  "match_end": 422,
+                  "target_hit": "P03521",
+                  "target_description": "Nucleoprotein",
+                  "taxid": 11285,
+                  "genus": "Vesiculovirus",
+                  "species": "Vesiculovirus indiana",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+                      "source": "1C351.a.48 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Declaration of Certain Biological Goods and Technologies as Controlled Goods",
+                      "source": "Vesicular stomatitis virus;"
+                    },
+                    {
+                      "list": "Australia Group Common Control List Human and Animal Pathogens",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D052 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "EU Dual-Use Export Control Regime",
+                      "source": "Vesicular stomatitis virus (Alagoas vesiculovirus, Cocal vesiculovirus', Indiana vesiculovirus, New Jersey vesiculovirus)"
+                    },
+                    {
+                      "list": "Russian Federation Export Control (Animals)",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "The Commerce Control List",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.28.Vesicular stomatitis virus (Alagoas VSV-3, Caraj\u00e1s, Cocal VSV-2, Indiana VSV-1, Juruna, Marab\u00e1, Marab\u00e1 VSV-4, Piry)"
+                    },
+                    {
+                      "list": "Specified Animal Pathogen Order",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Control of Substances Hazardous to Health Regulations 2002",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "UK Strategic Export Control List",
+                      "source": "Vesicular stomatitis virus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Protein Taxonomy Search"
+          },
+          "name": "Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "description": "controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal)",
+          "region": {
+            "e_value": 0.0,
+            "query_start": 5545,
+            "query_end": 11871
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 0.0,
+                  "percent_identity": 100.0,
+                  "query_start": 5545,
+                  "query_end": 11871,
+                  "match_start": 1,
+                  "match_end": 2109,
+                  "target_hit": "A6H4P5",
+                  "target_description": "RNA-directed RNA polymerase L",
+                  "taxid": 11277,
+                  "genus": "Vesiculovirus",
+                  "species": "Vesiculovirus indiana",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+                      "source": "1C351.a.48 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Declaration of Certain Biological Goods and Technologies as Controlled Goods",
+                      "source": "Vesicular stomatitis virus;"
+                    },
+                    {
+                      "list": "Australia Group Common Control List Human and Animal Pathogens",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D052 Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "EU Dual-Use Export Control Regime",
+                      "source": "Vesicular stomatitis virus (Alagoas vesiculovirus, Cocal vesiculovirus', Indiana vesiculovirus, New Jersey vesiculovirus)"
+                    },
+                    {
+                      "list": "Russian Federation Export Control (Animals)",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "The Commerce Control List",
+                      "source": "V.56. Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.28.Vesicular stomatitis virus (Alagoas VSV-3, Caraj\u00e1s, Cocal VSV-2, Indiana VSV-1, Juruna, Marab\u00e1, Marab\u00e1 VSV-4, Piry)"
+                    },
+                    {
+                      "list": "Specified Animal Pathogen Order",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "Control of Substances Hazardous to Health Regulations 2002",
+                      "source": "Vesicular stomatitis virus"
+                    },
+                    {
+                      "list": "UK Strategic Export Control List",
+                      "source": "Vesicular stomatitis virus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag (Cleared)",
+            "from_step": "Low Concern DNA Search"
+          },
+          "name": "BBa_I745002 U 10691 Plasmid \"pTHM   \"",
+          "description": "BBa_I745002 U 10691 Plasmid \"pTHM   \"",
+          "region": {
+            "e_value": 0.0,
+            "query_start": 12237,
+            "query_end": 15004
+          },
+          "annotations": {}
+        },
+        {
+          "recommendation": {
+            "status": "Flag (Cleared)",
+            "from_step": "Low Concern DNA Search"
+          },
+          "name": "BBa_J85802 P 22007 Coding \"EYFP-FF4x4\"",
+          "description": "BBa_J85802 P 22007 Coding \"EYFP-FF4x4\"",
+          "region": {
+            "e_value": 0.0,
+            "query_start": 72,
+            "query_end": 821
+          },
+          "annotations": {}
+        }
+      ]
+    },
+    "RVFV": {
+      "query": "RVFV",
+      "description": "Rift valley fever virus",
+      "length": 1691,
+      "status": {
+        "screen_status": "Flag",
+        "biorisk": "Flag",
+        "protein_taxonomy": "Flag",
+        "nucleotide_taxonomy": "Flag",
+        "low_concern": "Flag",
+        "rationale": "Matches sequence with pathogenic or toxin function, and protein and nucleotide sequence with regulated organisms."
+      },
+      "hits": [
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Nucleotide Taxonomy Search"
+          },
+          "name": "Phlebovirus riftense (Rift Valley fever virus)",
+          "description": "controlled Viruses Phlebovirus riftense (Rift Valley fever virus)",
+          "region": {
+            "e_value": 2.6400000000000003e-59,
+            "query_start": 830,
+            "query_end": 960
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 2.6400000000000003e-59,
+                  "percent_identity": 100.0,
+                  "query_start": 830,
+                  "query_end": 960,
+                  "match_start": 830,
+                  "match_end": 960,
+                  "target_hit": "JF784388",
+                  "target_description": "Rift Valley fever virus strain 35/74 segment S, complete sequence",
+                  "taxid": 11588,
+                  "genus": "Phlebovirus",
+                  "species": "Phlebovirus riftense",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+                      "source": "1C351.a.13 Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Declaration of Certain Biological Goods and Technologies as Controlled Goods",
+                      "source": "Rift Valley fever virus;"
+                    },
+                    {
+                      "list": "Australia Group Common Control List Human and Animal Pathogens",
+                      "source": "V.42. Rift Valley fever virus"
+                    },
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D040 Rift Valley Fever virus"
+                    },
+                    {
+                      "list": "EU List of Animal Pathogens",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "EU Dual-Use Export Control Regime",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Russian Federation Export Control (Humans and animals)",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Select Agents and Toxins List (HHS)",
+                      "source": "43) Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Select Agents and Toxins List (USDA)",
+                      "source": "43) Rift Valley fever virus"
+                    },
+                    {
+                      "list": "The Commerce Control List",
+                      "source": "V.42. Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.33.Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Specified Animal Pathogen Order",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Schedule 5 of the Anti-terrorism, Crime and Security Act 2001",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "UK Strategic Export Control List",
+                      "source": "Rift Valley fever virus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Biorisk Search"
+          },
+          "name": "GBR90786.1",
+          "description": "enterotoxin P, phage associated [Staphylococcus aureus]",
+          "region": {
+            "e_value": 1e-151,
+            "query_start": 35,
+            "query_end": 829
+          },
+          "annotations": {
+            "domain": [
+              "Bacteria"
+            ],
+            "regulated": [
+              "Regulated Gene"
+            ]
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Protein Taxonomy Search"
+          },
+          "name": "Phlebovirus riftense (Rift Valley fever virus)",
+          "description": "controlled Viruses Phlebovirus riftense (Rift Valley fever virus)",
+          "region": {
+            "e_value": 6.800000000000001e-157,
+            "query_start": 35,
+            "query_end": 829
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 6.800000000000001e-157,
+                  "percent_identity": 100.0,
+                  "query_start": 35,
+                  "query_end": 829,
+                  "match_start": 1,
+                  "match_end": 265,
+                  "target_hit": "A2T036",
+                  "target_description": "Non-structural protein NS-S",
+                  "taxid": 11588,
+                  "genus": "Phlebovirus",
+                  "species": "Phlebovirus riftense",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+                      "source": "1C351.a.13 Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Declaration of Certain Biological Goods and Technologies as Controlled Goods",
+                      "source": "Rift Valley fever virus;"
+                    },
+                    {
+                      "list": "Australia Group Common Control List Human and Animal Pathogens",
+                      "source": "V.42. Rift Valley fever virus"
+                    },
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D040 Rift Valley Fever virus"
+                    },
+                    {
+                      "list": "EU List of Animal Pathogens",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "EU Dual-Use Export Control Regime",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Russian Federation Export Control (Humans and animals)",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Select Agents and Toxins List (HHS)",
+                      "source": "43) Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Select Agents and Toxins List (USDA)",
+                      "source": "43) Rift Valley fever virus"
+                    },
+                    {
+                      "list": "The Commerce Control List",
+                      "source": "V.42. Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.33.Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Specified Animal Pathogen Order",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Schedule 5 of the Anti-terrorism, Crime and Security Act 2001",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "UK Strategic Export Control List",
+                      "source": "Rift Valley fever virus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Protein Taxonomy Search"
+          },
+          "name": "Phlebovirus riftense (Rift Valley fever virus)",
+          "description": "controlled Viruses Phlebovirus riftense (Rift Valley fever virus)",
+          "region": {
+            "e_value": 4.03e-169,
+            "query_start": 961,
+            "query_end": 1653
+          },
+          "annotations": {
+            "category": [
+              "Viruses"
+            ],
+            "controlled_taxonomy": {
+              "controlled_taxa": [
+                {
+                  "evalue": 4.03e-169,
+                  "percent_identity": 100.0,
+                  "query_start": 961,
+                  "query_end": 1653,
+                  "match_start": 1,
+                  "match_end": 231,
+                  "target_hit": "A2T003",
+                  "target_description": "Nucleoprotein",
+                  "taxid": 11588,
+                  "genus": "Phlebovirus",
+                  "species": "Phlebovirus riftense",
+                  "controlled_by_lists": [
+                    {
+                      "list": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+                      "source": "1C351.a.13 Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Declaration of Certain Biological Goods and Technologies as Controlled Goods",
+                      "source": "Rift Valley fever virus;"
+                    },
+                    {
+                      "list": "Australia Group Common Control List Human and Animal Pathogens",
+                      "source": "V.42. Rift Valley fever virus"
+                    },
+                    {
+                      "list": "India Export Controls (SCOMET List)",
+                      "source": "2D040 Rift Valley Fever virus"
+                    },
+                    {
+                      "list": "EU List of Animal Pathogens",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "EU Dual-Use Export Control Regime",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Russian Federation Export Control (Humans and animals)",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Select Agents and Toxins List (HHS)",
+                      "source": "43) Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Select Agents and Toxins List (USDA)",
+                      "source": "43) Rift Valley fever virus"
+                    },
+                    {
+                      "list": "The Commerce Control List",
+                      "source": "V.42. Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+                      "source": "4.33.Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Specified Animal Pathogen Order",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "Schedule 5 of the Anti-terrorism, Crime and Security Act 2001",
+                      "source": "Rift Valley fever virus"
+                    },
+                    {
+                      "list": "UK Strategic Export Control List",
+                      "source": "Rift Valley fever virus"
+                    }
+                  ]
+                }
+              ],
+              "non-controlled_taxa": [],
+              "statistics": {
+                "number_of_controlled_taxids": 1,
+                "number_of_non-controlled_taxids": 0,
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_parasites": 0,
+                "controlled_fungi": 0
+              }
+            }
+          }
+        },
+        {
+          "recommendation": {
+            "status": "Flag",
+            "from_step": "Biorisk Search"
+          },
+          "name": "1CK1_1ExtractedfromPDB",
+          "description": "PROTEIN (ENTEROTOXIN TYPE C-3) [Staphylococcus aureus] PDB : 1CK1",
+          "region": {
+            "e_value": 2.8e-172,
+            "query_start": 35,
+            "query_end": 778
+          },
+          "annotations": {
+            "domain": [
+              "Bacteria"
+            ],
+            "regulated": [
+              "Regulated Gene"
+            ]
+          }
+        }
+      ]
+    },
+    "encrypted": {
+      "query": "encrypted",
+      "description": "",
+      "length": 552,
+      "status": {
+        "screen_status": "Pass",
+        "biorisk": "Pass",
+        "protein_taxonomy": "Pass",
+        "nucleotide_taxonomy": "Pass",
+        "low_concern": "Pass",
+        "rationale": "No regions of concern."
+      },
+      "hits": []
+    }
+  },
+  "database_info": {
+    "search_tool_info": {
+      "biorisk_search_info": {
+        "tool_info": "HMMER 3.4 (Aug 2023); http://hmmer.org/",
+        "database_info": "HMMER3 [3.4 | Aug 2023]"
+      },
+      "protein_search_info": {
+        "tool_info": "blastx: 2.17.0+  Package: blast 2.17.0, build Aug 11 2025 09:46:06",
+        "database_info": "BLASTDB Version: 5 Date: Jul 6, 2026  12:04 PM Longest sequence: 46,734 residues"
+      },
+      "nucleotide_search_info": {
+        "tool_info": "blastn: 2.17.0+  Package: blast 2.17.0, build Aug 11 2025 09:46:06",
+        "database_info": "BLASTDB Version: 5 Date: Jul 7, 2026  5:52 PM Longest sequence: 1,991,922 bases"
+      },
+      "low_concern_protein_search_info": {
+        "tool_info": "HMMER 3.4 (Aug 2023); http://hmmer.org/",
+        "database_info": "HMMER3 [3.1b2 | February 2015]"
+      },
+      "low_concern_rna_search_info": {
+        "tool_info": "INFERNAL 1.1.5 (Sep 2023)",
+        "database_info": "INFERNAL1/a [1.1.5 | Sep 2023]"
+      },
+      "low_concern_dna_search_info": {
+        "tool_info": "blastn: 2.17.0+  Package: blast 2.17.0, build Aug 11 2025 09:46:06",
+        "database_info": "BLASTDB Version: 5 Date: Dec 5, 2025  4:10 PM Longest sequence: 66,879 bases"
+      }
+    },
+    "revisions": {
+      "biorisk": "1.1",
+      "best_match": "1.0",
+      "low_concern": "1.1",
+      "control_lists": "1.0"
+    },
+    "control_list_info": [
+      {
+        "name": "Dual-Use Items Export Control List of the People\u2019s Republic of China",
+        "acronym": "DUPRC",
+        "region": "People's Republic of China",
+        "includes": "CN",
+        "status": "Compliance",
+        "url": "https://www.china-briefing.com/news/china-issues-new-export-control-regulations/"
+      },
+      {
+        "name": "Declaration of Certain Biological Goods and Technologies as Controlled Goods",
+        "acronym": "ZAEC",
+        "region": "South Africa",
+        "includes": "ZA",
+        "status": "Compliance",
+        "url": "https://bwcimplementation.org/sites/default/files/resource/SouthAfrica_WMDAct2024.pdf"
+      },
+      {
+        "name": "Australia Group Common Control List Human and Animal Pathogens",
+        "acronym": "CCL",
+        "region": "Australia Group",
+        "includes": "GR,MT,KR,FR,DK,DE,LU,BE,MX,AR,AU,JP,IE,NO,RO,TR,FI,CY,IS,SI,SK,LV,NL,EE,US,GB,HU,SE,PT,CA,HR,ES,IT,NZ,BG,AT,LT,UA,CZ,CH,PL,IN",
+        "status": "Compliance",
+        "url": "https://www.dfat.gov.au/publications/minisite/theaustraliagroupnet/site/en/controllists.html"
+      },
+      {
+        "name": "Australia Group Common Control List Plant Pathogens",
+        "acronym": "PPCCL",
+        "region": "Australia Group",
+        "includes": "GR,MT,KR,FR,DK,DE,LU,BE,MX,AR,AU,JP,IE,NO,RO,TR,FI,CY,IS,SI,SK,LV,NL,EE,US,GB,HU,SE,PT,CA,HR,ES,IT,NZ,BG,AT,LT,UA,CZ,CH,PL,IN",
+        "status": "Compliance",
+        "url": "https://www.dfat.gov.au/publications/minisite/theaustraliagroupnet/site/en/controllists.html"
+      },
+      {
+        "name": "India Export Controls (SCOMET List)",
+        "acronym": "SCOMET",
+        "region": "India",
+        "includes": "IN",
+        "status": "Compliance",
+        "url": "https://www.mea.gov.in/Portal/Images/SCOMET-List-2021.pdf"
+      },
+      {
+        "name": "EU List of Animal Pathogens",
+        "acronym": "EULAP",
+        "region": "European Union",
+        "includes": "GR,MT,FR,DK,HU,DE,SE,PT,LU,BE,HR,ES,IT,IE,RO,BG,AT,FI,CY,SI,SK,LT,LV,NL,CZ,EE,PL",
+        "status": "Compliance",
+        "url": "https://eur-lex.europa.eu/eli/reg_impl/2018/1882/oj/eng"
+      },
+      {
+        "name": "EU Dual-Use Export Control Regime",
+        "acronym": "EUDUECR",
+        "region": "European Union",
+        "includes": "GR,MT,FR,DK,HU,DE,SE,PT,LU,BE,HR,ES,IT,IE,RO,BG,AT,FI,CY,SI,SK,LT,LV,NL,CZ,EE,PL",
+        "status": "Compliance",
+        "url": "https://eur-lex.europa.eu/eli/reg/2021/821/oj/eng"
+      },
+      {
+        "name": "Russian Federation Export Control (Humans and animals)",
+        "acronym": "RFECHA",
+        "region": "Russian Federation",
+        "includes": "RU",
+        "status": "Compliance",
+        "url": "http://www.tsouz.ru/db/exportcontrol/tpek/Documents/%D0%B2%D0%BE%D0%B7%D0%B1%D1%83%D0%B4%D0%B8%D1%82%D0%B5%D0%BB%D0%B8.pdf"
+      },
+      {
+        "name": "Russian Federation Export Control (Animals)",
+        "acronym": "RFECA",
+        "region": "Russian Federation",
+        "includes": "RU",
+        "status": "Compliance",
+        "url": "http://www.tsouz.ru/db/exportcontrol/tpek/Documents/%D0%B2%D0%BE%D0%B7%D0%B1%D1%83%D0%B4%D0%B8%D1%82%D0%B5%D0%BB%D0%B8.pdf"
+      },
+      {
+        "name": "Select Agents and Toxins List (HHS)",
+        "acronym": "BSATHHS",
+        "region": "United States of America",
+        "includes": "US",
+        "status": "Compliance",
+        "url": "https://www.selectagents.gov/sat/list.htm"
+      },
+      {
+        "name": "Select Agents and Toxins List (USDA)",
+        "acronym": "BSATUSDA",
+        "region": "United States of America",
+        "includes": "US",
+        "status": "Compliance",
+        "url": "https://www.selectagents.gov/sat/list.htm"
+      },
+      {
+        "name": "United States Department of Agriculture Plant Protection and Quarantine",
+        "acronym": "PPQUSDA",
+        "region": "United States of America",
+        "includes": "US",
+        "status": "Compliance",
+        "url": "https://www.selectagents.gov/sat/list.htm"
+      },
+      {
+        "name": "The Commerce Control List",
+        "acronym": "USCCL",
+        "region": "United States of America",
+        "includes": "US",
+        "status": "Compliance",
+        "url": "https://www.bis.gov/regulations/ear/774"
+      },
+      {
+        "name": "United States Munitions Lists",
+        "acronym": "USML",
+        "region": "United States of America",
+        "includes": "US",
+        "status": "Compliance",
+        "url": "https://www.ecfr.gov/current/title-22/chapter-I/subchapter-M/part-121#121.1"
+      },
+      {
+        "name": "Lista de Bens Relacionados \u00e0 \u00c1rea Biol\u00f3gica e Servi\u00e7os Diretamente Vinculados",
+        "acronym": "CIBES",
+        "region": "Brazil",
+        "includes": "BR",
+        "status": "Compliance",
+        "url": "https://bwcimplementation.org/sites/default/files/resource/resolucao-cibes-ndeg-13-10-03-2010%5B1%5D.pdf"
+      },
+      {
+        "name": "Specified Animal Pathogen Order",
+        "acronym": "SAPO",
+        "region": "United Kingdom",
+        "includes": "GB",
+        "status": "Compliance",
+        "url": "https://www.hse.gov.uk/pubns/books/hsg280.htm"
+      },
+      {
+        "name": "Schedule 5 of the Anti-terrorism, Crime and Security Act 2001",
+        "acronym": "ATCSA",
+        "region": "United Kingdom",
+        "includes": "GB",
+        "status": "Compliance",
+        "url": "https://www.legislation.gov.uk/ukpga/2001/24/2002-05-31/data.pdf"
+      },
+      {
+        "name": "Control of Substances Hazardous to Health Regulations 2002",
+        "acronym": "COSHH",
+        "region": "United Kingdom",
+        "includes": "GB",
+        "status": "Compliance",
+        "url": "https://www.hse.gov.uk/pubns/misc208.htm"
+      },
+      {
+        "name": "UK Strategic Export Control List",
+        "acronym": "UKSECL",
+        "region": "United Kingdom",
+        "includes": "GB",
+        "status": "Compliance",
+        "url": "https://assets.publishing.service.gov.uk/media/660d281067958c001f365abe/uk-strategic-export-control-list.pdf"
+      }
+    ]
+  }
+}

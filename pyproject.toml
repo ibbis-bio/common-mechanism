@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "commec"
-version = '1.0.5'
+version = '2.0.0'
 requires-python = ">=3.10"
 # This is not a pure python project; dependencies are managed through environment.yml
 authors = [
@@ -38,4 +38,4 @@ Repository = "https://github.com/ibbis-screening/common-mechanism.git"
 
 [tool.setuptools]
 packages = { find = { "include" = ["commec", "commec.*"] } }
-package-data = { "commec" = ["utils/template.html", "screen-default-config.yaml"] }
+package-data = { "commec" = ["utils/report_assets/*", "utils/report_assets/fonts/*", "screen-default-config.yaml", "database_compatibility.yaml"] }

@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 import os
 
 from commec.config.screen_io import ScreenIO, IoValidationError

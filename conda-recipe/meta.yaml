@@ -1,5 +1,5 @@
 {% set name = "commec" %}
-{% set version = "1.0.5" %}
+{% set version = "2.0.0" %}
 {% set sha256 = "" %}
 
 package:
@@ -32,17 +32,15 @@ requirements:
     - biopython
     - numpy
     - pandas
-    - pytaxonkit
     - pyyaml
     # Runtime non-Python dependencies
     - blast >=2.16
-    - diamond >=2.1
     - hmmer
     - infernal
     - wget
-    - plotly
     - yaml
-    - mako
+    - tar
+    - zstd
 
 test:
   commands:

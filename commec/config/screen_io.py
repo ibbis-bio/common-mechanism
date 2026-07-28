@@ -5,38 +5,38 @@ Defines the `ScreenIO` class and associated dataclasses.
 Objects responsible for parsing and interpreting user input for
 the screen workflow of commec.
 """
+
 import os
 import sys
 import glob
 import argparse
 import logging
 import multiprocessing
-import importlib.resources
 from pprint import pformat
-
-import yaml
-from yaml.parser import ParserError
-
+from pathlib import Path
 from Bio import SeqIO
+import yaml
 from Bio.SeqRecord import SeqRecord
 
+import commec.config.yaml_io as YamlIO
 from commec.config.query import Query
+from commec.utils.file_utils import expand_and_normalize
 from commec.config.constants import (
-    DEFAULT_CONFIG_YAML_PATH,
     MINIMUM_QUERY_LENGTH,
     MAXIMUM_QUERY_LENGTH,
     MAXIMUM_FILENAME_SIZE,
     MAXIMUM_QUERY_NAME_LENGTH,
+    VALID_BLAST_MT_MODES,
 )
-from commec.utils.file_utils import expand_and_normalize
-from commec.utils.dict_utils import deep_update
 
 logger = logging.getLogger(__name__)
+
 
 class ScreenIO:
     """
     Container for input settings constructed from arguments to `screen`.
     """
+
     def __init__(self, args: argparse.Namespace):
         # Inputs that do no have a package-level default, since they are specific to each run
         self.db_dir = args.database_dir
@@ -44,7 +44,9 @@ class ScreenIO:
         output_prefix = args.output_prefix
 
         # Output folder hierarchy
-        base, outputs, inputs = self._get_output_prefixes(self.input_fasta_path, output_prefix)
+        base, outputs, inputs = self._get_output_prefixes(
+            self.input_fasta_path, output_prefix
+        )
         self.directory_prefix = base
         self.output_prefix = outputs
         self.input_prefix = inputs
@@ -59,14 +61,16 @@ class ScreenIO:
         # Get configuration based on defaults and CLI args (including YAML config if supplied)
         self.config = {}
         self._read_config(args)
-        
+
         # Check whether a .screen output file already exists.
         if os.path.exists(self.output_screen_file) and not (
-            self.config["force"] or self.config["resume"]):
+            self.config["force"] or self.config["resume"]
+        ):
             logger.error(
-                f"""Screen output {self.output_screen_file} already exists.
+                """Screen output %s already exists.
                 Either use a different output location, or use --force or --resume to override.
-                Aborting Screen."""
+                Aborting Screen.""",
+                self.output_screen_file,
             )
             sys.exit(1)
 
@@ -86,19 +90,16 @@ class ScreenIO:
         if self.config["threads"] < 1:
             raise RuntimeError("Number of allocated threads must be at least 1!")
 
-        if (
-            self.config["diamond_jobs"] is not None
-            and self.config["protein_search_tool"] == "blastx"
-        ):
-            logger.warning(
-                "--jobs is a diamond only parameter! Specifying -j (--jobs) without also"
-                " specifying -p (--protein-search-tool) as 'diamond' will have no effect!"
+        if self.config["blast_mt_mode"] not in VALID_BLAST_MT_MODES:
+            raise RuntimeError(
+                f"blast_mt_mode must be one of {VALID_BLAST_MT_MODES}, "
+                f"but got {self.config['blast_mt_mode']!r}"
             )
 
         # Write a clean FASTA that can be used downstream
         self._write_clean_fasta()
-        return True
 
+        return True
 
     def parse_input_fasta(self) -> dict[str, Query]:
         """
@@ -109,31 +110,39 @@ class ScreenIO:
         queries = {}
 
         try:
-            with open(self.nt_path, "r", encoding = "utf-8") as fasta_file:
+            with open(self.nt_path, "r", encoding="utf-8") as fasta_file:
                 records = list(SeqIO.parse(fasta_file, "fasta"))
         except ValueError as e:
-            raise IoValidationError(f"Input FASTA file: {self.input_fasta_path} "
-                                    "is not a valid fasta file.") from e
+            raise IoValidationError(
+                f"Input FASTA file: {self.input_fasta_path} is not a valid fasta file."
+            ) from e
 
         if len(records) == 0:
-            raise IoValidationError(f"Input FASTA file: {self.input_fasta_path} "
-                                    " contains no records!")
+            raise IoValidationError(
+                f"Input FASTA file: {self.input_fasta_path}  contains no records!"
+            )
 
         for record in records:
             try:
                 query = Query(record)
                 if query.name in queries:
-                    raise ValueError(f"Duplicate sequence identifier generated: \"{query.name}\" from record: {record}\n"
-                                     f"Ensure that the first {MAXIMUM_QUERY_NAME_LENGTH} characters for each fasta record are unique.")
+                    raise ValueError(
+                        f'Duplicate sequence identifier generated: "{query.name}" from record: {record}\n'
+                        f"Ensure that the first {MAXIMUM_QUERY_NAME_LENGTH} characters for each fasta record are unique."
+                    )
                 queries[query.name] = query
                 # Override the original cleaned fasta, with queries above a given length and updated names
                 if MINIMUM_QUERY_LENGTH < len(record.seq) <= MAXIMUM_QUERY_LENGTH:
                     # Creating new SeqRecord to avoid overwriting the seq_record object inside query and preserve the original seq id
-                    updated_records.append(SeqRecord(record.seq, id=query.name, description=""))
+                    updated_records.append(
+                        SeqRecord(record.seq, id=query.name, description="")
+                    )
             except Exception as e:
-                raise IoValidationError(f"Failed to parse input fasta: {self.nt_path}, {e}") from e
+                raise IoValidationError(
+                    f"Failed to parse input fasta: {self.nt_path}, {e}"
+                ) from e
 
-        with open(self.nt_path, "w", encoding = "utf-8") as fasta_file:
+        with open(self.nt_path, "w", encoding="utf-8") as fasta_file:
             SeqIO.write(updated_records, fasta_file, "fasta")
 
         return queries
@@ -144,12 +153,10 @@ class ScreenIO:
         """
         if self.config.do_cleanup:
             for pattern in [
-                "reg_path_coords.csv",
                 "*hmmscan",
                 "*blastn",
                 "faa",
                 "*blastx",
-                "*dmnd",
                 "*.tmp",
             ]:
                 for file in glob.glob(f"{self.output_prefix}.{pattern}"):
@@ -167,126 +174,39 @@ class ScreenIO:
             1. Contents of a user-defined YAML file provided using the --config argument
             2. (highest-priority) Configuration provided directly as CLI arguments
         """
-        # Read package-level configuration defaults
-        default_yaml = importlib.resources.files("commec").joinpath(DEFAULT_CONFIG_YAML_PATH)
-        if default_yaml.exists():
-            self.config = self._load_config_from_yaml(str(default_yaml))
-        else:
-            raise FileNotFoundError(
-                f"No default yaml found. Expected at {DEFAULT_CONFIG_YAML_PATH}"
-                )
+        self.config = YamlIO.get_defaults()
 
-        # Override configuration with any in user-provided YAML file
-        cli_config_yaml=args.config_yaml.strip()
-        if os.path.exists(cli_config_yaml):
-            logger.debug(f"Overriding defaults in {default_yaml} with values from {cli_config_yaml}")
-            self._update_config_from_yaml(cli_config_yaml)
+        # Import a config yaml file if provided.
+        cli_config_yaml = args.config_yaml.strip()
+        if cli_config_yaml:
+            if not os.path.exists(cli_config_yaml):
+                raise FileNotFoundError(f"--config YAML not found: {cli_config_yaml}")
+            logger.debug("Overriding defaults in with values from %s", cli_config_yaml)
+            self.config = YamlIO.update_config_from_yaml(self.config, cli_config_yaml)
 
         # Override configuration with any user-provided CLI arguments
-        self._update_config_from_cli(args)
+        self.config = YamlIO.update_config_from_cli(self.config, args)
+
+        # Override the default base path with database directory from cli.
+        base_paths = self.config["base_paths"]
+        if self.db_dir is not None:
+            base_paths["default"] = Path(expand_and_normalize(self.db_dir)).resolve()
+            logger.info(
+                "Command line arguments updated base databases directory: %s",
+                base_paths["default"],
+            )
+        else:
+            # Otherwise update the default database path if it wasn't defined.
+            self.db_dir = base_paths["default"]
+
+        # CLI -d accepts relative paths for shell convenience; normalize to absolute.
+        # db_dir_override = expand_and_normalize(self.db_dir) if self.db_dir else None
 
         # Update paths in configuration using appropriate string substitution
-        self._format_config_paths(self.db_dir)
+        self.config = YamlIO.format_config_paths(self.config)
 
         logger.debug("Running Screen with the following parameter set:")
         logger.debug(pformat(self.config))
-
-    def _load_config_from_yaml(self, config_filepath: str | os.PathLike) -> dict:
-        """
-        Loads a yaml file, ensuring it's a dictionary.
-        """
-        try:
-            with open(config_filepath, "r", encoding = "utf-8") as file:
-                config_from_yaml = yaml.safe_load(file)
-        except ParserError:
-            raise ValueError(f"Invalid yaml syntax in configuration file: {config_filepath}")
-
-        if not isinstance(config_from_yaml, dict):
-            raise TypeError(f"Loaded configuration file did not result in a dictionary: {file}")
-        return config_from_yaml
-
-    def _update_config_from_yaml(self, config_filepath: str | os.PathLike) -> None:
-        """
-        Override YAML configuration based on provided YAML file. Items in the provided file, but
-        not in the default YAML, will be ignored.
-        """
-        config_from_yaml = self._load_config_from_yaml(config_filepath)
-        self.config, rejected = deep_update(self.config, config_from_yaml)
-        for rejects in rejected:
-            logger.warning("The follow input from the user provided"
-                " configuration was not recognised: %s : %s",
-                rejects[0], rejects[1])
-
-    def _update_config_from_cli(self, args: argparse.Namespace):
-        """ 
-        Override YAML configuration based on arguments given in the command line.
-        Need to reference `user_specified_args` because CLI defaults should not override YAML.
-        """
-        if not hasattr(args, "user_specified_args"):
-            raise ValueError(
-                "Missing required 'user_specified_args' in arguments namespace. "
-            )
-
-        # Update the YAML default values in the configuration dictionary
-        logger.debug("Using the following CLI configuration arguments:")
-        logger.debug(pformat(args.user_specified_args))
-
-        for arg in args.user_specified_args:
-            if arg in self.config and hasattr(args, arg):
-                logger.debug(f"Command line arguments updated '{arg}' to: {getattr(args,arg)}")
-                self.config[arg] = getattr(args, arg)
-
-    def _format_config_paths(self,
-        db_dir_override: str | os.PathLike = None
-    ):
-        """
-        The YAML file is expected to contain a 'base_paths' key that is referenced in string
-        substitutions, so that base paths do not need to be defined more than once. For example:
-
-            base_paths:
-                default: path/to/databases/
-            databases:
-                regulated_nt:
-                    path: '{default}nt_blast/core_nt'
-
-        This script will update the dictionary to propagate these substitutions.
-        If a database directory is provided, it will override the base_path provided in the yaml.
-        """
-        def recursive_format(nested_yaml, base_paths):
-            """
-            Recursively apply string formatting to read paths from nested yaml config dicts.
-            """
-            if isinstance(nested_yaml, dict):
-                return {key : recursive_format(value, base_paths) 
-                        for key, value in nested_yaml.items()}
-            if isinstance(nested_yaml, str):
-                try:
-                    return nested_yaml.format(**base_paths)
-                except KeyError as e:
-                    raise ValueError(
-                        f"Unknown base path key referenced in path: {nested_yaml}"
-                    ) from e
-            return nested_yaml
-            
-        try:
-            # Restores legacy behaviour with -d in commec screen CLI, with no yaml.
-            if db_dir_override is not None:
-                logger.debug("Command line arguments updated base databases directory: %s", db_dir_override)
-                self.config["base_paths"]["default"] = db_dir_override
-            else:
-                self.db_dir = self.config["base_paths"]["default"]
-
-            # Ensure all the base paths end with a separator
-            for key, value in self.config["base_paths"].items():
-                self.config["base_paths"][key] = os.path.join(value,'')
-            
-            # Recursively format all paths
-            self.config["base_paths"] = recursive_format(self.config["base_paths"], self.config["base_paths"])
-            self.config = recursive_format(self.config, self.config["base_paths"])
-
-        except TypeError as e:
-            logger.error("Encountered unexpected TypeError during yaml config base path substitution: %s", e)
-            pass
 
     @staticmethod
     def _get_output_prefixes(input_file: str | os.PathLike, prefix_arg=None) -> str:
@@ -297,7 +217,7 @@ class ScreenIO:
             prefix/input_name/name
 
         - If no prefix was given, use the input filename as name.
-        - If a directory was given, use the input filename 
+        - If a directory was given, use the input filename
             as file prefix within that directory.
         """
         name = os.path.splitext(os.path.basename(input_file))[0]
@@ -324,27 +244,26 @@ class ScreenIO:
         for path in [base, outputs, inputs]:
             os.makedirs(expand_and_normalize(path), exist_ok=True)
 
-        base_prefix = os.path.join(base,name)
-        outputs_prefix =  os.path.join(outputs,name)
-        inputs_prefix =  os.path.join(inputs,name)
+        base_prefix = os.path.join(base, name)
+        outputs_prefix = os.path.join(outputs, name)
+        inputs_prefix = os.path.join(inputs, name)
 
         return base_prefix, outputs_prefix, inputs_prefix
 
-    def output_yaml(self, output_filepath : str | os.PathLike):
+    def output_yaml(self, output_filepath: str | os.PathLike):
         """
-            Takes the current state of the yaml configuration dictionary and 
-            outputs it to a file for posterity, er, reproducibility.
-            
-            Parameters:
-                output_filepath (str | os.PathLike): Path to the output YAML file.
+        Takes the current state of the yaml configuration dictionary and
+        outputs it to a file for posterity, er, reproducibility.
+
+        Parameters:
+            output_filepath (str | os.PathLike): Path to the output YAML file.
         """
         with open(output_filepath, "w", encoding="utf-8") as stream_out:
             yaml.safe_dump(self.config, stream_out, default_flow_style=False)
 
-
     def _write_clean_fasta(self) -> str:
         """
-        Write a FASTA in which whitespace (excluding in header), including non-breaking spaces and 
+        Write a FASTA in which whitespace (excluding in header), including non-breaking spaces and
         illegal characters are replaced with underscores.
         """
 
@@ -371,7 +290,9 @@ class ScreenIO:
 
     @property
     def should_do_nucleotide_screening(self) -> bool:
-        return not (self.config["skip_taxonomy_search"] or self.config["skip_nt_search"])
+        return not (
+            self.config["skip_taxonomy_search"] or self.config["skip_nt_search"]
+        )
 
     @property
     def should_do_low_concern_screening(self) -> bool:

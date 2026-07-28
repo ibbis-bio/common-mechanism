@@ -1,0 +1,169 @@
+INFO    │ Validating input query, regulations, and databases...
+INFO    │ Input query file:
+────────┘
+/mnt/data/ibbis/repo/common-mechanism/example_data/commec-examples.fasta
+────────┐
+INFO    │ Using Control Lists:
+────────┘
+                                                                 Control List  Acronym  # Entries Region     Status
+         Dual-Use Items Export Control List of the People’s Republic of China    DUPRC        153     CN Compliance
+                Schedule 5 of the Anti-terrorism, Crime and Security Act 2001    ATCSA         63     UK Compliance
+                                              Specified Animal Pathogen Order     SAPO         37     UK Compliance
+Lista de Bens Relacionados à Área Biológica e Serviços Diretamente Vinculados    CIBES        318     BR Compliance
+                                                United States Munitions Lists     USML         11     US Compliance
+                                                    The Commerce Control List    USCCL        138     US Compliance
+      United States Department of Agriculture Plant Protection and Quarantine  PPQUSDA          6     US Compliance
+                                         Select Agents and Toxins List (USDA) BSATUSDA         84     US Compliance
+                   Control of Substances Hazardous to Health Regulations 2002    COSHH        154     UK Compliance
+                                          Select Agents and Toxins List (HHS)  BSATHHS         35     US Compliance
+                       Russian Federation Export Control (Humans and animals)   RFECHA         54     RU Compliance
+                                            EU Dual-Use Export Control Regime  EUDUECR        143     EU Compliance
+                                                  EU List of Animal Pathogens    EULAP        131     EU Compliance
+                                          India Export Controls (SCOMET List)   SCOMET        235     IN Compliance
+                          Australia Group Common Control List Plant Pathogens    PPCCL         22     AG Compliance
+               Australia Group Common Control List Human and Animal Pathogens      CCL        142     AG Compliance
+ Declaration of Certain Biological Goods and Technologies as Controlled Goods     ZAEC        180     ZA Compliance
+                                  Russian Federation Export Control (Animals)    RFECA         23     RU Compliance
+                                             UK Strategic Export Control List   UKSECL        158     UK Compliance
+────────┐
+INFO    │ Commec will screen the following 6 queries:
+────────┘
+M14107.1, xylanase_zero_shot_des31_bioalign_bening_non_chimeric, BBa_K209429_A_15261_Composite_SSFYFP-hM2D-Tuba, addgene-plasmid-36399, RVFV, encrypted
+────────┐
+INFO    │ Total length of all queries : 32170 b.p.
+INFO    │  >> STEP 1: Checking for biorisk genes...
+INFO    │  Biorisks in M14107.1:
+INFO    │        --> Virulence Factor found at coordinates: 814-1299.
+INFO    │        --> Virulence Factor found at coordinates: 1383-4385.
+INFO    │  Biorisks in RVFV:
+INFO    │        --> Regulated Gene found at coordinates: 35-778.
+INFO    │        --> Regulated Gene found at coordinates: 35-829.
+INFO    │ STEP 1 completed at 2026-07-22 17:29:13
+INFO    │  >> STEP 2: Checking regulated pathogen proteins...
+INFO    │     Identifying controlled taxa ...
+INFO    │     Processing query: BBa_K209429_A_15261_Composite_SSFYFP-hM2D-Tuba
+INFO    │     Processing query: addgene-plasmid-36399
+INFO    │        --> Flag at bases (85-864) controlled Viruses Orthopneumovirus hominis (Human Respiratory syncitial
+        │ virus).
+        │            (Regulated Species: Orthopneumovirus hominis.
+        │             Regulated TaxID: 11250)
+INFO    │        --> Flag at bases (865-2130) controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal).
+        │            (Regulated Species: Vesiculovirus indiana.
+        │             Regulated TaxID: 11285)
+INFO    │        --> Flag at bases (2197-2991) controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal).
+        │            (Regulated Species: Vesiculovirus indiana.
+        │             Regulated TaxID: 11279)
+INFO    │        --> Flag at bases (3117-3761) controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal).
+        │            (Regulated Species: Vesiculovirus indiana.
+        │             Regulated TaxID: 11278)
+INFO    │        --> Flag at bases (5545-11871) controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal).
+        │            (Regulated Species: Vesiculovirus indiana.
+        │             Regulated TaxID: 11277)
+INFO    │     Processing query: RVFV
+INFO    │        --> Flag at bases (35-829) controlled Viruses Phlebovirus riftense (Rift Valley fever virus).
+        │            (Regulated Species: Phlebovirus riftense.
+        │             Regulated TaxID: 11588)
+INFO    │        --> Flag at bases (961-1653) controlled Viruses Phlebovirus riftense (Rift Valley fever virus).
+        │            (Regulated Species: Phlebovirus riftense.
+        │             Regulated TaxID: 11588)
+INFO    │     Processing query: M14107.1
+INFO    │     Processing query: xylanase_zero_shot_des31_bioalign_bening_non_chimeric
+INFO    │ STEP 2 completed at 2026-07-22 17:36:02
+INFO    │  >> STEP 3: Checking regulated pathogen nucleotides...
+INFO    │        --> Identified noncoding regions for query M14107.1: [356-687, 4392-4480]
+INFO    │ No protein hits found for xylanase_zero_shot_des31_bioalign_bening_non_chimeric, screening entire sequence.
+INFO    │        --> Identified noncoding regions for query BBa_K209429_A_15261_Composite_SSFYFP-hM2D-Tuba: [1-1025,
+        │ 1833-1981, 2614-2779, 3497-9646]
+INFO    │        --> Identified noncoding regions for query addgene-plasmid-36399: [1-84, 2131-2196, 2992-3116,
+        │ 3762-3885, 5419-5544, 11872-12810, 12949-13148, 14007-14179, 14812-15045]
+INFO    │        --> Identified noncoding regions for query RVFV: [830-960]
+INFO    │ No protein hits found for encrypted, screening entire sequence.
+INFO    │     Identifying controlled taxa ...
+INFO    │     Processing query: BBa_K209429_A_15261_Composite_SSFYFP-hM2D-Tuba
+INFO    │     for the non-coding region: 1-1025
+INFO    │        --> Flag at bases (926-1025) controlled Viruses Cytomegalovirus humanbeta5.
+        │            (Regulated Species: Cytomegalovirus humanbeta5.
+        │             Regulated TaxID: 10359)
+INFO    │     Processing query: addgene-plasmid-36399
+INFO    │     for the non-coding region: 2131-2196
+INFO    │        --> Flag at bases (2131-2196) controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal).
+        │            (Regulated Species: Vesiculovirus indiana.
+        │             Regulated TaxID: 11277)
+INFO    │     Processing query: BBa_K209429_A_15261_Composite_SSFYFP-hM2D-Tuba
+INFO    │     for the non-coding region: 1833-1981
+INFO    │     Processing query: RVFV
+INFO    │     for the non-coding region: 830-960
+INFO    │        --> Flag at bases (830-960) controlled Viruses Phlebovirus riftense (Rift Valley fever virus).
+        │            (Regulated Species: Phlebovirus riftense.
+        │             Regulated TaxID: 11588)
+INFO    │     Processing query: addgene-plasmid-36399
+INFO    │     for the non-coding region: 14007-14179
+INFO    │     Processing query: addgene-plasmid-36399
+INFO    │     for the non-coding region: 14812-15045
+INFO    │     Processing query: addgene-plasmid-36399
+INFO    │     for the non-coding region: 11872-12810
+INFO    │        --> Flag at bases (11872-11974) controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal).
+        │            (Regulated Species: Vesiculovirus indiana.
+        │             Regulated TaxID: 11277)
+INFO    │        --> Flag at bases (11975-12060) controlled Viruses Hepatitis D virus.
+        │            (Regulated Species: Deltavirus italiense.
+        │             Regulated TaxID: 12475)
+INFO    │        --> Flag at bases (12203-12260) controlled Viruses Orthopoxvirus monkeypox.
+        │            (Regulated Species: Orthopoxvirus monkeypox.
+        │             Regulated TaxID: 10244)
+INFO    │     Processing query: addgene-plasmid-36399
+INFO    │     for the non-coding region: 12949-13148
+INFO    │        --> Flag at bases (12949-13018) controlled Viruses Human immunodeficiency virus 1.
+        │            (Regulated Species: Lentivirus humimdef1.
+        │             Regulated TaxID: 11676)
+INFO    │     Processing query: addgene-plasmid-36399
+INFO    │     for the non-coding region: 1-84
+INFO    │        --> Flag at bases (1-65) controlled Viruses Vesiculovirus (indiana, newjersey, alagoas, cocal).
+        │            (Regulated Species: Vesiculovirus indiana.
+        │             Regulated TaxID: 11277)
+INFO    │ STEP 3 completed at 2026-07-22 17:39:46
+INFO    │  >> STEP 4: Checking any pathogen regions for low-concern components...
+INFO    │  Low-concern checks for M14107.1
+INFO    │        ... no housekeeping protein hits.
+INFO    │        ... no low-concern RNA hits.
+INFO    │        ... no low-concern DNA hits.
+INFO    │  Low-concern checks for BBa_K209429_A_15261_Composite_SSFYFP-hM2D-Tuba
+INFO    │        --> Clearing Flag at bases (926-1025) as low-concern DNA: "Cytomegalovirus humanbeta5" matched
+        │ synthetic biology part "BBa_K209429 A 15261 Composite "SSFYFP-hM2D-Tuba""
+INFO    │        ... no housekeeping protein hits.
+INFO    │        ... no low-concern RNA hits.
+INFO    │  Low-concern checks for addgene-plasmid-36399
+INFO    │        --> Clearing Flag at bases (85-864) as low-concern DNA: "Orthopneumovirus hominis (Human Respiratory
+        │ syncitial virus)" matched synthetic biology part "BBa_J85802 P 22007 Coding "EYFP-FF4x4""
+INFO    │        --> Synbio sequences <80% coverage achieved over hit Orthopoxvirus monkeypox over 12203-12260.
+INFO    │        --> Clearing Flag at bases (12949-13018) as low-concern DNA: "Human immunodeficiency virus 1" matched
+        │ synthetic biology part "BBa_I745002 U 10691 Plasmid "pTHM   ""
+INFO    │        ... no housekeeping protein hits.
+INFO    │        ... no low-concern RNA hits.
+INFO    │  Low-concern checks for RVFV
+INFO    │ Clear failed for Phlebovirus riftense (Rift Valley fever virus) (Flag) as RNA of low-concern has >50 bases
+        │ unaccounted for.
+INFO    │        ... no housekeeping protein hits.
+INFO    │        ... no low-concern RNA hits.
+INFO    │        ... no low-concern DNA hits.
+INFO    │ STEP 4 completed at 2026-07-22 17:39:53
+INFO    │  >> Commec Screen completed at 2026-07-22 17:39:53
+────────┘
+
+ >> SUMMARY : 
+                    query        overall      biorisk  taxonomy_aa    taxonomy_nt        cleared
+                 M14107.1        Warning      Warning         Pass           Pass        Warning
+xylanase_zero_shot_des31_           Pass         Pass         Pass           Pass           Pass
+BBa_K209429_A_15261_Compo Flag (Cleared)         Pass         Pass Flag (Cleared) Flag (Cleared)
+    addgene-plasmid-36399           Flag         Pass         Flag           Flag           Flag
+                     RVFV           Flag         Flag         Flag           Flag           Flag
+                encrypted           Pass         Pass         Pass           Pass           Pass
+
+ >> RATIONALE : 
+M14107.1                  : Warning      --> Matches sequence with virulence factor.
+xylanase_zero_shot_des31_ : Pass         --> No regions of concern.
+BBa_K209429_A_15261_Compo : Flag (Cleared) --> No regions of concern flags cleared as common or non-hazardous
+addgene-plasmid-36399     : Flag         --> Matches protein and nucleotide sequence with regulated organisms; as well as flags cleared as common or non-hazardous.
+RVFV                      : Flag         --> Matches sequence with pathogenic or toxin function, and protein and nucleotide sequence with regulated organisms.
+encrypted                 : Pass         --> No regions of concern.
+

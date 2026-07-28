@@ -5,8 +5,10 @@ import os
 from dataclasses import dataclass
 from Bio import Seq
 from Bio.SeqRecord import SeqRecord
-from commec.config.result import QueryResult
+
+# from commec.config.result import QueryResult
 from commec.config.constants import MAXIMUM_QUERY_NAME_LENGTH
+
 
 class Query:
     """
@@ -21,11 +23,15 @@ class Query:
         Query.validate_sequence_record(seq_record)
         self._seq_record = seq_record
         self.name = self.create_id(seq_record.id)
-        self.description = seq_record.description[len(seq_record.id):].strip()
-        self.non_coding_regions : list[tuple[int, int]] = [] # 1 based coordinates for Non-Coding Regions.
-        self.result : QueryResult = None
+        self.description = seq_record.description[len(seq_record.id) :].strip()
+        self.non_coding_regions: list[
+            tuple[int, int]
+        ] = []  # 1 based coordinates for Non-Coding Regions.
+        self.result = None
         self.translations: list[QueryTranslation] = []
-        self.no_hits_warning : bool = True # Updated to False whenever any hit is found.
+
+    def __str__(self) -> str:
+        return self.name
 
     @property
     def original_name(self) -> str:
@@ -122,15 +128,15 @@ class Query:
             )
 
     @staticmethod
-    def create_id(input_name : str) -> str:
+    def create_id(input_name: str) -> str:
         """
-        Parse the Fasta SeqRecord string ID into 
+        Parse the Fasta SeqRecord string ID into
         a constant digit maximum Unique Identification.
         For internal Commec Screen Use only.
         Original Fasta name IDs are used during JSON output.
         """
         # Protections on split name conventions for translation output:
-        name = input_name.split('|')[0]
+        name = input_name.split("|")[0]
 
         # Protection on accidentally ending with _
         if name.endswith("_"):
@@ -138,9 +144,9 @@ class Query:
 
         if len(name) <= MAXIMUM_QUERY_NAME_LENGTH:
             return name
-        
-        tokens = name.split("_")
 
+        # Name is too long, lets try shorten it.
+        tokens = name.split("_")
         if len(tokens) == 1:
             return name[:MAXIMUM_QUERY_NAME_LENGTH]
 
@@ -152,52 +158,49 @@ class Query:
             output = testname
 
         return output
-    
 
-    def get_non_coding_regions_as_fasta(self) -> str:
-        """ 
+    def get_non_coding_regions_as_fasta(self) -> list[str]:
+        """
         Return the concatenation of all non-coding regions as a string,
         to be appended to a non_coding fasta file.
         """
         if len(self.non_coding_regions) == 0:
             return ""
-        heading : str = f">{self.name}"
-        sequence : str = ""
-        for start, stop in self.non_coding_regions:
-            heading+=f" ({start}-{stop})"
-            sequence+=f"{self._seq_record.seq[int(start)-1: int(stop)]}"
-        return f"{heading}\n{sequence}\n"
+        heading: str = f">{self.name}"
+        sequence: str = ""
+        outputs = []
+        for i, nc in enumerate(self.non_coding_regions):
+            start, stop = nc
+            heading = f">{self.name}_{i} ({start}-{stop})"
+            sequence = f"{self._seq_record.seq[int(start) - 1 : int(stop)]}"
+            outputs.append(f"{heading}\n{sequence}\n")
+        return outputs
 
-    def nc_to_nt_query_coords(self, index : int) -> int:
+    def nc_to_nt_query_coords(self, coord: int, index: int) -> int:
         """
-        Given an index in non-coding coordinates,
-        calculate the nucleotide index in query coordinates.
+        Given a coord in non-coding coordinates, and an index for which
+        non-coding start-stop site to use,
+        return the nucleotide coord in query coordinates.
         """
-        nc_pos : int = 1
-        for start, end in self.non_coding_regions:
-            region_length : int = end - start
-            if (index <= (nc_pos + region_length) and
-                index >= nc_pos):
-                return index - nc_pos + start
 
-            nc_pos += region_length + 1
-
-        # index was out put bounds of non-coding list of tuples:
-        raise QueryValueError(
-            f"Non-coding index provided  ({index}) for {self.name}"
-            f"which is out-of-bounds for any known NC start-end tuple: {self.non_coding_regions}"
+        # Index checking:
+        if index >= len(self.non_coding_regions):
+            raise QueryValueError(
+                f"Non-coding index provided  ({index}) for {self.name}"
+                f"which is out-of-bounds for any known NC start-end tuple: {self.non_coding_regions}"
             )
-    
-    def mark_as_hit(self):
-        """
-        Confirm that this query has had a valid hit, and therefore, has some
-        sort of homology to something. 
-        
-        TODO: In the future, this could also be passed
-        coordinate information to mark some areas of the query identified compared
-        to other areas.
-        """
-        self.no_hits_warning = False
+
+        # Range checking:
+        start, stop = self.non_coding_regions[index]
+        max_value = stop - start + 1
+        if coord < 1 or coord > max_value:
+            raise QueryValueError(
+                f"Coordinate {coord} from Non-coding index provided  ({index}) for {self.name}"
+                f" is out-of-bounds for its NC start-end tuple: {start} - {stop}"
+            )
+
+        return start + coord - 1
+
 
 @dataclass
 class QueryTranslation:
@@ -211,6 +214,7 @@ class QueryTranslation:
 
     sequence: str
     frame: int
+
 
 class QueryValueError(ValueError):
     """Custom exception for errors when validating a `Query`."""

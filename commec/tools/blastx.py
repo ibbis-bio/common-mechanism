@@ -20,7 +20,11 @@ class BlastXHandler(BlastHandler):
     """
 
     def __init__(
-        self, database_file: str, input_file: str, out_file: str, **kwargs,
+        self,
+        database_file: str,
+        input_file: str,
+        out_file: str,
+        **kwargs,
     ):
         super().__init__(database_file, input_file, out_file, **kwargs)
         # We fill this with defaults, however they can always be overridden before screening.
@@ -32,7 +36,7 @@ class BlastXHandler(BlastHandler):
             "-max_target_seqs": 500,
             "-culling_limit": 1,
             "-outfmt": [
-                "7",
+                "6",
                 "qacc",
                 "stitle",
                 "sacc",
@@ -91,7 +95,7 @@ class BlastXHandler(BlastHandler):
             result = subprocess.run(
                 ["blastx", "-version"], capture_output=True, text=True, check=True
             )
-            tool_info = result.stdout.strip()
+            tool_info = result.stdout.strip().replace("\t", " ").replace("\n", " ")
 
             result = subprocess.run(
                 ["blastdbcmd", "-info", "-db", self.db_file, "-dbtype", "prot"],
@@ -100,7 +104,10 @@ class BlastXHandler(BlastHandler):
                 check=True,
             )
             lines = result.stdout.splitlines()
-            database_info: str = lines[5] + lines[3]
+            lines = [
+                line.strip().replace("\t", " ").replace("\n", " ") for line in lines
+            ]
+            database_info: str = lines[5] + " " + lines[3]
 
             return SearchToolVersion(tool_info, database_info)
 
