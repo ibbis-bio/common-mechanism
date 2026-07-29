@@ -192,10 +192,6 @@
   .browser-list .row .sz { margin-left: auto; color: var(--faint); font-size: 12px; white-space: nowrap; }
   .browser-sel b, #browse-sel b { color: var(--heading); }
 
-  /* skip-50 toggle */
-  .opt { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 13px; color: var(--ink); }
-  .opt input { width: 16px; height: 16px; accent-color: var(--teal); }
-
   /* ---- Presets --------------------------------------------------------- */
   .presets { display: flex; flex-direction: column; gap: 10px; }
   .preset {
@@ -482,12 +478,6 @@
         </label>
         <div class="field-foot"><span class="bp" id="upload-info"></span></div>
       </div>
-
-      <!-- Feature 8: skip short sequences (default on) -->
-      <label class="opt">
-        <input type="checkbox" id="skip50" checked>
-        <span>Skip sequences shorter than 50 bp</span>
-      </label>
     </section>
 
     <!-- ============ 02 Screening depth (Advanced options only) ======== -->
@@ -943,7 +933,6 @@ form.addEventListener("submit", async (e) => {
   }
 
   const data = new FormData();
-  data.append("skip_short", document.getElementById("skip50").checked ? "1" : "0");
   // Screen EVERY populated input together (paste + upload + picked file),
   // regardless of the active tab -- the summary by the Run button shows what's
   // included so nothing hidden gets screened silently.

@@ -151,8 +151,8 @@ unique) and a sequence supplied one of three ways:
 Every input (paste, upload, spreadsheet, or a picked server file) is normalised
 into an `input.fasta` **inside the run dir**. This is required: commec writes its
 output next to the input file, so the input must live in the run dir or the
-output would scatter into the source directory. A default-on **"skip sequences
-shorter than 50 bp"** toggle drops sub-threshold records.
+output would scatter into the source directory. Every normalised sequence is
+passed to `commec screen`, regardless of length.
 
 One screen runs at a time (screening is CPU-bound and `--threads` already
 saturates the box). The shared run state is polled by every connected browser,

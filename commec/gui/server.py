@@ -529,11 +529,8 @@ JOB_LOCK = threading.Lock()
 # ---------------------------------------------------------------------------
 # Input handling. The browser can submit a server-side FASTA path or pasted
 # sequence text (FASTA, or rows copied from a spreadsheet). Both are normalised
-# into a FASTA file in the run dir, optionally dropping sub-threshold sequences.
+# into a FASTA file in the run dir.
 # ---------------------------------------------------------------------------
-MIN_SEQ_LEN = 50  # "skip short sequences" threshold (bp), default-on in the UI
-
-
 def _clean_seq(s):
     # Detection heuristic ONLY (see _looks_like_dna). Pasted/uploaded sequences are NOT sanitised
     # before screening: raw content goes to commec as-is, so a malformed sequence fails loudly at
@@ -1000,7 +997,6 @@ def screen():
     # not just tidy: commec writes its output next to the INPUT file (it ignores
     # the directory part of -o; see screen_io._get_output_prefixes), so the input
     # must live in the run dir or the output scatters into the source directory.
-    skip_short = (request.form.get("skip_short") or "1") != "0"
     records, sources = [], []  # sources: per-source "(N from X)" for the run note
 
     text = request.form.get("sequence_text") or ""
@@ -1050,15 +1046,6 @@ def screen():
         note.append("Combined inputs: " + ", ".join(sources) + ".")
     # Normalise the COMBINED list so names are made unique across all sources.
     records = _normalise_records(records)
-    if skip_short:
-        kept = [rec for rec in records if len(rec[1]) >= MIN_SEQ_LEN]
-        dropped = len(records) - len(kept)
-        records = kept
-        if dropped:
-            note.append(f"Skipped {dropped} sequence(s) shorter than {MIN_SEQ_LEN} bp.")
-    if not records:
-        return jsonify({"error":
-            f"No sequences left to screen (all shorter than {MIN_SEQ_LEN} bp)."}), 400
 
     with JOB_LOCK:
         busy = [j for j in JOBS.values() if not j["done"]]
