@@ -379,6 +379,12 @@
   body.advanced .file-row.adv-file { display: flex; }
 
   /* ---- Recent results ------------------------------------------------- */
+  .recent {
+    display: flex; flex-direction: column; max-height: 360px;
+  }
+  #recent-list {
+    min-height: 0; overflow-y: auto;
+  }
   .run-row {
     display: flex; align-items: center; gap: 12px; padding: 10px 0;
     border-bottom: 1px solid var(--line); cursor: pointer;
@@ -407,6 +413,7 @@
   @media (max-width: 620px) {
     .brand .title .p { font-size: 15px; white-space: normal; }
     .net, .hmeters { display: none; }
+    .recent { max-height: 320px; }
   }
 </style>
 </head>
