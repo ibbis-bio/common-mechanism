@@ -97,14 +97,6 @@
   .hmeter.cpu .hbar > i { background: var(--orange); }
   .hmeter b { color: #cfe0ea; font: 600 10px/1 var(--mono); letter-spacing: 0; text-transform: none; }
 
-  /* ---- Sequence ribbon (signature) ------------------------------------ */
-  .ribbon {
-    overflow: hidden; background: var(--navy);
-    font: 500 11px/1 var(--mono); letter-spacing: .42em;
-    color: rgba(255,255,255,.10); padding: 5px 0; white-space: nowrap;
-    user-select: none;
-  }
-
   /* ---- Layout ---------------------------------------------------------- */
   .wrap { max-width: 880px; margin: 0 auto; padding: 28px 24px 64px; }
 
@@ -422,7 +414,6 @@
     </div>
   </div>
 </header>
-<div class="ribbon" id="ribbon" aria-hidden="true"></div>
 
 <div class="wrap">
   <!-- Run label (names the output files) -->
@@ -672,14 +663,6 @@ function loadNet() {
 }
 loadNet();
 setInterval(loadNet, 60000);  // pick up DHCP / link changes
-
-/* ---- Signature: scrolling base ribbon -------------------------------- */
-(function () {
-  const bases = "ATGC";
-  let s = "";
-  for (let i = 0; i < 400; i++) s += bases[(i * 7 + (i >> 1)) % 4];
-  document.getElementById("ribbon").textContent = s;
-})();
 
 /* ---- Tabs (delegated, so dynamically-added USB tabs work too) -------- */
 const tabsEl = document.querySelector(".tabs");
