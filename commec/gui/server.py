@@ -13,6 +13,7 @@ The server is meant to run inside the `commec-dev` conda env so that the
 
 import argparse
 import atexit
+import copy
 import glob
 import importlib.resources
 import ipaddress
@@ -29,6 +30,7 @@ import uuid
 import webbrowser
 from pathlib import Path
 
+import pycountry
 import yaml
 from flask import (Flask, Response, jsonify, redirect, request, send_file,
                    session, url_for)
@@ -204,6 +206,31 @@ def _commec_db_paths():
         "best_match_nucleotide": resolve("best_match/nucleotide", "best_match", "nucleotide"),
         "control_lists":         resolve("control_lists", "control_lists"),
     }
+
+
+def _region_choices():
+    """Regions accepted by the GUI: installed groups plus ISO countries."""
+    choices = []
+    definitions = Path(_commec_db_paths()["control_lists"]) / "region_definitions.json"
+    try:
+        groups = json.loads(definitions.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        groups = []
+    if not isinstance(groups, list):
+        groups = []
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        code = str(group.get("acronym") or "").strip().upper()
+        name = str(group.get("name") or "").strip()
+        if code and name:
+            choices.append({"code": code, "name": name, "group": True})
+
+    choices.extend(
+        {"code": country.alpha_2, "name": country.name, "group": False}
+        for country in sorted(pycountry.countries, key=lambda item: item.name)
+    )
+    return choices
 
 
 def _missing_databases(preset):
@@ -931,7 +958,7 @@ def index():
 
 @app.route("/config")
 def config():
-    """Expose the preset choices the page renders, with DB availability."""
+    """Expose the preset and regional choices the page renders."""
     presets = []
     for p in CFG["presets"]:
         missing = _missing_databases(p)
@@ -943,7 +970,7 @@ def config():
             "available": not missing,
             "missing": [DB_LABELS.get(m, m) for m in missing],
         })
-    return jsonify({"presets": presets})
+    return jsonify({"presets": presets, "regions": _region_choices()})
 
 
 def _label_exists(label):
@@ -976,6 +1003,29 @@ def screen():
             f"The '{preset['label']}' preset needs databases not installed on "
             f"this server: {labels}. Install them with `commec setup`, or pick "
             f"a preset that doesn't require them."}), 400
+
+    raw_regions = (request.form.get("regions") or "all").strip()
+    if raw_regions.lower() == "all":
+        regions = "all"
+    else:
+        region_codes = list(dict.fromkeys(
+            code.strip().upper() for code in raw_regions.split(",") if code.strip()
+        ))
+        allowed_regions = {choice["code"] for choice in _region_choices()}
+        unknown_regions = [code for code in region_codes if code not in allowed_regions]
+        if not region_codes or unknown_regions:
+            detail = ", ".join(unknown_regions) or raw_regions
+            return jsonify({"error": f"Unknown regulatory jurisdiction: {detail}."}), 400
+        regions = ",".join(region_codes)
+
+    run_config = copy.deepcopy(preset["config"])
+    databases_config = run_config.setdefault("databases", {})
+    if not isinstance(databases_config, dict):
+        return jsonify({"error": "Preset databases config must be a mapping."}), 400
+    control_list_config = databases_config.setdefault("control_lists", {})
+    if not isinstance(control_list_config, dict):
+        return jsonify({"error": "Preset control-list config must be a mapping."}), 400
+    control_list_config["regions"] = regions
 
     # Required run label -> output-file prefix, sanitised to a filename-safe
     # token (timestamp fallback only if the label is all punctuation).
@@ -1044,6 +1094,10 @@ def screen():
     note = []
     if len(sources) > 1:
         note.append("Combined inputs: " + ", ".join(sources) + ".")
+    note.append(
+        "Regulatory jurisdiction: "
+        + ("all jurisdictions." if regions == "all" else regions + ".")
+    )
     # Normalise the COMBINED list so names are made unique across all sources.
     records = _normalise_records(records)
 
@@ -1061,7 +1115,7 @@ def screen():
         # record, kept with the results) and point commec at it.
         config_path = rundir / "config.used.yaml"
         with open(config_path, "w", encoding="utf-8") as fh:
-            yaml.safe_dump(preset["config"], fh, default_flow_style=False)
+            yaml.safe_dump(run_config, fh, default_flow_style=False)
 
         fasta = str(rundir / "input.fasta")
         _write_fasta(records, fasta)

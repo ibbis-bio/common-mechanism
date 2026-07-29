@@ -155,6 +155,31 @@
   .bp b { color: var(--heading); }
   .hint { color: var(--faint); }
 
+  /* Regulatory-jurisdiction picker */
+  .region-picker {
+    position: relative; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--field);
+  }
+  .region-picker > summary {
+    cursor: pointer; padding: 11px 13px; color: var(--ink);
+    font: 14px var(--ui); list-style-position: inside;
+  }
+  .region-picker[open] > summary { border-bottom: 1px solid var(--line); }
+  .region-menu { padding: 12px; }
+  .region-all, .region-option {
+    display: flex; align-items: center; gap: 9px; padding: 7px 8px;
+    color: var(--ink); font-size: 13px; cursor: pointer; border-radius: 6px;
+  }
+  .region-all:hover, .region-option:hover { background: var(--hover); }
+  .region-all { border-bottom: 1px solid var(--line); margin-bottom: 7px; padding-bottom: 11px; }
+  .region-all input, .region-option input { accent-color: var(--teal); }
+  .region-options { max-height: 240px; overflow-y: auto; }
+  .region-group-title {
+    color: var(--faint); font: 600 10px var(--display); text-transform: uppercase;
+    letter-spacing: .08em; padding: 9px 8px 4px;
+  }
+  .region-code { margin-left: auto; color: var(--faint); font: 11px var(--mono); }
+
   /* upload dropzone (sketch) */
   .drop {
     display: block; border: 1.5px dashed #c4ccd8; border-radius: 8px; padding: 30px;
@@ -470,7 +495,24 @@
       </div>
     </section>
 
-    <!-- ============ 02 Screening depth (Advanced options only) ======== -->
+    <!-- ============ 02 Regulatory jurisdiction ============ -->
+    <section class="card" id="region-card">
+      <div class="step-head">
+        <span class="step-title">Regulatory jurisdiction</span>
+      </div>
+      <details class="region-picker" id="region-picker">
+        <summary id="region-summary">All jurisdictions</summary>
+        <div class="region-menu">
+          <label class="region-all">
+            <input type="checkbox" id="region-all" checked>
+            <span>All jurisdictions</span>
+          </label>
+          <div class="region-options" id="region-options"></div>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============ 03 Screening depth (Advanced options only) ======== -->
     <section class="card adv-only" id="depth-card">
       <div class="step-head">
         <span class="step-title">Screening depth</span>
@@ -597,6 +639,9 @@ const dropzone = document.getElementById("dropzone");
 const resultCard = document.getElementById("resultcard");
 const resultTitle = document.getElementById("result-title");
 const advToggle = document.getElementById("adv-toggle");
+const regionAll = document.getElementById("region-all");
+const regionOptions = document.getElementById("region-options");
+const regionSummary = document.getElementById("region-summary");
 let viewingJobId = null;  // run currently shown in the detail card
 
 // Shared/synced state across clients.
@@ -806,6 +851,54 @@ dropzone.addEventListener("drop", e => {
 /* ---- Presets (functional) -------------------------------------------- */
 const summaryEl = document.getElementById("preset-summary");
 let PRESETS = [];
+let REGION_CHOICES = [];
+
+function selectedRegionCodes() {
+  return [...regionOptions.querySelectorAll("input:checked")].map(input => input.value);
+}
+
+function updateRegionSummary() {
+  const selected = selectedRegionCodes();
+  if (!selected.length) {
+    regionAll.checked = true;
+    regionSummary.textContent = "All jurisdictions";
+    return;
+  }
+  regionAll.checked = false;
+  const names = new Map(REGION_CHOICES.map(region => [region.code, region.name]));
+  regionSummary.textContent = selected.length <= 2
+    ? selected.map(code => `${names.get(code)} (${code})`).join(", ")
+    : `${selected.length} jurisdictions selected`;
+}
+
+function renderRegions(regions) {
+  REGION_CHOICES = regions || [];
+  const renderSection = (title, choices) => choices.length ? `
+    <div class="region-group-title">${escapeHtml(title)}</div>
+    ${choices.map(region => `
+      <label class="region-option">
+        <input type="checkbox" value="${escapeHtml(region.code)}">
+        <span>${escapeHtml(region.name)}</span>
+        <span class="region-code">${escapeHtml(region.code)}</span>
+      </label>`).join("")}` : "";
+  regionOptions.innerHTML =
+    renderSection("Region groups", REGION_CHOICES.filter(region => region.group))
+    + renderSection("Countries", REGION_CHOICES.filter(region => !region.group));
+  regionOptions.querySelectorAll("input").forEach(input => {
+    input.addEventListener("change", () => {
+      if (input.checked) regionAll.checked = false;
+      updateRegionSummary();
+    });
+  });
+  updateRegionSummary();
+}
+
+regionAll.addEventListener("change", () => {
+  if (regionAll.checked) {
+    regionOptions.querySelectorAll("input").forEach(input => { input.checked = false; });
+  }
+  updateRegionSummary();
+});
 
 // Recommendation badge: green "recommended" / red "NOT RECOMMENDED".
 function recBadge(p) {
@@ -844,6 +937,7 @@ form.addEventListener("change", (e) => {
 
 fetch("/config").then(r => r.json()).then(c => {
   PRESETS = c.presets || [];
+  renderRegions(c.regions);
   // Default to a full screen for real use; fall back to the first available
   // preset (e.g. when the full-screen databases aren't installed).
   const isAvail = p => p.available !== false;
@@ -905,6 +999,8 @@ form.addEventListener("submit", async (e) => {
   }
 
   const data = new FormData();
+  const selectedRegions = selectedRegionCodes();
+  data.append("regions", selectedRegions.length ? selectedRegions.join(",") : "all");
   // Screen EVERY populated input together (paste + upload + picked file),
   // regardless of the active tab -- the summary by the Run button shows what's
   // included so nothing hidden gets screened silently.

@@ -136,6 +136,17 @@ the server.
 > at the end of a run (upstream bug in `screen_io.py`). Each job already gets
 > its own output directory, so cleanup isn't needed.
 
+## Regulatory jurisdiction
+
+Each run can target one or more regulatory jurisdictions. The default,
+**All jurisdictions**, preserves commec's strict default. With specific
+countries or region groups selected, applicable control lists use full
+compliance and the remaining installed lists use conditional compliance.
+Selection does not remove control lists from the screen.
+
+The selected codes are stored under
+`databases.control_lists.regions` in the run's `config.used.yaml`.
+
 ## Inputs
 
 Each run takes a required **run label** (it names the output files and must be
