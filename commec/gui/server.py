@@ -14,6 +14,7 @@ The server is meant to run inside the `commec-dev` conda env so that the
 import argparse
 import atexit
 import copy
+import csv
 import glob
 import importlib.resources
 import ipaddress
@@ -208,27 +209,67 @@ def _commec_db_paths():
     }
 
 
-def _region_choices():
-    """Regions accepted by the GUI: installed groups plus ISO countries."""
-    choices = []
-    definitions = Path(_commec_db_paths()["control_lists"]) / "region_definitions.json"
+def _region_choices(include_single_country_groups=False):
+    """Jurisdictions represented by the installed control-list data."""
+    control_lists = Path(_commec_db_paths()["control_lists"])
+    definitions = control_lists / "region_definitions.json"
     try:
         groups = json.loads(definitions.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         groups = []
     if not isinstance(groups, list):
         groups = []
+
+    choices = []
+    group_codes = set()
+    memberships = {}
+    supported_countries = set()
     for group in groups:
         if not isinstance(group, dict):
             continue
         code = str(group.get("acronym") or "").strip().upper()
         name = str(group.get("name") or "").strip()
-        if code and name:
+        region_codes = list(dict.fromkeys(
+            str(region).strip().upper()
+            for region in group.get("regions", [])
+            if str(region).strip()
+        )) if isinstance(group.get("regions"), list) else []
+        if not code or not name:
+            continue
+        group_codes.add(code)
+        supported_countries.update(region_codes)
+        if region_codes and (len(region_codes) > 1 or include_single_country_groups):
             choices.append({"code": code, "name": name, "group": True})
+            for region_code in region_codes:
+                memberships.setdefault(region_code, []).append(name)
 
+    for list_info in control_lists.rglob("list_info.csv"):
+        try:
+            with open(list_info, encoding="utf-8", newline="") as fh:
+                supported_countries.update(
+                    str(row.get("region_code") or "").strip().upper()
+                    for row in csv.DictReader(fh)
+                    if str(row.get("region_code") or "").strip()
+                )
+        except (OSError, csv.Error):
+            continue
+
+    countries = {country.alpha_2: country for country in pycountry.countries}
     choices.extend(
-        {"code": country.alpha_2, "name": country.name, "group": False}
-        for country in sorted(pycountry.countries, key=lambda item: item.name)
+        {
+            "code": country.alpha_2,
+            "name": country.name,
+            "group": False,
+            "memberships": memberships.get(country.alpha_2, []),
+        }
+        for country in sorted(
+            (
+                countries[code]
+                for code in supported_countries - group_codes
+                if code in countries
+            ),
+            key=lambda item: item.name,
+        )
     )
     return choices
 
@@ -1011,7 +1052,10 @@ def screen():
         region_codes = list(dict.fromkeys(
             code.strip().upper() for code in raw_regions.split(",") if code.strip()
         ))
-        allowed_regions = {choice["code"] for choice in _region_choices()}
+        allowed_regions = {
+            choice["code"]
+            for choice in _region_choices(include_single_country_groups=True)
+        }
         unknown_regions = [code for code in region_codes if code not in allowed_regions]
         if not region_codes or unknown_regions:
             detail = ", ".join(unknown_regions) or raw_regions

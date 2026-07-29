@@ -143,6 +143,9 @@ Each run can target one or more regulatory jurisdictions. The default,
 countries or region groups selected, applicable control lists use full
 compliance and the remaining installed lists use conditional compliance.
 Selection does not remove control lists from the screen.
+Available jurisdictions reflect the installed control-list data.
+Country entries identify their applicable multi-country groups; single-country
+aliases are shown once as their ISO country.
 
 The selected codes are stored under
 `databases.control_lists.regions` in the run's `config.used.yaml`.

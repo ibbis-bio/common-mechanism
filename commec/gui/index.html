@@ -178,7 +178,6 @@
     color: var(--faint); font: 600 10px var(--display); text-transform: uppercase;
     letter-spacing: .08em; padding: 9px 8px 4px;
   }
-  .region-code { margin-left: auto; color: var(--faint); font: 11px var(--mono); }
 
   /* upload dropzone (sketch) */
   .drop {
@@ -873,13 +872,17 @@ function updateRegionSummary() {
 
 function renderRegions(regions) {
   REGION_CHOICES = regions || [];
+  const regionLabel = region => {
+    const memberships = region.memberships && region.memberships.length
+      ? ` - ${region.memberships.join(", ")}` : "";
+    return `${region.name} (${region.code})${memberships}`;
+  };
   const renderSection = (title, choices) => choices.length ? `
     <div class="region-group-title">${escapeHtml(title)}</div>
     ${choices.map(region => `
       <label class="region-option">
         <input type="checkbox" value="${escapeHtml(region.code)}">
-        <span>${escapeHtml(region.name)}</span>
-        <span class="region-code">${escapeHtml(region.code)}</span>
+        <span>${escapeHtml(regionLabel(region))}</span>
       </label>`).join("")}` : "";
   regionOptions.innerHTML =
     renderSection("Region groups", REGION_CHOICES.filter(region => region.group))
