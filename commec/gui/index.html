@@ -205,14 +205,13 @@
     color: var(--ink); background: var(--field);
     border: 1px solid var(--line); border-radius: 8px;
   }
-  /* Recommendation badge + raw config args (debugging-oriented preset display) */
+  /* Recommendation badge */
   .rec {
     font: 600 10px var(--display); text-transform: uppercase; letter-spacing: .06em;
     padding: 2px 7px; border-radius: 999px; color: #1f6e44; background: #eaf6ef;
     white-space: nowrap;
   }
   .rec.no { color: #b1310f; background: #fdeee9; }
-  .args { display: block; margin-top: 5px; font: 12px var(--mono); color: var(--muted); word-break: break-word; }
 
   /* selected-preset summary + advanced disclosure */
   .preset-summary { display: flex; gap: 12px; align-items: flex-start; }
@@ -814,11 +813,6 @@ function recBadge(p) {
   if (p.recommended === false) return ` <span class="rec no">NOT RECOMMENDED</span>`;
   return "";
 }
-// The actual config commec receives (via -y), shown instead of prose -- for debugging.
-function presetArgs(p) {
-  const c = p.config || {};
-  return Object.keys(c).map(k => `${k}: ${c[k]}`).join("   ");
-}
 
 const customCfgEl = document.getElementById("custom-config");
 let customSelected = false;
@@ -826,16 +820,12 @@ let customSelected = false;
 function updateSummary() {
   const r = form.querySelector("input[name=preset]:checked");
   if (r && r.value === "__custom__") {
-    summaryEl.innerHTML =
-      `<span><span class="pl">Custom (raw config)</span>` +
-      `<span class="args">debug: raw config passed to commec -y</span></span>`;
+    summaryEl.innerHTML = `<span class="pl">Custom (raw config)</span>`;
     return;
   }
   const p = r && PRESETS.find(x => x.id === r.value);
   if (!p) { summaryEl.innerHTML = ""; return; }
-  summaryEl.innerHTML =
-    `<span><span class="pl">${escapeHtml(p.label)}${recBadge(p)}</span>` +
-    `<span class="args">${escapeHtml(presetArgs(p))}</span></span>`;
+  summaryEl.innerHTML = `<span class="pl">${escapeHtml(p.label)}${recBadge(p)}</span>`;
 }
 
 // Shared handler for any screening-choice change (presets + the custom radio).
@@ -871,7 +861,6 @@ fetch("/config").then(r => r.json()).then(c => {
       <input type="radio" name="preset" value="${escapeHtml(p.id)}" ${sel ? "checked" : ""} ${avail ? "" : "disabled"}>
       <span>
         <span class="pl">${escapeHtml(p.label)}${recBadge(p)}</span>
-        <span class="args">${escapeHtml(presetArgs(p))}</span>
         ${warn}
       </span>
     </label>`;
