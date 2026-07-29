@@ -4,10 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Common Mechanism - Sequence Screening</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  @font-face {
+    font-family: "Crimson Pro";
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url("/fonts/CrimsonPro.woff2") format("woff2");
+  }
   :root {
     /* IBBIS brand tokens (from ibbis.bio) */
     --navy: #232A58;
@@ -24,8 +28,8 @@
     /* themed surfaces (overridden by body.dark) */
     --heading: #232A58; --field: #fbfcfd; --track: #eaeef3; --hover: #eef6f9; --tint: #f3f9fb;
     /* type */
-    --display: "Archivo", system-ui, sans-serif;
-    --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --display: "Crimson Pro", Georgia, serif;
+    --ui: "Crimson Pro", Georgia, serif;
     --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
     --radius: 10px;
     --shadow: 0 1px 2px rgba(35,42,88,.04), 0 6px 20px rgba(35,42,88,.05);

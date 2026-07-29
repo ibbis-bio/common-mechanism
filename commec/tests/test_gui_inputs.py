@@ -146,3 +146,11 @@ def test_config_exposes_supported_region_choices(client):
         "group": False,
         "memberships": [],
     } in regions
+
+
+def test_gui_serves_bundled_report_font(client):
+    response = client.get("/fonts/CrimsonPro.woff2")
+
+    assert response.status_code == 200
+    assert response.mimetype == "font/woff2"
+    assert response.data[:4] == b"wOF2"

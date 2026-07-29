@@ -314,6 +314,9 @@ def vendor_plotly():
 
 
 ASSETS_DIR = Path(__file__).parent / "assets"
+REPORT_FONTS_DIR = Path(importlib.resources.files("commec").joinpath(
+    "utils", "report_assets", "fonts"
+))
 
 
 @app.route("/assets/<path:name>")
@@ -323,6 +326,12 @@ def asset(name):
     if ASSETS_DIR.resolve() not in target.parents or not target.is_file():
         return jsonify({"error": "not found"}), 404
     return send_file(target)
+
+
+@app.route("/fonts/CrimsonPro.woff2")
+def report_font():
+    """Serve the report's bundled UI font to the main GUI."""
+    return send_file(REPORT_FONTS_DIR / "CrimsonPro.woff2", mimetype="font/woff2")
 
 
 # ---------------------------------------------------------------------------
