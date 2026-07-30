@@ -192,6 +192,18 @@
   .drop:hover { border-color: var(--teal); }
   .drop.drag { border-color: var(--teal); background: var(--tint); }
   .drop b { color: var(--ink); }
+  .sheet-warning { color: #9a6a12; background: #fbf3e3; border: 1px solid #eed9ad; border-radius: 7px; padding: 8px 10px; font-size: 13px; margin: 12px 0; }
+  .sheet-tabs { display: flex; gap: 6px; overflow-x: auto; margin: 12px 0; }
+  .sheet-tabs button { border: 1px solid var(--line); border-radius: 6px; background: var(--field); color: var(--muted); padding: 6px 10px; font: 600 13px var(--ui); cursor: pointer; white-space: nowrap; }
+  .sheet-tabs button.active { color: var(--heading); border-color: var(--teal); background: var(--tint); }
+  .sheet-map { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+  .sheet-map select { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--field); color: var(--ink); font: 13px var(--ui); }
+  .sheet-preview { overflow-x: auto; border: 1px solid var(--line); border-radius: 7px; }
+  .sheet-preview table { border-collapse: collapse; width: 100%; font: 12px var(--mono); }
+  .sheet-preview td, .sheet-preview th { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+  .sheet-preview thead th { color: var(--faint); background: var(--field); }
+  .sheet-preview tr.skip { opacity: .42; }
+  .sheet-preview tr.more td { color: var(--muted); text-align: center; }
 
   /* Server-side file browser */
   .browser { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--field); }
@@ -471,6 +483,7 @@
         <button type="button" class="tab active" data-tab="paste">Paste sequence</button>
         <button type="button" class="tab" data-tab="path">Server file path</button>
         <button type="button" class="tab" data-tab="upload">Upload file</button>
+        <button type="button" class="tab" data-tab="spreadsheet">Spreadsheet</button>
       </div>
 
       <!-- Paste (sketch: parses FASTA + spreadsheet paste later) -->
@@ -502,6 +515,24 @@
                  accept=".fasta,.fa,.fna,.ffn,.frn,.txt,.csv,.tsv" hidden>
         </label>
         <div class="field-foot"><span class="bp" id="upload-info"></span></div>
+      </div>
+
+      <div class="pane" data-pane="spreadsheet">
+        <label class="drop" for="spreadsheet-file">
+          <b>Choose a spreadsheet</b><br>.xlsx, .xls, .csv, or .tsv
+          <input type="file" id="spreadsheet-file" accept=".xlsx,.xls,.csv,.tsv" hidden>
+        </label>
+        <div class="field-foot"><span class="bp" id="spreadsheet-info"></span></div>
+        <div id="spreadsheet-controls" hidden>
+          <div class="sheet-warning" id="sheet-warning" hidden>Warning: file has multiple sheets. Select the one to screen.</div>
+          <div class="sheet-tabs" id="sheet-tabs"></div>
+          <div class="sheet-map">
+            <label class="lbl">Nucleotide column<select id="sheet-nucleotide"><option value="">Choose column</option></select></label>
+            <label class="lbl">Sequence name column (optional)<select id="sheet-name"><option value="">Generate names</option></select></label>
+          </div>
+          <label class="lbl"><input type="checkbox" id="sheet-skip"> Skip first row</label>
+          <div class="sheet-preview" id="sheet-preview"></div>
+        </div>
       </div>
     </section>
 
@@ -645,6 +676,15 @@ const recentSub = document.getElementById("recent-sub");
 const delallBtn = document.getElementById("delall");
 const uploadInput = document.getElementById("upload-file");
 const uploadInfo = document.getElementById("upload-info");
+const spreadsheetInput = document.getElementById("spreadsheet-file");
+const spreadsheetInfo = document.getElementById("spreadsheet-info");
+const spreadsheetControls = document.getElementById("spreadsheet-controls");
+const sheetTabs = document.getElementById("sheet-tabs");
+const sheetWarning = document.getElementById("sheet-warning");
+const sheetNucleotide = document.getElementById("sheet-nucleotide");
+const sheetName = document.getElementById("sheet-name");
+const sheetSkip = document.getElementById("sheet-skip");
+const sheetPreview = document.getElementById("sheet-preview");
 const dropzone = document.getElementById("dropzone");
 const resultCard = document.getElementById("resultcard");
 const resultTitle = document.getElementById("result-title");
@@ -835,6 +875,8 @@ function updateInputSummary() {
   if (seqPaste.value.trim()) parts.push(`${recCount.textContent} pasted`);
   const uf = uploadInput.files[0];
   if (uf) parts.push(`${uf.name} (upload)`);
+  const sf = spreadsheetInput.files[0];
+  if (sf) parts.push(`${sf.name} (spreadsheet)`);
   if (selectedPath) parts.push(`${selectedPath.split("/").pop()} (file)`);
   inputSummaryEl.innerHTML = parts.length
     ? "Will screen: " + parts.map(p => `<b>${escapeHtml(p)}</b>`).join(" + ")
@@ -857,6 +899,43 @@ uploadInput.addEventListener("change", showUpload);
 dropzone.addEventListener("drop", e => {
   if (e.dataTransfer.files.length) { uploadInput.files = e.dataTransfer.files; showUpload(); }
 });
+
+let spreadsheetPreview = null;
+function columnLabel(index) {
+  let label = ""; index += 1;
+  while (index) { const r = (index - 1) % 26; label = String.fromCharCode(65 + r) + label; index = Math.floor((index - 1) / 26); }
+  return label;
+}
+function renderSpreadsheetPreview(data) {
+  spreadsheetPreview = data;
+  spreadsheetControls.hidden = false;
+  sheetWarning.hidden = data.sheets.length < 2;
+  sheetTabs.innerHTML = data.sheets.map(sheet => `<button type="button" class="${sheet === data.sheet ? "active" : ""}" data-sheet="${escapeHtml(sheet)}">${escapeHtml(sheet)}</button>`).join("");
+  sheetTabs.querySelectorAll("button").forEach(button => button.addEventListener("click", () => loadSpreadsheetPreview(button.dataset.sheet)));
+  const oldNucleotide = sheetNucleotide.value, oldName = sheetName.value;
+  const options = data.columns.map(index =>
+    `<option value="${index}">${columnLabel(index)}</option>`).join("");
+  sheetNucleotide.innerHTML = '<option value="">Choose column</option>' + options;
+  sheetName.innerHTML = '<option value="">Generate names</option>' + options;
+  sheetNucleotide.value = oldNucleotide;
+  sheetName.value = oldName;
+  const previewRows = data.rows.map((row, i) => `<tr class="${i === 0 && sheetSkip.checked ? "skip" : ""}"><th>${i + 1}</th>${data.columns.map(c => `<td>${escapeHtml(row[c] || "")}</td>`).join("")}</tr>`).join("");
+  const moreRows = data.has_more_rows ? `<tr class="more"><th>...</th><td colspan="${data.columns.length}">...</td></tr>` : "";
+  sheetPreview.innerHTML = `<table><thead><tr><th></th>${data.columns.map(c => `<th>${columnLabel(c)}</th>`).join("")}</tr></thead><tbody>${previewRows}${moreRows}</tbody></table>`;
+  updateInputSummary();
+}
+async function loadSpreadsheetPreview(sheet = "") {
+  const file = spreadsheetInput.files[0];
+  if (!file) return;
+  const data = new FormData(); data.append("spreadsheet_file", file); if (sheet) data.append("sheet", sheet);
+  const response = await fetch("/spreadsheet-preview", { method: "POST", body: data });
+  const body = await response.json();
+  if (!response.ok) { spreadsheetInfo.textContent = body.error || "Could not read spreadsheet."; spreadsheetControls.hidden = true; return; }
+  spreadsheetInfo.textContent = `${file.name} - ${body.sheets.length} sheet${body.sheets.length === 1 ? "" : "s"}`;
+  renderSpreadsheetPreview(body);
+}
+spreadsheetInput.addEventListener("change", () => { sheetNucleotide.value = ""; sheetName.value = ""; sheetSkip.checked = false; loadSpreadsheetPreview(); });
+sheetSkip.addEventListener("change", () => { if (spreadsheetPreview) renderSpreadsheetPreview(spreadsheetPreview); });
 
 /* ---- Presets (functional) -------------------------------------------- */
 const summaryEl = document.getElementById("preset-summary");
@@ -1023,6 +1102,19 @@ form.addEventListener("submit", async (e) => {
   if (pasteText) { data.append("sequence_text", pasteText); anyInput = true; }
   const upFile = uploadInput.files[0];
   if (upFile) { data.append("upload_file", upFile); anyInput = true; }
+  const spreadsheetFile = spreadsheetInput.files[0];
+  if (spreadsheetFile) {
+    if (!spreadsheetPreview || sheetNucleotide.value === "") {
+      errEl.textContent = "Choose the spreadsheet sheet and nucleotide column first.";
+      return;
+    }
+    data.append("spreadsheet_file", spreadsheetFile);
+    data.append("spreadsheet_sheet", spreadsheetPreview.sheet);
+    data.append("spreadsheet_nucleotide_column", sheetNucleotide.value);
+    data.append("spreadsheet_name_column", sheetName.value);
+    if (sheetSkip.checked) data.append("spreadsheet_skip_first_row", "1");
+    anyInput = true;
+  }
   if (selectedPath) { data.append("fasta_file", selectedPath); anyInput = true; }
   if (!anyInput) {
     errEl.textContent = "Add sequences first: paste, upload, or pick a file (you can combine them).";
@@ -1066,6 +1158,8 @@ function clearInputs() {
   runLabel.value = "";
   seqPaste.value = ""; bpCount.textContent = "0"; recCount.textContent = "0";
   uploadInput.value = ""; uploadInfo.textContent = "";
+  spreadsheetInput.value = ""; spreadsheetInfo.textContent = "";
+  spreadsheetControls.hidden = true; spreadsheetPreview = null;
   selectedPath = null; browseSel.textContent = "No file selected.";
   browseList.querySelectorAll(".row.sel").forEach(x => x.classList.remove("sel"));
   updateInputSummary();
