@@ -44,6 +44,8 @@ from flask import (Flask, Response, jsonify, redirect, request, send_file,
                    session, url_for)
 from werkzeug.security import check_password_hash
 
+from commec.config.result import ScreenStatus
+
 # CPU/RAM meters read Linux /proc directly (zero-dep; the kiosk path). psutil is
 # a purely opportunistic fallback for platforms without /proc (macOS dev/demo):
 # never required, never installed by packaging, and never allowed to break the
@@ -1364,11 +1366,23 @@ def events(job_id):
     return Response(stream(), mimetype="text/event-stream")
 
 
+_STATUS_SCORE_FACTOR = 10
+_MAX_STATUS_SCORE = max(status.importance for status in ScreenStatus) * _STATUS_SCORE_FACTOR
+
+
+def _status_score(value):
+    """Canonical package importance on the GUI's expanded score scale."""
+    try:
+        return ScreenStatus(str(value or "")).importance * _STATUS_SCORE_FACTOR
+    except ValueError:
+        return _MAX_STATUS_SCORE
+
+
 def _summarize_output(outdir):
     """Per-query verdicts read from commec's *.output.json, or None.
 
-    Parses the JSON directly (commec isn't importable from the GUI env), so we
-    can show a verdict table without re-running `commec flag`.
+    Parses the JSON directly and uses Commec's canonical status importance, so
+    the GUI can show a verdict table without re-running `commec flag`.
     """
     jsons = sorted(outdir.glob("*.output.json"))
     if not jsons:
@@ -1377,30 +1391,27 @@ def _summarize_output(outdir):
         data = json.loads(jsons[0].read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    # Overall verdict = the most severe per-query status. A too-short sequence is not
-    # itself a risk, so it ranks below Pass. Other skips rank just below Flag: an
-    # unscreened query (e.g. too long) may warrant inspection and ranks above
-    # Warning/Pass. Remaining variants are matched by base word; unknown/error
-    # defaults to the general Skip level.
-    sev = {"Flag": 4, "Skip": 3, "Warning": 2, "Pass": 1}
-    def _sev(s):
-        s = str(s or "")
-        if s == "Skip (too short)":
-            return 0
-        return next((n for base, n in sev.items() if s.startswith(base)), 3)
     rows = []
     for name, v in (data.get("queries") or {}).items():
         st = v.get("status") or {}
+        status = st.get("screen_status", "Unknown")
         rows.append({
             "name": name,
             "length": v.get("length"),
-            "status": st.get("screen_status", "Unknown"),
+            "status": status,
+            "score": _status_score(status),
             "rationale": st.get("rationale", "") or "",
         })
     if not rows:
         return None
-    overall = max((r["status"] for r in rows), key=_sev)
-    return {"n": len(rows), "overall": overall, "queries": rows}
+    overall = max(rows, key=lambda row: row["score"])
+    return {
+        "n": len(rows),
+        "overall": overall["status"],
+        "overall_score": overall["score"],
+        "score_max": _MAX_STATUS_SCORE,
+        "queries": rows,
+    }
 
 
 def _job_dir(job_id):
@@ -1530,22 +1541,29 @@ def runs():
             status = _effective_status(meta, False)
             finished = meta.get("finished") or d.stat().st_mtime
             summary = meta.get("summary") or {}
-            # The verdict is cached in the marker at finalize, but a run may have
-            # finished without it (e.g. a resume whose marker predates the new
-            # output.json). Fall back to deriving it live, and self-heal the
-            # marker so the list and the detail view never disagree.
-            if not summary and status in ("done", "error"):
-                summary = _summarize_output(d) or {}
-                if summary:
-                    meta["summary"] = summary
-                    _save_meta(d, meta)
+            # Re-derive completed verdicts so package changes to status
+            # importance also update retained runs. Persist the current summary
+            # to keep the durable marker useful outside this endpoint.
+            if status in ("done", "error"):
+                current_summary = _summarize_output(d)
+                if current_summary:
+                    summary = current_summary
+                    if meta.get("summary") != summary:
+                        meta["summary"] = summary
+                        _save_meta(d, meta)
+            overall = summary.get("overall")
             entries.append((finished, {
                 "id": meta.get("id", d.name),
                 "label": meta.get("label", d.name),
                 "status": status,
                 "returncode": meta.get("returncode"),
                 "finished": finished,
-                "overall": summary.get("overall"),
+                "overall": overall,
+                "overall_score": summary.get(
+                    "overall_score",
+                    _status_score(overall) if overall else None,
+                ),
+                "score_max": summary.get("score_max", _MAX_STATUS_SCORE),
                 "n": summary.get("n"),
                 "size": _dir_size(d),  # bytes on disk (intermediates included)
                 # Resumable only if we still have what -R needs (the config; the

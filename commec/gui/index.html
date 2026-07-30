@@ -342,10 +342,6 @@
     border: 1px solid; border-radius: 9px; margin-bottom: 12px;
   }
   .verdict .vc { font: 500 12px var(--ui); opacity: .85; }
-  .v-flag { color: #b1310f; background: #fdeee9; border-color: #f6c4b5; }
-  .v-warn { color: #9a6a12; background: #fbf3e3; border-color: #eed9ad; }
-  .v-pass { color: #1f6e44; background: #eaf6ef; border-color: #bfe3cd; }
-  .v-skip { color: #b1310f; background: #fdeee9; border-color: #f6c4b5; }  /* unscreened (Skip) is flagged as loud as Flag */
   .qtable { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
   .qrow {
     display: grid; grid-template-columns: 88px minmax(120px, 1fr) 2fr; gap: 12px;
@@ -357,10 +353,6 @@
     justify-self: start; font: 600 11px var(--display); text-transform: uppercase;
     letter-spacing: .05em; padding: 3px 9px; border-radius: 999px;
   }
-  .q-flag { color: #b1310f; background: #fdeee9; }
-  .q-warn { color: #9a6a12; background: #fbf3e3; }
-  .q-pass { color: #1f6e44; background: #eaf6ef; }
-  .q-skip { color: #b1310f; background: #fdeee9; }  /* Skip == Flag colour */
   .q-int { color: #5a6b7a; background: #e8edf2; }  /* run state: interrupted */
   .qn { font: 13px var(--mono); color: var(--heading); word-break: break-all; }
   .qr { color: var(--muted); }
@@ -1072,18 +1064,33 @@ function appendLog(line) {
   if (atBottom) logEl.scrollTop = logEl.scrollHeight;
 }
 
-/* ---- Submit (only the server-path tab is wired so far) --------------- */
-function statusClass(s) {
-  // Match by base word so commec's parenthetical variants map correctly:
-  // "Pass (Skipped Taxonomy)" -> pass, "Skip (too long/short)" -> skip, "Flag/Warning (Cleared)" -> flag/warn.
-  s = String(s || "");
-  if (s.startsWith("Flag")) return "flag";
-  if (s.startsWith("Warning")) return "warn";
-  if (s.startsWith("Pass")) return "pass";
-  if (s.startsWith("Skip")) return "skip";
-  return "skip";  // unknown/error status -> conservative (skip is flag-coloured: unscreened can be as bad as flagged)
+/* ---- Severity colours ------------------------------------------------ */
+const severityStops = [
+  { at: 0,   fg: [31, 110, 68],  bg: [234, 246, 239], border: [191, 227, 205] },
+  { at: 0.5, fg: [154, 106, 18], bg: [251, 243, 227], border: [238, 217, 173] },
+  { at: 1,   fg: [177, 49, 15],  bg: [253, 238, 233], border: [246, 196, 181] },
+];
+function mixColor(from, to, amount) {
+  const channel = i => Math.round(from[i] + (to[i] - from[i]) * amount);
+  return `rgb(${channel(0)}, ${channel(1)}, ${channel(2)})`;
+}
+function severityStyle(score, scoreMax, includeBorder = false) {
+  const maximum = Number(scoreMax);
+  const fraction = maximum > 0
+    ? Math.max(0, Math.min(1, Number(score) / maximum))
+    : 1;
+  const lower = fraction <= severityStops[1].at;
+  const from = lower ? severityStops[0] : severityStops[1];
+  const to = lower ? severityStops[1] : severityStops[2];
+  const amount = (fraction - from.at) / (to.at - from.at);
+  let style = `color:${mixColor(from.fg, to.fg, amount)};`
+    + `background:${mixColor(from.bg, to.bg, amount)};`;
+  if (includeBorder)
+    style += `border-color:${mixColor(from.border, to.border, amount)};`;
+  return style;
 }
 
+/* ---- Submit (only the server-path tab is wired so far) --------------- */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   errEl.textContent = "";
@@ -1229,7 +1236,7 @@ async function loadRecent() {
     recentList.innerHTML = runs.map(r => {
       let pill;
       if (r.status === "interrupted") pill = `<span class="qpill q-int">Interrupted</span>`;
-      else if (r.overall) pill = `<span class="qpill q-${statusClass(r.overall)}">${escapeHtml(r.overall)}</span>`;
+      else if (r.overall) pill = `<span class="qpill" style="${severityStyle(r.overall_score, r.score_max)}">${escapeHtml(r.overall)}</span>`;
       else pill = `<span class="qpill q-int">${r.status === "error" ? "Error" : "Done"}</span>`;
       const when = r.finished ? fmtDateTime(r.finished) : "";
       const nq = r.status === "interrupted" ? "interrupted"
@@ -1448,14 +1455,14 @@ async function showResults(jobId) {
     const sm = body.summary;
     if (sm && sm.n) {
       summaryDiv.innerHTML =
-        `<div class="verdict v-${statusClass(sm.overall)}">`
+        `<div class="verdict" style="${severityStyle(sm.overall_score, sm.score_max, true)}">`
         + `Overall: ${escapeHtml(sm.overall)}`
         + `<span class="vc">${sm.n} quer${sm.n === 1 ? "y" : "ies"}</span></div>`;
       summaryDiv.style.display = "block";
       let q = '<h3>Per-sequence results</h3><div class="qtable">';
       for (const query of sm.queries) {
         q += `<div class="qrow">
-          <span class="qpill q-${statusClass(query.status)}">${escapeHtml(query.status)}</span>
+          <span class="qpill" style="${severityStyle(query.score, sm.score_max)}">${escapeHtml(query.status)}</span>
           <span class="qn">${escapeHtml(query.name)}</span>
           <span class="qr">${escapeHtml(query.rationale)}</span>
         </div>`;
