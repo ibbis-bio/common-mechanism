@@ -850,6 +850,7 @@ def _job_meta(job, status, summary=None):
         "returncode": job["returncode"], "created": job["created"],
         "finished": job.get("finished"), "summary": summary,
         "error_hint": job.get("error_hint"),
+        "rerun_of": job.get("rerun_of"),
     }
 
 
@@ -1414,6 +1415,13 @@ def _summarize_output(outdir):
     }
 
 
+def _is_rerunnable(status, summary):
+    """True for process failures and completed screens with an Error verdict."""
+    return status == "error" or (
+        status == "done" and summary and summary.get("overall") == str(ScreenStatus.ERROR)
+    )
+
+
 def _job_dir(job_id):
     """The single persistent directory holding a run's files (same location
     live or finished). Returns None if it doesn't exist."""
@@ -1471,19 +1479,27 @@ def results(job_id):
         returncode = meta.get("returncode")
         label = meta.get("label")
         error_hint = meta.get("error_hint")
+    summary = _summarize_output(d) if d is not None else None
     # Resumable whenever the run is interrupted and still has its config -- same
     # rule as /runs. (A live or finished job has status running/done, so this
     # naturally excludes them; being in JOBS is irrelevant -- a stopped run
     # stays in JOBS as 'interrupted' and is very much resumable.)
     resumable = (status == "interrupted"
                  and d is not None and (d / "config.used.yaml").is_file())
+    rerunnable = (
+        d is not None
+        and _is_rerunnable(status, summary)
+        and (d / "config.used.yaml").is_file()
+        and (d / "input.fasta").is_file()
+    )
     return jsonify({
         "status": status,
         "returncode": returncode,
         "label": label,
         "files": files,
-        "summary": _summarize_output(d) if d is not None else None,
+        "summary": summary,
         "resumable": resumable,
+        "rerunnable": rerunnable,
         "error_hint": error_hint,
     })
 
@@ -1570,6 +1586,11 @@ def runs():
                 # input is re-checked at resume time, since it may be external).
                 "resumable": (status == "interrupted"
                               and (d / "config.used.yaml").is_file()),
+                "rerunnable": (
+                    _is_rerunnable(status, summary)
+                    and (d / "config.used.yaml").is_file()
+                    and (d / "input.fasta").is_file()
+                ),
             }))
     entries.sort(key=lambda e: e[0], reverse=True)
     return jsonify({"runs": [e[1] for e in entries[:50]]})
@@ -1683,6 +1704,67 @@ def resume_run(job_id):
     job["log"].append("$ " + " ".join(shlex.quote(c) for c in cmd))
     threading.Thread(target=_run_job, args=(job,), daemon=True).start()
     return jsonify({"job_id": d.name})
+
+
+@app.route("/runs/<job_id>/rerun", methods=["POST"])
+def rerun_run(job_id):
+    """Start an errored run again in a fresh directory.
+
+    Only the original input and effective configuration are copied. Search
+    intermediates, outputs, and logs remain with the failed attempt and are
+    neither reused nor modified.
+    """
+    source = (CFG["runs_dir"] / job_id).resolve()
+    if source.parent != CFG["runs_dir"].resolve() or not source.is_dir():
+        return jsonify({"error": "not found"}), 404
+
+    meta = _read_meta(source)
+    status = _effective_status(meta, False)
+    summary = _summarize_output(source)
+    if not _is_rerunnable(status, summary):
+        return jsonify({"error": "That run did not fail; nothing to rerun."}), 400
+
+    prefix = meta.get("prefix")
+    source_config = source / "config.used.yaml"
+    source_fasta = source / "input.fasta"
+    if not prefix or not source_config.is_file() or not source_fasta.is_file():
+        return jsonify({"error": "Can't rerun: the original input or config is missing."}), 400
+
+    with JOB_LOCK:
+        if any(not j["done"] for j in JOBS.values()):
+            return jsonify({"error": "A screen is already running. "
+                                     "Wait for it to finish."}), 409
+
+        new_id = uuid.uuid4().hex[:12]
+        rundir = CFG["runs_dir"] / new_id
+        rundir.mkdir(parents=True, exist_ok=False)
+        config_path = rundir / "config.used.yaml"
+        fasta_path = rundir / "input.fasta"
+        try:
+            shutil.copy2(source_config, config_path)
+            shutil.copy2(source_fasta, fasta_path)
+        except OSError as exc:
+            shutil.rmtree(rundir)
+            return jsonify({"error": f"Can't rerun: {exc}"}), 400
+
+        source_label = meta.get("label", source.name)
+        cmd = _build_command(str(fasta_path), rundir, config_path, prefix)
+        job = {
+            "id": new_id, "label": f"{source_label} (rerun)", "prefix": prefix,
+            "fasta": str(fasta_path), "created": time.time(), "finished": None,
+            "cmd": cmd, "dir": rundir, "log": [], "status": "starting",
+            "returncode": None, "done": False, "stopped": False, "proc": None,
+            "pgid": None, "rerun_of": source.name,
+        }
+        JOBS[new_id] = job
+
+    job["log"].append(
+        f"[gui] Fresh rerun of {source.name}; original input and config copied. "
+        "No prior intermediates are reused."
+    )
+    job["log"].append("$ " + " ".join(shlex.quote(c) for c in cmd))
+    threading.Thread(target=_run_job, args=(job,), daemon=True).start()
+    return jsonify({"job_id": new_id})
 
 
 DESCRIPTION = "Launch the commec screening web GUI (spawns a local Flask server)."

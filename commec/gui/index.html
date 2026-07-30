@@ -404,11 +404,11 @@
     color: var(--faint); font: 500 12px var(--ui); padding: 2px 4px; margin-left: 12px;
   }
   .run-row .del:hover { color: var(--orange); text-decoration: underline; }
-  .run-row .resume {
+  .run-row .resume, .run-row .rerun {
     appearance: none; background: none; border: none; cursor: pointer;
     color: var(--teal); font: 600 12px var(--ui); padding: 2px 4px; margin-left: 12px;
   }
-  .run-row .resume:hover { text-decoration: underline; }
+  .run-row .resume:hover, .run-row .rerun:hover { text-decoration: underline; }
   .delall {
     appearance: none; background: none; border: none; cursor: pointer;
     color: var(--faint); font: 500 12px var(--ui); padding: 2px 4px;
@@ -1246,10 +1246,13 @@ async function loadRecent() {
       const resume = r.resumable
         ? `<button type="button" class="resume" data-id="${escapeHtml(r.id)}" title="Re-run the interrupted step and continue">resume</button>`
         : "";
+      const rerun = r.rerunnable
+        ? `<button type="button" class="rerun" data-id="${escapeHtml(r.id)}" title="Start a fresh run with the same input and configuration">rerun</button>`
+        : "";
       return `<div class="run-row" data-id="${escapeHtml(r.id)}">
         ${pill}<span class="rl">${escapeHtml(r.label)}</span>
         <span class="rm">${escapeHtml(meta)}</span>
-        ${resume}
+        ${resume}${rerun}
         <button type="button" class="del" data-id="${escapeHtml(r.id)}" title="Delete this result">delete</button>
       </div>`;
     }).join("");
@@ -1257,6 +1260,8 @@ async function loadRecent() {
       row.addEventListener("click", () => viewRun(row.dataset.id)));
     recentList.querySelectorAll(".resume").forEach(btn =>
       btn.addEventListener("click", (e) => { e.stopPropagation(); resumeRun(btn.dataset.id); }));
+    recentList.querySelectorAll(".rerun").forEach(btn =>
+      btn.addEventListener("click", (e) => { e.stopPropagation(); rerunRun(btn.dataset.id); }));
     recentList.querySelectorAll(".del").forEach(btn =>
       btn.addEventListener("click", (e) => { e.stopPropagation(); deleteRun(btn.dataset.id); }));
   } catch (e) { /* ignore */ }
@@ -1286,21 +1291,27 @@ stopBtn.addEventListener("click", stopRun);
 // Continue an interrupted run: the server re-runs the step it died on and
 // reuses the rest, then we attach to the live log like a fresh submit.
 async function resumeRun(id) {
+  return restartSavedRun(id, "resume");
+}
+async function rerunRun(id) {
+  return restartSavedRun(id, "rerun");
+}
+async function restartSavedRun(id, action) {
   errEl.textContent = "";
   runBtn.disabled = true; runBtn.textContent = "Running...";
   mySubmitInFlight = true;
   try {
-    const res = await fetch("/runs/" + id + "/resume", { method: "POST" });
+    const res = await fetch("/runs/" + id + "/" + action, { method: "POST" });
     const body = await res.json();
     if (!res.ok) {
-      errEl.textContent = body.error || "Couldn't resume.";
+      errEl.textContent = body.error || `Couldn't ${action}.`;
       mySubmitInFlight = false; refreshStatus(); loadRecent();
       return;
     }
     attach(body.job_id);
     loadRecent();  // drop the now-live run from the recent list (no stale buttons)
   } catch (err) {
-    errEl.textContent = "Resume failed: " + err;
+    errEl.textContent = `${action === "resume" ? "Resume" : "Rerun"} failed: ` + err;
     mySubmitInFlight = false; refreshStatus();
   }
 }
@@ -1447,6 +1458,18 @@ async function showResults(jobId) {
             <div class="rd">${escapeHtml(body.error_hint)}</div>
           </div>
         </div>`;
+    }
+
+    if (body.rerunnable) {
+      reportEl.innerHTML += `
+        <div class="report-cta">
+          <div>
+            <div class="rt">Run failed</div>
+            <div class="rd">Start a fresh run with the same input and configuration. Previous intermediates and outputs will not be reused.</div>
+          </div>
+          <button type="button" class="btn" id="rerun-result">Rerun from scratch</button>
+        </div>`;
+      document.getElementById("rerun-result").addEventListener("click", () => rerunRun(jobId));
     }
 
     // Verdict summary, parsed from commec's output JSON. The overall verdict
