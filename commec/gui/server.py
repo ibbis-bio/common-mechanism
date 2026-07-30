@@ -4,8 +4,10 @@ One Flask server, two modes selected by flags:
   - kiosk : bind 127.0.0.1 and auto-open a fullscreen browser
   - LAN   : bind 0.0.0.0 so other machines on the network can connect
 
-Phase 1: FASTA is supplied as a path that exists on the SERVER machine.
-Upload and paste-sequence inputs come later.
+Sequences may be pasted, uploaded, selected from an allowed server-side path,
+or selected from a read-only removable volume. Each run is stored in its own
+persistent directory with its normalized input, effective configuration,
+intermediates, and results.
 
 The server is meant to run inside the `commec-dev` conda env so that the
 `commec` binary is on PATH; override with --commec-bin if needed.
@@ -25,6 +27,7 @@ import shlex
 import shutil
 import signal
 import subprocess
+import sys
 import threading
 import time
 import uuid
@@ -1611,6 +1614,24 @@ def add_args(parser):
     return parser
 
 
+def _serve(host, port, ssl_context):
+    """Run Flask, adding context when a privileged port cannot be bound."""
+    try:
+        app.run(host=host, port=port, threaded=True, ssl_context=ssl_context)
+    except (PermissionError, SystemExit):
+        # Werkzeug currently turns every bind OSError into SystemExit after
+        # printing its strerror. Add the missing context only for ports that
+        # commonly require an explicit privilege grant.
+        if port < 1024:
+            print(
+                f"commec gui: hint: Port {port} is privileged on many systems. "
+                "Grant permission to bind privileged ports, or choose a higher "
+                "port, for example: commec gui --port 8765",
+                file=sys.stderr,
+            )
+        raise
+
+
 def run(args):
     """Configure the server from parsed args and launch it (blocks in app.run)."""
     CFG["commec_bin"] = args.commec_bin
@@ -1708,7 +1729,7 @@ def run(args):
     if args.kiosk:
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()
 
-    app.run(host=host, port=args.port, threaded=True, ssl_context=ssl_context)
+    _serve(host, args.port, ssl_context)
 
 
 def main():
