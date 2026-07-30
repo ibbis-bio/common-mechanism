@@ -533,7 +533,7 @@
             <label class="lbl">Nucleotide column<select id="sheet-nucleotide"><option value="">Choose column</option></select></label>
             <label class="lbl">Sequence name column (optional)<select id="sheet-name"><option value="">Generate names</option></select></label>
           </div>
-          <label class="lbl"><input type="checkbox" id="sheet-skip"> Skip first row</label>
+          <label class="lbl"><input type="checkbox" id="sheet-skip" checked> Skip first row</label>
           <div class="sheet-preview" id="sheet-preview"></div>
         </div>
       </div>
@@ -937,7 +937,7 @@ async function loadSpreadsheetPreview(sheet = "") {
   spreadsheetInfo.textContent = `${file.name} - ${body.sheets.length} sheet${body.sheets.length === 1 ? "" : "s"}`;
   renderSpreadsheetPreview(body);
 }
-spreadsheetInput.addEventListener("change", () => { sheetNucleotide.value = ""; sheetName.value = ""; sheetSkip.checked = false; loadSpreadsheetPreview(); });
+spreadsheetInput.addEventListener("change", () => { sheetNucleotide.value = ""; sheetName.value = ""; sheetSkip.checked = true; loadSpreadsheetPreview(); });
 sheetSkip.addEventListener("change", () => { if (spreadsheetPreview) renderSpreadsheetPreview(spreadsheetPreview); });
 
 /* ---- Presets (functional) -------------------------------------------- */

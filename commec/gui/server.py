@@ -1377,13 +1377,16 @@ def _summarize_output(outdir):
         data = json.loads(jsons[0].read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    # Overall verdict = the most severe per-query status. Skip ranks just below Flag: an
-    # unscreened query (e.g. too long) is treated as nearly as serious as a flagged one, and
-    # above Warning/Pass. Matched by base word so commec's variants ("Skip (too long)",
-    # "Pass (Skipped Taxonomy)") are counted; unknown/error defaults to the Skip level.
+    # Overall verdict = the most severe per-query status. A too-short sequence is not
+    # itself a risk, so it ranks below Pass. Other skips rank just below Flag: an
+    # unscreened query (e.g. too long) may warrant inspection and ranks above
+    # Warning/Pass. Remaining variants are matched by base word; unknown/error
+    # defaults to the general Skip level.
     sev = {"Flag": 4, "Skip": 3, "Warning": 2, "Pass": 1}
     def _sev(s):
         s = str(s or "")
+        if s == "Skip (too short)":
+            return 0
         return next((n for base, n in sev.items() if s.startswith(base)), 3)
     rows = []
     for name, v in (data.get("queries") or {}).items():
