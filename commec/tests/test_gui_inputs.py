@@ -115,6 +115,21 @@ def _long_xlsx_file():
     return data
 
 
+def _long_header_xlsx_file():
+    book = openpyxl.Workbook()
+    sheet = book.active
+    sheet.title = "Long header"
+    sheet.append([
+        "Sample identifier header with spaces and over forty one characters",
+        "Nucleotide sequence header with spaces and over forty one characters",
+    ])
+    sheet.append(["sample_001", "ACGT" * 25])
+    data = BytesIO()
+    book.save(data)
+    data.seek(0)
+    return data
+
+
 def test_short_sequences_are_passed_to_commec(tmp_path, client):
     """The GUI leaves sequence-length handling to the screening pipeline."""
     response = _submit(
@@ -281,3 +296,24 @@ def test_long_spreadsheet_preview_is_capped_but_all_rows_are_imported(client, tm
     run_dir = next(path for path in (tmp_path / "runs").iterdir() if path.is_dir())
     fasta = (run_dir / "input.fasta").read_text(encoding="utf-8")
     assert fasta.count(">sample_") == 100
+
+
+def test_spreadsheet_header_is_passed_when_skip_first_row_is_not_selected(client, tmp_path):
+    header_name = "Sample identifier header with spaces and over forty one characters"
+    header_sequence = "Nucleotide sequence header with spaces and over forty one characters"
+    assert len(header_sequence) > 41
+
+    response = _submit(
+        client,
+        sequence_text="",
+        spreadsheet_file=(_long_header_xlsx_file(), "long-header.xlsx"),
+        spreadsheet_sheet="Long header",
+        spreadsheet_nucleotide_column="1",
+        spreadsheet_name_column="0",
+    )
+
+    assert response.status_code == 200
+    run_dir = next(path for path in (tmp_path / "runs").iterdir() if path.is_dir())
+    fasta = (run_dir / "input.fasta").read_text(encoding="utf-8")
+    assert f">{header_name.replace(' ', '_')}\n{header_sequence}\n" in fasta
+    assert ">sample_001\n" in fasta
