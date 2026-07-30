@@ -11,6 +11,9 @@ dependencies:
   - pandas
   - pyyaml
   - pycountry
+  - openpyxl
+  - xlrd
+  - xlwt
   # Web GUI (`commec gui`)
   - flask
   - psutil

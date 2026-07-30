@@ -19,6 +19,7 @@ import copy
 import csv
 import glob
 import importlib.resources
+import io
 import ipaddress
 import json
 import os
@@ -32,9 +33,12 @@ import threading
 import time
 import uuid
 import webbrowser
+import zipfile
 from pathlib import Path
 
 import pycountry
+import openpyxl
+import xlrd
 import yaml
 from flask import (Flask, Response, jsonify, redirect, request, send_file,
                    session, url_for)
@@ -682,6 +686,95 @@ def parse_pasted_sequences(text):
     return _parse_blocks_text(text)
 
 
+_TABULAR_SUFFIXES = {".xlsx", ".xls", ".csv", ".tsv"}
+_TABULAR_PREVIEW_ROWS = 3
+_TABULAR_PREVIEW_COLS = 20
+
+
+def _column_name(index):
+    """Zero-based column index as an Excel-style label."""
+    result = ""
+    index += 1
+    while index:
+        index, remainder = divmod(index - 1, 26)
+        result = chr(65 + remainder) + result
+    return result
+
+
+def _tabular_rows(data, suffix, sheet):
+    """Return (sheet names, selected sheet rows) from a tabular upload."""
+    if suffix == ".xlsx":
+        book = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+        sheets = book.sheetnames
+        sheet = sheet or sheets[0]
+        if sheet not in sheets:
+            raise ValueError("Unknown worksheet.")
+        return sheets, list(book[sheet].iter_rows(values_only=True))
+    if suffix == ".xls":
+        book = xlrd.open_workbook(file_contents=data)
+        sheets = book.sheet_names()
+        sheet = sheet or sheets[0]
+        if sheet not in sheets:
+            raise ValueError("Unknown worksheet.")
+        ws = book.sheet_by_name(sheet)
+        return sheets, [ws.row_values(i) for i in range(ws.nrows)]
+    delimiter = "\t" if suffix == ".tsv" else ","
+    text = data.decode("utf-8-sig", errors="replace")
+    return ["Data"], list(csv.reader(io.StringIO(text), delimiter=delimiter))
+
+
+def _tabular_preview(data, filename, sheet=""):
+    suffix = Path(filename).suffix.lower()
+    if suffix not in _TABULAR_SUFFIXES:
+        raise ValueError("Supported formats are .xlsx, .xls, .csv, and .tsv.")
+    sheets, rows = _tabular_rows(data, suffix, sheet)
+    column_count = min(max((len(row) for row in rows[:_TABULAR_PREVIEW_ROWS]), default=0), _TABULAR_PREVIEW_COLS)
+    preview = [["" if cell is None else str(cell) for cell in row[:column_count]]
+               for row in rows[:_TABULAR_PREVIEW_ROWS]]
+    return {
+        "sheets": sheets,
+        "sheet": sheet or sheets[0],
+        "columns": list(range(column_count)),
+        "rows": preview,
+        "has_more_rows": len(rows) > _TABULAR_PREVIEW_ROWS,
+    }
+
+
+@app.route("/spreadsheet-preview", methods=["POST"])
+def spreadsheet_preview():
+    uploaded = request.files.get("spreadsheet_file")
+    if not uploaded or not uploaded.filename:
+        return jsonify({"error": "Choose a spreadsheet first."}), 400
+    try:
+        return jsonify(_tabular_preview(uploaded.read(), uploaded.filename,
+                                        request.form.get("sheet") or ""))
+    except (OSError, ValueError, xlrd.XLRDError, zipfile.BadZipFile) as exc:
+        return jsonify({"error": f"Could not read spreadsheet: {exc}"}), 400
+
+
+def _parse_tabular_upload(uploaded, sheet, nucleotide_column, name_column, skip_first_row):
+    """Map one selected worksheet column pair into FASTA records."""
+    suffix = Path(uploaded.filename).suffix.lower()
+    if suffix not in _TABULAR_SUFFIXES:
+        raise ValueError("Supported formats are .xlsx, .xls, .csv, and .tsv.")
+    try:
+        nucleotide_column = int(nucleotide_column)
+        name_column = int(name_column) if name_column != "" else None
+    except ValueError as exc:
+        raise ValueError("Choose a nucleotide column.") from exc
+    _, rows = _tabular_rows(uploaded.read(), suffix, sheet)
+    records = []
+    for row_number, row in enumerate(rows, start=1):
+        if skip_first_row and row_number == 1:
+            continue
+        seq = row[nucleotide_column] if nucleotide_column < len(row) else ""
+        if seq is None or not str(seq).strip():
+            continue
+        name = row[name_column] if name_column is not None and name_column < len(row) else ""
+        records.append((str(name).strip() or f"{sheet}_row_{row_number}", str(seq).strip()))
+    return records
+
+
 def _normalise_records(records):
     """Drop empty sequences; make names FASTA-safe and unique."""
     out, used = [], set()
@@ -1123,6 +1216,23 @@ def screen():
                 "column)."}), 400
         records += r
         sources.append(f"{len(r)} from {f.filename}")
+
+    spreadsheet = request.files.get("spreadsheet_file")
+    if spreadsheet and spreadsheet.filename:
+        try:
+            r = _parse_tabular_upload(
+                spreadsheet,
+                request.form.get("spreadsheet_sheet") or "",
+                request.form.get("spreadsheet_nucleotide_column") or "",
+                request.form.get("spreadsheet_name_column") or "",
+                request.form.get("spreadsheet_skip_first_row") == "1",
+            )
+        except (OSError, ValueError, xlrd.XLRDError, zipfile.BadZipFile) as exc:
+            return jsonify({"error": f"Could not read spreadsheet: {exc}"}), 400
+        if not r:
+            return jsonify({"error": "No sequences found in the selected spreadsheet column."}), 400
+        records += r
+        sources.append(f"{len(r)} from {spreadsheet.filename}")
 
     picked = (request.form.get("fasta_file") or "").strip()
     if picked:
