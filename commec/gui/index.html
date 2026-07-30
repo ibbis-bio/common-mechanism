@@ -32,6 +32,7 @@
     --ui: "Crimson Pro", Georgia, serif;
     --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
     --radius: 10px;
+    --badge-radius: 4px;
     --shadow: 0 1px 2px rgba(35,42,88,.04), 0 6px 20px rgba(35,42,88,.05);
   }
   /* Dark mode: re-point the neutral/surface tokens. Brand colors (navy header,
@@ -123,7 +124,7 @@
   .soon {
     font: 600 9px/1 var(--display); text-transform: uppercase; letter-spacing: .1em;
     color: var(--teal); border: 1px solid #cfe2ea; background: var(--hover);
-    border-radius: 999px; padding: 4px 8px; vertical-align: middle;
+    border-radius: var(--badge-radius); padding: 4px 8px; vertical-align: middle;
   }
   .sketch { position: relative; }
 
@@ -249,11 +250,17 @@
   }
   /* Recommendation badge */
   .rec {
+    --rec-accent: #1f6e44;
     font: 600 10px var(--display); text-transform: uppercase; letter-spacing: .06em;
-    padding: 2px 7px; border-radius: 999px; color: #1f6e44; background: #eaf6ef;
+    padding: 2px 7px; border-radius: var(--badge-radius); color: var(--rec-accent);
+    background: color-mix(in srgb, var(--rec-accent) 10%, white);
     white-space: nowrap;
   }
-  .rec.no { color: #b1310f; background: #fdeee9; }
+  .rec.no { --rec-accent: #b1310f; }
+  body.dark .rec {
+    color: color-mix(in srgb, var(--rec-accent) 55%, white);
+    background: color-mix(in srgb, var(--rec-accent) 18%, var(--panel));
+  }
 
   /* selected-preset summary + advanced disclosure */
   .preset-summary { display: flex; gap: 12px; align-items: flex-start; }
@@ -352,6 +359,18 @@
     font: 700 15px var(--display); padding: 12px 16px;
     border: 1px solid; border-radius: 9px; margin-bottom: 12px;
   }
+  .severity {
+    color: var(--severity);
+    background: color-mix(in srgb, var(--severity) 10%, white);
+  }
+  .verdict.severity { border-color: color-mix(in srgb, var(--severity) 30%, white); }
+  body.dark .severity {
+    color: color-mix(in srgb, var(--severity) 55%, white);
+    background: color-mix(in srgb, var(--severity) 18%, var(--panel));
+  }
+  body.dark .verdict.severity {
+    border-color: color-mix(in srgb, var(--severity) 45%, var(--panel));
+  }
   .verdict .vc { font: 500 12px var(--ui); opacity: .85; }
   .qtable { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
   .qrow {
@@ -362,9 +381,10 @@
   .qrow:last-child { border-bottom: none; }
   .qpill {
     justify-self: start; font: 600 11px var(--display); text-transform: uppercase;
-    letter-spacing: .05em; padding: 3px 9px; border-radius: 999px;
+    letter-spacing: .05em; padding: 3px 9px; border-radius: var(--badge-radius);
   }
   .q-int { color: #5a6b7a; background: #e8edf2; }  /* run state: interrupted */
+  body.dark .q-int { color: #aebac7; background: #27313b; }
   .qn { font: 13px var(--mono); color: var(--heading); word-break: break-all; }
   .qr { color: var(--muted); }
 
@@ -1140,15 +1160,15 @@ copyLogBtn.addEventListener("click", copyLog);
 
 /* ---- Severity colours ------------------------------------------------ */
 const severityStops = [
-  { at: 0,   fg: [31, 110, 68],  bg: [234, 246, 239], border: [191, 227, 205] },
-  { at: 0.5, fg: [154, 106, 18], bg: [251, 243, 227], border: [238, 217, 173] },
-  { at: 1,   fg: [177, 49, 15],  bg: [253, 238, 233], border: [246, 196, 181] },
+  { at: 0,   color: [31, 110, 68] },
+  { at: 0.5, color: [154, 106, 18] },
+  { at: 1,   color: [177, 49, 15] },
 ];
 function mixColor(from, to, amount) {
   const channel = i => Math.round(from[i] + (to[i] - from[i]) * amount);
   return `rgb(${channel(0)}, ${channel(1)}, ${channel(2)})`;
 }
-function severityStyle(score, scoreMax, includeBorder = false) {
+function severityStyle(score, scoreMax) {
   const maximum = Number(scoreMax);
   const fraction = maximum > 0
     ? Math.max(0, Math.min(1, Number(score) / maximum))
@@ -1157,11 +1177,7 @@ function severityStyle(score, scoreMax, includeBorder = false) {
   const from = lower ? severityStops[0] : severityStops[1];
   const to = lower ? severityStops[1] : severityStops[2];
   const amount = (fraction - from.at) / (to.at - from.at);
-  let style = `color:${mixColor(from.fg, to.fg, amount)};`
-    + `background:${mixColor(from.bg, to.bg, amount)};`;
-  if (includeBorder)
-    style += `border-color:${mixColor(from.border, to.border, amount)};`;
-  return style;
+  return `--severity:${mixColor(from.color, to.color, amount)};`;
 }
 
 /* ---- Submit (only the server-path tab is wired so far) --------------- */
@@ -1317,7 +1333,7 @@ async function loadRecent() {
     recentList.innerHTML = runs.map(r => {
       let pill;
       if (r.status === "interrupted") pill = `<span class="qpill q-int">Interrupted</span>`;
-      else if (r.overall) pill = `<span class="qpill" style="${severityStyle(r.overall_score, r.score_max)}">${escapeHtml(r.overall)}</span>`;
+      else if (r.overall) pill = `<span class="qpill severity" style="${severityStyle(r.overall_score, r.score_max)}">${escapeHtml(r.overall)}</span>`;
       else pill = `<span class="qpill q-int">${r.status === "error" ? "Error" : "Done"}</span>`;
       const when = r.finished ? fmtDateTime(r.finished) : "";
       const nq = r.status === "interrupted" ? "interrupted"
@@ -1562,14 +1578,14 @@ async function showResults(jobId) {
     const sm = body.summary;
     if (sm && sm.n) {
       summaryDiv.innerHTML =
-        `<div class="verdict" style="${severityStyle(sm.overall_score, sm.score_max, true)}">`
+        `<div class="verdict severity" style="${severityStyle(sm.overall_score, sm.score_max)}">`
         + `Overall: ${escapeHtml(sm.overall)}`
         + `<span class="vc">${sm.n} quer${sm.n === 1 ? "y" : "ies"}</span></div>`;
       summaryDiv.style.display = "block";
       let q = '<h3>Per-sequence results</h3><div class="qtable">';
       for (const query of sm.queries) {
         q += `<div class="qrow">
-          <span class="qpill" style="${severityStyle(query.score, sm.score_max)}">${escapeHtml(query.status)}</span>
+          <span class="qpill severity" style="${severityStyle(query.score, sm.score_max)}">${escapeHtml(query.status)}</span>
           <span class="qn">${escapeHtml(query.name)}</span>
           <span class="qr">${escapeHtml(query.rationale)}</span>
         </div>`;
