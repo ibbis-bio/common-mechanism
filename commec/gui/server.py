@@ -219,7 +219,7 @@ def _commec_db_paths():
 
 
 def _region_choices(include_single_country_groups=False):
-    """Jurisdictions represented by the installed control-list data."""
+    """Available region groups and ISO countries, with data support metadata."""
     control_lists = Path(_commec_db_paths()["control_lists"])
     definitions = control_lists / "region_definitions.json"
     try:
@@ -252,34 +252,30 @@ def _region_choices(include_single_country_groups=False):
             for region_code in region_codes:
                 memberships.setdefault(region_code, []).append(name)
 
+    direct_region_codes = set()
     for list_info in control_lists.rglob("list_info.csv"):
         try:
             with open(list_info, encoding="utf-8", newline="") as fh:
-                supported_countries.update(
+                direct_region_codes.update(
                     str(row.get("region_code") or "").strip().upper()
                     for row in csv.DictReader(fh)
                     if str(row.get("region_code") or "").strip()
                 )
         except (OSError, csv.Error):
             continue
+    supported_countries.update(direct_region_codes - group_codes)
 
-    countries = {country.alpha_2: country for country in pycountry.countries}
-    choices.extend(
-        {
+    for country in sorted(pycountry.countries, key=lambda item: item.name):
+        choice = {
             "code": country.alpha_2,
             "name": country.name,
             "group": False,
             "memberships": memberships.get(country.alpha_2, []),
+            "supported": country.alpha_2 in supported_countries,
         }
-        for country in sorted(
-            (
-                countries[code]
-                for code in supported_countries - group_codes
-                if code in countries
-            ),
-            key=lambda item: item.name,
-        )
-    )
+        if country.alpha_2 in group_codes:
+            choice["value"] = country.alpha_3
+        choices.append(choice)
     return choices
 
 
@@ -1161,7 +1157,7 @@ def screen():
             code.strip().upper() for code in raw_regions.split(",") if code.strip()
         ))
         allowed_regions = {
-            choice["code"]
+            choice.get("value", choice["code"])
             for choice in _region_choices(include_single_country_groups=True)
         }
         unknown_regions = [code for code in region_codes if code not in allowed_regions]

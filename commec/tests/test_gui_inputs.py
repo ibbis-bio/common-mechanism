@@ -164,18 +164,35 @@ def test_hidden_single_country_alias_is_accepted(tmp_path, client):
     assert config["databases"]["control_lists"]["regions"] == "UK"
 
 
-@pytest.mark.parametrize("region", ["NOT_A_REGION", "AQ"])
-def test_unsupported_region_is_rejected(tmp_path, client, region):
-    response = _submit(client, regions=region)
+def test_unsupported_country_is_recorded_in_run_config(tmp_path, client):
+    response = _submit(client, regions="AQ")
+
+    assert response.status_code == 200
+    run_dir = next(path for path in (tmp_path / "runs").iterdir() if path.is_dir())
+    config = yaml.safe_load((run_dir / "config.used.yaml").read_text(encoding="utf-8"))
+    assert config["databases"]["control_lists"]["regions"] == "AQ"
+
+
+def test_unknown_region_is_rejected(tmp_path, client):
+    response = _submit(client, regions="NOT_A_REGION")
 
     assert response.status_code == 400
     assert response.get_json() == {
-        "error": f"Unknown regulatory jurisdiction: {region}."
+        "error": "Unknown regulatory jurisdiction: NOT_A_REGION."
     }
     assert list((tmp_path / "runs").iterdir()) == []
 
 
-def test_config_exposes_supported_region_choices(client):
+def test_country_group_code_collision_uses_alpha_3_country_value(tmp_path, client):
+    response = _submit(client, regions="ATG")
+
+    assert response.status_code == 200
+    run_dir = next(path for path in (tmp_path / "runs").iterdir() if path.is_dir())
+    config = yaml.safe_load((run_dir / "config.used.yaml").read_text(encoding="utf-8"))
+    assert config["databases"]["control_lists"]["regions"] == "ATG"
+
+
+def test_config_exposes_grouped_region_choices(client):
     response = client.get(
         "/config",
         environ_overrides={"REMOTE_ADDR": "127.0.0.1"},
@@ -188,16 +205,32 @@ def test_config_exposes_supported_region_choices(client):
         "name": "United States",
         "group": False,
         "memberships": ["Australia Group"],
+        "supported": True,
     } in regions
     assert {
         "code": "BR",
         "name": "Brazil",
         "group": False,
         "memberships": [],
+        "supported": True,
     } in regions
-    assert not any(region["code"] == "AQ" for region in regions)
+    assert {
+        "code": "AQ",
+        "name": "Antarctica",
+        "group": False,
+        "memberships": [],
+        "supported": False,
+    } in regions
     assert [region for region in regions if region["code"] == "AG"] == [
-        {"code": "AG", "name": "Australia Group", "group": True}
+        {"code": "AG", "name": "Australia Group", "group": True},
+        {
+            "code": "AG",
+            "name": "Antigua and Barbuda",
+            "group": False,
+            "memberships": [],
+            "supported": False,
+            "value": "ATG",
+        },
     ]
     assert not any(region["code"] == "UK" for region in regions)
     assert {
@@ -205,7 +238,13 @@ def test_config_exposes_supported_region_choices(client):
         "name": "United Kingdom",
         "group": False,
         "memberships": [],
+        "supported": True,
     } in regions
+    assert {
+        region["code"] for region in regions if not region["group"]
+    } == {
+        country.alpha_2 for country in server.pycountry.countries
+    }
 
 
 def test_gui_serves_bundled_report_font(client):
