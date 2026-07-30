@@ -273,7 +273,7 @@ and the upstream project's third-party / NOTICES accounting.**
 
 ## Storage & retention
 
-Implemented entirely in `server.py` (`--runs-dir` / `--runs-keep` and the
+Implemented entirely in `server.py` (`--runs-dir` / `--retention-days` and the
 periodic orphan-process sweep). There is **nothing for the image pipeline to do
 here** -- no tmpfs mount, no swap-off. (This reverses an earlier
 ephemeral/tmpfs design.)
@@ -285,13 +285,14 @@ run: `input.fasta`, `config.used.yaml`, commec's raw search intermediates
 `.blastx`/`.hmmscan`...), and the polished artifacts (`<prefix>.output.json`,
 `<prefix>_summary.html`, `<prefix>.screen.log`). Nothing is wiped at end-of-run.
 
-- **Capacity.** Disk now grows by roughly the full size of each run (bulky BLAST
-  output included), so it accumulates rather than vanishing on power-off. Set
-  `--runs-keep N` for a rolling cap (oldest whole run dirs pruned past the cap),
-  or prune out of band. Sizing on the prototype is comfortable, but unbounded
-  retention on a small disk will eventually fill it.
-- **The sweep never deletes run dirs.** `--sweep-interval` reaps process groups
-  orphaned by a crash/restart (a run that was live when the server died) and
-  marks those runs **Interrupted** so the GUI can offer a one-click Resume
-  (re-runs the cut-off step, re-uses the rest). Cleanup of finished runs is
-  governed solely by `--runs-keep` and explicit deletes from the GUI.
+- **Capacity.** Disk grows by roughly the full size of each run (bulky BLAST
+  output included). Set a retention period in the Results card or with
+  `--retention-days N`; terminal runs older than the period are removed with
+  their inputs and intermediates. The setting is stored in
+  `--runs-dir/.retention.json`. Zero keeps everything, which can eventually fill
+  a small disk.
+- **Process safety.** `--sweep-interval` reaps process groups orphaned by a
+  crash/restart (a run that was live when the server died) and marks those runs
+  **Interrupted** so the GUI can offer a one-click Resume (re-runs the cut-off
+  step, re-uses the rest). Only terminal runs can expire; live and nonterminal
+  run directories are protected.

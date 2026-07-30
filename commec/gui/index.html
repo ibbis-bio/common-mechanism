@@ -438,6 +438,28 @@
   .recent {
     display: flex; flex-direction: column; max-height: 360px;
   }
+  .retention-control {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+    margin: 0 0 10px; color: var(--muted); font-size: 12px;
+  }
+  .retention-control label { display: flex; align-items: center; gap: 7px; }
+  .retention-control input {
+    width: 64px; box-sizing: border-box; padding: 5px 7px;
+    color: var(--ink); background: var(--field); border: 1px solid var(--line);
+    border-radius: 6px; font: 12px var(--mono);
+  }
+  .retention-control button {
+    appearance: none; cursor: pointer; padding: 5px 9px;
+    color: var(--heading); background: var(--field); border: 1px solid var(--line);
+    border-radius: 6px; font: 600 12px var(--ui);
+  }
+  .retention-control button:hover:not(:disabled) { border-color: var(--teal); }
+  .retention-control button:disabled { opacity: .55; cursor: default; }
+  .retention-hint { flex-basis: 100%; color: var(--faint); }
+  .retention-summary {
+    margin: -4px 0 10px; color: var(--faint); font-size: 12px;
+  }
+  .retention-status { color: var(--faint); }
   #recent-list {
     min-height: 0; overflow-y: auto;
   }
@@ -654,6 +676,18 @@
       <span class="step-sub" id="recent-sub"></span>
       <button type="button" class="delall" id="delall" hidden>delete all</button>
     </div>
+    <p class="retention-summary" id="retention-summary">Runs are currently kept forever.</p>
+    <div class="adv-only">
+      <div class="retention-control">
+        <label for="retention-days">Keep completed runs for
+          <input type="number" id="retention-days" min="0" step="1" value="0">
+          days
+        </label>
+        <button type="button" id="retention-save">Save</button>
+        <span class="retention-hint">Set to 0 to keep runs indefinitely.</span>
+        <span class="retention-status" id="retention-status"></span>
+      </div>
+    </div>
     <div id="recent-list"></div>
   </section>
 
@@ -726,6 +760,10 @@ const stopBtn = document.getElementById("stop");
 const recentList = document.getElementById("recent-list");
 const recentSub = document.getElementById("recent-sub");
 const delallBtn = document.getElementById("delall");
+const retentionSummary = document.getElementById("retention-summary");
+const retentionDays = document.getElementById("retention-days");
+const retentionSave = document.getElementById("retention-save");
+const retentionStatus = document.getElementById("retention-status");
 const uploadInput = document.getElementById("upload-file");
 const uploadInfo = document.getElementById("upload-info");
 const spreadsheetInput = document.getElementById("spreadsheet-file");
@@ -1117,9 +1155,17 @@ form.addEventListener("change", (e) => {
   if (e.target && e.target.name === "preset") onPresetChange();
 });
 
+function retentionSummaryText(days) {
+  return Number(days)
+    ? `Runs currently expire after ${days} day${days === 1 ? "" : "s"}.`
+    : "Runs are currently kept forever.";
+}
+
 fetch("/config").then(r => r.json()).then(c => {
   PRESETS = c.presets || [];
   renderRegions(c.regions);
+  retentionDays.value = c.retention_days ?? 0;
+  retentionSummary.textContent = retentionSummaryText(c.retention_days);
   // Default to a full screen for real use; fall back to the first available
   // preset (e.g. when the full-screen databases aren't installed).
   const isAvail = p => p.available !== false;
@@ -1469,6 +1515,49 @@ async function deleteAllRuns() {
   } catch (e) { /* ignore */ }
 }
 delallBtn.addEventListener("click", deleteAllRuns);
+
+async function saveRetention() {
+  if (!retentionDays.value.trim()) {
+    retentionStatus.textContent = "Enter a non-negative whole number.";
+    return;
+  }
+  const days = Number(retentionDays.value);
+  if (!Number.isInteger(days) || days < 0) {
+    retentionStatus.textContent = "Enter a non-negative whole number.";
+    return;
+  }
+  if (days > 0 && !confirm(
+    `Keep completed runs for ${days} day${days === 1 ? "" : "s"}? `
+    + "Runs already older than this will be deleted immediately."
+  )) return;
+  retentionSave.disabled = true;
+  retentionSave.textContent = "Saving...";
+  try {
+    const res = await fetch("/retention", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ days }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      retentionStatus.textContent = body.error || "Could not save retention.";
+      return;
+    }
+    retentionDays.value = body.retention_days;
+    retentionSummary.textContent = retentionSummaryText(body.retention_days);
+    retentionStatus.textContent = "Saved.";
+    if (body.deleted)
+      retentionStatus.textContent += ` Deleted ${body.deleted} expired run${body.deleted === 1 ? "" : "s"}.`;
+    loadRecent();
+    loadMetrics();
+  } catch (err) {
+    retentionStatus.textContent = "Could not save retention: " + err;
+  } finally {
+    retentionSave.disabled = false;
+    retentionSave.textContent = "Save";
+  }
+}
+retentionSave.addEventListener("click", saveRetention);
 
 // Poll the shared screener state so any browser reflects the busy/idle status
 // and auto-joins an in-progress run started elsewhere.

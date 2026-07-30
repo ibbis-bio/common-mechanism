@@ -75,7 +75,7 @@ CFG = {
     # together and are kept on disk (the box is treated as secured). This
     # enables post-run debugging and future run-resume.
     "runs_dir": Path("runs").resolve(),
-    "runs_keep": 0,         # max retained run dirs; 0 = unlimited (forever)
+    "retention_days": 0,    # completed-run lifetime; 0 = unlimited (forever)
     "default_databases": "",
     "threads": None,        # CPU threads passed to commec (-t); None = don't set
     "browse_root": Path.home(),  # file browser is confined to this directory
@@ -83,6 +83,51 @@ CFG = {
     "require_local_auth": False,  # also require the password from localhost
     "presets": [],          # list of {id, label, description, config}
 }
+
+_RETENTION_FILENAME = ".retention.json"
+
+
+def _parse_retention_days(value):
+    """Return a non-negative whole-day retention value."""
+    if isinstance(value, bool):
+        raise ValueError("Retention days must be a non-negative whole number.")
+    try:
+        days = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Retention days must be a non-negative whole number.") from exc
+    if str(value).strip() != str(days) or days < 0:
+        raise ValueError("Retention days must be a non-negative whole number.")
+    return days
+
+
+def _retention_path():
+    return CFG["runs_dir"] / _RETENTION_FILENAME
+
+
+def _load_retention_days(default=0):
+    """Load the durable retention setting, using a safe fallback if absent."""
+    path = _retention_path()
+    if not path.is_file():
+        return default
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return _parse_retention_days(payload.get("days"))
+    except (OSError, ValueError, AttributeError) as exc:
+        app.logger.warning("Ignoring invalid retention settings in %s: %s", path, exc)
+        return default
+
+
+def _save_retention_days(days):
+    """Atomically persist the retention setting."""
+    days = _parse_retention_days(days)
+    path = _retention_path()
+    temporary = path.with_name(path.name + ".tmp")
+    try:
+        temporary.write_text(json.dumps({"days": days}) + "\n", encoding="utf-8")
+        os.replace(temporary, path)
+    except OSError:
+        temporary.unlink(missing_ok=True)
+        raise
 
 # The polished, self-contained artifacts. The GUI's Results panel shows these
 # by default; everything else in a run dir (input.fasta, raw search output) is
@@ -867,7 +912,7 @@ def _finalize_job(job):
     meta = _job_meta(job, job["status"], summary=_summarize_output(rundir))
     if not _save_meta(rundir, meta):
         job["log"].append("[gui] WARNING: could not write run marker.")
-    _sweep_runs()  # apply any rolling-retention cap
+    _sweep_runs()
 
 
 def _run_job(job):
@@ -921,8 +966,8 @@ def _run_job(job):
 
 
 # ---------------------------------------------------------------------------
-# Cleanup: kill process groups orphaned by crashes/restarts, and apply the
-# optional rolling-retention cap. Run dirs are otherwise kept (never wiped).
+# Cleanup: kill process groups orphaned by crashes/restarts, and expire
+# completed runs past the configured retention period.
 # ---------------------------------------------------------------------------
 def _kill_pgid(pgid):
     try:
@@ -965,7 +1010,8 @@ def _sweep_orphans():
                 pass
         meta.update(id=meta.get("id", d.name), label=meta.get("label", d.name),
                     status="interrupted")
-        meta.setdefault("finished", d.stat().st_mtime)
+        if not meta.get("finished"):
+            meta["finished"] = d.stat().st_mtime
         _save_meta(d, meta)
 
 
@@ -991,16 +1037,39 @@ def _drop_interrupted_artifact(d, prefix):
         return None
 
 
-def _sweep_runs():
-    """Apply the rolling-retention cap, if any (default: keep everything).
-    Deletes whole run dirs (intermediates included) oldest-first past the cap."""
-    keep = CFG["runs_keep"]
-    if not keep or keep <= 0 or not CFG["runs_dir"].is_dir():
-        return
-    dirs = [d for d in CFG["runs_dir"].iterdir() if d.is_dir()]
-    dirs.sort(key=lambda d: d.stat().st_mtime, reverse=True)
-    for d in dirs[keep:]:
-        shutil.rmtree(d, ignore_errors=True)
+def _sweep_runs(now=None):
+    """Delete terminal runs older than the persisted retention period."""
+    days = CFG["retention_days"]
+    runs = CFG["runs_dir"]
+    if days <= 0 or not runs.is_dir():
+        return []
+    cutoff = (time.time() if now is None else now) - days * 86400
+    with JOB_LOCK:
+        live = {j["dir"].name for j in JOBS.values() if not j["done"]}
+    deleted = []
+    for d in runs.iterdir():
+        if not d.is_dir() or d.name in live:
+            continue
+        meta = _read_meta(d)
+        if meta.get("status") not in _TERMINAL_STATUS:
+            continue
+        try:
+            finished = float(meta.get("finished") or d.stat().st_mtime)
+        except (TypeError, ValueError, OSError):
+            continue
+        if finished >= cutoff:
+            continue
+        try:
+            shutil.rmtree(d)
+        except OSError as exc:
+            app.logger.warning("Could not expire run %s: %s", d, exc)
+            continue
+        deleted.append(d.name)
+    if deleted:
+        with JOB_LOCK:
+            for job_id in deleted:
+                JOBS.pop(job_id, None)
+    return deleted
 
 
 def _sweep():
@@ -1103,7 +1172,7 @@ def index():
 
 @app.route("/config")
 def config():
-    """Expose the preset and regional choices the page renders."""
+    """Expose the settings and choices the page renders."""
     presets = []
     for p in CFG["presets"]:
         missing = _missing_databases(p)
@@ -1115,7 +1184,28 @@ def config():
             "available": not missing,
             "missing": [DB_LABELS.get(m, m) for m in missing],
         })
-    return jsonify({"presets": presets, "regions": _region_choices()})
+    return jsonify({
+        "presets": presets,
+        "regions": _region_choices(),
+        "retention_days": CFG["retention_days"],
+    })
+
+
+@app.route("/retention", methods=["POST"])
+def set_retention():
+    """Persist a server-wide completed-run retention period and apply it."""
+    payload = request.get_json(silent=True)
+    try:
+        days = _parse_retention_days(payload.get("days") if payload else None)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    try:
+        _save_retention_days(days)
+    except OSError as exc:
+        return jsonify({"error": f"Could not save retention setting: {exc}"}), 500
+    CFG["retention_days"] = days
+    deleted = _sweep_runs()
+    return jsonify({"ok": True, "retention_days": days, "deleted": len(deleted)})
 
 
 def _label_exists(label):
@@ -1786,9 +1876,10 @@ def add_args(parser):
                          "submitted sequence, commec's search intermediates, "
                          "and the polished results, all kept on disk "
                          "(default: ./runs).")
-    ap.add_argument("--runs-keep", type=int, default=0,
-                    help="Max retained run dirs (oldest pruned, intermediates "
-                         "included). 0 (default) keeps everything.")
+    ap.add_argument("--retention-days", type=_parse_retention_days, default=None,
+                    help="Completed-run retention in whole days. 0 keeps "
+                         "everything. The persisted GUI setting is used when "
+                         "this option is omitted.")
     ap.add_argument("--sweep-interval", type=int, default=300,
                     help="Seconds between orphan-process sweeps (default: 300).")
     ap.add_argument("--databases", default="",
@@ -1846,7 +1937,12 @@ def run(args):
     CFG["commec_bin"] = args.commec_bin
     CFG["runs_dir"] = Path(args.runs_dir).resolve()
     CFG["runs_dir"].mkdir(parents=True, exist_ok=True)
-    CFG["runs_keep"] = args.runs_keep
+    CFG["retention_days"] = (
+        args.retention_days
+        if args.retention_days is not None
+        else _load_retention_days()
+    )
+    _save_retention_days(CFG["retention_days"])
     CFG["default_databases"] = args.databases
     CFG["browse_root"] = Path(args.browse_root).resolve()
     CFG["require_local_auth"] = args.require_local_auth
@@ -1871,8 +1967,9 @@ def run(args):
     print(f"Loaded {len(CFG['presets'])} preset(s): "
           + ", ".join(p["id"] for p in CFG["presets"]))
     print(f"commec search tools will use {CFG['threads']} thread(s).")
-    print(f"runs dir (kept): {CFG['runs_dir']}"
-          + (f", max {CFG['runs_keep']}" if CFG["runs_keep"] else ""))
+    retention = CFG["retention_days"]
+    print(f"runs dir: {CFG['runs_dir']}; retention: "
+          + (f"{retention} day(s)" if retention else "forever"))
 
     # Kill any process group orphaned by a previous (crashed/killed) run, then
     # sweep periodically. Kill in-flight children on shutdown too.

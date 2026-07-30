@@ -101,7 +101,7 @@ LAN can still reach the GUI.
 | `--tls-cert` / `--tls-key` | (none) | Use a specific cert/key pair (HTTPS) |
 | `--commec-bin` | `commec` | Path to the commec binary |
 | `--runs-dir` | `./runs` | Persistent dir holding one directory per run (sequence + intermediates + results), all kept on disk. See [Storage & retention](#storage--retention) |
-| `--runs-keep` | `0` (unlimited) | Max retained run dirs; oldest pruned past the cap (intermediates included) |
+| `--retention-days` | persisted setting (initially `0`) | Completed-run lifetime in whole days; `0` keeps everything. An explicit value replaces the saved GUI setting |
 | `--sweep-interval` | `300` | Seconds between orphan-process sweeps |
 | `--databases` | (none) | Database dir passed to every screen (via `-d`) |
 | `--browse-root` | home dir | Root the server-side file browser is confined to |
@@ -209,10 +209,16 @@ more than ephemerality (see `deploy-notes.md`). The GUI's Results panel shows th
 polished artifacts by default and reveals the intermediates (and `input.fasta`)
 under the **Advanced options** toggle.
 
-Retention is forever by default; set `--runs-keep N` for a rolling cap (oldest
-whole run dirs pruned past the cap). A periodic sweep (`--sweep-interval`) reaps
-process groups orphaned by a crash/restart and flags their runs **Interrupted**
-(resumable, see above).
+Retention is forever by default. The Results card stores a server-wide retention
+period in `--runs-dir/.retention.json`; `0` keeps everything. A terminal run
+expires when its recorded completion time is more than that many whole days old.
+Expiry removes the whole run directory, including inputs and intermediates. Live
+and nonterminal runs are excluded. `--retention-days N` can set and persist the
+same value at startup.
+
+A periodic sweep (`--sweep-interval`) reaps process groups orphaned by a
+crash/restart, flags their runs **Interrupted** (resumable, see above), and
+expires completed runs.
 
 ## Planned
 
