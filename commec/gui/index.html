@@ -266,7 +266,7 @@
   }
 
   /* Global "Advanced options" master toggle: gates the screening-depth card
-     and the terminal log. */
+     and advanced output files. */
   /* Header controls (fullscreen + advanced), styled for the navy bar. */
   .hcontrols { display: flex; align-items: center; gap: 14px; }
   .hbtn {
@@ -299,11 +299,11 @@
 
   /* ---- Run / progress panel ------------------------------------------- */
   #resultcard { display: none; }
-  /* The Run card is always visible (it holds the button); the progress bar
-     and terminal appear only once a run has started (#runpanel.active). */
+  /* The Run card is always visible. Progress appears once a run starts;
+     terminal visibility is controlled independently. */
   .progress-row { display: none; align-items: center; gap: 14px; margin: 16px 0 0; }
   #runpanel.active .progress-row { display: flex; }
-  body.advanced #runpanel.active #log { display: block; }
+  #runpanel.terminal-open #log { display: block; }
   /* Stage progress: one rectangle per commec step, width ~ its share of
      runtime (from speedtest data). Empty -> flashing (active) -> filled (done). */
   .stages { flex: 1; display: flex; gap: 5px; height: 10px; }
@@ -326,13 +326,13 @@
   }
   button.stop:hover:not(:disabled) { background: var(--orange); color: #fff; }
   button.stop:disabled { opacity: .55; cursor: default; }
-
   #log {
     background: #0f1320; border: 1px solid #1d2333; border-radius: 8px;
     padding: 13px 14px; height: 300px; overflow-y: auto;
     font: 12px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word;
     color: #c7d2e0; display: none; margin-top: 4px;
   }
+  #log:empty::before { content: "Terminal output will appear when a run starts."; color: #7f8da3; }
 
   /* ---- Verdict summary ------------------------------------------------- */
   #summary { display: none; margin: 4px 0 18px; }
@@ -441,6 +441,7 @@
         <button type="button" id="theme" class="hbtn">Dark</button>
         <button type="button" id="fs" class="hbtn">Fullscreen</button>
         <label class="hswitch"><input type="checkbox" id="adv-toggle"><span>Advanced options</span></label>
+        <label class="hswitch"><input type="checkbox" id="terminal-toggle"><span>Terminal</span></label>
       </div>
       <span class="queue" id="queue" title="Whether a screen is running on this server">
         <span class="dot"></span> Screener idle
@@ -627,6 +628,7 @@ const queriesEl = document.getElementById("queries");
 const errEl = document.getElementById("errmsg");
 const presetsEl = document.getElementById("presets");
 const runPanel = document.getElementById("runpanel");
+const terminalToggle = document.getElementById("terminal-toggle");
 const queueEl = document.getElementById("queue");
 const runLabel = document.getElementById("run-label");
 const stagesEl = document.getElementById("stages");
@@ -692,10 +694,14 @@ let viewingJobId = null;  // run currently shown in the detail card
 // Shared/synced state across clients.
 let streamingJobId = null;     // job we're attached to via SSE (the live run)
 let liveJobId = null;          // the currently-running job (from /status), Stop target
+let runPanelJobId = null;      // job whose transcript is in the Run card
 let mySubmitInFlight = false;  // suppress the poller re-enabling Run mid-submit
 let noPresetAvailable = true;  // set once /config loads
+let terminalPreferred = localStorage.getItem("commec-terminal") === "1";
+let terminalErrorJobId = null;
+let terminalDismissedJobId = null;
 
-/* ---- Advanced options master toggle (gates depth card + terminal) ---- */
+/* ---- Advanced options master toggle (gates depth + advanced files) --- */
 (function () {
   const on = localStorage.getItem("commec-adv") === "1";
   advToggle.checked = on;
@@ -705,6 +711,29 @@ let noPresetAvailable = true;  // set once /config loads
     localStorage.setItem("commec-adv", advToggle.checked ? "1" : "0");
   });
 })();
+
+/* ---- Terminal visibility: user preference plus temporary error-open -- */
+function updateTerminalVisibility() {
+  const errorOpen = runPanelJobId && terminalErrorJobId === runPanelJobId;
+  const open = terminalPreferred || errorOpen;
+  terminalToggle.checked = open;
+  runPanel.classList.toggle("terminal-open", open);
+}
+function openTerminalForError(jobId) {
+  if (jobId !== runPanelJobId || terminalDismissedJobId === jobId) return;
+  terminalErrorJobId = jobId;
+  updateTerminalVisibility();
+}
+terminalToggle.addEventListener("change", () => {
+  terminalPreferred = terminalToggle.checked;
+  localStorage.setItem("commec-terminal", terminalPreferred ? "1" : "0");
+  if (!terminalToggle.checked && terminalErrorJobId === runPanelJobId) {
+    terminalDismissedJobId = runPanelJobId;
+    terminalErrorJobId = null;
+  }
+  updateTerminalVisibility();
+});
+updateTerminalVisibility();
 
 /* ---- Dark-mode toggle (persisted) ------------------------------------ */
 (function () {
@@ -1181,6 +1210,10 @@ function clearInputs() {
 function attach(jobId) {
   if (streamingJobId === jobId) return;
   streamingJobId = jobId;
+  runPanelJobId = jobId;
+  terminalErrorJobId = null;
+  terminalDismissedJobId = null;
+  updateTerminalVisibility();
   // Clear the separate Results card; it populates when this run finishes.
   resultCard.style.display = "none";
   summaryDiv.innerHTML = ""; reportEl.innerHTML = ""; filesEl.innerHTML = ""; queriesEl.innerHTML = ""; resultTitle.textContent = "Result";
@@ -1208,6 +1241,7 @@ function attach(jobId) {
       // Surface a user-fixable error (e.g. duplicate names) plainly; fall back
       // to the generic "see the log" only when we don't recognise it.
       errEl.textContent = d.error_hint || `Screen failed (exit ${d.returncode}) - see the log.`;
+    if (d.status === "error") openTerminalForError(jobId);
     showResults(jobId);
     refreshStatus();
     loadRecent();
@@ -1432,6 +1466,9 @@ async function showResults(jobId) {
     reportEl.innerHTML = "";
     filesEl.innerHTML = "";
     queriesEl.innerHTML = "";
+    if (jobId === runPanelJobId
+        && (body.status === "error" || (body.summary && body.summary.overall === "Error")))
+      openTerminalForError(jobId);
 
     // Interrupted run: explain, and offer to continue it (re-runs the cut-off
     // step and reuses the rest).
