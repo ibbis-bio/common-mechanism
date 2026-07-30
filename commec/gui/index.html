@@ -326,6 +326,17 @@
   }
   button.stop:hover:not(:disabled) { background: var(--orange); color: #fff; }
   button.stop:disabled { opacity: .55; cursor: default; }
+  .log-actions { display: none; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; }
+  #runpanel.active.terminal-open .log-actions { display: flex; }
+  .log-actions .issue-link { color: var(--muted); }
+  .log-actions .issue-link a { color: var(--teal); }
+  button.copy-log {
+    appearance: none; cursor: pointer; white-space: nowrap;
+    background: none; color: var(--muted); border: 1px solid var(--line);
+    border-radius: 7px; padding: 5px 10px; font: 600 12px var(--ui);
+  }
+  button.copy-log:hover:not(:disabled) { color: var(--heading); border-color: var(--teal); }
+  button.copy-log:disabled { opacity: .45; cursor: default; }
   #log {
     background: #0f1320; border: 1px solid #1d2333; border-radius: 8px;
     padding: 13px 14px; height: 300px; overflow-y: auto;
@@ -590,6 +601,10 @@
         <button type="button" class="stop" id="stop" hidden>Stop</button>
       </div>
       <div id="log"></div>
+      <div class="log-actions">
+        <p class="issue-link">Problem with commec-gui? <a href="https://github.com/ibbis-bio/common-mechanism/issues/new" target="_blank" rel="noopener">File an issue</a>.</p>
+        <button type="button" class="copy-log" id="copy-log" disabled>Copy log</button>
+      </div>
     </section>
   </form>
 
@@ -629,6 +644,7 @@ const errEl = document.getElementById("errmsg");
 const presetsEl = document.getElementById("presets");
 const runPanel = document.getElementById("runpanel");
 const terminalToggle = document.getElementById("terminal-toggle");
+const copyLogBtn = document.getElementById("copy-log");
 const queueEl = document.getElementById("queue");
 const runLabel = document.getElementById("run-label");
 const stagesEl = document.getElementById("stages");
@@ -718,6 +734,8 @@ function updateTerminalVisibility() {
   const open = terminalPreferred || errorOpen;
   terminalToggle.checked = open;
   runPanel.classList.toggle("terminal-open", open);
+  if (open)
+    requestAnimationFrame(() => { logEl.scrollTop = logEl.scrollHeight; });
 }
 function openTerminalForError(jobId) {
   if (jobId !== runPanelJobId || terminalDismissedJobId === jobId) return;
@@ -1090,8 +1108,35 @@ fetch("/config").then(r => r.json()).then(c => {
 function appendLog(line) {
   const atBottom = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 4;
   logEl.textContent += line + "\n";
+  copyLogBtn.disabled = false;
   if (atBottom) logEl.scrollTop = logEl.scrollHeight;
 }
+
+async function copyLog() {
+  const text = logEl.textContent;
+  if (!text) return;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const area = document.createElement("textarea");
+      area.value = text;
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      const copied = document.execCommand("copy");
+      area.remove();
+      if (!copied) throw new Error("copy command failed");
+    }
+    copyLogBtn.textContent = "Copied";
+    setTimeout(() => { copyLogBtn.textContent = "Copy log"; }, 1500);
+  } catch (err) {
+    copyLogBtn.textContent = "Copy failed";
+    setTimeout(() => { copyLogBtn.textContent = "Copy log"; }, 2000);
+  }
+}
+copyLogBtn.addEventListener("click", copyLog);
 
 /* ---- Severity colours ------------------------------------------------ */
 const severityStops = [
@@ -1218,6 +1263,8 @@ function attach(jobId) {
   resultCard.style.display = "none";
   summaryDiv.innerHTML = ""; reportEl.innerHTML = ""; filesEl.innerHTML = ""; queriesEl.innerHTML = ""; resultTitle.textContent = "Result";
   logEl.textContent = "";
+  copyLogBtn.disabled = true;
+  copyLogBtn.textContent = "Copy log";
   runPanel.classList.add("active");
   resetStages();
   setStageActive(1);  // commec's prep/biorisk phase; refined as STEP markers stream
