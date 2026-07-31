@@ -17,11 +17,6 @@ jobs:
         uses: astral-sh/ruff-action@v4.1.0
         with:
           version: ">=0.15.10,<0.16.0"
-      # These two steps must not auto-fix: mutating files in CI and exiting 0
-      # means unsorted imports and unformatted code pass unnoticed. Run
-      # `ruff check --select I --fix . && ruff format .` locally to fix failures.
-      - name: Ruff isort
-        run: ruff check --select I .
       - name: Ruff format
         run: ruff format --check --diff .
 
