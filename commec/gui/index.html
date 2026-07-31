@@ -1074,7 +1074,7 @@ function updateRegionSummary() {
   }
   regionAll.checked = false;
   const choices = new Map(REGION_CHOICES.map(region => [region.value || region.code, region]));
-  regionSummary.textContent = selected.length <= 4
+  regionSummary.textContent = selected.length <= 3
     ? selected.map(value => {
         const region = choices.get(value);
         return region ? `${region.name} (${region.code})` : value;
