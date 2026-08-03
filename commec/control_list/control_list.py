@@ -310,10 +310,9 @@ def run(arguments: argparse.Namespace):
         config = read_config_yaml_for_control_list_info(arguments.yaml_file)
         try:
             database_location = config["databases"]["control_lists"]["path"]
-            # YAML overrides control list regions if no CLI value 
+            # YAML overrides control list regions if no CLI value
             region_context = (
-                region_context
-                or config["databases"]["control_lists"]["regions"]
+                region_context or config["databases"]["control_lists"]["regions"]
             )
         except KeyError as e:
             logger.error(
@@ -328,9 +327,7 @@ def run(arguments: argparse.Namespace):
         )
         return 2
 
-    regions = (
-        [r.strip() for r in region_context.split(",")] if region_context else None
-    )
+    regions = [r.strip() for r in region_context.split(",")] if region_context else None
 
     import_data(database_location, regions)
 

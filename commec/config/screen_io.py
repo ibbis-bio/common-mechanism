@@ -216,7 +216,7 @@ class ScreenIO:
             prefix/name
             prefix/output_name/name
             prefix/input_name/name
-        
+
         The output file location and name will be based on the prefix provided by the user,
          with a fallback to the input file directory and basename if one is not given.
         """
