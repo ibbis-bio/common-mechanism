@@ -334,35 +334,6 @@ def _missing_databases(preset):
     return [name for name in _required_db_dirs(preset["config"])
             if not _db_present(paths.get(name, ""))]
 
-# ---------------------------------------------------------------------------
-# Offline Plotly. commec's *_summary.html report pulls plotly.js from a CDN
-# (include_plotlyjs='cdn'), so it won't render charts on an offline kiosk/LAN.
-# We ship a local copy and, when *viewing* a report through this server,
-# transparently rewrite the CDN <script> tag to point at our local copy. This
-# keeps commec's core untouched; the on-disk HTML still references the CDN.
-# ---------------------------------------------------------------------------
-VENDOR_DIR = Path(__file__).parent / "vendor"
-LOCAL_PLOTLY = "/vendor/plotly.min.js"
-
-# Matches commec's CDN plotly tag at any version. We drop integrity/crossorigin
-# along with it: SRI would reject our same-origin copy if bytes ever differ.
-_PLOTLY_CDN_RE = re.compile(
-    r'<script\b[^>]*\bsrc="https://cdn\.plot\.ly/plotly-[^"]*"[^>]*></script>'
-)
-
-
-def _localize_plotly(html):
-    """Point commec's CDN plotly <script> tags at our local copy."""
-    return _PLOTLY_CDN_RE.sub(
-        f'<script charset="utf-8" src="{LOCAL_PLOTLY}"></script>', html
-    )
-
-
-@app.route("/vendor/plotly.min.js")
-def vendor_plotly():
-    return send_file(VENDOR_DIR / "plotly-3.0.1.min.js")
-
-
 ASSETS_DIR = Path(__file__).parent / "assets"
 REPORT_FONTS_DIR = Path(importlib.resources.files("commec").joinpath(
     "utils", "report_assets", "fonts"
@@ -1618,11 +1589,6 @@ def result_file(job_id, name):
     if base.resolve() not in target.parents or not target.is_file():
         return jsonify({"error": "not found"}), 404
     view = request.args.get("view") == "1"
-    # When viewing an HTML report in-browser, swap commec's CDN plotly tag for
-    # our local copy so charts render offline. Downloads keep the file as-is.
-    if view and target.suffix.lower() in (".html", ".htm"):
-        html = _localize_plotly(target.read_text(encoding="utf-8"))
-        return Response(html, mimetype="text/html")
     return send_file(target, as_attachment=not view)
 
 

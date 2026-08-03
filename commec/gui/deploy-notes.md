@@ -263,14 +263,6 @@ sequences from Google Drive). Outbound is fine; the thing to control is
 This pairs with the GUI password: the firewall keeps the public internet from
 reaching the port at all, and allowed LAN/Tailscale clients still authenticate.
 
-## Third-party licensing
-
-The GUI bundles one vendored asset: `gui/vendor/plotly-3.0.1.min.js`
-(plotly.js, **MIT**, (c) Plotly Inc.) so the report renders offline. It ships
-unmodified with its MIT notice in the file header -- see `gui/vendor/NOTICE.md`.
-commec-gui is itself MIT, so this is compatible. **Carry this into the image's
-and the upstream project's third-party / NOTICES accounting.**
-
 ## Storage & retention
 
 Implemented entirely in `server.py` (`--runs-dir` / `--retention-days` and the
