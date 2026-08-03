@@ -236,8 +236,8 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "-r",
         "--regions",
         dest="regions",
-        default=[],
-        help="A comma separated list of countries or regions to add context to list compliance i.e. NZ,US,CH",
+        default="",
+        help="A comma-separated list of countries or regions to add context to list compliance, e.g. 'NZ,EU'",
     )
     return parser
 

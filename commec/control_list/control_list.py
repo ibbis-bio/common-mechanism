@@ -294,13 +294,14 @@ def run(arguments: argparse.Namespace):
 
     logger.debug("Parsing input parameters... %s", arguments.database_dir)
 
-    regions = arguments.regions or None
-
     if not (arguments.showlists or arguments.showtaxids or arguments.output_prefix):
         logger.error(
             "commec list requires --lists/-l, --accessions/-a, or --output_prefix/-o as input."
         )
         return 1
+
+    # By default, expect regions to be defined by CLI args
+    region_context = arguments.regions
 
     database_location = None
     if arguments.database_dir:
@@ -309,6 +310,11 @@ def run(arguments: argparse.Namespace):
         config = read_config_yaml_for_control_list_info(arguments.yaml_file)
         try:
             database_location = config["databases"]["control_lists"]["path"]
+            # YAML overrides control list regions if no CLI value 
+            region_context = (
+                region_context
+                or config["databases"]["control_lists"]["regions"]
+            )
         except KeyError as e:
             logger.error(
                 "Provided yaml input contained invaid control list path information. %s",
@@ -321,6 +327,10 @@ def run(arguments: argparse.Namespace):
             " or location of yaml configuration file (-y) for commec list to import."
         )
         return 2
+
+    regions = (
+        [r.strip() for r in region_context.split(",")] if region_context else None
+    )
 
     import_data(database_location, regions)
 

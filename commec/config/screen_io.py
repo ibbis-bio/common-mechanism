@@ -216,31 +216,31 @@ class ScreenIO:
             prefix/name
             prefix/output_name/name
             prefix/input_name/name
-
-        - If no prefix was given, use the input filename as name.
-        - If a directory was given, use the input filename
-            as file prefix within that directory.
+        
+        The output file location and name will be based on the prefix provided by the user,
+         with a fallback to the input file directory and basename if one is not given.
         """
+        # By default, the output name is the basename of the input file
         name = os.path.splitext(os.path.basename(input_file))[0]
         name = name[:MAXIMUM_FILENAME_SIZE]
 
-        directory = prefix_arg or os.path.dirname(input_file)
+        # File prefix provided; override output name, and use prefix directory if applicable
+        if prefix_arg and not (
+            os.path.isdir(prefix_arg)
+            or prefix_arg.endswith(os.path.sep)
+            or prefix_arg in {".", "..", "~"}
+        ):
+            name = os.path.splitext(os.path.basename(prefix_arg))[0]
+            base = os.path.dirname(prefix_arg)
+        else:
+            base = prefix_arg
 
-        # Update the directory/name but only:
-        # if the prefix argument was given,
-        # if it is not a directory
-        if prefix_arg:
-            if not (
-                os.path.isdir(prefix_arg)
-                or prefix_arg.endswith(os.path.sep)
-                or prefix_arg in {".", "..", "~"}
-            ):
-                name = os.path.splitext(os.path.basename(directory))[0]
-                directory = os.path.dirname(input_file)
+        # If no output location extracted from prefix, outputs go in input file directory
+        if not base:
+            base = os.path.dirname(input_file)
 
-        base = directory
-        outputs = os.path.join(directory, f"output_{name}/")
-        inputs = os.path.join(directory, f"input_{name}/")
+        outputs = os.path.join(base, f"output_{name}/")
+        inputs = os.path.join(base, f"input_{name}/")
 
         for path in [base, outputs, inputs]:
             os.makedirs(expand_and_normalize(path), exist_ok=True)
