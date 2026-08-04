@@ -73,17 +73,8 @@
     max-width: var(--content-width); margin: 0 auto; padding: 16px 24px;
     display: flex; align-items: center; gap: 18px;
   }
-  .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
-  .brand img { height: 34px; width: auto; display: block; }
-  .brand .div { width: 1px; height: 30px; background: rgba(255,255,255,.22); }
-  .brand .title { min-width: 0; }
-  .brand .title .k {
-    font: 600 var(--font-small)/1 var(--display); letter-spacing: .14em;
-    text-transform: uppercase; color: var(--teal);
-  }
-  .brand .title .p {
-    font: 700 var(--font-title)/1.2 var(--display); margin-top: 4px; white-space: nowrap;
-  }
+  .brand { min-width: 0; }
+  .brand img { height: 38px; width: auto; display: block; }
   /* Right-side status cluster: screener state, then IPs, then CPU/RAM. */
   .hstatus {
     margin-left: auto; display: flex; flex-direction: column;
@@ -511,7 +502,7 @@
   .recent .empty { color: var(--faint); font-size: var(--font-compact); padding: 6px 0; }
 
   @media (max-width: 620px) {
-    .brand .title .p { font-size: var(--font-base); white-space: normal; }
+    .brand img { height: 32px; }
     .net, .hmeters { display: none; }
     .recent { max-height: 320px; }
   }
@@ -522,12 +513,7 @@
 <header class="topbar">
   <div class="topbar-in">
     <div class="brand">
-      <img src="/assets/ibbis_logo.png" alt="IBBIS">
-      <div class="div"></div>
-      <div class="title">
-        <div class="k">Common Mechanism</div>
-        <div class="p">Sequence Screening</div>
-      </div>
+      <img src="/assets/commec_ibbis_logo.png" alt="Commec | IBBIS">
     </div>
     <!-- Right-side status: controls, screener state, network addresses, CPU/RAM. -->
     <div class="hstatus">
