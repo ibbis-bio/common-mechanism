@@ -640,14 +640,13 @@
         <input type="radio" name="preset" value="__custom__">
         <span>
           <span class="pl">Custom (raw config)</span>
-          <span class="pd">Debug escape hatch: type commec config keys as YAML;
-            written verbatim to <code>config.used.yaml</code> and passed to
-            <code>commec -y</code>. Bypasses presets. No validation beyond blocking
-            <code>do_cleanup</code>.</span>
+          <span class="pd">Enter <code>commec screen</code> configuration keys as
+            YAML. See the <a href="https://github.com/ibbis-bio/common-mechanism/wiki/Tutorial#using-yaml-to-configure-commec-screen"
+            target="_blank" rel="noopener">YAML configuration tutorial</a>.</span>
         </span>
       </label>
       <textarea id="custom-config" spellcheck="false" hidden
-        placeholder="skip_nt_search: true&#10;protein_search_tool: blastx&#10;blast_mt_mode: 0"></textarea>
+        placeholder="skip_nt_search: true&#10;blast_mt_mode: 0"></textarea>
     </section>
 
     <!-- ============ Run (button + live progress) ============ -->
