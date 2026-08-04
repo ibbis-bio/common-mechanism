@@ -1,8 +1,10 @@
 import os
-import pytest
 import textwrap
+
+import pytest
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+
 from commec.config.query import Query, QueryTranslation
 
 INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.fasta")
