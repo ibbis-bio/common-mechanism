@@ -32,9 +32,6 @@
     background: var(--panel); border-radius: 14px; padding: 34px 32px;
     width: 360px; max-width: 92vw; box-shadow: 0 12px 44px rgba(0,0,0,.32);
   }
-  .k { font: 600 var(--font-small)/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--teal); }
-  h1 { font: 700 var(--font-title)/1.2 var(--display); color: var(--navy); margin: 10px 0 4px; }
-  p.sub { color: var(--muted); font-size: var(--font-compact); margin: 0 0 22px; }
   label { display: block; font-size: var(--font-compact); color: var(--muted); margin-bottom: 7px; }
   input[type=password] {
     width: 100%; background: #fbfcfd; border: 1px solid var(--line); border-radius: 8px;
@@ -51,11 +48,8 @@
 </head>
 <body>
   <div class="wrap">
-    <img class="logo" src="/assets/ibbis_logo.png" alt="IBBIS">
+    <img class="logo" src="/assets/commec_ibbis_logo.png" alt="Commec | IBBIS">
     <form class="card" method="POST" action="/login">
-      <div class="k">Common Mechanism</div>
-      <h1>Sequence Screening</h1>
-      <p class="sub">Enter the access password to continue.</p>
       <input type="hidden" name="next" id="next" value="/">
       <label for="pw">Password</label>
       <input type="password" name="password" id="pw" autocomplete="current-password" autofocus required>
