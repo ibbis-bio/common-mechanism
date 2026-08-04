@@ -248,6 +248,7 @@
   .browser-sel b, #browse-sel b { color: var(--heading); }
 
   /* ---- Presets --------------------------------------------------------- */
+  .preset-options { display: flex; flex-direction: column; gap: 10px; }
   .presets { display: flex; flex-direction: column; gap: 10px; }
   .preset {
     display: flex; gap: 12px; align-items: flex-start; cursor: pointer;
@@ -280,16 +281,6 @@
   body.dark .rec {
     color: color-mix(in srgb, var(--rec-accent) 55%, white);
     background: color-mix(in srgb, var(--rec-accent) 18%, var(--panel));
-  }
-
-  /* selected-preset summary + advanced disclosure */
-  .preset-summary { display: flex; gap: 12px; align-items: flex-start; }
-  .preset-summary .pl { display: block; font-weight: 600; color: var(--heading); }
-  .preset-summary .pd { display: block; color: var(--muted); font-size: var(--font-compact); margin-top: 3px; }
-  .preset-summary .pd.warn { color: var(--orange); }
-  .legend {
-    font: 600 var(--font-small) var(--display); text-transform: uppercase; letter-spacing: .08em;
-    color: var(--muted); margin: 14px 0 10px;
   }
 
   /* Global "Advanced options" master toggle: gates the screening-depth card
@@ -633,18 +624,18 @@
       <!-- Screening options remain controlled by the Advanced options toggle. -->
       <div class="settings-section adv-only" id="depth-card">
         <div class="settings-title">Screening options</div>
-        <div class="preset-summary" id="preset-summary"></div>
-        <p class="legend">Choose a screening preset</p>
-        <div class="presets" id="presets"></div>
-        <label class="preset" id="custom-opt">
-          <input type="radio" name="preset" value="__custom__">
-          <span>
-            <span class="pl">Custom (raw config)</span>
-            <span class="pd">Enter <code>commec screen</code> configuration keys as
-              YAML. See the <a href="https://github.com/ibbis-bio/common-mechanism/wiki/Tutorial#using-yaml-to-configure-commec-screen"
-              target="_blank" rel="noopener">YAML configuration tutorial</a>.</span>
-          </span>
-        </label>
+        <div class="preset-options">
+          <div class="presets" id="presets"></div>
+          <label class="preset" id="custom-opt">
+            <input type="radio" name="preset" value="__custom__">
+            <span>
+              <span class="pl">Custom (raw config)</span>
+              <span class="pd">Enter <code>commec screen</code> configuration keys as
+                YAML. See the <a href="https://github.com/ibbis-bio/common-mechanism/wiki/Tutorial#using-yaml-to-configure-commec-screen"
+                target="_blank" rel="noopener">YAML configuration tutorial</a>.</span>
+            </span>
+          </label>
+        </div>
         <textarea id="custom-config" spellcheck="false" hidden
           placeholder="skip_nt_search: true&#10;blast_mt_mode: 0"></textarea>
       </div>
@@ -1068,7 +1059,6 @@ spreadsheetInput.addEventListener("change", () => { sheetNucleotide.value = ""; 
 sheetSkip.addEventListener("change", () => { if (spreadsheetPreview) renderSpreadsheetPreview(spreadsheetPreview); });
 
 /* ---- Presets (functional) -------------------------------------------- */
-const summaryEl = document.getElementById("preset-summary");
 let PRESETS = [];
 let REGION_CHOICES = [];
 
@@ -1139,17 +1129,6 @@ function recBadge(p) {
 const customCfgEl = document.getElementById("custom-config");
 let customSelected = false;
 
-function updateSummary() {
-  const r = form.querySelector("input[name=preset]:checked");
-  if (r && r.value === "__custom__") {
-    summaryEl.innerHTML = `<span class="pl">Custom (raw config)</span>`;
-    return;
-  }
-  const p = r && PRESETS.find(x => x.id === r.value);
-  if (!p) { summaryEl.innerHTML = ""; return; }
-  summaryEl.innerHTML = `<span class="pl">${escapeHtml(p.label)}${recBadge(p)}</span>`;
-}
-
 // Shared handler for any screening-choice change (presets + the custom radio).
 function onPresetChange() {
   const r = form.querySelector("input[name=preset]:checked");
@@ -1157,7 +1136,6 @@ function onPresetChange() {
   if (r) r.closest(".preset")?.classList.add("sel");
   customSelected = !!r && r.value === "__custom__";
   customCfgEl.hidden = !customSelected;
-  updateSummary();
   refreshStatus();  // custom can run even if no preset's DBs are installed
 }
 form.addEventListener("change", (e) => {
@@ -1202,9 +1180,6 @@ fetch("/config").then(r => r.json()).then(c => {
   noPresetAvailable = defaultIdx < 0;
   if (noPresetAvailable) {
     errEl.textContent = "No preset can run: required databases are not installed.";
-    summaryEl.innerHTML = `<span class="pd warn">No screening preset is available - install the databases with \`commec setup\`.</span>`;
-  } else {
-    updateSummary();
   }
   refreshStatus();
 }).catch(() => { errEl.textContent = "Could not load presets."; });
