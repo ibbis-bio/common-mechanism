@@ -31,6 +31,7 @@
     --display: "Crimson Pro", Georgia, serif;
     --ui: "Crimson Pro", Georgia, serif;
     --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --content-width: 1040px;
     --radius: 10px;
     --badge-radius: 4px;
     --shadow: 0 1px 2px rgba(35,42,88,.04), 0 6px 20px rgba(35,42,88,.05);
@@ -46,6 +47,12 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
+  @media (min-width: 1280px) {
+    html { zoom: 1.1; }
+  }
+  @media (min-width: 1800px) {
+    html { zoom: 1.2; }
+  }
   body {
     font: 15px/1.55 var(--ui);
     background: var(--paper); color: var(--ink);
@@ -59,7 +66,7 @@
     border-bottom: 3px solid var(--orange);
   }
   .topbar-in {
-    max-width: 880px; margin: 0 auto; padding: 16px 24px;
+    max-width: var(--content-width); margin: 0 auto; padding: 16px 24px;
     display: flex; align-items: center; gap: 18px;
   }
   .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
@@ -103,7 +110,7 @@
   .hmeter b { color: #cfe0ea; font: 600 10px/1 var(--mono); letter-spacing: 0; text-transform: none; }
 
   /* ---- Layout ---------------------------------------------------------- */
-  .wrap { max-width: 880px; margin: 0 auto; padding: 28px 24px 64px; }
+  .wrap { max-width: var(--content-width); margin: 0 auto; padding: 28px 24px 64px; }
   .issue-link { margin: 0; color: #8fa6b6; font-size: 11px; }
   .issue-link a { color: #cfe0ea; }
 
