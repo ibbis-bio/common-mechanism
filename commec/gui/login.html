@@ -14,11 +14,15 @@
     --display: "Archivo", system-ui, sans-serif;
     --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-small: 12px;
+    --font-compact: 14px;
+    --font-base: 16px;
+    --font-title: 20px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body {
-    font: 15px/1.5 var(--ui); background: var(--navy); color: var(--ink);
+    font: var(--font-base)/1.5 var(--ui); background: var(--navy); color: var(--ink);
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
     -webkit-font-smoothing: antialiased;
   }
@@ -28,21 +32,21 @@
     background: var(--panel); border-radius: 14px; padding: 34px 32px;
     width: 360px; max-width: 92vw; box-shadow: 0 12px 44px rgba(0,0,0,.32);
   }
-  .k { font: 600 11px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--teal); }
-  h1 { font: 700 19px/1.2 var(--display); color: var(--navy); margin: 10px 0 4px; }
-  p.sub { color: var(--muted); font-size: 13px; margin: 0 0 22px; }
-  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 7px; }
+  .k { font: 600 var(--font-small)/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--teal); }
+  h1 { font: 700 var(--font-title)/1.2 var(--display); color: var(--navy); margin: 10px 0 4px; }
+  p.sub { color: var(--muted); font-size: var(--font-compact); margin: 0 0 22px; }
+  label { display: block; font-size: var(--font-compact); color: var(--muted); margin-bottom: 7px; }
   input[type=password] {
     width: 100%; background: #fbfcfd; border: 1px solid var(--line); border-radius: 8px;
-    padding: 11px 12px; font: 14px var(--mono); color: var(--ink);
+    padding: 11px 12px; font: var(--font-compact) var(--mono); color: var(--ink);
   }
   input:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(65,155,185,.14); }
   button {
     margin-top: 18px; width: 100%; background: var(--orange); color: #fff; border: none;
-    border-radius: 8px; padding: 12px; font: 700 15px var(--display); cursor: pointer;
+    border-radius: 8px; padding: 12px; font: 700 var(--font-base) var(--display); cursor: pointer;
   }
   button:hover { filter: brightness(.94); }
-  .err { color: var(--orange); font-size: 13px; margin-top: 12px; min-height: 18px; }
+  .err { color: var(--orange); font-size: var(--font-compact); margin-top: 12px; min-height: 18px; }
 </style>
 </head>
 <body>
