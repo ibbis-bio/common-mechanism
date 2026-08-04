@@ -145,6 +145,9 @@ def test_short_sequences_are_passed_to_commec(tmp_path, client):
     config = yaml.safe_load((run_dir / "config.used.yaml").read_text(encoding="utf-8"))
     assert config["databases"]["control_lists"]["regions"] == "all"
 
+    status = client.get("/status").get_json()
+    assert status["active"]["query_count"] == 1
+
 
 def test_selected_regions_are_recorded_in_run_config(tmp_path, client):
     response = _submit(client, regions="US,CA")
@@ -287,6 +290,22 @@ def test_gui_has_card_specific_message_destinations(client):
     assert 'showCardMessage("run"' in html
     assert "function scrollToCard(card)" in html
     assert "const offset = topbar.getBoundingClientRect().height + 12;" in html
+
+
+def test_gui_places_large_query_status_below_logo(client):
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    brand_start = html.index('<div class="brand">')
+    brand = html[brand_start:html.index('</div>', brand_start)]
+    assert 'id="queue"' in brand
+    assert 'class="queue-text"' in brand
+    assert "margin: 0 0 0 8px" in html
+    assert "width: 12px; height: 12px" in html
+    assert "font: 700 var(--font-base)/1.2 var(--ui)" in html
+    assert "s.active.query_count" in html
+    assert '`Screening: ${label}${queries}`' in html
 
 
 def test_gui_serves_bundled_report_font(client):

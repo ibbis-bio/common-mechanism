@@ -74,21 +74,28 @@
     max-width: var(--content-width); margin: 0 auto; padding: 16px 24px;
     display: flex; align-items: center; gap: 18px;
   }
-  .brand { min-width: 0; }
+  .brand {
+    min-width: 0; display: flex; flex-direction: column;
+    align-items: flex-start; gap: 9px;
+  }
   .brand img { height: 38px; width: auto; display: block; }
-  /* Right-side status cluster: screener state, then IPs, then CPU/RAM. */
+  .queue {
+    margin: 0 0 0 8px; display: flex; align-items: center; gap: 10px;
+    font: 700 var(--font-base)/1.2 var(--ui); color: #cfe0ea;
+    max-width: min(520px, 55vw);
+  }
+  .queue-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .queue .dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--ok); flex: none;
+  }
+  .queue.busy { color: #fff; }
+  .queue.busy .dot { background: var(--orange); animation: pulse 1.2s ease-in-out infinite; }
+  /* Right-side status cluster: controls, IPs, CPU/RAM, then support. */
   .hstatus {
     margin-left: auto; display: flex; flex-direction: column;
     align-items: flex-end; gap: 7px; min-width: 0;
   }
-  .hstatus .queue {
-    margin: 0; display: flex; align-items: center; gap: 7px;
-    font-size: var(--font-small); color: #cfe0ea; max-width: 320px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .hstatus .queue .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
-  .hstatus .queue.busy { color: #fff; }
-  .hstatus .queue.busy .dot { background: var(--orange); animation: pulse 1.2s ease-in-out infinite; }
   .net { display: flex; gap: 16px; }
   .chip {
     display: inline-flex; align-items: baseline; gap: 6px;
@@ -509,17 +516,17 @@
   <div class="topbar-in">
     <div class="brand">
       <img src="/assets/commec_ibbis_logo.png" alt="Commec | IBBIS">
+      <span class="queue" id="queue" title="Whether a screen is running on this server">
+        <span class="dot"></span><span class="queue-text">Screener idle</span>
+      </span>
     </div>
-    <!-- Right-side status: controls, screener state, network addresses, CPU/RAM. -->
+    <!-- Right-side status: controls, network addresses, CPU/RAM, and support. -->
     <div class="hstatus">
       <div class="hcontrols">
         <button type="button" id="theme" class="hbtn">Dark</button>
         <button type="button" id="fs" class="hbtn">Fullscreen</button>
         <label class="hswitch"><input type="checkbox" id="adv-toggle"><span>Advanced options</span></label>
       </div>
-      <span class="queue" id="queue" title="Whether a screen is running on this server">
-        <span class="dot"></span> Screener idle
-      </span>
       <div class="net" id="net" title="Addresses this machine can be reached on"></div>
       <div class="hmeters">
         <div class="hmeter cpu">CPU<div class="hbar"><i id="cpu-bar"></i></div><b id="cpu-val">-- %</b></div>
@@ -729,6 +736,7 @@ const runPanel = document.getElementById("runpanel");
 const terminalToggle = document.getElementById("terminal-toggle");
 const copyLogBtn = document.getElementById("copy-log");
 const queueEl = document.getElementById("queue");
+const queueText = queueEl.querySelector(".queue-text");
 const runLabel = document.getElementById("run-label");
 const runLabelError = document.getElementById("run-label-error");
 const runLabelCard = document.getElementById("run-label-card");
@@ -1673,12 +1681,16 @@ async function refreshStatus() {
   try {
     const s = await (await fetch("/status")).json();
     if (s.busy) {
-      const lbl = (s.active && s.active.label) ? ": " + s.active.label : "";
+      const label = (s.active && s.active.label) || "run";
+      const queryCount = s.active && s.active.query_count;
+      const queries = Number.isInteger(queryCount)
+        ? ` (${queryCount} quer${queryCount === 1 ? "y" : "ies"})`
+        : "";
       queueEl.classList.add("busy");
-      queueEl.innerHTML = `<span class="dot"></span> Screening${escapeHtml(lbl)}`;
+      queueText.textContent = `Screening: ${label}${queries}`;
     } else {
       queueEl.classList.remove("busy");
-      queueEl.innerHTML = `<span class="dot"></span> Screener idle`;
+      queueText.textContent = "Screener idle";
     }
     if (!mySubmitInFlight) runBtn.disabled = s.busy || (noPresetAvailable && !customSelected);
     runBtn.textContent = (s.busy || mySubmitInFlight) ? "Running..." : "Run";

@@ -146,6 +146,7 @@ def test_errored_run_can_be_rerun_in_a_clean_directory(
     job = server.JOBS[new_id]
     assert job["label"] == "Failed run (rerun)"
     assert job["rerun_of"] == source.name
+    assert job["query_count"] == 1
     assert "-R" not in job["cmd"]
     assert str(source) not in job["cmd"]
     copied_files = {

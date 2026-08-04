@@ -663,6 +663,14 @@ def _parse_fasta_text(text):
     return records
 
 
+def _fasta_query_count(path):
+    """Count FASTA records once when reconstructing a saved job."""
+    try:
+        return len(_parse_fasta_text(Path(path).read_text(encoding="utf-8")))
+    except OSError:
+        return None
+
+
 def _parse_spreadsheet_text(text):
     """Tab/comma-delimited rows (Excel/CSV paste): the most DNA-like field is
     the sequence; another field, if present, names it. Rows with no DNA-like
@@ -863,6 +871,7 @@ def _job_meta(job, status, summary=None):
     return {
         "id": job["id"], "label": job["label"], "prefix": job["prefix"],
         "fasta": job.get("fasta"), "status": status,
+        "query_count": job.get("query_count"),
         "returncode": job["returncode"], "created": job["created"],
         "finished": job.get("finished"), "summary": summary,
         "error_hint": job.get("error_hint"),
@@ -1382,6 +1391,7 @@ def screen():
         job = {
             "id": job_id,
             "label": label or prefix,
+            "query_count": len(records),
             "prefix": prefix,
             "fasta": fasta,
             "created": time.time(),
@@ -1420,6 +1430,7 @@ def status():
     active = None if job is None else {
         "job_id": job["id"],
         "label": job["label"],
+        "query_count": job.get("query_count"),
         "status": job["status"],
         "returncode": job["returncode"],
     }
@@ -1773,6 +1784,7 @@ def resume_run(job_id):
     job = {
         "id": d.name, "label": meta.get("label", d.name), "prefix": prefix,
         "fasta": fasta, "created": meta.get("created", time.time()),
+        "query_count": meta.get("query_count") or _fasta_query_count(fasta),
         "finished": None, "cmd": cmd, "dir": d, "log": [],
         "status": "starting", "returncode": None, "done": False,
         "stopped": False, "proc": None, "pgid": None,
@@ -1835,6 +1847,9 @@ def rerun_run(job_id):
         job = {
             "id": new_id, "label": f"{source_label} (rerun)", "prefix": prefix,
             "fasta": str(fasta_path), "created": time.time(), "finished": None,
+            "query_count": (
+                meta.get("query_count") or _fasta_query_count(fasta_path)
+            ),
             "cmd": cmd, "dir": rundir, "log": [], "status": "starting",
             "returncode": None, "done": False, "stopped": False, "proc": None,
             "pgid": None, "rerun_of": source.name,
