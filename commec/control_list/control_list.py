@@ -10,24 +10,26 @@ is_regulated - Returns truthiness for whether accession is regulated.
 are_regulated - Batch version of is_regulated.
 """
 
-import os
-import logging
 import argparse
+import logging
+import os
+
 from commec.utils.logger import setup_console_logging
-from .containers import (
-    Accession,
-    derive_accession_format,
-    ControlListOutput,
-)
-from . import list_data as __data
+
 from . import initialisation as __init
+from . import list_data as __data
 from . import region as __region
 from .cli import (
     add_args,
-    format_control_lists,
     format_control_list_annotation,
+    format_control_lists,
     generate_output_summary_csv,
     read_config_yaml_for_control_list_info,
+)
+from .containers import (
+    Accession,
+    ControlListOutput,
+    derive_accession_format,
 )
 
 DESCRIPTION = """Tool for displaying information on
@@ -308,10 +310,9 @@ def run(arguments: argparse.Namespace):
         config = read_config_yaml_for_control_list_info(arguments.yaml_file)
         try:
             database_location = config["databases"]["control_lists"]["path"]
-            # YAML overrides control list regions if no CLI value 
+            # YAML overrides control list regions if no CLI value
             region_context = (
-                region_context
-                or config["databases"]["control_lists"]["regions"]
+                region_context or config["databases"]["control_lists"]["regions"]
             )
         except KeyError as e:
             logger.error(
@@ -326,9 +327,7 @@ def run(arguments: argparse.Namespace):
         )
         return 2
 
-    regions = (
-        [r.strip() for r in region_context.split(",")] if region_context else None
-    )
+    regions = [r.strip() for r in region_context.split(",")] if region_context else None
 
     import_data(database_location, regions)
 

@@ -4,11 +4,13 @@ Will fail if databases have not been installed as expected, with correct version
 """
 
 import os
+
 import pytest
+
 from commec.tools.blastn import BlastNHandler
 from commec.tools.blastx import BlastXHandler
-from commec.tools.hmmer import HmmerHandler
 from commec.tools.cmscan import CmscanHandler
+from commec.tools.hmmer import HmmerHandler
 from commec.tools.search_handler import DatabaseValidationError
 
 INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.fasta")

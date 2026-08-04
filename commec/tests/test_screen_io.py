@@ -1,9 +1,10 @@
-import pytest
-from unittest.mock import patch
 import os
+from unittest.mock import patch
 
-from commec.config.screen_io import ScreenIO, IoValidationError
-from commec.screen import add_args, ScreenArgumentParser
+import pytest
+
+from commec.config.screen_io import IoValidationError, ScreenIO
+from commec.screen import ScreenArgumentParser, add_args
 
 
 @pytest.fixture

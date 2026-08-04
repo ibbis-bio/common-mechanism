@@ -5,25 +5,25 @@ Module for CLI setup of Commec, such that required
 databases are downloaded in a desired database directory.
 """
 
-import sys
+import argparse
+import hashlib
+import importlib.resources
+import json
 import os
 import shutil
-import argparse
 import subprocess
+import sys
 import time
-import hashlib
-from pathlib import Path
-import importlib.resources
-from urllib import request, error
-import yaml
-import json
 from dataclasses import dataclass
+from pathlib import Path
+from urllib import error, request
 
-from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
-from commec.config import yaml_io as YamlIO
-from commec.utils.file_utils import expand_and_normalize, remove_filename_from_path
+import yaml
 
 from commec import __version__ as VERSION
+from commec.config import yaml_io as YamlIO
+from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
+from commec.utils.file_utils import expand_and_normalize, remove_filename_from_path
 
 DESCRIPTION = """Helper script for downloading or updating the databases
  required for running the Common Mechanism Screen"""

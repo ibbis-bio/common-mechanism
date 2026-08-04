@@ -1,5 +1,6 @@
 import json
 import logging
+
 import pytest
 
 from commec.control_list.region import (

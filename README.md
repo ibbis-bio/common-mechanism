@@ -51,5 +51,9 @@ conda activate commec-dev
 
 From here, you should have an interactive version of the package installed via `pip -e .` and the necessary shell dependencies.
 
+### Code Style/Formatting
+
+We use `ruff` for formatting, including import sorting. Please lint your code by running `uvx ruff format` (or using your preferred python package manager).
+
 ## License
 `commec` is released under the [MIT License](LICENSE).

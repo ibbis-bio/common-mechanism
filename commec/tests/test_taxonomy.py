@@ -8,32 +8,32 @@ input validation, hit-info formatting, annotation-level outcome determination,
 cluster-level hit creation, per-query aggregation, and the main entry point.
 """
 
-from dataclasses import asdict
 import json
 import logging
+from dataclasses import asdict
 from unittest.mock import MagicMock, patch
+
 import pandas as pd
 
-from commec.screeners.check_reg_path import (
-    _create_hit_info,
-    _create_hit_result_from_annotations,
-    _create_hit_result_for_cluster,
-    _get_hit_result_from_data,
-    _build_log_message,
-    parse_taxonomy_hits,
-)
 from commec.config.result import (
-    ScreenResult,
-    ScreenStatus,
-    ScreenStep,
     HitResult,
     HitScreenStatus,
     MatchRange,
     QueryResult,
+    ScreenResult,
+    ScreenStatus,
+    ScreenStep,
 )
 from commec.control_list.containers import ControlListOutput, ListMode
+from commec.screeners.check_reg_path import (
+    _build_log_message,
+    _create_hit_info,
+    _create_hit_result_for_cluster,
+    _create_hit_result_from_annotations,
+    _get_hit_result_from_data,
+    parse_taxonomy_hits,
+)
 from commec.utils.logger import setup_console_logging
-
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 

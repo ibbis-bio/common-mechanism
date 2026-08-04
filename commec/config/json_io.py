@@ -23,12 +23,13 @@ Set of tools for retrieving and storing information important to screen
 # Consider whether this can get away with being part of config. rename to IO config?
 
 import json
-import string
 import os
+import string
 from dataclasses import asdict, fields, is_dataclass
-from typing import Dict, Type, get_origin, Any, get_args
 from enum import StrEnum
-from commec.config.result import ScreenResult, JSON_COMMEC_FORMAT_VERSION
+from typing import Any, Dict, Type, get_args, get_origin
+
+from commec.config.result import JSON_COMMEC_FORMAT_VERSION, ScreenResult
 
 
 class IoVersionError(RuntimeError):

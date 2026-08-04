@@ -9,6 +9,7 @@ The following behaviour is expected:
 
 import pandas as pd
 import pytest
+
 from commec.tools.hmmer import remove_overlaps
 
 # Test the following hmmer configuration:

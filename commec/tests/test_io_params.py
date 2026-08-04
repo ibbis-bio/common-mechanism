@@ -1,11 +1,12 @@
-import pytest
-from unittest.mock import patch
 import os
+from unittest.mock import patch
+
+import pytest
 import yaml
 
+from commec.cli import ScreenArgumentParser
 from commec.config.screen_io import ScreenIO
 from commec.config.yaml_io import YamlIOValidationError
-from commec.cli import ScreenArgumentParser
 from commec.screen import add_args
 
 INPUT_QUERY = os.path.join(os.path.dirname(__file__), "test_data/single_record.fasta")

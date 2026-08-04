@@ -6,28 +6,29 @@ Objects responsible for parsing and interpreting user input for
 the screen workflow of commec.
 """
 
-import os
-import sys
-import glob
 import argparse
+import glob
 import logging
 import multiprocessing
-from pprint import pformat
+import os
+import sys
 from pathlib import Path
-from Bio import SeqIO
+from pprint import pformat
+
 import yaml
+from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
 import commec.config.yaml_io as YamlIO
-from commec.config.query import Query
-from commec.utils.file_utils import expand_and_normalize
 from commec.config.constants import (
-    MINIMUM_QUERY_LENGTH,
-    MAXIMUM_QUERY_LENGTH,
     MAXIMUM_FILENAME_SIZE,
+    MAXIMUM_QUERY_LENGTH,
     MAXIMUM_QUERY_NAME_LENGTH,
+    MINIMUM_QUERY_LENGTH,
     VALID_BLAST_MT_MODES,
 )
+from commec.config.query import Query
+from commec.utils.file_utils import expand_and_normalize
 
 logger = logging.getLogger(__name__)
 
@@ -215,7 +216,7 @@ class ScreenIO:
             prefix/name
             prefix/output_name/name
             prefix/input_name/name
-        
+
         The output file location and name will be based on the prefix provided by the user,
          with a fallback to the input file directory and basename if one is not given.
         """
