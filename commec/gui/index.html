@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Common Mechanism - Sequence Screening</title>
+<link rel="stylesheet" href="/report-badge.css">
 <style>
   @font-face {
     font-family: "Crimson Pro";
@@ -11,6 +12,13 @@
     font-weight: 400 700;
     font-display: swap;
     src: url("/fonts/CrimsonPro.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url("/fonts/Manrope.woff2") format("woff2");
   }
   :root {
     /* IBBIS brand tokens (from ibbis.bio) */
@@ -391,21 +399,10 @@
   .verdict {
     display: flex; align-items: center; gap: 10px;
     font: 700 var(--font-base) var(--display); padding: 12px 16px;
-    border: 1px solid; border-radius: 9px; margin-bottom: 12px;
+    border: 1px solid var(--line); border-radius: 9px; margin-bottom: 12px;
+    background: var(--field); color: var(--heading);
   }
-  .severity {
-    color: var(--severity);
-    background: color-mix(in srgb, var(--severity) 10%, white);
-  }
-  .verdict.severity { border-color: color-mix(in srgb, var(--severity) 30%, white); }
-  body.dark .severity {
-    color: color-mix(in srgb, var(--severity) 55%, white);
-    background: color-mix(in srgb, var(--severity) 18%, var(--panel));
-  }
-  body.dark .verdict.severity {
-    border-color: color-mix(in srgb, var(--severity) 45%, var(--panel));
-  }
-  .verdict .vc { font: 500 var(--font-small) var(--ui); opacity: .85; }
+  .verdict .vc { margin-left: auto; font: 500 var(--font-small) var(--ui); opacity: .85; }
   .qtable { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
   .qrow {
     display: grid; grid-template-columns: 88px minmax(120px, 1fr) 2fr; gap: 12px;
@@ -413,10 +410,7 @@
     font-size: var(--font-compact);
   }
   .qrow:last-child { border-bottom: none; }
-  .qpill {
-    justify-self: start; font: 600 var(--font-small) var(--display); text-transform: uppercase;
-    letter-spacing: .05em; padding: 3px 9px; border-radius: var(--badge-radius);
-  }
+  .qrow .badge, .run-row .badge { justify-self: start; }
   .q-int { color: #5a6b7a; background: #e8edf2; }  /* run state: interrupted */
   body.dark .q-int { color: #aebac7; background: #27313b; }
   .qn { font: var(--font-compact) var(--mono); color: var(--heading); word-break: break-all; }
@@ -1282,26 +1276,24 @@ async function copyLog() {
 }
 copyLogBtn.addEventListener("click", copyLog);
 
-/* ---- Severity colours ------------------------------------------------ */
-const severityStops = [
-  { at: 0,   color: [31, 110, 68] },
-  { at: 0.5, color: [154, 106, 18] },
-  { at: 1,   color: [177, 49, 15] },
-];
-function mixColor(from, to, amount) {
-  const channel = i => Math.round(from[i] + (to[i] - from[i]) * amount);
-  return `rgb(${channel(0)}, ${channel(1)}, ${channel(2)})`;
+function reportStatus(status) {
+  const value = String(status || "");
+  if (value.startsWith("Skip") || value === "Error" || value === "Incomplete")
+    return "Skipped";
+  if (value === "Flag") return "Flag";
+  if (value.startsWith("Warning") && !value.includes("Cleared")) return "Warning";
+  return "Clear";
 }
-function severityStyle(score, scoreMax) {
-  const maximum = Number(scoreMax);
-  const fraction = maximum > 0
-    ? Math.max(0, Math.min(1, Number(score) / maximum))
-    : 1;
-  const lower = fraction <= severityStops[1].at;
-  const from = lower ? severityStops[0] : severityStops[1];
-  const to = lower ? severityStops[1] : severityStops[2];
-  const amount = (fraction - from.at) / (to.at - from.at);
-  return `--severity:${mixColor(from.color, to.color, amount)};`;
+
+const reportBadgeColors = {
+  Flag: "#F05023",
+  Warning: "#D98A00",
+  Clear: "#419BB9",
+  Skipped: "#8a8f9e",
+};
+function screeningBadge(status) {
+  const label = reportStatus(status);
+  return `<span class="badge" style="background:${reportBadgeColors[label]}; color:#fff;">${label}</span>`;
 }
 
 function showScreenStartError(body) {
@@ -1499,9 +1491,9 @@ async function loadRecent() {
     }
     recentList.innerHTML = runs.map(r => {
       let pill;
-      if (r.status === "interrupted") pill = `<span class="qpill q-int">Interrupted</span>`;
-      else if (r.overall) pill = `<span class="qpill severity" style="${severityStyle(r.overall_score, r.score_max)}">${escapeHtml(r.overall)}</span>`;
-      else pill = `<span class="qpill q-int">${r.status === "error" ? "Error" : "Done"}</span>`;
+      if (r.status === "interrupted") pill = `<span class="badge q-int">Interrupted</span>`;
+      else if (r.overall) pill = screeningBadge(r.overall);
+      else pill = `<span class="badge q-int">${r.status === "error" ? "Error" : "Done"}</span>`;
       const when = r.finished ? fmtDateTime(r.finished) : "";
       const nq = r.status === "interrupted" ? "interrupted"
         : (r.n ? `${r.n} quer${r.n === 1 ? "y" : "ies"}` : (r.status === "error" ? "failed" : ""));
@@ -1813,14 +1805,13 @@ async function showResults(jobId) {
     const sm = body.summary;
     if (sm && sm.n) {
       summaryDiv.innerHTML =
-        `<div class="verdict severity" style="${severityStyle(sm.overall_score, sm.score_max)}">`
-        + `Overall: ${escapeHtml(sm.overall)}`
+        `<div class="verdict">Overall ${screeningBadge(sm.overall)}`
         + `<span class="vc">${sm.n} quer${sm.n === 1 ? "y" : "ies"}</span></div>`;
       summaryDiv.style.display = "block";
       let q = '<h3>Per-sequence results</h3><div class="qtable">';
       for (const query of sm.queries) {
         q += `<div class="qrow">
-          <span class="qpill severity" style="${severityStyle(query.score, sm.score_max)}">${escapeHtml(query.status)}</span>
+          ${screeningBadge(query.status)}
           <span class="qn">${escapeHtml(query.name)}</span>
           <span class="qr">${escapeHtml(query.rationale)}</span>
         </div>`;

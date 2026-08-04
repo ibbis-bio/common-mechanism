@@ -339,9 +339,10 @@ def _missing_databases(preset):
             if not _db_present(paths.get(name, ""))]
 
 ASSETS_DIR = Path(__file__).parent / "assets"
-REPORT_FONTS_DIR = Path(importlib.resources.files("commec").joinpath(
-    "utils", "report_assets", "fonts"
-))
+REPORT_ASSETS_DIR = importlib.resources.files("commec").joinpath(
+    "utils", "report_assets"
+)
+REPORT_FONTS_DIR = Path(REPORT_ASSETS_DIR.joinpath("fonts"))
 
 
 @app.route("/assets/<path:name>")
@@ -353,10 +354,23 @@ def asset(name):
     return send_file(target)
 
 
-@app.route("/fonts/CrimsonPro.woff2")
-def report_font():
-    """Serve the report's bundled UI font to the main GUI."""
-    return send_file(REPORT_FONTS_DIR / "CrimsonPro.woff2", mimetype="font/woff2")
+@app.route("/fonts/<name>")
+def report_font(name):
+    """Serve the report's bundled fonts to the main GUI."""
+    if name not in {"CrimsonPro.woff2", "Manrope.woff2"}:
+        return jsonify({"error": "not found"}), 404
+    return send_file(REPORT_FONTS_DIR / name, mimetype="font/woff2")
+
+
+@app.route("/report-badge.css")
+def report_badge_css():
+    """Serve the full report's badge rule without its page-wide styles."""
+    css = REPORT_ASSETS_DIR.joinpath("report.css").read_text(encoding="utf-8")
+    match = re.search(r"(?ms)^\.badge\s*\{.*?^\}", css)
+    if not match:
+        return Response("Report badge style not found.\n", status=500,
+                        mimetype="text/plain")
+    return Response(match.group(0) + "\n", mimetype="text/css")
 
 
 # ---------------------------------------------------------------------------
