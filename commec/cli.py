@@ -18,23 +18,42 @@ Command-line usage examples:
 from commec import __version__ as COMMEC_VERSION
 from commec.control_list import (
     DESCRIPTION as list_DESCRIPTION,
+)
+from commec.control_list import (
     add_args as list_add_args,
+)
+from commec.control_list import (
     run as list_run,
 )
 from commec.flag import (
     DESCRIPTION as flag_DESCRIPTION,
+)
+from commec.flag import (
     add_args as flag_add_args,
+)
+from commec.flag import (
     run as flag_run,
 )
 from commec.screen import (
     ScreenArgumentParser,
     DESCRIPTION as screen_DESCRIPTION,
+)
+from commec.screen import (
+    ScreenArgumentParser,
+)
+from commec.screen import (
     add_args as screen_add_args,
+)
+from commec.screen import (
     run as screen_run,
 )
 from commec.setup import (
     DESCRIPTION as setup_DESCRIPTION,
+)
+from commec.setup import (
     add_args as setup_add_args,
+)
+from commec.setup import (
     run as setup_run,
 )
 from commec.gui.server import (

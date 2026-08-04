@@ -39,3 +39,6 @@ Repository = "https://github.com/ibbis-screening/common-mechanism.git"
 [tool.setuptools]
 packages = { find = { "include" = ["commec", "commec.*"] } }
 package-data = { "commec" = ["utils/report_assets/*", "utils/report_assets/fonts/*", "screen-default-config.yaml", "database_compatibility.yaml"], "commec.gui" = ["*.html", "*.yaml.example", "*.sh", "assets/*"] }
+
+[tool.ruff.lint]
+extend-select = ["I"]

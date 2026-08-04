@@ -28,14 +28,16 @@ Set of containers for storing information important to screen
 """
 
 import logging
-from dataclasses import dataclass, asdict, field
-from typing import List, Iterator, Tuple
+from dataclasses import asdict, dataclass, field
 from enum import StrEnum
+from typing import Iterator, List, Tuple
+
 import pandas as pd
-from commec.tools.search_handler import SearchToolVersion
-from commec.control_list.containers import ListMode
-from commec.config.constants import MINIMUM_QUERY_LENGTH, MAXIMUM_QUERY_LENGTH
+
 from commec import __version__ as COMMEC_VERSION
+from commec.config.constants import MAXIMUM_QUERY_LENGTH, MINIMUM_QUERY_LENGTH
+from commec.control_list.containers import ListMode
+from commec.tools.search_handler import SearchToolVersion
 
 logger = logging.getLogger(__name__)
 

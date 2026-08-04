@@ -9,22 +9,24 @@ relevant low concern information.
 """
 
 import logging
+
 import pandas as pd
-from commec.tools.blast_tools import get_top_hits
-from commec.tools.blastn import BlastNHandler  # For has_hits.
-from commec.tools.hmmer import HmmerHandler
-from commec.tools.cmscan import CmscanHandler
+
 from commec.config.query import Query
-from commec.tools.hmmer import (
-    recalculate_hmmer_query_coordinates,
-    append_nt_querylength_info,
-)
 from commec.config.result import (
     HitResult,
-    ScreenStep,
-    ScreenStatus,
     HitScreenStatus,
     MatchRange,
+    ScreenStatus,
+    ScreenStep,
+)
+from commec.tools.blast_tools import get_top_hits
+from commec.tools.blastn import BlastNHandler  # For has_hits.
+from commec.tools.cmscan import CmscanHandler
+from commec.tools.hmmer import (
+    HmmerHandler,
+    append_nt_querylength_info,
+    recalculate_hmmer_query_coordinates,
 )
 
 # Constants determining Commec's sensitivity for low_concern screen.

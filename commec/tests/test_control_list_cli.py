@@ -4,26 +4,25 @@ import argparse
 import json
 import os
 
-import pytest
 import pandas as pd
+import pytest
 
 import commec.control_list.list_data as ld
 import commec.control_list.region as region_module
-from commec.control_list.containers import (
-    ControlList,
-    ControlListOutput,
-    ListMode,
-    Region,
-)
 from commec.control_list.cli import (
     add_args,
     format_control_list_annotation,
     format_control_lists,
     generate_output_summary_csv,
 )
+from commec.control_list.containers import (
+    ControlList,
+    ControlListOutput,
+    ListMode,
+    Region,
+)
 from commec.control_list.control_list import run
 from commec.control_list.initialisation import tidy_control_list_data
-
 
 # ---------------------------------------------------------------------------
 # Fixtures & Helpers
@@ -266,8 +265,8 @@ def test_add_args_accessions():
 def test_add_args_regions():
     parser = argparse.ArgumentParser()
     add_args(parser)
-    args = parser.parse_args(["--regions", "NZ", "AU"])
-    assert args.regions == ["NZ", "AU"]
+    args = parser.parse_args(["--regions", "NZ,AU"])
+    assert args.regions == "NZ,AU"
 
 
 def test_add_args_verbose():

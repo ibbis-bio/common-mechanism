@@ -9,28 +9,30 @@ Usage:
 
 import logging
 import os
+
 import pandas as pd
-from commec.config.query import Query
+
 from commec.config.constants import (
-    BIORISK_SHORT_QUERY_NT_THRESHOLD,
-    BIORISK_SHORT_QUERY_EVALUE_EXPONENT,
     BIORISK_LONG_QUERY_EVALUE_THRESHOLD,
+    BIORISK_SHORT_QUERY_EVALUE_EXPONENT,
+    BIORISK_SHORT_QUERY_NT_THRESHOLD,
 )
-from commec.tools.hmmer import (
-    readhmmer,
-    remove_overlaps,
-    recalculate_hmmer_query_coordinates,
-    append_nt_querylength_info,
-    HmmerHandler,
-)
+from commec.config.query import Query
 from commec.config.result import (
-    ScreenResult,
     HitResult,
-    ScreenStep,
-    ScreenStatus,
     HitScreenStatus,
     MatchRange,
+    ScreenResult,
+    ScreenStatus,
+    ScreenStep,
     compare,
+)
+from commec.tools.hmmer import (
+    HmmerHandler,
+    append_nt_querylength_info,
+    readhmmer,
+    recalculate_hmmer_query_coordinates,
+    remove_overlaps,
 )
 
 logger = logging.getLogger(__name__)

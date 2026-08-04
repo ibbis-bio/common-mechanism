@@ -13,9 +13,10 @@ Someone from Germany would be interested in the policies made that affect
 the European Union for example.
 """
 
-import os
 import json
 import logging
+import os
+
 import pycountry as pc
 
 from .containers import Region

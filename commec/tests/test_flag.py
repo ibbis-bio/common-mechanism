@@ -1,5 +1,5 @@
-import os
 import argparse
+import os
 import textwrap
 
 from commec.flag import add_args, run

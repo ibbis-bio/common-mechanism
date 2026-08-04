@@ -1,17 +1,17 @@
 import logging
-import pytest
-import pandas as pd
 
-from commec.control_list.containers import (
-    AccessionFormat,
-    derive_accession_format,
-    ControlList,
-    ListMode,
-)
+import pandas as pd
+import pytest
+
 import commec.control_list.list_data as ld
 from commec.control_list import get_regulation
+from commec.control_list.containers import (
+    AccessionFormat,
+    ControlList,
+    ListMode,
+    derive_accession_format,
+)
 from commec.control_list.initialisation import tidy_control_list_data
-
 from commec.utils.logger import setup_console_logging
 
 
