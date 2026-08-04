@@ -32,6 +32,7 @@
     --ui: "Crimson Pro", Georgia, serif;
     --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
     --content-width: 1040px;
+    --card-width: 960px;
     --radius: 10px;
     --badge-radius: 4px;
     --shadow: 0 1px 2px rgba(35,42,88,.04), 0 6px 20px rgba(35,42,88,.05);
@@ -110,7 +111,7 @@
   .hmeter b { color: #cfe0ea; font: 600 10px/1 var(--mono); letter-spacing: 0; text-transform: none; }
 
   /* ---- Layout ---------------------------------------------------------- */
-  .wrap { max-width: var(--content-width); margin: 0 auto; padding: 28px 24px 64px; }
+  .wrap { max-width: var(--card-width); margin: 0 auto; padding: 28px 24px 64px; }
   .issue-link { margin: 0; color: #8fa6b6; font-size: 11px; }
   .issue-link a { color: #cfe0ea; }
 
@@ -126,6 +127,12 @@
   }
   .step-title { font: 700 16px/1 var(--display); color: var(--heading); }
   .step-sub { color: var(--muted); font-size: 13px; margin-left: auto; }
+  .settings-section + .settings-section {
+    border-top: 1px solid var(--line); margin-top: 20px; padding-top: 20px;
+  }
+  .settings-title {
+    color: var(--heading); font: 700 14px/1 var(--display); margin-bottom: 12px;
+  }
 
   /* soon = sketched, not yet wired */
   .soon {
@@ -263,8 +270,8 @@
   .preset:hover { border-color: var(--teal); }
   .preset.sel { border-color: var(--teal); background: var(--tint); box-shadow: inset 3px 0 0 var(--teal); }
   .preset input { margin-top: 3px; accent-color: var(--teal); }
-  .preset .pl { font-weight: 600; color: var(--heading); }
-  .preset .pd { color: var(--muted); font-size: 13px; margin-top: 3px; }
+  .preset .pl { display: block; font-weight: 600; color: var(--heading); }
+  .preset .pd { display: block; color: var(--muted); font-size: 13px; margin-top: 3px; }
   .preset.unavail { opacity: .55; cursor: not-allowed; }
   .preset.unavail:hover { border-color: var(--line); }
   .preset .pd.warn { color: var(--orange); margin-top: 5px; }
@@ -623,42 +630,42 @@
       </div>
     </section>
 
-    <!-- ============ 02 Regulatory jurisdiction ============ -->
-    <section class="card" id="region-card">
+    <!-- ============ 02 Settings ======================================= -->
+    <section class="card" id="settings-card">
       <div class="step-head">
-        <span class="step-title">Regulatory jurisdiction</span>
+        <span class="step-title">Settings</span>
       </div>
-      <details class="region-picker" id="region-picker">
-        <summary id="region-summary">All jurisdictions</summary>
-        <div class="region-menu">
-          <label class="region-all">
-            <input type="checkbox" id="region-all" checked>
-            <span>All jurisdictions</span>
-          </label>
-          <div class="region-options" id="region-options"></div>
-        </div>
-      </details>
-    </section>
-
-    <!-- ============ 03 Screening depth (Advanced options only) ======== -->
-    <section class="card adv-only" id="depth-card">
-      <div class="step-head">
-        <span class="step-title">Screening depth</span>
+      <div class="settings-section" id="region-card">
+        <div class="settings-title">Regulatory jurisdiction</div>
+        <details class="region-picker" id="region-picker">
+          <summary id="region-summary">All jurisdictions</summary>
+          <div class="region-menu">
+            <label class="region-all">
+              <input type="checkbox" id="region-all" checked>
+              <span>All jurisdictions</span>
+            </label>
+            <div class="region-options" id="region-options"></div>
+          </div>
+        </details>
       </div>
-      <div class="preset-summary" id="preset-summary"></div>
-      <p class="legend">Choose a screening preset</p>
-      <div class="presets" id="presets"></div>
-      <label class="preset" id="custom-opt">
-        <input type="radio" name="preset" value="__custom__">
-        <span>
-          <span class="pl">Custom (raw config)</span>
-          <span class="pd">Enter <code>commec screen</code> configuration keys as
-            YAML. See the <a href="https://github.com/ibbis-bio/common-mechanism/wiki/Tutorial#using-yaml-to-configure-commec-screen"
-            target="_blank" rel="noopener">YAML configuration tutorial</a>.</span>
-        </span>
-      </label>
-      <textarea id="custom-config" spellcheck="false" hidden
-        placeholder="skip_nt_search: true&#10;blast_mt_mode: 0"></textarea>
+      <!-- Screening options remain controlled by the Advanced options toggle. -->
+      <div class="settings-section adv-only" id="depth-card">
+        <div class="settings-title">Screening options</div>
+        <div class="preset-summary" id="preset-summary"></div>
+        <p class="legend">Choose a screening preset</p>
+        <div class="presets" id="presets"></div>
+        <label class="preset" id="custom-opt">
+          <input type="radio" name="preset" value="__custom__">
+          <span>
+            <span class="pl">Custom (raw config)</span>
+            <span class="pd">Enter <code>commec screen</code> configuration keys as
+              YAML. See the <a href="https://github.com/ibbis-bio/common-mechanism/wiki/Tutorial#using-yaml-to-configure-commec-screen"
+              target="_blank" rel="noopener">YAML configuration tutorial</a>.</span>
+          </span>
+        </label>
+        <textarea id="custom-config" spellcheck="false" hidden
+          placeholder="skip_nt_search: true&#10;blast_mt_mode: 0"></textarea>
+      </div>
     </section>
 
     <!-- ============ Run (button + live progress) ============ -->
@@ -1194,6 +1201,8 @@ fetch("/config").then(r => r.json()).then(c => {
   presetsEl.innerHTML = PRESETS.map((p, i) => {
     const avail = isAvail(p);
     const sel = i === defaultIdx;
+    const description = p.description
+      ? `<span class="pd">${escapeHtml(p.description)}</span>` : "";
     const warn = (p.missing && p.missing.length)
       ? `<span class="pd warn">Unavailable here - missing databases: ${escapeHtml(p.missing.join(", "))}</span>`
       : "";
@@ -1202,6 +1211,7 @@ fetch("/config").then(r => r.json()).then(c => {
       <input type="radio" name="preset" value="${escapeHtml(p.id)}" ${sel ? "checked" : ""} ${avail ? "" : "disabled"}>
       <span>
         <span class="pl">${escapeHtml(p.label)}${recBadge(p)}</span>
+        ${description}
         ${warn}
       </span>
     </label>`;
