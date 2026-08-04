@@ -209,18 +209,6 @@
     text-transform: none; letter-spacing: 0;
   }
   .region-support a { color: var(--teal); }
-  .unsupported-badge {
-    --unsupported-accent: #b1310f;
-    margin-left: auto; flex: none; padding: 3px 7px;
-    color: var(--unsupported-accent);
-    background: color-mix(in srgb, var(--unsupported-accent) 10%, white);
-    border-radius: var(--badge-radius);
-    font: 700 10px var(--display); letter-spacing: .06em;
-  }
-  body.dark .unsupported-badge {
-    color: color-mix(in srgb, var(--unsupported-accent) 55%, white);
-    background: color-mix(in srgb, var(--unsupported-accent) 18%, var(--panel));
-  }
 
   /* upload dropzone (sketch) */
   .drop {
@@ -1124,18 +1112,16 @@ function renderRegions(regions) {
   const renderSection = (title, choices, supportPrompt = false) => choices.length ? `
     <div class="region-group-title">
       <span>${escapeHtml(title)}</span>
-      ${supportPrompt ? `<span class="region-support">Want better support for your country? <a href="https://github.com/ibbis-bio/common-mechanism/issues/new" target="_blank" rel="noopener">File an issue</a>.</span>` : ""}
+      ${supportPrompt ? `<span class="region-support">Don't see your country? <a href="https://github.com/ibbis-bio/common-mechanism/issues/new" target="_blank" rel="noopener">File an issue</a>.</span>` : ""}
     </div>
     ${choices.map(region => `
       <label class="region-option">
         <input type="checkbox" value="${escapeHtml(region.value || region.code)}">
         <span>${escapeHtml(regionLabel(region))}</span>
-        ${!region.group && !region.supported ? `<span class="unsupported-badge">UNSUPPORTED</span>` : ""}
       </label>`).join("")}` : "";
   regionOptions.innerHTML =
     renderSection("Region groups", REGION_CHOICES.filter(region => region.group))
-    + renderSection("Supported countries", REGION_CHOICES.filter(region => !region.group && region.supported))
-    + renderSection("Unsupported countries", REGION_CHOICES.filter(region => !region.group && !region.supported), true);
+    + renderSection("Supported countries", REGION_CHOICES.filter(region => !region.group), true);
   regionOptions.querySelectorAll("input").forEach(input => {
     input.addEventListener("change", () => {
       if (input.checked) regionAll.checked = false;

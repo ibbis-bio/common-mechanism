@@ -264,7 +264,7 @@ def _commec_db_paths():
 
 
 def _region_choices(include_single_country_groups=False):
-    """Available region groups and ISO countries, with data support metadata."""
+    """Available region groups and ISO countries supported by installed data."""
     control_lists = Path(_commec_db_paths()["control_lists"])
     definitions = control_lists / "region_definitions.json"
     try:
@@ -277,7 +277,7 @@ def _region_choices(include_single_country_groups=False):
     choices = []
     group_codes = set()
     memberships = {}
-    supported_countries = set()
+    country_codes = set()
     for group in groups:
         if not isinstance(group, dict):
             continue
@@ -291,7 +291,7 @@ def _region_choices(include_single_country_groups=False):
         if not code or not name:
             continue
         group_codes.add(code)
-        supported_countries.update(region_codes)
+        country_codes.update(region_codes)
         if region_codes and (len(region_codes) > 1 or include_single_country_groups):
             choices.append({"code": code, "name": name, "group": True})
             for region_code in region_codes:
@@ -308,15 +308,16 @@ def _region_choices(include_single_country_groups=False):
                 )
         except (OSError, csv.Error):
             continue
-    supported_countries.update(direct_region_codes - group_codes)
+    country_codes.update(direct_region_codes - group_codes)
 
     for country in sorted(pycountry.countries, key=lambda item: item.name):
+        if country.alpha_2 not in country_codes:
+            continue
         choice = {
             "code": country.alpha_2,
             "name": country.name,
             "group": False,
             "memberships": memberships.get(country.alpha_2, []),
-            "supported": country.alpha_2 in supported_countries,
         }
         if country.alpha_2 in group_codes:
             choice["value"] = country.alpha_3
