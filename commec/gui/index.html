@@ -317,8 +317,21 @@
   body.advanced .adv-only { display: block; }
 
   /* ---- Run bar --------------------------------------------------------- */
-  .runbar { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-  .run-inputs { color: var(--muted); font-size: 12.5px; text-align: center; min-height: 1em; }
+  .runbar {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center; row-gap: 10px;
+  }
+  .runbar button.run { grid-column: 2; }
+  .run-terminal {
+    grid-column: 3; justify-self: end;
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    color: var(--muted); font-size: 12px; user-select: none;
+  }
+  .run-terminal input { width: 15px; height: 15px; accent-color: var(--teal); }
+  .run-inputs {
+    grid-column: 1 / -1; color: var(--muted); font-size: 12.5px;
+    text-align: center; min-height: 1em;
+  }
   .run-inputs b { color: var(--heading); font-weight: 600; }
   button.run {
     background: var(--orange); color: #fff; border: none; border-radius: 8px;
@@ -520,7 +533,6 @@
         <button type="button" id="theme" class="hbtn">Dark</button>
         <button type="button" id="fs" class="hbtn">Fullscreen</button>
         <label class="hswitch"><input type="checkbox" id="adv-toggle"><span>Advanced options</span></label>
-        <label class="hswitch"><input type="checkbox" id="terminal-toggle"><span>Terminal</span></label>
       </div>
       <span class="queue" id="queue" title="Whether a screen is running on this server">
         <span class="dot"></span> Screener idle
@@ -653,6 +665,7 @@
     <section class="card" id="runpanel">
       <div class="runbar">
         <button type="submit" class="run" id="run" disabled>Run</button>
+        <label class="run-terminal"><input type="checkbox" id="terminal-toggle"><span>Terminal</span></label>
         <div class="run-inputs" id="input-summary"></div>
       </div>
       <div class="err-msg" id="errmsg"></div>
