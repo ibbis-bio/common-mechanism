@@ -32,10 +32,9 @@
     --ui: "Crimson Pro", Georgia, serif;
     --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
     --content-width: 1040px;
-    --card-width: 960px;
-    --radius: 10px;
+    --card-width: 880px;
     --badge-radius: 4px;
-    --shadow: 0 1px 2px rgba(35,42,88,.04), 0 6px 20px rgba(35,42,88,.05);
+    --section-rule: var(--navy);
   }
   /* Dark mode: re-point the neutral/surface tokens. Brand colors (navy header,
      teal, orange, ok-green) and the always-dark terminal log stay as-is. */
@@ -44,7 +43,7 @@
     --ink: #e6edf3; --muted: #97a3b4; --faint: #6b7686;
     --heading: #e6edf3; --field: #0d1117; --track: #2a3441;
     --hover: #1d2632; --tint: #16242e;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.4);
+    --section-rule: color-mix(in srgb, var(--navy) 55%, white);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -116,16 +115,20 @@
   .issue-link a { color: #cfe0ea; }
 
   .card {
-    background: var(--panel); border: 1px solid var(--line);
-    border-radius: var(--radius); box-shadow: var(--shadow);
-    padding: 22px 24px; margin-bottom: 18px;
+    position: relative; background: transparent; padding: 28px 0 24px; margin: 0;
   }
+  .card::before {
+    content: ""; position: absolute; top: 0; left: 0;
+    width: 100%; height: 1px; background: var(--section-rule);
+  }
+  .wrap > .card:first-child { padding-top: 0; }
+  .wrap > .card:first-child::before { display: none; }
   .step-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
   .step-no {
     font: 800 13px/1 var(--display); color: var(--orange);
     letter-spacing: .02em;
   }
-  .step-title { font: 700 16px/1 var(--display); color: var(--heading); }
+  .step-title { font: 800 19px/1 var(--display); color: var(--heading); }
   .step-sub { color: var(--muted); font-size: 13px; margin-left: auto; }
   .settings-section + .settings-section {
     border-top: 1px solid var(--line); margin-top: 20px; padding-top: 20px;
@@ -670,6 +673,9 @@
 
     <!-- ============ Run (button + live progress) ============ -->
     <section class="card" id="runpanel">
+      <div class="step-head">
+        <span class="step-title">Run</span>
+      </div>
       <div class="runbar">
         <button type="submit" class="run" id="run" disabled>Run</button>
         <label class="run-terminal"><input type="checkbox" id="terminal-toggle"><span>Terminal</span></label>
