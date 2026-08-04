@@ -169,7 +169,8 @@ def test_unsupported_country_is_rejected(tmp_path, client):
 
     assert response.status_code == 400
     assert response.get_json() == {
-        "error": "Unknown regulatory jurisdiction: AQ."
+        "error": "Unknown regulatory jurisdiction: AQ.",
+        "field": "settings",
     }
     assert list((tmp_path / "runs").iterdir()) == []
 
@@ -179,9 +180,57 @@ def test_unknown_region_is_rejected(tmp_path, client):
 
     assert response.status_code == 400
     assert response.get_json() == {
-        "error": "Unknown regulatory jurisdiction: NOT_A_REGION."
+        "error": "Unknown regulatory jurisdiction: NOT_A_REGION.",
+        "field": "settings",
     }
     assert list((tmp_path / "runs").iterdir()) == []
+
+
+def test_screen_errors_identify_their_gui_destination(client):
+    missing_label = _submit(client, label="")
+    assert missing_label.status_code == 400
+    assert missing_label.get_json()["field"] == "label"
+
+    missing_sequence = _submit(client, sequence_text="")
+    assert missing_sequence.status_code == 400
+    assert missing_sequence.get_json()["field"] == "sequence"
+
+    unknown_preset = _submit(client, preset="missing")
+    assert unknown_preset.status_code == 400
+    assert unknown_preset.get_json()["field"] == "settings"
+
+    started = _submit(client, label="first")
+    assert started.status_code == 200
+    busy = _submit(client, label="second")
+    assert busy.status_code == 409
+    assert busy.get_json()["field"] == "run"
+
+
+def test_oversized_upload_is_a_sequence_error(client, monkeypatch):
+    monkeypatch.setitem(server.app.config, "MAX_CONTENT_LENGTH", 1)
+
+    response = _submit(client)
+
+    assert response.status_code == 413
+    assert response.get_json() == {
+        "error": "Uploaded file is too large (max 200 MB).",
+        "field": "sequence",
+    }
+
+
+def test_duplicate_run_label_is_a_label_error(tmp_path, client):
+    retained = tmp_path / "runs" / "retained"
+    retained.mkdir()
+    (retained / "meta.json").write_text(
+        json.dumps({"label": "duplicate"}), encoding="utf-8"
+    )
+
+    duplicate = _submit(client, label="duplicate")
+    assert duplicate.status_code == 400
+    assert duplicate.get_json() == {
+        "error": "Can't accept run label: run label already chosen.",
+        "field": "label",
+    }
 
 
 def test_config_exposes_grouped_region_choices(client):
@@ -217,6 +266,27 @@ def test_config_exposes_grouped_region_choices(client):
     assert {
         region["code"] for region in regions if not region["group"]
     } == {"AU", "BR", "CA", "GB", "US"}
+
+
+def test_gui_has_card_specific_message_destinations(client):
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    for element_id in (
+        "run-label-error",
+        "sequence-error",
+        "settings-error",
+        "errmsg",
+        "results-message",
+    ):
+        assert f'id="{element_id}"' in html
+    assert "function showCardMessage(area, message, options = {})" in html
+    assert 'const area = messageAreas[body.field] ? body.field : "run";' in html
+    assert 'showCardMessage("results"' in html
+    assert 'showCardMessage("run"' in html
+    assert "function scrollToCard(card)" in html
+    assert "const offset = topbar.getBoundingClientRect().height + 12;" in html
 
 
 def test_gui_serves_bundled_report_font(client):

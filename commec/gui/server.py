@@ -63,7 +63,10 @@ app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
 
 @app.errorhandler(413)
 def _too_large(_e):
-    return jsonify({"error": "Uploaded file is too large (max 200 MB)."}), 413
+    return jsonify({
+        "error": "Uploaded file is too large (max 200 MB).",
+        "field": "sequence",
+    }), 413
 
 # ---------------------------------------------------------------------------
 # Config, populated from argparse in main(). Kept on the app for test access.
@@ -1191,25 +1194,32 @@ def _label_exists(label):
     return False
 
 
+def _screen_error(message, field, status=400):
+    """Return a screen-start error with its GUI destination."""
+    return jsonify({"error": message, "field": field}), status
+
+
 @app.route("/screen", methods=["POST"])
 def screen():
     preset_id = (request.form.get("preset") or "").strip()
     if preset_id == "__custom__":
         preset, err = _custom_preset(request.form.get("custom_config") or "")
         if err:
-            return jsonify({"error": err}), 400
+            return _screen_error(err, "settings")
     else:
         preset = _preset(preset_id)
         if preset is None:
-            return jsonify({"error": f"Unknown preset: {preset_id!r}"}), 400
+            return _screen_error(f"Unknown preset: {preset_id!r}", "settings")
 
     missing = _missing_databases(preset)
     if missing:
         labels = ", ".join(DB_LABELS.get(m, m) for m in missing)
-        return jsonify({"error":
+        return _screen_error(
             f"The '{preset['label']}' preset needs databases not installed on "
             f"this server: {labels}. Install them with `commec setup`, or pick "
-            f"a preset that doesn't require them."}), 400
+            f"a preset that doesn't require them.",
+            "settings",
+        )
 
     raw_regions = (request.form.get("regions") or "all").strip()
     if raw_regions.lower() == "all":
@@ -1225,26 +1235,31 @@ def screen():
         unknown_regions = [code for code in region_codes if code not in allowed_regions]
         if not region_codes or unknown_regions:
             detail = ", ".join(unknown_regions) or raw_regions
-            return jsonify({"error": f"Unknown regulatory jurisdiction: {detail}."}), 400
+            return _screen_error(
+                f"Unknown regulatory jurisdiction: {detail}.", "settings"
+            )
         regions = ",".join(region_codes)
 
     run_config = copy.deepcopy(preset["config"])
     databases_config = run_config.setdefault("databases", {})
     if not isinstance(databases_config, dict):
-        return jsonify({"error": "Preset databases config must be a mapping."}), 400
+        return _screen_error("Preset databases config must be a mapping.", "settings")
     control_list_config = databases_config.setdefault("control_lists", {})
     if not isinstance(control_list_config, dict):
-        return jsonify({"error": "Preset control-list config must be a mapping."}), 400
+        return _screen_error(
+            "Preset control-list config must be a mapping.", "settings"
+        )
     control_list_config["regions"] = regions
 
     # Required run label -> output-file prefix, sanitised to a filename-safe
     # token (timestamp fallback only if the label is all punctuation).
     label = (request.form.get("label") or "").strip()
     if not label:
-        return jsonify({"error": "A run label is required."}), 400
+        return _screen_error("A run label is required.", "label")
     if _label_exists(label):
-        return jsonify({"error":
-            "Can't accept run label: run label already chosen."}), 400
+        return _screen_error(
+            "Can't accept run label: run label already chosen.", "label"
+        )
     prefix = re.sub(r"[^A-Za-z0-9._-]+", "_", label).strip("._-")
     if not prefix:
         prefix = time.strftime("run-%Y%m%d-%H%M%S")
@@ -1263,8 +1278,11 @@ def screen():
     if text.strip():
         r = parse_pasted_sequences(text)
         if not r:
-            return jsonify({"error": "Couldn't find any sequences in the pasted "
-                "text. Paste FASTA, or spreadsheet rows with a sequence column."}), 400
+            return _screen_error(
+                "Couldn't find any sequences in the pasted text. Paste FASTA, "
+                "or spreadsheet rows with a sequence column.",
+                "sequence",
+            )
         records += r
         sources.append(f"{len(r)} pasted")
 
@@ -1272,9 +1290,11 @@ def screen():
     if f and f.filename:
         r = parse_pasted_sequences(f.read().decode("utf-8", errors="replace"))
         if not r:
-            return jsonify({"error": f"No sequences found in the uploaded file "
-                f"'{f.filename}' (expected FASTA, or CSV/TSV with a sequence "
-                "column)."}), 400
+            return _screen_error(
+                f"No sequences found in the uploaded file '{f.filename}' "
+                "(expected FASTA, or CSV/TSV with a sequence column).",
+                "sequence",
+            )
         records += r
         sources.append(f"{len(r)} from {f.filename}")
 
@@ -1289,9 +1309,11 @@ def screen():
                 request.form.get("spreadsheet_skip_first_row") == "1",
             )
         except (OSError, ValueError, xlrd.XLRDError, zipfile.BadZipFile) as exc:
-            return jsonify({"error": f"Could not read spreadsheet: {exc}"}), 400
+            return _screen_error(f"Could not read spreadsheet: {exc}", "sequence")
         if not r:
-            return jsonify({"error": "No sequences found in the selected spreadsheet column."}), 400
+            return _screen_error(
+                "No sequences found in the selected spreadsheet column.", "sequence"
+            )
         records += r
         sources.append(f"{len(r)} from {spreadsheet.filename}")
 
@@ -1302,21 +1324,28 @@ def screen():
         # to defeat symlink/.. escapes, matching /browse and /results/file.
         target = Path(picked).resolve()
         if not any(target == r or r in target.parents for r in _allowed_roots()):
-            return jsonify({"error": "That file is outside the allowed directory."}), 400
+            return _screen_error("That file is outside the allowed directory.", "sequence")
         if not target.is_file():
-            return jsonify({"error": f"FASTA path not found on server: {target}"}), 400
+            return _screen_error(
+                f"FASTA path not found on server: {target}", "sequence"
+            )
         try:
             r = _parse_fasta_text(target.read_text(encoding="utf-8"))
         except OSError as exc:
-            return jsonify({"error": f"Could not read {target}: {exc}"}), 400
+            return _screen_error(f"Could not read {target}: {exc}", "sequence")
         if not r:
-            return jsonify({"error": f"No FASTA records found in {target.name}."}), 400
+            return _screen_error(
+                f"No FASTA records found in {target.name}.", "sequence"
+            )
         records += r
         sources.append(f"{len(r)} from {target.name}")
 
     if not records:
-        return jsonify({"error": "No sequences to screen. Paste, upload, or pick "
-                                 "a file (you can combine them)."}), 400
+        return _screen_error(
+            "No sequences to screen. Paste, upload, or pick a file "
+            "(you can combine them).",
+            "sequence",
+        )
 
     note = []
     if len(sources) > 1:
@@ -1331,8 +1360,9 @@ def screen():
     with JOB_LOCK:
         busy = [j for j in JOBS.values() if not j["done"]]
         if busy:
-            return jsonify({"error": "A screen is already running. "
-                                     "Wait for it to finish."}), 409
+            return _screen_error(
+                "A screen is already running. Wait for it to finish.", "run", 409
+            )
 
         job_id = uuid.uuid4().hex[:12]
         rundir = CFG["runs_dir"] / job_id  # persistent: sequence + intermediates + results

@@ -170,6 +170,9 @@
     border-radius: 8px; padding: 12px 13px; font: var(--font-compact)/1.5 var(--mono);
   }
   input:focus, textarea:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(65,155,185,.14); }
+  .field-error, .card-message { color: var(--orange); margin-top: 8px; font-size: var(--font-compact); }
+  .field-error:empty, .card-message:empty { display: none; }
+  .card-message.info { color: var(--muted); }
   .field-foot { display: flex; align-items: center; gap: 14px; margin-top: 9px; font-size: var(--font-small); color: var(--faint); }
   .bp { font: 500 var(--font-small) var(--mono); color: var(--muted); }
   .bp b { color: var(--heading); }
@@ -326,7 +329,7 @@
   button.run:hover { filter: brightness(.94); }
   button.run:disabled { opacity: .45; cursor: not-allowed; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
-  .err-msg { color: var(--orange); margin-top: 12px; min-height: 18px; font-size: var(--font-compact); text-align: center; }
+  .err-msg { margin-top: 12px; text-align: center; }
 
   /* ---- Run / progress panel ------------------------------------------- */
   #resultcard { display: none; }
@@ -530,18 +533,20 @@
 
 <div class="wrap">
   <!-- Run label (names the output files) -->
-  <section class="card">
+  <section class="card" id="run-label-card">
     <div class="step-head">
       <span class="step-title">Run label</span>
     </div>
     <input type="text" id="run-label" placeholder="e.g. vendor-order-114"
-           autocomplete="off" maxlength="80" aria-label="Run label" required>
+           autocomplete="off" maxlength="80" aria-label="Run label"
+           aria-describedby="run-label-error" required>
+    <div class="field-error" id="run-label-error" role="alert"></div>
   </section>
 
   <form id="form">
 
     <!-- ============ 01 Sequence ============ -->
-    <section class="card">
+    <section class="card" id="sequence-card">
       <div class="step-head">
         <span class="step-title">Sequence</span>
       </div>
@@ -601,6 +606,7 @@
           <div class="sheet-preview" id="sheet-preview"></div>
         </div>
       </div>
+      <div class="card-message" id="sequence-error" role="alert"></div>
     </section>
 
     <!-- ============ 02 Settings ======================================= -->
@@ -639,6 +645,7 @@
         <textarea id="custom-config" spellcheck="false" hidden
           placeholder="skip_nt_search: true&#10;blast_mt_mode: 0"></textarea>
       </div>
+      <div class="card-message" id="settings-error" role="alert"></div>
     </section>
 
     <!-- ============ Run (button + live progress) ============ -->
@@ -651,7 +658,7 @@
         <label class="run-terminal"><input type="checkbox" id="terminal-toggle"><span>Terminal</span></label>
         <div class="run-inputs" id="input-summary"></div>
       </div>
-      <div class="err-msg" id="errmsg"></div>
+      <div class="card-message err-msg" id="errmsg" role="alert"></div>
 
       <!-- Activity bar (system CPU/RAM meters live in the header). -->
       <div class="progress-row">
@@ -679,6 +686,7 @@
       <button type="button" class="delall" id="delall" hidden>delete all</button>
     </div>
     <p class="retention-summary" id="retention-summary">Runs are currently kept forever.</p>
+    <div class="card-message" id="results-message" role="status"></div>
     <div class="adv-only">
       <div class="retention-control">
         <label for="retention-days">Keep completed runs for
@@ -722,6 +730,15 @@ const terminalToggle = document.getElementById("terminal-toggle");
 const copyLogBtn = document.getElementById("copy-log");
 const queueEl = document.getElementById("queue");
 const runLabel = document.getElementById("run-label");
+const runLabelError = document.getElementById("run-label-error");
+const runLabelCard = document.getElementById("run-label-card");
+const sequenceCard = document.getElementById("sequence-card");
+const sequenceError = document.getElementById("sequence-error");
+const settingsCard = document.getElementById("settings-card");
+const settingsError = document.getElementById("settings-error");
+const resultsCard = document.getElementById("recent");
+const resultsMessage = document.getElementById("results-message");
+const topbar = document.querySelector(".topbar");
 const stagesEl = document.getElementById("stages");
 
 /* ---- Stage progress bar (driven by commec's STEP log markers) -------- */
@@ -797,15 +814,48 @@ let terminalErrorJobId = null;
 let terminalDismissedJobId = null;
 
 /* ---- Advanced options master toggle (gates depth + advanced files) --- */
-(function () {
-  const on = localStorage.getItem("commec-adv") === "1";
+function setAdvancedOptions(on) {
   advToggle.checked = on;
   document.body.classList.toggle("advanced", on);
+  localStorage.setItem("commec-adv", on ? "1" : "0");
+}
+(function () {
+  setAdvancedOptions(localStorage.getItem("commec-adv") === "1");
   advToggle.addEventListener("change", () => {
-    document.body.classList.toggle("advanced", advToggle.checked);
-    localStorage.setItem("commec-adv", advToggle.checked ? "1" : "0");
+    setAdvancedOptions(advToggle.checked);
   });
 })();
+
+const messageAreas = {
+  label: { element: runLabelError, card: runLabelCard },
+  sequence: { element: sequenceError, card: sequenceCard },
+  settings: { element: settingsError, card: settingsCard },
+  run: { element: errEl, card: runPanel },
+  results: { element: resultsMessage, card: resultsCard },
+};
+
+function clearCardMessage(area) {
+  const target = messageAreas[area];
+  target.element.textContent = "";
+  target.element.classList.remove("info");
+}
+
+function scrollToCard(card) {
+  const offset = topbar.getBoundingClientRect().height + 12;
+  const top = window.scrollY + card.getBoundingClientRect().top - offset;
+  window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+}
+
+function showCardMessage(area, message, options = {}) {
+  const target = messageAreas[area] || messageAreas.run;
+  if (options.advanced) setAdvancedOptions(true);
+  target.element.textContent = message;
+  target.element.classList.toggle("info", options.info === true);
+  target.element.setAttribute("role", options.info === true ? "status" : "alert");
+  if (options.focus) options.focus.focus({ preventScroll: true });
+  if (options.scroll !== false)
+    requestAnimationFrame(() => scrollToCard(target.card));
+}
 
 /* ---- Terminal visibility: user preference plus temporary error-open -- */
 function updateTerminalVisibility() {
@@ -1179,10 +1229,16 @@ fetch("/config").then(r => r.json()).then(c => {
   }).join("");
   noPresetAvailable = defaultIdx < 0;
   if (noPresetAvailable) {
-    errEl.textContent = "No preset can run: required databases are not installed.";
+    showCardMessage(
+      "settings",
+      "No preset can run: required databases are not installed.",
+      { advanced: true },
+    );
   }
   refreshStatus();
-}).catch(() => { errEl.textContent = "Could not load presets."; });
+}).catch(() => {
+  showCardMessage("settings", "Could not load presets.", { advanced: true });
+});
 
 /* ---- Helpers --------------------------------------------------------- */
 function appendLog(line) {
@@ -1240,14 +1296,24 @@ function severityStyle(score, scoreMax) {
   return `--severity:${mixColor(from.color, to.color, amount)};`;
 }
 
+function showScreenStartError(body) {
+  const area = messageAreas[body.field] ? body.field : "run";
+  showCardMessage(area, body.error || "Failed to start.", {
+    advanced: area === "settings",
+    focus: area === "label" ? runLabel : null,
+  });
+  if (area === "label") runLabel.setAttribute("aria-invalid", "true");
+}
+
 /* ---- Submit (only the server-path tab is wired so far) --------------- */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  errEl.textContent = "";
+  ["label", "sequence", "settings", "run"].forEach(clearCardMessage);
+  runLabel.removeAttribute("aria-invalid");
 
   if (!runLabel.value.trim()) {
-    errEl.textContent = "Enter a run label.";
-    runLabel.focus();
+    runLabel.setAttribute("aria-invalid", "true");
+    showCardMessage("label", "Enter a run label.", { focus: runLabel });
     return;
   }
 
@@ -1265,7 +1331,12 @@ form.addEventListener("submit", async (e) => {
   const spreadsheetFile = spreadsheetInput.files[0];
   if (spreadsheetFile) {
     if (!spreadsheetPreview || sheetNucleotide.value === "") {
-      errEl.textContent = "Choose the spreadsheet sheet and nucleotide column first.";
+      tabsEl.querySelector('.tab[data-tab="spreadsheet"]').click();
+      showCardMessage(
+        "sequence",
+        "Choose the spreadsheet sheet and nucleotide column first.",
+        { focus: sheetNucleotide },
+      );
       return;
     }
     data.append("spreadsheet_file", spreadsheetFile);
@@ -1277,14 +1348,24 @@ form.addEventListener("submit", async (e) => {
   }
   if (selectedPath) { data.append("fasta_file", selectedPath); anyInput = true; }
   if (!anyInput) {
-    errEl.textContent = "Add sequences first: paste, upload, or pick a file (you can combine them).";
+    showCardMessage(
+      "sequence",
+      "Add sequences first: paste, upload, or pick a file (you can combine them).",
+    );
     return;
   }
   const preset = form.querySelector("input[name=preset]:checked");
   if (preset) data.append("preset", preset.value);
   if (preset && preset.value === "__custom__") {
     const cfg = customCfgEl.value.trim();
-    if (!cfg) { errEl.textContent = "Enter a custom config (YAML), or pick a preset."; return; }
+    if (!cfg) {
+      showCardMessage(
+        "settings",
+        "Enter a custom config (YAML), or pick a preset.",
+        { advanced: true, focus: customCfgEl },
+      );
+      return;
+    }
     data.append("custom_config", cfg);
   }
   data.append("label", runLabel.value.trim());
@@ -1299,7 +1380,7 @@ form.addEventListener("submit", async (e) => {
     const res = await fetch("/screen", { method: "POST", body: data });
     const body = await res.json();
     if (!res.ok) {
-      errEl.textContent = body.error || "Failed to start.";
+      showScreenStartError(body);
       mySubmitInFlight = false;
       refreshStatus();
       return;
@@ -1307,10 +1388,20 @@ form.addEventListener("submit", async (e) => {
     attach(body.job_id);
     clearInputs();   // a run started -> clear the form so it can't be resubmitted as-is
   } catch (err) {
-    errEl.textContent = "Request failed: " + err;
+    showCardMessage("run", "Request failed: " + err);
     mySubmitInFlight = false;
     refreshStatus();
   }
+});
+
+runLabel.addEventListener("input", () => {
+  if (!runLabel.value.trim()) return;
+  clearCardMessage("label");
+  runLabel.removeAttribute("aria-invalid");
+});
+["input", "change"].forEach(eventName => {
+  sequenceCard.addEventListener(eventName, () => clearCardMessage("sequence"));
+  settingsCard.addEventListener(eventName, () => clearCardMessage("settings"));
 });
 
 // Empty the input fields once a run has started (label, paste, upload, picked path).
@@ -1330,6 +1421,7 @@ function clearInputs() {
 // Results card fills in when the run ends.
 function attach(jobId) {
   if (streamingJobId === jobId) return;
+  clearCardMessage("run");
   streamingJobId = jobId;
   runPanelJobId = jobId;
   terminalErrorJobId = null;
@@ -1359,11 +1451,18 @@ function attach(jobId) {
     stopBtn.hidden = true;
     finishStages(d.status);
     if (d.status === "interrupted")
-      errEl.textContent = "Run stopped -- saved as Interrupted; resume it from Results.";
+      showCardMessage(
+        "run",
+        "Run stopped - saved as Interrupted; resume it from Results.",
+        { info: true },
+      );
     else if (d.status !== "done")
       // Surface a user-fixable error (e.g. duplicate names) plainly; fall back
       // to the generic "see the log" only when we don't recognise it.
-      errEl.textContent = d.error_hint || `Screen failed (exit ${d.returncode}) - see the log.`;
+      showCardMessage(
+        "run",
+        d.error_hint || `Screen failed (exit ${d.returncode}) - see the log.`,
+      );
     if (d.status === "error") openTerminalForError(jobId);
     showResults(jobId);
     refreshStatus();
@@ -1421,7 +1520,10 @@ async function loadRecent() {
       btn.addEventListener("click", (e) => { e.stopPropagation(); rerunRun(btn.dataset.id); }));
     recentList.querySelectorAll(".del").forEach(btn =>
       btn.addEventListener("click", (e) => { e.stopPropagation(); deleteRun(btn.dataset.id); }));
-  } catch (e) { /* ignore */ }
+  } catch (err) {
+    if (!resultsMessage.textContent)
+      showCardMessage("results", "Could not load saved runs.", { scroll: false });
+  }
 }
 
 // Stop the live run. The server kills it and finalizes it as Interrupted
@@ -1430,16 +1532,17 @@ async function stopRun() {
   if (!liveJobId) return;
   if (!confirm("Stop this run? It will be saved as Interrupted and can be "
              + "resumed (or deleted) from Results.")) return;
+  clearCardMessage("run");
   stopBtn.disabled = true; stopBtn.textContent = "Stopping...";
   try {
     const res = await fetch("/runs/" + liveJobId + "/stop", { method: "POST" });
     if (!res.ok) {
       const b = await res.json().catch(() => ({}));
-      errEl.textContent = b.error || "Couldn't stop the run.";
+      showCardMessage("run", b.error || "Couldn't stop the run.");
       stopBtn.disabled = false; stopBtn.textContent = "Stop";
     }
   } catch (err) {
-    errEl.textContent = "Stop failed: " + err;
+    showCardMessage("run", "Stop failed: " + err);
     stopBtn.disabled = false; stopBtn.textContent = "Stop";
   }
 }
@@ -1454,52 +1557,69 @@ async function rerunRun(id) {
   return restartSavedRun(id, "rerun");
 }
 async function restartSavedRun(id, action) {
-  errEl.textContent = "";
+  clearCardMessage("results");
   runBtn.disabled = true; runBtn.textContent = "Running...";
   mySubmitInFlight = true;
   try {
     const res = await fetch("/runs/" + id + "/" + action, { method: "POST" });
     const body = await res.json();
     if (!res.ok) {
-      errEl.textContent = body.error || `Couldn't ${action}.`;
+      showCardMessage("results", body.error || `Couldn't ${action}.`);
       mySubmitInFlight = false; refreshStatus(); loadRecent();
       return;
     }
     attach(body.job_id);
+    requestAnimationFrame(() => scrollToCard(runPanel));
     loadRecent();  // drop the now-live run from the recent list (no stale buttons)
   } catch (err) {
-    errEl.textContent = `${action === "resume" ? "Resume" : "Rerun"} failed: ` + err;
+    showCardMessage(
+      "results",
+      `${action === "resume" ? "Resume" : "Rerun"} failed: ` + err,
+    );
     mySubmitInFlight = false; refreshStatus();
   }
 }
 
 async function deleteRun(id) {
   if (!confirm("Delete this result? Its saved report and outputs are removed.")) return;
+  clearCardMessage("results");
   try {
     const res = await fetch("/runs/" + id, { method: "DELETE" });
     if (!res.ok) {
       // e.g. 409 while the run is still in progress -- don't pretend it's gone.
       const b = await res.json().catch(() => ({}));
-      errEl.textContent = b.error || "Couldn't delete that run.";
+      showCardMessage("results", b.error || "Couldn't delete that run.");
       loadRecent();
       return;
     }
     if (viewingJobId === id) { resultCard.style.display = "none"; viewingJobId = null; }
     loadRecent();
-  } catch (e) { /* ignore */ }
+  } catch (err) {
+    showCardMessage("results", "Delete failed: " + err);
+  }
 }
 
 async function deleteAllRuns() {
   if (!confirm("Delete ALL results? Every saved run and its outputs are "
              + "removed (a run still in progress is kept).")) return;
+  clearCardMessage("results");
   try {
     const res = await fetch("/runs", { method: "DELETE" });
     const b = await res.json().catch(() => ({}));
-    if (b && b.skipped) errEl.textContent = "Deleted all finished runs; the "
-      + "in-progress run was kept.";
+    if (!res.ok) {
+      showCardMessage("results", b.error || "Couldn't delete saved runs.");
+      return;
+    }
+    if (b && b.skipped) showCardMessage(
+      "results",
+      "Deleted all finished runs; the in-progress run was kept.",
+      { info: true },
+    );
     resultCard.style.display = "none"; viewingJobId = null;
     loadRecent();
-  } catch (e) { /* ignore */ }
+  } catch (err) {
+    showCardMessage("results", "Delete failed: " + err);
+  }
 }
 delallBtn.addEventListener("click", deleteAllRuns);
 
