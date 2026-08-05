@@ -27,6 +27,11 @@ __pypackages__/
 .venv
 venv/
 .conda
+.pixi/
+
+# Tool caches
+.ruff_cache/
+.pytest_cache/
 .vscode
 .pylintrc
 *:Zone.Identifier

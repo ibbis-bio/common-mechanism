@@ -7,7 +7,7 @@ package:
   version: "{{ version }}"
 
 source:
-  url: https://github.com/ibbis-screening/common-mechanism/archive/refs/tags/v{{version}}.tar.gz
+  url: https://github.com/ibbis-bio/common-mechanism/archive/refs/tags/v{{version}}.tar.gz
   sha256: {{ sha256 }}
 
 build:
@@ -26,35 +26,42 @@ requirements:
     - python >=3.10
     - pip
     - setuptools
+  # Keep in sync with environment.yaml, which is the authoritative dependency
+  # list for the project (pyproject.toml declares no dependencies of its own).
   run:
-    - python >=3.10
+    - python >=3.10,<3.14
     # Runtime Python dependencies
     - biopython
     - numpy
     - pandas
     - pyyaml
+    - pycountry
     # Runtime non-Python dependencies
-    - blast >=2.16
+    - blast >=2.17
     - hmmer
     - infernal
     - wget
     - yaml
+    # tar must support --zstd: `commec setup` shells out to it to extract the
+    # .tar.zst reference database archives.
     - tar
     - zstd
 
 test:
   commands:
+    - commec --version
     - commec screen --help
     - commec flag --help
-    - commec split --help
+    - commec setup --help
+    - commec list --help
 
 about:
-  home: https://github.com/ibbis-screening/common-mechanism
+  home: https://github.com/ibbis-bio/common-mechanism
   license: MIT
   license_family: MIT
-  doc_url: https://github.com/ibbis-screening/common-mechanism/wiki
+  doc_url: https://github.com/ibbis-bio/common-mechanism/wiki
   summary: "commec: a free, open-source, globally available tool for DNA sequence screening"
-  dev_url: https://github.com/ibbis-screening/common-mechanism
+  dev_url: https://github.com/ibbis-bio/common-mechanism
 
 extra:
   identifiers:

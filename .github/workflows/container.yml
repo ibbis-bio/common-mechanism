@@ -1,0 +1,123 @@
+name: Container
+
+# Builds the commec container image, runs the test suite and a binary smoke test
+# inside it, and publishes to GitHub Container Registry.
+#
+# Pull requests build and test only — no registry login, no push, so PRs from
+# forks (which have no packages:write token) work unchanged. Images are pushed
+# only for pushes to main and for v* tags.
+#
+# One-time manual step: after the first successful push, set the package's
+# visibility to Public under the repository's Packages settings, otherwise
+# `docker pull` requires authentication.
+#
+# The image is linux/amd64 only; see the architecture note in Containerfile.
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: container-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-test-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Derive image tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=pr
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # Built with load: true so the image is available to the local daemon for
+      # the test steps below. The runtime stage is a prefix of the test stage, so
+      # the push build later reuses these layers from the cache.
+      - name: Build test image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Containerfile
+          target: test
+          platforms: linux/amd64
+          load: true
+          tags: commec:test
+          build-args: |
+            COMMEC_VERSION=${{ steps.meta.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run test suite inside the image
+        run: docker run --rm commec:test pytest -vv
+
+      # The entrypoint is `commec`, so arguments are passed directly.
+      - name: Smoke test the commec CLI
+        run: |
+          set -euxo pipefail
+          docker run --rm --entrypoint commec commec:test --version
+          for subcommand in screen flag setup list; do
+            docker run --rm --entrypoint commec commec:test "$subcommand" --help > /dev/null
+          done
+
+      # commec shells out to each of these; a missing or non-executable binary
+      # would otherwise only surface at screening time. GNU tar must support
+      # --zstd because `commec setup` extracts .tar.zst database archives.
+      - name: Smoke test external binaries
+        run: |
+          docker run --rm --entrypoint bash commec:test -euxo pipefail -c '
+            blastn -version
+            blastx -version
+            blastdbcmd -version
+            hmmscan -h > /dev/null
+            cmscan -h > /dev/null
+            tar --zstd --help > /dev/null
+          '
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push runtime image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Containerfile
+          target: runtime
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            COMMEC_VERSION=${{ steps.meta.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

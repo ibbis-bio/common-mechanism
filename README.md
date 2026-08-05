@@ -39,6 +39,78 @@ commec screen -d /path/to/databases input.fasta
 
 See the [GitHub Wiki](https://github.com/ibbis-screening/common-mechanism/wiki) for full installation instructions.
 
+## Run with a container
+
+A container image with `commec` and all of its dependencies (BLAST+, HMMER, Infernal) is published
+to the GitHub Container Registry:
+
+```
+docker pull ghcr.io/ibbis-bio/common-mechanism:latest
+```
+
+The examples below use `docker`; `podman` accepts the same commands. The image entrypoint is
+`commec`, so sub-commands are passed straight through.
+
+**The reference databases are not included in the image.** They are tens of gigabytes, are
+versioned independently of the package, and are fetched by `commec setup`. Keep them on the host
+and bind-mount them.
+
+### Download the databases
+
+This writes tens of gigabytes to the host directory, which must be writable:
+
+```
+mkdir -p commec-databases
+docker run --rm \
+  -v "$PWD/commec-databases:/databases" \
+  ghcr.io/ibbis-bio/common-mechanism:latest \
+  setup -d /databases
+```
+
+### Screen a FASTA
+
+```
+docker run --rm \
+  -v "$PWD/commec-databases:/databases:ro" \
+  -v "$PWD:/data" \
+  ghcr.io/ibbis-bio/common-mechanism:latest \
+  screen -d /databases input.fasta
+```
+
+There are two mounts:
+
+* `/databases` — the reference databases, passed to `commec` with `-d`. A read-only mount is fine
+  for `screen`, but **not** for `setup`, and not if you set `auto_update_databases: true` in a
+  config file.
+* `/data` — the image's working directory. Input FASTA files are read from here and `.screen`,
+  `.json`, and report output is written back here.
+
+Instead of `-d`, you can supply a full config file with `-y /data/config.yaml`; the paths in
+`base_paths.default` must be absolute paths as seen from inside the container.
+
+### Notes
+
+* **File ownership.** The image runs as UID 1000. On Linux, add `--user "$(id -u):$(id -g)"` if
+  your host UID differs, so output files are owned by you.
+* **Threads.** Pass `screen --threads N` to use more cores, and constrain the container with
+  `--cpus N` to match.
+* **Interactive shell.** `docker run --rm -it --entrypoint bash ghcr.io/ibbis-bio/common-mechanism:latest`
+* **Architecture.** The image is `linux/amd64` only, because bioconda does not publish
+  `linux-aarch64` builds of BLAST+. It runs on Apple Silicon and other arm64 hosts under emulation,
+  which is noticeably slower.
+
+### Build the image locally
+
+```
+docker build --target runtime -t commec:local -f Containerfile .
+```
+
+The `test` target adds `pytest` and the source tree, and runs the test suite inside the image:
+
+```
+docker build --target test -t commec:test -f Containerfile .
+docker run --rm commec:test
+```
 
 ## Development
 The `commec` package is being actively developed by IBBIS staff. We welcome contributions! To get started, install conda, and make sure
