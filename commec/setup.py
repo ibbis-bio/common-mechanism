@@ -124,6 +124,9 @@ class CommecSetup:
         updaters = {}
         self.yaml_mode = False
         self.config = YamlIO.get_defaults()
+        # False if any part of this setup run failed. Callers (and `run()`, which turns this
+        # into a non-zero exit code) rely on it: a failed download must not look like success.
+        self.success = True
 
         # Derive databases directory / yaml outputs.abs
         if args.database_dir:
@@ -172,6 +175,7 @@ class CommecSetup:
                     '       "control_lists" : "1.0"\n'
                     "    }\n  }\n}"
                 )
+                self.success = False
                 return
         else:
             print(f"{STEP}Fetching latest commec database revision information ...")
@@ -181,6 +185,7 @@ class CommecSetup:
                 print(
                     f"{ERROR_CHECK} Could not fetch latest revisions. Check internet connection and try again."
                 )
+                self.success = False
                 return
 
             # For each database, create an updater.
@@ -193,6 +198,7 @@ class CommecSetup:
             print(
                 f"{ERROR_CHECK}An issue occured when fetching databases. Exiting now."
             )
+            self.success = False
             return
 
         for database_name, revision in databases.items():
@@ -235,8 +241,18 @@ class CommecSetup:
 
         # Perform the database updates, consider making this async.
         os.makedirs(working_directory, exist_ok=True)
+        failed = []
         for database_name, updater in updaters.items():
-            updater.perform_update()
+            if not updater.perform_update():
+                failed.append(database_name)
+
+        if failed:
+            self.success = False
+            print(
+                f"{ERROR_CHECK}The following databases were NOT updated: "
+                f"{', '.join(failed)}. See the errors above."
+            )
+            return
 
         # Create example config.yaml if we only passed a directory, and if one doens't already exist.
         if not self.yaml_mode:
@@ -409,9 +425,14 @@ class CommecDatabaseUpdater:
         self.update_required = False
         return
 
-    def perform_update(self):
+    def perform_update(self) -> bool:
+        """
+        Download and extract this database. Returns True on success (including when no
+        update was required), False if the download or extraction failed - callers must
+        not treat a failed update as a completed one.
+        """
         if not self.update_required:
-            return
+            return True
 
         os.makedirs(self.write_location, exist_ok=True)
 
@@ -433,7 +454,7 @@ class CommecDatabaseUpdater:
 
         if not download_success:
             print(f"{ERROR_CHECK}Failed to download {self.name} ... ")
-            return
+            return False
 
         # Extract the Database tar.
         # Stdlib tarfile only gained native zstd support ('r:zst') in
@@ -446,7 +467,7 @@ class CommecDatabaseUpdater:
         )
         if output.returncode > 0:
             print(f"{ERROR_CHECK}Error during Extraction: {output.stdout}")
-            return
+            return False
 
         # Remove the tar
         # os.remove(tar_write_location)
@@ -459,7 +480,7 @@ class CommecDatabaseUpdater:
         with open(manifest_write_location, mode="w", encoding="utf-8") as manifest_json:
             json.dump(manifest_data, manifest_json, indent=2)
 
-        return
+        return True
 
 
 def create_updaters_from_config(config: dict) -> dict[str, CommecDatabaseUpdater]:
@@ -824,7 +845,12 @@ def run(arguments):
     """Entry point for CommecSetup"""
     print(SPLASH_IMAGE)
     print(SPLASH_TEXT)
-    CommecSetup(arguments)
+    setup = CommecSetup(arguments)
+    # Exit non-zero when anything failed. Without this a failed download still ends on
+    # "Update check complete!" and exit 0, so automated callers (and CI) cannot tell a
+    # completed update from a broken one.
+    if not setup.success:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
