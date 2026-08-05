@@ -11,12 +11,14 @@ import importlib.resources
 import json
 import os
 import shutil
+import ssl
 import subprocess
 import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from urllib import error, request
+from urllib.parse import urlparse
 
 import yaml
 
@@ -114,6 +116,15 @@ def add_args(input_options: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="Point setup to a commec screen output json file to replicate the databases used for that run.",
     )
 
+    input_options.add_argument(
+        "--base-url",
+        dest="base_url",
+        default=R2_PUBLIC_BASE_URL,
+        help="Base URL to fetch the databases from, for anyone who needs to pull them"
+        f" from somewhere other than the default ({R2_PUBLIC_BASE_URL}), such as an"
+        " internal mirror. The host is expected to lay the databases out the same way.",
+    )
+
     return input_options
 
 
@@ -124,6 +135,7 @@ class CommecSetup:
         updaters = {}
         self.yaml_mode = False
         self.config = YamlIO.get_defaults()
+        self.base_url = getattr(args, "base_url", None) or R2_PUBLIC_BASE_URL
 
         # Derive databases directory / yaml outputs.abs
         if args.database_dir:
@@ -134,7 +146,7 @@ class CommecSetup:
                 self.config.get("base_paths").get("default")
             )
             self.yaml_mode = True
-            updaters = create_updaters_from_config(self.config)
+            updaters = create_updaters_from_config(self.config, self.base_url)
         else:
             print(
                 "{ERROR_CHECK}Neither database working directory, of configuration yaml provided. Exiting now."
@@ -175,7 +187,7 @@ class CommecSetup:
                 return
         else:
             print(f"{STEP}Fetching latest commec database revision information ...")
-            latest = fetch_latest_revisions()
+            latest = fetch_latest_revisions(self.base_url)
 
             if not latest:
                 print(
@@ -199,7 +211,7 @@ class CommecSetup:
             updater = updaters.get(database_name)
             if not updater:
                 download_location = os.path.join(working_directory, database_name)
-                updater = CommecDatabaseUpdater(download_location)
+                updater = CommecDatabaseUpdater(download_location, self.base_url)
                 updaters[database_name] = updater
                 if self.yaml_mode:
                     print(
@@ -307,13 +319,13 @@ def fetch_revisions_from_json(filename: str | os.PathLike) -> dict | None:
     return db_revisions
 
 
-def fetch_latest_revisions() -> dict | None:
+def fetch_latest_revisions(base_url: str = R2_PUBLIC_BASE_URL) -> dict | None:
     """
     A latest.json manifest exists at the root of the R2 bucket, listing
     the latest revision of each database. Downloads and parses it into a
     dict. Returns None if it could not be fetched or parsed.
     """
-    raw = fetch_r2_object("latest.json")
+    raw = fetch_r2_object("latest.json", base_url=base_url)
     if raw is None:
         return None
 
@@ -344,9 +356,12 @@ class CommecDatabaseUpdater:
     Handles fetching, writing, and version management.
     """
 
-    def __init__(self, existing_location: os.PathLike):
+    def __init__(
+        self, existing_location: os.PathLike, base_url: str = R2_PUBLIC_BASE_URL
+    ):
         self.name = None
         self.write_location = existing_location
+        self.base_url = base_url
         self.existing_revision = None
         try:
             self.name, self.existing_revision = read_manifest(existing_location)
@@ -429,7 +444,9 @@ class CommecDatabaseUpdater:
         tar_write_location = os.path.join(self.write_location, f"{self.name}.tar.zst")
 
         # Download tar from R2 self.fetch_location.
-        download_success = save_r2_object(tar_fetch_location, tar_write_location)
+        download_success = save_r2_object(
+            tar_fetch_location, tar_write_location, base_url=self.base_url
+        )
 
         if not download_success:
             print(f"{ERROR_CHECK}Failed to download {self.name} ... ")
@@ -462,7 +479,9 @@ class CommecDatabaseUpdater:
         return
 
 
-def create_updaters_from_config(config: dict) -> dict[str, CommecDatabaseUpdater]:
+def create_updaters_from_config(
+    config: dict, base_url: str = R2_PUBLIC_BASE_URL
+) -> dict[str, CommecDatabaseUpdater]:
     """
     Given a yaml config dict, create a named dict of updaters.
     """
@@ -472,7 +491,7 @@ def create_updaters_from_config(config: dict) -> dict[str, CommecDatabaseUpdater
         # databases don't. It is best to just detect suffix, and remove, as
         # checking on name would affect other databases too.
         fileless_path = remove_filename_from_path(database_info.get("path"))
-        updaters[database_name] = CommecDatabaseUpdater(fileless_path)
+        updaters[database_name] = CommecDatabaseUpdater(fileless_path, base_url)
         updaters[database_name].name = database_name
     return updaters
 
@@ -535,6 +554,45 @@ class DatabaseRevision:
         return f"{self.major}.{self.minor}"
 
 
+def connection_failure_notes(err: BaseException, url: str) -> str | None:
+    """
+    Return some notes to print alongside a failed download, or None if we have
+    nothing useful to add.
+
+    These are deliberately just pointers at what to check, not a diagnosis. A
+    certificate verification failure in particular has several plausible causes
+    that we can't tell apart from the client side, so the notes list them rather
+    than picking one.
+    """
+    # urllib wraps the underlying error as URLError.reason. An ssl.SSLError also
+    # has a .reason, but it's a string ("CERTIFICATE_VERIFY_FAILED"), so the
+    # exception itself has to be checked as well as what it wraps.
+    if not isinstance(err, ssl.SSLError) and not isinstance(
+        getattr(err, "reason", None), ssl.SSLError
+    ):
+        return None
+
+    host = urlparse(url).hostname or ""
+    return (
+        f"\n{C_F_GRAY}   Notes: this is a TLS/certificate failure rather than an HTTP\n"
+        "   error, so the connection did not get far enough to download anything.\n"
+        "   Possible causes, roughly in order of how often they turn up:\n"
+        "     - A proxy, firewall, or antivirus product on the network is inspecting\n"
+        "       HTTPS traffic and presenting its own certificate. If so, its root\n"
+        "       certificate needs to be trusted (see SSL_CERT_FILE below), or the\n"
+        "       host needs to be exempted from inspection.\n"
+        "     - The CA certificates available to Python are out of date or\n"
+        "       incomplete, which conda environments are especially prone to.\n"
+        "     - A genuine problem with the certificate being served.\n"
+        "   To see which certificate is actually arriving:\n"
+        f"     openssl s_client -connect {host}:443 -servername {host} </dev/null \\\n"
+        "       | openssl x509 -noout -issuer -subject -dates\n"
+        "   To point commec at a specific CA bundle:\n"
+        "     SSL_CERT_FILE=/path/to/ca-bundle.pem commec setup ...\n"
+        f"{C_RESET}"
+    )
+
+
 def fetch_r2_object(
     object_path: str,
     base_url: str = R2_PUBLIC_BASE_URL,
@@ -550,9 +608,9 @@ def fetch_r2_object(
     network failures up to `max_retries` times with a short backoff.
 
     `object_path` is the object's key/path within the bucket and is joined onto
-    `base_url`. `base_url` defaults to the public r2.dev endpoint but can
-    be swapped for a stable custom domain fronting the same bucket without
-    changing any calling code.
+    `base_url`. `base_url` defaults to the public custom domain fronting the
+    bucket, but can be swapped (via `commec setup --base-url`) for any host that
+    lays the databases out the same way, such as an internal mirror.
 
     Returns the raw bytes of the object, or None if every attempt failed.
     """
@@ -573,6 +631,11 @@ def fetch_r2_object(
                 break  # Client errors (404, 403, ...) won't succeed on retry.
         except error.URLError as e:
             print(f"{ERROR_CHECK}URL Error fetching {url}: {e.reason}")
+            # Only once the retries are spent, so it isn't repeated per attempt.
+            if attempt == max_retries:
+                notes = connection_failure_notes(e, url)
+                if notes:
+                    print(notes)
 
         if attempt < max_retries:
             time.sleep(retry_delay * attempt)
@@ -606,7 +669,7 @@ def save_r2_object(
     Returns True if the file was downloaded successfully (and verified,
     if a checksum was available), False otherwise.
     """
-    expected_sha256_raw = fetch_r2_object(f"{object_path}.sha256")
+    expected_sha256_raw = fetch_r2_object(f"{object_path}.sha256", base_url=base_url)
     expected_sha256 = None
     if expected_sha256_raw is None:
         print(f"{ERROR_CHECK}Could not fetch checksum for {object_path}")
@@ -659,6 +722,10 @@ def save_r2_object(
                 break  # Client errors (404, 403, ...) won't succeed on retry.
         except (error.URLError, OSError) as e:
             print(f"{ERROR_CHECK}Error fetching {url}: {e}")
+            if attempt == max_retries:
+                notes = connection_failure_notes(e, url)
+                if notes:
+                    print(notes)
 
         if attempt < max_retries:
             time.sleep(retry_delay * attempt)
