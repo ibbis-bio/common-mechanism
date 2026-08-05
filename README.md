@@ -27,6 +27,9 @@ The [GitHub Wiki](https://github.com/ibbis-screening/common-mechanism/wiki) has 
 
 More information about the Common Mechanism project is available on the [commec.ibbis.bio](https://commec.ibbis.bio/) and [IBBIS project page](https://ibbis.bio/common-mechanism/).
 
+## Google Colab Demo
+You can quickly see what `commec` is all about with our easy to use [google colab notebook](https://colab.research.google.com/github/ibbis-bio/common-mechanism/blob/main/notebooks/commec_colab_screen.ipynb). Simple click `Run all`, and paste in your fasta sequence, or upload a fasta file, and click run!
+
 ## Quick start
 `commec` and its package dependencies are installed via conda. The reference databases that support screening are downloaded and kept up to date with the `commec setup` command, which retrieves them from [databases.commec.io](https://databases.commec.io).
 
