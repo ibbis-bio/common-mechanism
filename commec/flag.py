@@ -238,8 +238,6 @@ def run(args: argparse.Namespace):
     output_dir = expand_and_normalize(args.output or os.path.dirname(search_dir))
     evalportal_format = args.evalportal_format
 
-    # The output directory is written to at the end of the run, so create it (and any missing
-    # parents) up front, rather than failing once all the screen files have been parsed.
     try:
         os.makedirs(output_dir, exist_ok=True)
     except OSError as e:
