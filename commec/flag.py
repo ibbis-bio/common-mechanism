@@ -9,7 +9,7 @@ positional arguments:
 options:
   -r, --recursive      show this help message and exit
   -o, --output OUTPUT_DIR
-                       path where output CSVs should be written
+                       path where output CSVs should be written, created if it does not exist
 
 The screen_pipline_status covers the status of the 4 screening steps, while flags.csv has just
 flag outcomes for various things that commec can flag, and flags_recommended just has an overall
@@ -25,7 +25,7 @@ import pandas as pd
 
 from commec.config.json_io import IoVersionError, get_screen_data_from_json
 from commec.config.result import Rationale, ScreenResult, ScreenStatus, ScreenStep
-from commec.utils.file_utils import directory_arg
+from commec.utils.file_utils import directory_arg, expand_and_normalize
 
 DESCRIPTION = (
     "Parse all .screen, or .json files in a directory and create CSVs of flags raised"
@@ -52,9 +52,9 @@ def add_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "-o",
         "--output",
-        type=directory_arg,
         default=None,
-        help="Output directory name (defaults to directory if not provided)",
+        help="Output directory name, created if it does not exist"
+        " (defaults to directory if not provided)",
     )
     parser.add_argument(
         "-e",
@@ -235,8 +235,15 @@ def run(args: argparse.Namespace):
     """
     search_dir = args.directory
     search_recursive = args.recursive
-    output_dir = args.output or os.path.dirname(search_dir)
+    output_dir = expand_and_normalize(args.output or os.path.dirname(search_dir))
     evalportal_format = args.evalportal_format
+
+    try:
+        os.makedirs(output_dir, exist_ok=True)
+    except OSError as e:
+        raise NotADirectoryError(
+            f"Could not create output directory: {output_dir} ({e})"
+        ) from e
 
     search_pattern = "**/*.json" if search_recursive else "*.json"
     screen_paths = glob.glob(
