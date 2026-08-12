@@ -119,10 +119,12 @@ def _long_header_xlsx_file():
     book = openpyxl.Workbook()
     sheet = book.active
     sheet.title = "Long header"
-    sheet.append([
-        "Sample identifier header with spaces and over forty one characters",
-        "Nucleotide sequence header with spaces and over forty one characters",
-    ])
+    sheet.append(
+        [
+            "Sample identifier header with spaces and over forty one characters",
+            "Nucleotide sequence header with spaces and over forty one characters",
+        ]
+    )
     sheet.append(["sample_001", "ACGT" * 25])
     data = BytesIO()
     book.save(data)
@@ -266,9 +268,13 @@ def test_config_exposes_grouped_region_choices(client):
         "group": False,
         "memberships": [],
     } in regions
-    assert {
-        region["code"] for region in regions if not region["group"]
-    } == {"AU", "BR", "CA", "GB", "US"}
+    assert {region["code"] for region in regions if not region["group"]} == {
+        "AU",
+        "BR",
+        "CA",
+        "GB",
+        "US",
+    }
 
 
 def test_gui_has_card_specific_message_destinations(client):
@@ -298,14 +304,14 @@ def test_gui_places_large_query_status_below_logo(client):
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     brand_start = html.index('<div class="brand">')
-    brand = html[brand_start:html.index('</div>', brand_start)]
+    brand = html[brand_start : html.index("</div>", brand_start)]
     assert 'id="queue"' in brand
     assert 'class="queue-text"' in brand
     assert "margin: 0 0 0 8px" in html
     assert "width: 12px; height: 12px" in html
     assert "font: 700 var(--font-base)/1.2 var(--ui)" in html
     assert "s.active.query_count" in html
-    assert '`Screening: ${label}${queries}`' in html
+    assert "`Screening: ${label}${queries}`" in html
 
 
 def test_gui_serves_bundled_report_font(client):
@@ -330,13 +336,22 @@ def test_xlsx_preview_lists_sheets_and_rows(client):
     assert body["rows"][1][:2] == ["alpha", "ACGTACGTACGT"]
 
 
-@pytest.mark.parametrize("filename,contents,sheet", [
-    ("samples.xlsx", _xlsx_file, "Samples"),
-    ("legacy.xls", _xls_file, "Legacy"),
-    ("samples.csv", lambda: BytesIO(b"name,sequence\ncsv,CCCCAAAATTTT\n"), "Data"),
-    ("samples.tsv", lambda: BytesIO(b"name\tsequence\ntsv\tAAAACCCCGGGG\n"), "Data"),
-])
-def test_tabular_upload_maps_selected_columns(tmp_path, client, filename, contents, sheet):
+@pytest.mark.parametrize(
+    "filename,contents,sheet",
+    [
+        ("samples.xlsx", _xlsx_file, "Samples"),
+        ("legacy.xls", _xls_file, "Legacy"),
+        ("samples.csv", lambda: BytesIO(b"name,sequence\ncsv,CCCCAAAATTTT\n"), "Data"),
+        (
+            "samples.tsv",
+            lambda: BytesIO(b"name\tsequence\ntsv\tAAAACCCCGGGG\n"),
+            "Data",
+        ),
+    ],
+)
+def test_tabular_upload_maps_selected_columns(
+    tmp_path, client, filename, contents, sheet
+):
     response = _submit(
         client,
         sequence_text="",
@@ -398,9 +413,13 @@ def test_long_spreadsheet_preview_is_capped_but_all_rows_are_imported(client, tm
     assert fasta.count(">sample_") == 100
 
 
-def test_spreadsheet_header_is_passed_when_skip_first_row_is_not_selected(client, tmp_path):
+def test_spreadsheet_header_is_passed_when_skip_first_row_is_not_selected(
+    client, tmp_path
+):
     header_name = "Sample identifier header with spaces and over forty one characters"
-    header_sequence = "Nucleotide sequence header with spaces and over forty one characters"
+    header_sequence = (
+        "Nucleotide sequence header with spaces and over forty one characters"
+    )
     assert len(header_sequence) > 41
 
     response = _submit(

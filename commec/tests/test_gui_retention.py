@@ -7,7 +7,6 @@ import pytest
 
 from commec.gui import server
 
-
 NOW = 2_000_000_000
 DAY = 86400
 
@@ -30,12 +29,14 @@ def _run_dir(runs_dir, name, status, finished):
     path = runs_dir / name
     path.mkdir()
     (path / "meta.json").write_text(
-        json.dumps({
-            "id": name,
-            "label": name,
-            "status": status,
-            "finished": finished,
-        }),
+        json.dumps(
+            {
+                "id": name,
+                "label": name,
+                "status": status,
+                "finished": finished,
+            }
+        ),
         encoding="utf-8",
     )
     return path
@@ -63,9 +64,7 @@ def test_retention_setting_is_persisted_and_exposed(client):
     assert client.get("/config").get_json()["retention_days"] == 30
 
 
-def test_setting_retention_immediately_deletes_only_expired_runs(
-    client, monkeypatch
-):
+def test_setting_retention_immediately_deletes_only_expired_runs(client, monkeypatch):
     runs_dir = server.CFG["runs_dir"]
     expired = _run_dir(runs_dir, "expired", "done", NOW - 31 * DAY)
     retained = _run_dir(runs_dir, "retained", "error", NOW - 29 * DAY)

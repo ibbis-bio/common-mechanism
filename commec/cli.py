@@ -34,8 +34,16 @@ from commec.flag import (
 from commec.flag import (
     run as flag_run,
 )
+from commec.gui.server import (
+    DESCRIPTION as gui_DESCRIPTION,
+)
+from commec.gui.server import (
+    add_args as gui_add_args,
+)
+from commec.gui.server import (
+    run as gui_run,
+)
 from commec.screen import (
-    ScreenArgumentParser,
     DESCRIPTION as screen_DESCRIPTION,
 )
 from commec.screen import (
@@ -56,11 +64,7 @@ from commec.setup import (
 from commec.setup import (
     run as setup_run,
 )
-from commec.gui.server import (
-    DESCRIPTION as gui_DESCRIPTION,
-    add_args as gui_add_args,
-    run as gui_run,
-)
+
 
 def main():
     """
