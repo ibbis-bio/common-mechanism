@@ -92,13 +92,17 @@ Then we get the unique list of taxids, and calculate the "parent of all parents"
 
 We now check if there were any regulated hits, and exist early if there are none.
 
-We now go through the remaining DataFrame hits at the per-Query level. (Which makes any subsequent operations on the whole dataframe cheaper)
+We now go through the remaining DataFrame hits at the per-Query level. (Which makes the following operations on the query specific part of the dataframe cheaper)
 
-For each query, we get the top hits. First the dataframe coordinates are updated such that q. start is always smaller than q. end. (i.e. reverse hits are simply restored with the start and end points swapped). Then we sort the dataframe such that regulated hits are first, and then by percent identity, and bit score.
+For each query, we get the top hits. First the dataframe coordinates are updated such that q. start is always smaller than q. end. (i.e. reverse hits are simply restored with the start and end points swapped). Then we sort the dataframe such that regulated hits are first, and then by percent identity, and bit score. After sorting, the top ranked hits based on "% identity" are kept so long as they have no overlaps with another hit.
+We then sort the remaining "top hits" by "% identity" before iteratively trimming the edges of the hits, which alters that start and end points of each hit that is weaker than an overlapping stronger hit to match the start and end points. (This step is important later for when we check for mixed results)
+Finally, all hits are filtered based on being > 50 bps.
 
-Then the remaining hits are iterated over by unique control list cluster, each unique cluster can have 1 or more "hits" associated with it. Each set of clustered data is then used to generate a single HitResult object.
+> Note: _trim_overlapping() form blast_tools has some old code, and should be revisted.
 
-We use the parent taxid (the cluster hash) as the name for the HitResult object.
+Then the remaining hits are iterated over by unique control list cluster, each unique cluster can have 1 or more "hits" associated with it. Each set of clustered data is always used to generate a single HitResult object.
+
+We use the parent taxid (the control cluster hash) as the name for the HitResult object.
 
 Any duplicate "Subject title" entries are removed, these are rare, but are always useless duplicates. More of an issue when we matched against the full nr database.
 
@@ -121,9 +125,62 @@ Finally, cached logs are output at the per query level, separated from the logic
 
 The best match search uses exactly the same logic as above, however there are some important differences in the input data, which will be the focus on this section.
 
-Like the previous steps, all external calls is performed by a search handler, which in this instance called Blastn. The cli arguments of which are of course stored in the search handlers run function, and some of which will be updated via cli/config options.
+Like the previous steps, all external calls is performed by a search handler, which in this instance calls Blastn. The cli arguments of which are of course stored in the search handlers run function, and some of which will be updated via cli/config options.
 
+Importantly, before Blastn can be called, we need to detect non-coding regions for each query. The nucleotide best match step is **only** run on regions of the sequence that have no protein best match hit. Importantly, the threshold is based on "% identity" and all of the raw blastx data is used to find **any** hit that meets the threshold (NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD in constants, currently 80 %). This is unrelated to any of the hit matching or filtering of the protein best match step.
 
+It is therefore possible for a weaker hit to be present in the best match protein output, but not be strong enough to prevent nucleotide best match hits from overlapping with it. This is by design to be redundant rather than over-sure.
+
+The non-coding regions are calculated as any region of the query sequence not covered by those protein hits which pass the % identity threshold, which also covers a total size of greater than 50 nucleotides. The non-coding region information is stored in the Query objects themselves, and are used to create a third .fasta file, the non-coding.fasta. Each region is labelled with an integer "_X" suffix. In much the same way that the 6 frame translations are encoded on the name of the query in the amino acid .fasta.
+
+Because of this, all blastn data at this step has to be prepared:
+* The query name is interrogated, and suffix _X gleamed to understand which non-coding region the hit is for.
+* The offset for that non-coding region is applied to all q. start and q. end coordinates, to represent the data in query sequence space, rather than non-coding sequence space.
+
+Apart from this initial setup, the following per query logic for handling hits is identical to the best match protein step as outlined above.
 
 ## Step 4 - Low Concern Search
+
+We now have a ScreenResult data structure, fill of Querys with 0 or many hits from the previous steps, however some of the hits may be "cleared" as low concern, if they overlap with known common parts. The low concern step consists of 3 tool calls: blastn, cmscan, and hmmer, Each checking for low concern dna, rna, and protein respectively.
+
+We start with an early exit if there are no hits that require clearing.
+Then each of the 3 screen searchers are run sequentially, hmmer, blastn, and then cmscan.
+We then read the low concern annotation csv, which contains a simple ID,Description column mapping. The 3 search handlers for each low concern step, as well as these descriptions, and the query info is used at the parse_low_concern_hits() entrypoint of check_low_concern.py.
+
+The protein data is read from the hmmer output via search handler. We then filter all results based on the low concern protein e-value cutoff, a constant (1e-20). The protein data is further modified to also contain the total query length. Which is also used to recalculate the protein AA coordinates into nucleotide coordinates.
+
+The RNA data is read from the cmscan handler, this is the only current cmscan use in commec. The data is simply read in via the search handler.
+
+The DNA data is read from the blastn handler.
+
+> Note: Currently no additional filtering is occuring for the RNA and DNA outputs, The DNA blastn is already somewhat filtered in outputs due to the search handlers blastn call cli arguments. But the CMSCAN output doesn't have this, and may require investigating whether it can output poorly matching hits.
+
+Each query is then interrogated, if there are not hits, the low concern step is skipped, and we move onto the next query,
+
+We create filtered copies of the input data to be processed at a per query level. We then iterate over every Hit in the query. If the hit is not FLAG or WARN, we ignore it.
+
+If the Hit is a Flag or Warn, we then interrogate each set of low concern data specific for that query:
+
+The protein data is trimmed to the region of the Hit. If there are no remaining data, we early exit. We calculate the coverage of the low concern data over the hit region in question. The coverage calculations contain both a coverage_nt (a raw count of how many nucleotides overlap) and a coverage_ratio (The percentage of overlap with the Hit region.)
+We further filter the protein hits based on having at least 50 (constant MINIMUM_PEPTIDE_COVERAGE) nucleotides in coverage.
+We then filter the protein hits based on having at least 80% (constant MINIMUM_QUERY_COVERAGE_FRACTION) coverage_ratio.
+
+We then use the top remaining hit to create a HitResult for the low concern hit. We also update the FLAG/WARN hit to be FLAG (Cleared) or WARN (Cleared).
+
+The RNA low concern data for the query is also trimmed to the hit region. The same coverage calculations also are done for coverage_nt and coverage ratio.  Only the coverage_nt is checked to be less than 50 (constant MINIMUM_RNA_BASEPAIR_COVERAGE). A HitResult for the low concern is created by the top entry in the remaining data, and the original hit status updated to be cleared.
+
+The DNA low concern data for the query is also trimmed to the region, and coverage calculated. Similar to RNA, only the ratio of coverage is checked against the constant MINIMUM_SYNBIO_COVERAGE_FRACTION. (Currently at 80%) The top remaining hit is then used to create a HitResult, and the original hit cleared.
+
+> Note, potentialy issues in that the output low concern data is never sorted() before grabbing the literal "top" hit. i.e. that hit at the 0th location in the remaining filtered dataframe. It is likely there is only 1 hit here anyway, but it may be prudent to perform a sort on e-value at these steps.
+
+At each of the previous steps, the resulting low concern hit results are returned. They are then added to a list to be added to the query data, and the total number of clears is compared against the total number of flagged / warn hit results.
+
+> Note: Much of this counting region / cleared_regions is redundant, and a hangover from when HitResults had multiple regions associated with them, as well as that this _was_ the place that you would clear the whole query, now the whole query will be automatically cleared because we overwrite the status with Flag (Cleared) rather than keeping the Flag status. Allowing the ScreenResult data to be updated at any time.
+
+If all regions have been cleared, we log this info, and update the Query screens status. We take the full list of new low concern hits, ensure it is fully of unique entries only, and then log the outcome and add the information to the screen result json output data.
+
 ## Step 5 - Conclude
+
+Now commec is completed, there is some minor tidy up. The complete time is logged, the output ScreenResult data object is updated(), which ensures that all the hits and their screen statuses propagate to the Querys status, and that all rationales are updated, so that the data is ready to be output to JSON. Some summary data is printed to the log, and the lifetime of the Screen class object expires.
+
+As the Screen object is deleted, the __del__ method is called. This calculates the time taken, and updates that field to the result data. It is then converted into a json, and output. If the screen was a success, the HTML report is also generated and output. This all occurs in the delete function as this can be called even under some exception circumstances during python shutdown, and allows us to get a JSON in partial amounts depending on what error has occured.
