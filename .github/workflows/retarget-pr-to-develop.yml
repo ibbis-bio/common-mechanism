@@ -9,11 +9,13 @@ permissions:
 
 jobs:
   retarget:
-    if: ${{ !startsWith(github.event.pull_request.head.ref, 'release_v') }}
+    if: >
+      !startsWith(github.event.pull_request.head.ref, 'release_v') &&
+      !startsWith(github.event.pull_request.head.ref, 'release-v') &&
+      github.event.pull_request.base.ref != 'develop'
     runs-on: ubuntu-latest
     steps:
       - name: Retarget base branch to develop
-        if: github.event.pull_request.base.ref != 'develop'
         uses: actions/github-script@v7
         with:
           script: |
