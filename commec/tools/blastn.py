@@ -6,11 +6,12 @@ Initialise with local input database, fasta to screen, and output file.
 Throws error if inputs are invalid. Creates a temporary log file, which is deleted on completion.
 """
 
-import os
 import glob
+import os
 import subprocess
+
 from commec.tools.blast_tools import BlastHandler
-from commec.tools.search_handler import SearchToolVersion, DatabaseValidationError
+from commec.tools.search_handler import DatabaseValidationError, SearchToolVersion
 
 
 class BlastNHandler(BlastHandler):

@@ -8,11 +8,13 @@ Usage:
 """
 
 import logging
+
 import pandas as pd
+
 from commec.config.query import Query
+from commec.config.result import ScreenStatus
 from commec.tools.blast_tools import get_high_identity_hits
 from commec.tools.search_handler import SearchHandler
-from commec.config.result import ScreenStatus
 
 logger = logging.getLogger(__name__)
 

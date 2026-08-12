@@ -1,6 +1,8 @@
-import os
 import argparse
+import os
 import textwrap
+
+import pytest
 
 from commec.flag import add_args, run
 
@@ -34,6 +36,34 @@ def test_flag(tmp_path):
     )
     actual_status = status_output.read_text()
     assert expected_status.strip() == actual_status.strip()
+
+
+@pytest.mark.parametrize("suffix", ["new_dir", "new/nested/dir", "new_dir/"])
+def test_flag_creates_missing_output_directory(tmp_path, suffix):
+    """An output directory passed to -o is created if it doesn't already exist."""
+    output_dir = tmp_path / suffix
+    assert not output_dir.exists()
+
+    parser = argparse.ArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([SCREEN_DIR, "-o", str(output_dir), "-r"])
+    run(args)
+
+    assert output_dir.is_dir()
+    assert (output_dir / "screen_pipeline_status.csv").exists()
+
+
+def test_flag_errors_if_output_directory_cannot_be_created(tmp_path):
+    """A clear error is raised when the output directory cannot be created."""
+    blocker = tmp_path / "not_a_dir"
+    blocker.write_text("")
+
+    parser = argparse.ArgumentParser()
+    add_args(parser)
+    args = parser.parse_args([SCREEN_DIR, "-o", str(blocker / "output"), "-r"])
+
+    with pytest.raises(NotADirectoryError):
+        run(args)
 
 
 def test_evalportal_format(tmp_path):

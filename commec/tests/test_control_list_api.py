@@ -3,8 +3,8 @@
 import json
 import os
 
-import pytest
 import pandas as pd
+import pytest
 
 import commec.control_list.list_data as ld
 import commec.control_list.region as region_module
@@ -20,7 +20,6 @@ from commec.control_list.control_list import (
     is_regulated,
 )
 from commec.control_list.initialisation import tidy_control_list_data
-
 
 # ---------------------------------------------------------------------------
 # Fixtures & Helpers

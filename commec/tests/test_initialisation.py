@@ -2,8 +2,8 @@
 
 import os
 
-import pytest
 import pandas as pd
+import pytest
 
 import commec.control_list.list_data as ld
 from commec.control_list.containers import (
@@ -18,7 +18,6 @@ from commec.control_list.initialisation import (
     tidy_control_list_data,
     update_regional_context,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures & Helpers

@@ -9,22 +9,21 @@ This abstracts the difficulty in dealing with external database files,
 as well as dealing with the various regulated annotations etc.
 """
 
-import os
-import math
 import json
+import math
+import os
 from dataclasses import asdict
 from unittest.mock import patch
 
 import pandas as pd
 
-from commec.screen import run, ScreenArgumentParser, add_args
-from commec.config.result import ScreenResult, ScreenStep
-from commec.config.json_io import get_screen_data_from_json
-
-from commec.control_list.region import Region
-from commec.control_list.containers import ControlList, ListMode
 import commec.control_list.list_data as ld
+from commec.config.json_io import get_screen_data_from_json
+from commec.config.result import ScreenResult, ScreenStep
+from commec.control_list.containers import ControlList, ListMode
 from commec.control_list.initialisation import tidy_control_list_data
+from commec.control_list.region import Region
+from commec.screen import ScreenArgumentParser, add_args, run
 
 
 def fake_full_coords(_protein_search_handler, queries):
