@@ -153,6 +153,11 @@ class CommecSetup:
         # Updaters dictionary, of {[name : UpdaterObject]}
         updaters = {}
         self.config = YamlIO.get_defaults()
+        # False if any part of this setup run failed. Callers (and `run()`, which turns this
+        # into a non-zero exit code) rely on it: a failed download must not look like success.
+        # Set before anything that can fail, so the attribute always exists.
+        self.success = True
+
         # The config named by -y, or None. A config sitting in the databases
         # directory is not read: -d names a directory of databases, and a file
         # found in one may describe another install, down to paths that would
@@ -228,11 +233,15 @@ class CommecSetup:
         if self.config_filepath:
             updaters = create_updaters_from_config(self.config, self.base_url)
 
-        # Ensure working_directory is a valid path (even if it doesn't exist yet)
+        # Ensure working_directory is a valid path (even if it doesn't exist yet).
+        # Nothing downloadable can land anywhere if the parent cannot be written,
+        # so this stops here rather than spending the transfer to fail later.
         if not check_directory_is_writable(working_directory):
             print(
                 f"{ERROR_CHECK}Failed to parse working directory: {working_directory}"
             )
+            self.success = False
+            return
 
         databases = None
         # Fetch latest.json from R2.abs
@@ -241,7 +250,11 @@ class CommecSetup:
                 print(
                     f"{ERROR_CHECK}Provided argument for import revisions from JSON file not a valid file: {args.restore_json}"
                 )
-                raise FileNotFoundError(args.restore_json)
+                # Reported the same one-line way as every other bad input here,
+                # rather than as a traceback: naming a file that isn't there is a
+                # user mistake, not a defect.
+                self.success = False
+                return
             print(
                 f"{STEP}A json database file was provided, fetching revision information..."
             )
@@ -258,6 +271,7 @@ class CommecSetup:
                     '       "control_lists" : "1.0"\n'
                     "    }\n  }\n}"
                 )
+                self.success = False
                 return
         else:
             print(f"{STEP}Fetching latest commec database revision information ...")
@@ -267,6 +281,7 @@ class CommecSetup:
                 print(
                     f"{ERROR_CHECK} Could not fetch latest revisions. Check internet connection and try again."
                 )
+                self.success = False
                 return
 
             # For each database, create an updater.
@@ -279,6 +294,7 @@ class CommecSetup:
             print(
                 f"{ERROR_CHECK}An issue occured when fetching databases. Exiting now."
             )
+            self.success = False
             return
 
         for database_name, revision in databases.items():
@@ -307,8 +323,14 @@ class CommecSetup:
         # Every directory that will actually be written to, not just the parent:
         # a config may place one database on another volume, and discovering at
         # extraction time that it cannot be written has already cost the download.
-        for directory in unwritable_download_directories(updaters):
+        # Stops the run, for the same reason the check is here at all: there is no
+        # point spending the transfer on a database that cannot be written.
+        unwritable = unwritable_download_directories(updaters)
+        for directory in unwritable:
             print(f"{ERROR_CHECK}Cannot write to database directory: {directory}")
+        if unwritable:
+            self.success = False
+            return
 
         updated_required = False
         # Each updater, reports on its status, does it need to update?
@@ -329,8 +351,23 @@ class CommecSetup:
 
         # Perform the database updates, consider making this async.
         os.makedirs(working_directory, exist_ok=True)
+        failed = []
         for database_name, updater in updaters.items():
-            updater.perform_update()
+            if not updater.perform_update():
+                failed.append(database_name)
+
+        if failed:
+            self.success = False
+            print(
+                f"{ERROR_CHECK}The following databases were NOT updated: "
+                f"{', '.join(failed)}. See the errors above."
+            )
+            # No config is written for a part-finished install, since it would
+            # record databases that aren't there. The base URL advice is still
+            # given: a run that set --base-url needs to hear how to make it stick
+            # whether or not every download succeeded.
+            self.advise_on_base_url()
+            return
 
         # A setup that brought its own config with -y already has one recording
         # this install, so nothing is written; otherwise write one, recording what
@@ -556,9 +593,14 @@ class CommecDatabaseUpdater:
         self.update_required = False
         return
 
-    def perform_update(self):
+    def perform_update(self) -> bool:
+        """
+        Download and extract this database. Returns True on success (including when no
+        update was required), False if the download or extraction failed - callers must
+        not treat a failed update as a completed one.
+        """
         if not self.update_required:
-            return
+            return True
 
         os.makedirs(self.write_location, exist_ok=True)
 
@@ -582,7 +624,7 @@ class CommecDatabaseUpdater:
 
         if not download_success:
             print(f"{ERROR_CHECK}Failed to download {self.name} ... ")
-            return
+            return False
 
         # Extract the Database tar.
         # Stdlib tarfile only gained native zstd support ('r:zst') in
@@ -595,7 +637,7 @@ class CommecDatabaseUpdater:
         )
         if output.returncode > 0:
             print(f"{ERROR_CHECK}Error during Extraction: {output.stdout}")
-            return
+            return False
 
         # Remove the tar
         # os.remove(tar_write_location)
@@ -608,7 +650,7 @@ class CommecDatabaseUpdater:
         with open(manifest_write_location, mode="w", encoding="utf-8") as manifest_json:
             json.dump(manifest_data, manifest_json, indent=2)
 
-        return
+        return True
 
 
 def create_updaters_from_config(
@@ -1147,7 +1189,12 @@ def run(arguments):
     """Entry point for CommecSetup"""
     print(SPLASH_IMAGE)
     print(SPLASH_TEXT)
-    CommecSetup(arguments)
+    setup = CommecSetup(arguments)
+    # Exit non-zero when anything failed. Without this a failed download still ends on
+    # "Update check complete!" and exit 0, so automated callers (and CI) cannot tell a
+    # completed update from a broken one.
+    if not setup.success:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

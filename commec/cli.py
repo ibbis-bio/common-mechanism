@@ -37,6 +37,15 @@ from commec.flag import (
 from commec.flag import (
     run as flag_run,
 )
+from commec.gui.server import (
+    DESCRIPTION as gui_DESCRIPTION,
+)
+from commec.gui.server import (
+    add_args as gui_add_args,
+)
+from commec.gui.server import (
+    run as gui_run,
+)
 from commec.screen import (
     DESCRIPTION as screen_DESCRIPTION,
 )
@@ -96,6 +105,10 @@ def main():
     list_parser = subparsers.add_parser("list", description=list_DESCRIPTION)
     list_add_args(list_parser)
 
+    # Sub-command for "gui"
+    gui_parser = subparsers.add_parser("gui", description=gui_DESCRIPTION)
+    gui_add_args(gui_parser)
+
     args = parser.parse_args()
 
     # A malformed or contradictory configuration is a user error, not a defect,
@@ -111,6 +124,8 @@ def main():
             setup_run(args)
         elif args.command == "list":
             list_run(args)
+        elif args.command == "gui":
+            gui_run(args)
         elif args.version:
             print(
                 "Commec  : The Common Mechanism\n"
