@@ -1,3 +1,7 @@
+# Where `commec setup` and automatic updates fetch databases from. Prefer an
+# https host: a download is checked against a .sha256 served from this same base
+# URL, which catches a corrupted transfer but not a host or network able to
+# substitute both files.
 base_url: https://databases.commec.io
 base_paths:
   default: null

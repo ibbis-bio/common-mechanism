@@ -208,8 +208,16 @@ class CommecSetup:
         # "was already there" from "appeared while this run was downloading" when
         # explaining a skipped write, since a download can take hours.
         self.config_present_at_start = os.path.exists(self.recording_config_path)
-        self.recorded_base_url = normalized_base_url(
-            self.config.get("base_url"), f"base_url in {self.recording_config_path}"
+        # What that config records, for comparing against the URL actually used.
+        # Only ever the config named with -y, since that is the only one this run
+        # reads: one sitting in the databases directory is left alone, so there is
+        # nothing to compare and nothing that can honestly be said about it.
+        self.recorded_base_url = (
+            normalized_base_url(
+                self.config.get("base_url"), f"base_url in {self.recording_config_path}"
+            )
+            if self.config_filepath
+            else None
         )
 
         # Resolved after the config is read, so a base_url recorded in it is
@@ -320,18 +328,6 @@ class CommecSetup:
                 )
                 updater.update_required = False
 
-        # Every directory that will actually be written to, not just the parent:
-        # a config may place one database on another volume, and discovering at
-        # extraction time that it cannot be written has already cost the download.
-        # Stops the run, for the same reason the check is here at all: there is no
-        # point spending the transfer on a database that cannot be written.
-        unwritable = unwritable_download_directories(updaters)
-        for directory in unwritable:
-            print(f"{ERROR_CHECK}Cannot write to database directory: {directory}")
-        if unwritable:
-            self.success = False
-            return
-
         updated_required = False
         # Each updater, reports on its status, does it need to update?
         print(f"{STEP}The following actions have been identified ...")
@@ -409,10 +405,6 @@ class CommecSetup:
                     "\n   keep updates coming from the same host, pass it back:"
                     f"\n     commec screen -y {self.recording_config_path} <input.fasta>"
                 )
-                # Only once a config has actually been written: it carries the
-                # resolved URL, so there is nothing left to advise about. When
-                # the write was skipped the advice still needs to be given.
-                self.recorded_base_url = self.base_url
 
         self.advise_on_base_url()
 
@@ -423,9 +415,17 @@ class CommecSetup:
         Point at the config that needs to record the base URL, when this run
         isn't the one writing that config.
 
+        Only the config named with -y, which is the only one this run has read.
+        A config sitting in the databases directory is deliberately left unread,
+        so what it records is unknown: it is noted in the log when it is passed
+        over, and warned about when it blocks a config being written, but it
+        cannot be reported on here without guessing at its contents.
+
         Shared by real and mock runs, so `-m/--mock` previews the same advice
         rather than leaving it to be discovered on the run that matters.
         """
+        if self.config_filepath is None:
+            return
         # No config yet means setup is about to write one, or would have on a
         # real run, and a config setup writes already carries the URL.
         if not os.path.isfile(self.recording_config_path):
@@ -763,34 +763,6 @@ def normalized_base_url(value, source: str) -> str | None:
         return YamlIO.validate_base_url(value, source)
     except ValueError:
         return None
-
-
-def unwritable_download_directories(
-    updaters: dict[str, "CommecDatabaseUpdater"],
-) -> list[str]:
-    """
-    Which of the directories about to be downloaded into cannot be written to.
-
-    Checked per database rather than only for the parent directory, since a config
-    may place one database on a separate volume. A download that only finds out at
-    extraction time has already spent the transfer.
-
-    Only databases actually being updated are checked: an install that is already
-    up to date writes nothing, so a directory it never touches being read-only is
-    not this run's problem.
-    """
-    unwritable = []
-    checked = set()
-    for updater in updaters.values():
-        if not updater.update_required:
-            continue
-        directory = str(updater.write_location)
-        if directory in checked:
-            continue
-        checked.add(directory)
-        if not check_directory_is_writable(directory):
-            unwritable.append(directory)
-    return unwritable
 
 
 def warn_base_url_not_recorded(

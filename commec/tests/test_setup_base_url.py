@@ -24,12 +24,10 @@ from commec.config.yaml_io import (
 )
 from commec.screen import add_args as screen_add_args
 from commec.setup import (
-    CommecDatabaseUpdater,
     CommecSetup,
     add_args,
     check_for_updates,
     resolve_base_url,
-    unwritable_download_directories,
 )
 
 DEFAULT = default_base_url()
@@ -126,11 +124,15 @@ def test_setup_uses_the_url_from_the_config_it_is_given(database_dir, capsys):
     assert "does not record the base URL" not in capsys.readouterr().out
 
 
-def test_setup_d_does_not_read_the_databases_directory_config(database_dir):
+def test_setup_d_does_not_read_the_databases_directory_config(database_dir, capsys):
     """`-d` names a directory of databases and nothing more. A config left there
     may describe a different install, down to paths in another directory, so it is
     not read: fetching from the wrong host is recoverable, downloading over
-    somebody else's databases is not."""
+    somebody else's databases is not.
+
+    Left unread, its contents are unknown, so nothing is said about what it does
+    or does not record -- a config that already names the mirror must not be
+    reported as failing to."""
     (database_dir / "config.yaml").write_text(yaml.safe_dump({"base_url": MIRROR}))
 
     with patch("commec.setup.fetch_latest_revisions", return_value=LATEST) as fetched:
@@ -138,6 +140,7 @@ def test_setup_d_does_not_read_the_databases_directory_config(database_dir):
 
     assert setup.base_url == DEFAULT
     fetched.assert_called_once_with(DEFAULT)
+    assert "does not record the base URL" not in capsys.readouterr().out
 
 
 def test_setup_d_is_not_blocked_by_a_broken_directory_config(database_dir):
@@ -236,26 +239,6 @@ def test_cli_reports_an_unusable_config_without_a_traceback(
 
     assert exit_info.value.code == 1
     assert f"Configuration error: {message}" in capsys.readouterr().err
-
-
-@pytest.mark.skipif(os.geteuid() == 0, reason="root ignores directory permissions")
-def test_unwritable_download_directories_checks_each_database(tmp_path):
-    """Checked per database, not just for the parent: a config may put one database
-    on another volume, and a multi-GB download that only finds out at extraction
-    time has already spent the transfer."""
-    readonly = tmp_path / "readonly"
-    readonly.mkdir()
-    readonly.chmod(0o500)
-    try:
-        updaters = {
-            "biorisk": CommecDatabaseUpdater(str(tmp_path / "dbs/biorisk"), DEFAULT),
-            "best_match": CommecDatabaseUpdater(str(readonly / "best_match"), DEFAULT),
-        }
-        assert unwritable_download_directories(updaters) == [
-            str(readonly / "best_match")
-        ]
-    finally:
-        readonly.chmod(0o700)
 
 
 def test_check_for_updates_uses_configured_base_url(database_dir):
