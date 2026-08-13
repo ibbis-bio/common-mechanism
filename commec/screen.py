@@ -330,7 +330,17 @@ class Screen:
         # Check for database updates.
         if self.params.config["auto_update_databases"]:
             logger.info("Checking for database updates ... ")
-            updates_required, updaters = check_for_updates(self.params.config)
+            try:
+                updates_required, updaters = check_for_updates(self.params.config)
+            except (ValueError, OSError, KeyError) as e:
+                # The databases needed to screen are already on disk, so a bad
+                # base_url or an unusable latest.json is not worth aborting for.
+                logger.warning(
+                    "Could not check for database updates, continuing with the"
+                    " databases already installed: %s",
+                    e,
+                )
+                updates_required, updaters = False, {}
             if updates_required:
                 names = [
                     updater.name

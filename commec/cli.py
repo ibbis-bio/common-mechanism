@@ -15,7 +15,10 @@ Command-line usage examples:
     - commec -v, --version
 """
 
+import sys
+
 from commec import __version__ as COMMEC_VERSION
+from commec.config.yaml_io import YamlIOValidationError
 from commec.control_list import (
     DESCRIPTION as list_DESCRIPTION,
 )
@@ -95,23 +98,31 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == "screen":
-        screen_run(args)
-    elif args.command == "flag":
-        flag_run(args)
-    elif args.command == "setup":
-        setup_run(args)
-    elif args.command == "list":
-        list_run(args)
-    elif args.version:
-        print(
-            "Commec  : The Common Mechanism\n"
-            f"Version : {COMMEC_VERSION}\n"
-            "Copyright IBBIS (c) 2021-2025\n"
-            "International Biosecurity and Biosafety Initiative for Science"
-        )
-    else:
-        parser.print_help()
+    # A malformed or contradictory configuration is a user error, not a defect,
+    # so it is reported as one line rather than a traceback. Every subcommand
+    # that reads a config raises this from somewhere different, so it is caught
+    # once here instead of in each of them.
+    try:
+        if args.command == "screen":
+            screen_run(args)
+        elif args.command == "flag":
+            flag_run(args)
+        elif args.command == "setup":
+            setup_run(args)
+        elif args.command == "list":
+            list_run(args)
+        elif args.version:
+            print(
+                "Commec  : The Common Mechanism\n"
+                f"Version : {COMMEC_VERSION}\n"
+                "Copyright IBBIS (c) 2021-2025\n"
+                "International Biosecurity and Biosafety Initiative for Science"
+            )
+        else:
+            parser.print_help()
+    except YamlIOValidationError as e:
+        print(f"Configuration error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

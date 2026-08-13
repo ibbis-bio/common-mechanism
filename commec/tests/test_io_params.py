@@ -16,6 +16,7 @@ DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs/")
 @pytest.fixture
 def expected_defaults():
     return {
+        "base_url": "https://databases.commec.io",
         "base_paths": {"default": "/commec-dbs/"},
         "databases": {
             "low_concern": {
@@ -64,6 +65,7 @@ def custom_yaml_config():
 @pytest.fixture
 def expected_updated_from_custom_yaml():
     return {
+        "base_url": "https://databases.commec.io",
         "base_paths": {"default": "/commec-dbs/"},
         "databases": {
             "low_concern": {
@@ -248,7 +250,9 @@ def test_missing_user_yaml_raises(tmp_path):
     args = parser.parse_args(
         [INPUT_QUERY, "--config", str(tmp_path / "does_not_exist.yaml")]
     )
-    with pytest.raises(FileNotFoundError, match="--config YAML not found"):
+    # A configuration error rather than a bare OSError, so the CLI reports it as
+    # one line instead of a traceback.
+    with pytest.raises(YamlIOValidationError, match="--config YAML not found"):
         ScreenIO(args)
 
 

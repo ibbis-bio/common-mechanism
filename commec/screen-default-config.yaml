@@ -1,3 +1,4 @@
+base_url: https://databases.commec.io
 base_paths:
   default: null
 databases:

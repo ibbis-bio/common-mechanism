@@ -46,5 +46,11 @@ DEPRECATED_CONFIG_KEYS = {
 
 # I/O
 DEFAULT_CONFIG_YAML_PATH = "screen-default-config.yaml"
+# Name of the config `commec setup` writes into a databases directory. It records
+# that install for the user to pass back with -y; neither setup nor screen reads
+# it automatically, since a file found in a databases directory may describe a
+# different install. Known here only so both commands can name it when it is
+# sitting there unused.
+SETUP_CONFIG_FILENAME = "config.yaml"
 MAXIMUM_FILENAME_SIZE = 255
 MAXIMUM_QUERY_NAME_LENGTH = 64
