@@ -1243,11 +1243,82 @@ fetch("/config").then(r => r.json()).then(c => {
 });
 
 /* ---- Helpers --------------------------------------------------------- */
-function appendLog(line) {
+/* The terminal pane is a tail, not an archive; the full log is on disk in the
+   run directory. Appending with `logEl.textContent +=` is quadratic, and on a
+   25k-sequence screen the stream outruns it until the tab dies. So: buffer
+   lines, flush once per frame, and trim with hysteresis. */
+const LOG_MAX_LINES = 5000;   // trim trigger
+const LOG_KEEP_LINES = 4000;  // trim target
+let logLines = [];
+let logPending = [];
+let logDropped = 0;
+let logFlushQueued = false;
+
+function logHeader() {
+  return logDropped
+    ? `[... ${logDropped.toLocaleString()} earlier lines trimmed; full log is in the run directory ...]\n`
+    : "";
+}
+
+function resetLog() {
+  logLines = []; logPending = []; logDropped = 0;
+  logEl.textContent = "";
+}
+
+function flushLog() {
+  logFlushQueued = false;
+  if (!logPending.length) return;
+  // Once per flush, before mutating: a scrollHeight read per line forces a reflow.
   const atBottom = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 4;
-  logEl.textContent += line + "\n";
-  copyLogBtn.disabled = false;
+  const chunk = logPending.join("\n") + "\n";
+  for (const line of logPending) logLines.push(line);
+  logPending = [];
+  if (logLines.length > LOG_MAX_LINES) {
+    logDropped += logLines.length - LOG_KEEP_LINES;
+    logLines = logLines.slice(-LOG_KEEP_LINES);
+    logEl.textContent = logHeader() + logLines.join("\n") + "\n";
+  } else {
+    logEl.appendChild(document.createTextNode(chunk));
+  }
   if (atBottom) logEl.scrollTop = logEl.scrollHeight;
+}
+
+/* Drawn in bounded chunks: one innerHTML write for all 25k rows is enough on
+   its own to exhaust the renderer. Order matches the source spreadsheet. */
+const QUERY_CHUNK = 500;
+
+function queryRowHtml(query) {
+  return `<div class="qrow">
+          ${screeningBadge(query.status)}
+          <span class="qn">${escapeHtml(query.name)}</span>
+          <span class="qr">${escapeHtml(query.rationale)}</span>
+        </div>`;
+}
+
+function renderQueryRows(queries) {
+  queriesEl.innerHTML = '<h3>Per-sequence results</h3><div class="qtable"></div>';
+  const table = queriesEl.querySelector(".qtable");
+  const more = document.createElement("button");
+  more.type = "button";
+  more.className = "btn";
+  let shown = 0;
+  const draw = () => {
+    const slice = queries.slice(shown, shown + QUERY_CHUNK);
+    table.insertAdjacentHTML("beforeend", slice.map(queryRowHtml).join(""));
+    shown += slice.length;
+    const left = queries.length - shown;
+    if (!left) { more.remove(); return; }
+    more.textContent = `Show ${Math.min(QUERY_CHUNK, left).toLocaleString()} more (${left.toLocaleString()} remaining)`;
+    queriesEl.appendChild(more);
+  };
+  more.addEventListener("click", draw);
+  draw();
+}
+
+function appendLog(line) {
+  logPending.push(line);
+  copyLogBtn.disabled = false;
+  if (!logFlushQueued) { logFlushQueued = true; requestAnimationFrame(flushLog); }
 }
 
 async function copyLog() {
@@ -1430,7 +1501,7 @@ function attach(jobId) {
   // Clear the separate Results card; it populates when this run finishes.
   resultCard.style.display = "none";
   summaryDiv.innerHTML = ""; reportEl.innerHTML = ""; filesEl.innerHTML = ""; queriesEl.innerHTML = ""; resultTitle.textContent = "Result";
-  logEl.textContent = "";
+  resetLog();
   copyLogBtn.disabled = true;
   copyLogBtn.textContent = "Copy log";
   runPanel.classList.add("active");
@@ -1439,9 +1510,10 @@ function attach(jobId) {
   stopBtn.hidden = false; stopBtn.disabled = false; stopBtn.textContent = "Stop";
   const es = new EventSource("/events/" + jobId);
   es.addEventListener("log", (e) => {
-    const line = JSON.parse(e.data).line;
-    appendLog(line);
-    parseStageLine(line);
+    for (const line of JSON.parse(e.data).lines) {
+      appendLog(line);
+      parseStageLine(line);
+    }
   });
   es.addEventListener("end", (e) => {
     const d = JSON.parse(e.data);
@@ -1808,16 +1880,7 @@ async function showResults(jobId) {
         `<div class="verdict">Overall ${screeningBadge(sm.overall)}`
         + `<span class="vc">${sm.n} quer${sm.n === 1 ? "y" : "ies"}</span></div>`;
       summaryDiv.style.display = "block";
-      let q = '<h3>Per-sequence results</h3><div class="qtable">';
-      for (const query of sm.queries) {
-        q += `<div class="qrow">
-          ${screeningBadge(query.status)}
-          <span class="qn">${escapeHtml(query.name)}</span>
-          <span class="qr">${escapeHtml(query.rationale)}</span>
-        </div>`;
-      }
-      q += '</div>';
-      queriesEl.innerHTML = q;
+      renderQueryRows(sm.queries);
     }
 
     const files = body.files || [];
