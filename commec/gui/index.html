@@ -1243,9 +1243,9 @@ fetch("/config").then(r => r.json()).then(c => {
 });
 
 /* ---- Helpers --------------------------------------------------------- */
-/* The terminal pane is a tail, not an archive; the full log is on disk in the
+/* The terminal pane is just the tail, the full log is on disk in the
    run directory. Appending with `logEl.textContent +=` is quadratic, and on a
-   25k-sequence screen the stream outruns it until the tab dies. So: buffer
+   large screen the stream outruns it until the tab dies. So: buffer
    lines, flush once per frame, and trim with hysteresis. */
 const LOG_MAX_LINES = 5000;   // trim trigger
 const LOG_KEEP_LINES = 4000;  // trim target
@@ -1283,7 +1283,7 @@ function flushLog() {
   if (atBottom) logEl.scrollTop = logEl.scrollHeight;
 }
 
-/* Drawn in bounded chunks: one innerHTML write for all 25k rows is enough on
+/* Drawn in bounded chunks: one innerHTML write for many rows is enough on
    its own to exhaust the renderer. Order matches the source spreadsheet. */
 const QUERY_CHUNK = 500;
 
