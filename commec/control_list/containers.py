@@ -206,12 +206,28 @@ class ControlList:
         else:
             self.display_name = self.name
 
+    def __repr__(self):
+        """
+        Shorthand acroynms for list comprehension. e.g:
+        AG_CCL, or IN_SCOMET.
+        Describes the region affect, the acronym, and the use in a single line.
+        For JSON and logging reporting purposes.
+        It also abbreviated the acronym if the region is in the acroynm:
+        USCCL becomes US_CCL instead of US_USCCL.
+        """
+        acronym = self.acronym
+        if self.acronym.startswith(self.region.acronym):
+            acronym = self.acronym[len(self.region.acronym):]
+        return f"{self.region.acronym}_{acronym}"
+
     def __str__(self):
         """
         Shorthand acroynms for list comprehension. e.g:
-        AG_CCL_EXPORT, or IN_SCOMET_EXPORT.
+        AG_CCL, or IN_SCOMET.
         Describes the region affect, the acronym, and the use in a single line.
         For JSON and logging reporting purposes.
+        It also abbreviated the acronym if the region is in the acroynm:
+        USCCL becomes US_CCL instead of US_USCCL.
         """
         return f"{self.region.acronym}_{self.acronym}_{self.use}"
 
