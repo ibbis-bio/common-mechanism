@@ -532,7 +532,7 @@ class CommecDatabaseUpdater:
             return False
 
         # Remove the tar
-        # os.remove(tar_write_location)
+        os.remove(tar_write_location)
 
         # Write updated local manifest.
         manifest_data = {
