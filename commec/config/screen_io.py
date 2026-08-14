@@ -187,8 +187,9 @@ class ScreenIO:
             logger.debug("Overriding defaults in with values from %s", cli_config_yaml)
             self.config = YamlIO.update_config_from_yaml(self.config, cli_config_yaml)
 
-        # A config `commec setup` left in the databases directory records that
-        # install, but it is not read here: screening against databases other than
+        # The example config `commec setup` leaves in the databases directory
+        # describes that install, but it is not read here: it is an example
+        # rewritten by every setup run, and screening against databases other than
         # the ones -d asked for is a worse outcome than losing a setting.
         if self.db_dir is not None:
             YamlIO.note_unread_directory_config(

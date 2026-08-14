@@ -1,8 +1,10 @@
 """
-Regression tests for the database download base URL, and for how `-d` and `-y`
-divide the work of saying where the databases are: that an unusable URL is
-rejected rather than crashing mid-download, and that a config is applied when it
-is named and left alone when it is merely sitting in a directory that was.
+Regression tests for the database download base URL, and for the example config
+`commec setup` writes into the databases directory: that an unusable URL is
+rejected rather than crashing mid-download, that the example config is rewritten
+by every run and records the host actually used, and that a config sitting in a
+databases directory is never read by the commands that were merely pointed at
+that directory.
 """
 
 import argparse
@@ -15,6 +17,7 @@ import yaml
 
 from commec.cli import ScreenArgumentParser
 from commec.cli import main as commec_main
+from commec.config.constants import SETUP_EXAMPLE_CONFIG_FILENAME
 from commec.config.screen_io import ScreenIO
 from commec.config.yaml_io import (
     YamlIOValidationError,
@@ -95,59 +98,80 @@ def test_base_url_is_not_treated_as_a_path():
         assert format_config_paths(config)["base_url"] == url
 
 
-def test_setup_records_base_url_in_written_config(database_dir):
-    """The config written by setup carries the URL the databases came from, at the
-    top of the file, so a later run given it with -y finds the same host."""
+def test_setup_writes_an_example_config_and_says_to_copy_it(database_dir, capsys):
+    """The config setup leaves behind describes this install: the databases
+    directory and the URL they came from, at the top of the file. Nothing in the
+    file says it is a copy to work from -- the run says so instead -- so the advice
+    is checked as printed output."""
     with patch("commec.setup.fetch_latest_revisions", return_value=LATEST) as fetched:
         CommecSetup(parse_setup_args(["-d", str(database_dir), "--base-url", MIRROR]))
 
     fetched.assert_called_once_with(MIRROR)
-    written = yaml.safe_load((database_dir / "config.yaml").read_text())
+    example_config = database_dir / SETUP_EXAMPLE_CONFIG_FILENAME
+    assert example_config.name == "example-config.yaml"
+
+    printed = capsys.readouterr().out
+    assert "Every setup run rewrites it" in printed
+    assert f"cp {example_config} my-config.yaml" in printed
+
+    written = yaml.safe_load(example_config.read_text())
     assert written["base_url"] == MIRROR
     assert next(iter(written)) == "base_url"
+    assert written["base_paths"]["default"] == str(database_dir.resolve())
 
 
-def test_setup_uses_the_url_from_the_config_it_is_given(database_dir, capsys):
-    """A config, once named, is where the host comes from, which is how a mirror
-    install keeps fetching from its mirror. A URL differing only by a trailing
-    slash counts as recorded, and must not be nagged about."""
-    config_path = database_dir / "config.yaml"
-    config_path.write_text(
-        f"base_url: {MIRROR}/\nbase_paths:\n  default: {database_dir}\n"
+def test_setup_rewrites_the_example_config_every_run(database_dir):
+    """Rewritten on an update run, and over a file already there, so it never
+    describes an install other than the one in this directory. The previous
+    behaviour -- refusing to overwrite -- left a stale config in place for as long
+    as the directory survived."""
+    example_config = database_dir / SETUP_EXAMPLE_CONFIG_FILENAME
+    example_config.write_text("base_url: https://stale.example.org\n")
+
+    with patch("commec.setup.fetch_latest_revisions", return_value=LATEST):
+        # Nothing to download: the fixture's database is already up to date, so
+        # this is the update-check run that used to write nothing at all.
+        CommecSetup(parse_setup_args(["-d", str(database_dir), "--base-url", MIRROR]))
+
+    assert yaml.safe_load(example_config.read_text())["base_url"] == MIRROR
+
+    with patch("commec.setup.fetch_latest_revisions", return_value=LATEST):
+        CommecSetup(parse_setup_args(["-d", str(database_dir)]))
+
+    assert yaml.safe_load(example_config.read_text())["base_url"] == DEFAULT
+
+
+def test_setup_mock_run_writes_nothing(database_dir):
+    """`-m/--mock` changes nothing on disk, the example config included, so it can
+    be used to preview an update against a directory in use."""
+    with patch("commec.setup.fetch_latest_revisions", return_value=LATEST):
+        CommecSetup(parse_setup_args(["-d", str(database_dir), "-m"]))
+
+    assert not (database_dir / SETUP_EXAMPLE_CONFIG_FILENAME).exists()
+
+
+def test_setup_does_not_read_the_databases_directory_config(database_dir):
+    """`-d` names a directory of databases and nothing more. The config left there
+    is an example for the user to copy, not an input: reading it back would let a
+    stale or hand-edited file redirect the next download."""
+    (database_dir / SETUP_EXAMPLE_CONFIG_FILENAME).write_text(
+        yaml.safe_dump({"base_url": MIRROR})
     )
-
-    with patch("commec.setup.fetch_latest_revisions", return_value=LATEST) as fetched:
-        setup = CommecSetup(parse_setup_args(["-y", str(config_path)]))
-
-    assert setup.base_url == MIRROR
-    fetched.assert_called_once_with(MIRROR)
-    assert "does not record the base URL" not in capsys.readouterr().out
-
-
-def test_setup_d_does_not_read_the_databases_directory_config(database_dir, capsys):
-    """`-d` names a directory of databases and nothing more. A config left there
-    may describe a different install, down to paths in another directory, so it is
-    not read: fetching from the wrong host is recoverable, downloading over
-    somebody else's databases is not.
-
-    Left unread, its contents are unknown, so nothing is said about what it does
-    or does not record -- a config that already names the mirror must not be
-    reported as failing to."""
-    (database_dir / "config.yaml").write_text(yaml.safe_dump({"base_url": MIRROR}))
 
     with patch("commec.setup.fetch_latest_revisions", return_value=LATEST) as fetched:
         setup = CommecSetup(parse_setup_args(["-d", str(database_dir)]))
 
     assert setup.base_url == DEFAULT
     fetched.assert_called_once_with(DEFAULT)
-    assert "does not record the base URL" not in capsys.readouterr().out
 
 
-def test_setup_d_is_not_blocked_by_a_broken_directory_config(database_dir):
+def test_setup_is_not_blocked_by_a_broken_directory_config(database_dir):
     """A stale, foreign, or unparseable config left in a databases directory must
     not stop a run that never asked for it. Refusing to update because of a file
     nobody pointed at is the failure this replaced."""
-    (database_dir / "config.yaml").write_text("base_paths:\n\tdefault: /x\n")
+    (database_dir / SETUP_EXAMPLE_CONFIG_FILENAME).write_text(
+        "base_paths:\n\tdefault: /x\n"
+    )
 
     with patch("commec.setup.fetch_latest_revisions", return_value=LATEST):
         setup = CommecSetup(parse_setup_args(["-d", str(database_dir), "-m"]))
@@ -155,11 +179,11 @@ def test_setup_d_is_not_blocked_by_a_broken_directory_config(database_dir):
     assert setup.base_url == DEFAULT
 
 
-def test_screen_d_does_not_read_the_databases_directory_config(database_dir):
+def test_screen_does_not_read_the_databases_directory_config(database_dir):
     """`commec screen -d dir` screens against the databases in the directory it was
-    given. A config found there may point at another directory entirely, so it is
-    not read, and cannot quietly turn settings on either."""
-    (database_dir / "config.yaml").write_text(
+    given. The example config found there is a reference copy, not settings: it
+    cannot quietly turn features on or point at another host."""
+    (database_dir / SETUP_EXAMPLE_CONFIG_FILENAME).write_text(
         yaml.safe_dump({"base_url": MIRROR, "auto_update_databases": True})
     )
 
@@ -172,45 +196,24 @@ def test_screen_d_does_not_read_the_databases_directory_config(database_dir):
     assert config["auto_update_databases"] is False
 
 
-def test_d_and_y_combine_with_d_winning_the_base_path(database_dir):
-    """The two flags are not mutually exclusive: the config says how the databases
-    are laid out, -d says which directory this machine keeps them in. A path the
-    config states outright is left alone, which is how a large database is kept on
-    a separate volume -- the one thing -y can express that -d cannot."""
-    elsewhere = database_dir / "bulk" / "nucleotide" / "nucl"
-    config_path = database_dir / "split.yaml"
-    config_path.write_text(
-        yaml.safe_dump(
-            {
-                "base_paths": {"default": str(database_dir / "unused")},
-                "databases": {"best_match": {"nucleotide": {"path": str(elsewhere)}}},
-            }
-        )
-    )
-
-    with patch("commec.setup.fetch_latest_revisions", return_value=LATEST):
-        config = CommecSetup(
-            parse_setup_args(["-d", str(database_dir), "-y", str(config_path), "-m"])
-        ).config
-
-    assert config["base_paths"]["default"] == os.path.join(str(database_dir), "")
-    assert config["databases"]["best_match"]["nucleotide"]["path"] == str(elsewhere)
-    assert config["databases"]["biorisk"]["path"] == str(
-        database_dir / "biorisk" / "biorisk.hmm"
-    )
-
-
-def test_setup_requires_a_destination(capsys):
-    """Neither flag leaves nowhere to download to, and no safe default to invent.
-    This path was unreachable while the two flags were mutually exclusive, and its
-    message was never formatted, so it is checked as rendered output."""
+def test_setup_requires_a_databases_directory(capsys):
+    """Setup downloads a fixed set of databases into one parent directory, and has
+    no safe default to invent for where that is, so -d is not optional."""
     with pytest.raises(SystemExit) as exit_info:
-        CommecSetup(parse_setup_args([]))
+        parse_setup_args([])
 
-    assert exit_info.value.code == 1
-    printed = capsys.readouterr().out
-    assert "Neither a databases directory" in printed
-    assert "{ERROR_CHECK}" not in printed
+    assert exit_info.value.code == 2
+    assert "-d/--databases" in capsys.readouterr().err
+
+
+def test_setup_does_not_take_a_config(database_dir, capsys):
+    """Setup no longer reads a config at all: it installs the packaged layout under
+    -d. A -y that was silently ignored would be worse than one that is rejected."""
+    with pytest.raises(SystemExit) as exit_info:
+        parse_setup_args(["-d", str(database_dir), "-y", "config.yaml"])
+
+    assert exit_info.value.code == 2
+    assert "unrecognized arguments: -y" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize(
@@ -224,16 +227,25 @@ def test_setup_requires_a_destination(capsys):
 def test_cli_reports_an_unusable_config_without_a_traceback(
     tmp_path, capsys, kind, message
 ):
-    """Every way a -y config can be unusable is a user error, so each exits with
-    one line rather than a traceback: a path that isn't there, one that cannot be
-    read, and one that will not parse."""
-    config_path = tmp_path / "config.yaml"
+    """Every way a -y config given to `screen` can be unusable is a user error, so
+    each exits with one line rather than a traceback: a path that isn't there, one
+    that cannot be read, and one that will not parse."""
+    config_path = tmp_path / "my-config.yaml"
     if kind == "directory":
         config_path.mkdir()
     elif kind == "unparseable":
         config_path.write_text("base_paths:\n\tdefault: /x\n")
 
-    with patch("sys.argv", ["commec", "setup", "-y", str(config_path), "-m"]):
+    argv = [
+        "commec",
+        "screen",
+        "-y",
+        str(config_path),
+        "-o",
+        str(tmp_path / "out"),
+        INPUT_QUERY,
+    ]
+    with patch("sys.argv", argv):
         with pytest.raises(SystemExit) as exit_info:
             commec_main()
 

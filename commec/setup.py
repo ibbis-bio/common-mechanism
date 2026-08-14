@@ -24,8 +24,7 @@ import yaml
 
 from commec import __version__ as VERSION
 from commec.config import yaml_io as YamlIO
-from commec.config.constants import DEFAULT_CONFIG_YAML_PATH, SETUP_CONFIG_FILENAME
-from commec.config.yaml_io import YamlIOValidationError
+from commec.config.constants import SETUP_EXAMPLE_CONFIG_FILENAME
 from commec.utils.file_utils import expand_and_normalize, remove_filename_from_path
 
 DESCRIPTION = """Helper script for downloading or updating the databases
@@ -75,27 +74,15 @@ def add_args(input_options: argparse.ArgumentParser) -> argparse.ArgumentParser:
     Add module arguments to an ArgumentParser object.
     """
 
-    # Deliberately not a mutually exclusive group: a config can describe the
-    # database layout while -d says which directory this machine keeps it in, so
-    # one config held in version control serves hosts that put their databases in
-    # different places. At least one of the two is still required, which argparse
-    # cannot express for "either or both", so CommecSetup checks it instead.
+    # The one thing setup must be told: a config cannot stand in for it, since
+    # setup downloads a fixed set of databases into one parent directory and
+    # there is no safe default yet for where that is.
     input_options.add_argument(
         "-d",
         "--databases",
         dest="database_dir",
-        default=None,
-        help="Path to a parent directory to download, or update, the Commec databases."
-        " Overrides base_paths.default in any --config YAML.",
-    )
-    input_options.add_argument(
-        "-y",
-        "--config",
-        dest="config_yaml",
-        default="",
-        help="Commec yaml configuration file describing where the databases live."
-        " Combine with -d to keep the parent directory out of the file. Cannot"
-        " change which databases are downloaded.",
+        required=True,
+        help="Path to a parent directory to download, or update, the Commec databases.",
     )
 
     # Optional
@@ -149,7 +136,6 @@ def _base_url_arg(value: str) -> str:
 
 class CommecSetup:
     def __init__(self, args):
-        working_directory = Path()
         # Updaters dictionary, of {[name : UpdaterObject]}
         updaters = {}
         self.config = YamlIO.get_defaults()
@@ -158,73 +144,21 @@ class CommecSetup:
         # Set before anything that can fail, so the attribute always exists.
         self.success = True
 
-        # The config named by -y, or None. A config sitting in the databases
-        # directory is not read: -d names a directory of databases, and a file
-        # found in one may describe another install, down to paths that would
-        # send this download somewhere else entirely.
-        self.config_filepath = None
+        working_directory = expand_and_normalize(args.database_dir)
 
-        # Neither flag leaves no destination to download to, and there is no safe
-        # default to invent for one.
-        if not args.database_dir and not args.config_yaml:
-            print(
-                f"{ERROR_CHECK}Neither a databases directory (-d/--databases) nor a"
-                " configuration yaml (-y/--config) was provided. Exiting now."
-            )
-            sys.exit(1)
-
-        if args.config_yaml:
-            self.config_filepath = args.config_yaml
-            # -d wins for the parent directory, so a config may leave
-            # base_paths.default unset and still be used on a machine that keeps
-            # its databases elsewhere. Paths the config states outright are left
-            # alone, which is how a database is kept on a separate volume.
-            self.config = read_config_yaml_for_database_setup(
-                args.config_yaml,
-                database_dir=(
-                    expand_and_normalize(args.database_dir)
-                    if args.database_dir
-                    else None
-                ),
-            )
-
-        if args.database_dir:
-            working_directory = expand_and_normalize(args.database_dir)
-            YamlIO.note_unread_directory_config(working_directory, self.config_filepath)
-        else:
-            working_directory = expand_and_normalize(
-                self.config.get("base_paths").get("default")
-            )
-
-        cli_base_url = getattr(args, "base_url", None)
-
-        # The config that records this install, and so has to carry the base URL
-        # for a later run given it with -y: the one named on the command line, or
-        # the one a first-time setup will write into the databases directory.
-        self.recording_config_path = self.config_filepath or os.path.join(
-            working_directory, SETUP_CONFIG_FILENAME
-        )
-        # Whether that file was there before this run started. Only for telling
-        # "was already there" from "appeared while this run was downloading" when
-        # explaining a skipped write, since a download can take hours.
-        self.config_present_at_start = os.path.exists(self.recording_config_path)
-        # What that config records, for comparing against the URL actually used.
-        # Only ever the config named with -y, since that is the only one this run
-        # reads: one sitting in the databases directory is left alone, so there is
-        # nothing to compare and nothing that can honestly be said about it.
-        self.recorded_base_url = (
-            normalized_base_url(
-                self.config.get("base_url"), f"base_url in {self.recording_config_path}"
-            )
-            if self.config_filepath
-            else None
+        # The example config this run writes into the databases directory. It is
+        # rewritten on every run, first install or update alike, so it always
+        # describes the databases that are actually there and the host they came
+        # from -- and so is never a file to edit in place.
+        self.example_config_path = os.path.join(
+            working_directory, SETUP_EXAMPLE_CONFIG_FILENAME
         )
 
-        # Resolved after the config is read, so a base_url recorded in it is
-        # picked up, and recorded back so any config written out carries it.
+        # Recorded into the config written below, so a copy of it fetches from the
+        # same host, including during automatic updates from `commec screen`.
         try:
             self.base_url = resolve_base_url(
-                cli_base_url, self.config, f"base_url in {self.recording_config_path}"
+                getattr(args, "base_url", None), self.config
             )
         except ValueError as e:
             print(f"{ERROR_CHECK}{e}")
@@ -237,9 +171,6 @@ class CommecSetup:
         print(f"{STEP}Fetching databases from {self.base_url}")
 
         dry_run = getattr(args, "dry_run", False)
-
-        if self.config_filepath:
-            updaters = create_updaters_from_config(self.config, self.base_url)
 
         # Ensure working_directory is a valid path (even if it doesn't exist yet).
         # Nothing downloadable can land anywhere if the parent cannot be written,
@@ -305,28 +236,15 @@ class CommecSetup:
             self.success = False
             return
 
+        # Every database goes under the directory `-d` named, in the layout the
+        # packaged default config describes, which is what makes the config
+        # written at the end of the run describe this install.
         for database_name, revision in databases.items():
-            updater = updaters.get(database_name)
-            if not updater:
-                download_location = os.path.join(working_directory, database_name)
-                updater = CommecDatabaseUpdater(download_location, self.base_url)
-                updaters[database_name] = updater
-                if self.config_filepath:
-                    print(
-                        f"{WARNING_CHECK}{database_name} not present in"
-                        f" {self.config_filepath}, it may be out of date."
-                    )
+            download_location = os.path.join(working_directory, database_name)
+            updater = CommecDatabaseUpdater(download_location, self.base_url)
+            updaters[database_name] = updater
             updater.name = database_name
             updater.check_for_update(revision)
-
-        # Check for orphaned databases:
-        for db_name, updater in updaters.items():
-            if db_name not in databases.keys():
-                print(
-                    f"{WARNING_CHECK}{db_name} has no formal update route:"
-                    f" {self.config_filepath} has deprecated database entries."
-                )
-                updater.update_required = False
 
         updated_required = False
         # Each updater, reports on its status, does it need to update?
@@ -337,7 +255,10 @@ class CommecSetup:
 
         # Log output of intended changes.
         if dry_run:
-            self.advise_on_base_url()
+            print(
+                f"{STEP}A real run would write an example config describing this"
+                f" install to {self.example_config_path}."
+            )
             print(
                 f"\n{C_F_GRAY}This was a mock run. Run {C_F_ORANGE}'commec"
                 f" setup'{C_F_GRAY} again without {C_F_ORANGE}'-m/--mock'{C_F_GRAY}"
@@ -352,87 +273,58 @@ class CommecSetup:
             if not updater.perform_update():
                 failed.append(database_name)
 
+        # Written on every run rather than only the first, and whether or not
+        # every download succeeded: it is an example describing where these
+        # databases live and which host they come from, not a record of a
+        # finished install, and a part-finished one has the same layout.
+        self.write_example_config(working_directory)
+
         if failed:
             self.success = False
             print(
                 f"{ERROR_CHECK}The following databases were NOT updated: "
                 f"{', '.join(failed)}. See the errors above."
             )
-            # No config is written for a part-finished install, since it would
-            # record databases that aren't there. The base URL advice is still
-            # given: a run that set --base-url needs to hear how to make it stick
-            # whether or not every download succeeded.
-            self.advise_on_base_url()
             return
-
-        # A setup that brought its own config with -y already has one recording
-        # this install, so nothing is written; otherwise write one, recording what
-        # this run resolved so it can be handed back with -y.
-        if self.config_filepath is None:
-            self.config["base_paths"]["default"] = str(
-                Path(working_directory).resolve()
-            )
-            # Any file at all stops the write, empty or not: a config we did not
-            # create is never written over. Checked again here rather than
-            # trusting the look taken at the start of the run, since the
-            # downloads in between can take hours and another setup into the
-            # same directory may have created one since.
-            if os.path.exists(self.recording_config_path):
-                reason = (
-                    "was already there"
-                    if self.config_present_at_start
-                    else "appeared while this run was downloading"
-                )
-                print(
-                    f"{WARNING_CHECK}{self.recording_config_path} {reason}, so no"
-                    " config was written."
-                    "\n   Remove it and run setup again to have one created."
-                )
-            else:
-                with open(
-                    self.recording_config_path, "w", encoding="utf-8"
-                ) as output_config_file:
-                    # Unsorted, so the written config keeps the same key order as
-                    # the packaged default, base_url included.
-                    yaml.safe_dump(self.config, output_config_file, sort_keys=False)
-                # Nothing reads this file on its own, so saying it exists is only
-                # half the message: the invocation that uses it is the other half.
-                print(
-                    f"{STEP}A config.yaml recording this install was created at"
-                    f" {self.recording_config_path}."
-                    "\n   Nothing reads it automatically. To screen with these"
-                    " settings, and to"
-                    "\n   keep updates coming from the same host, pass it back:"
-                    f"\n     commec screen -y {self.recording_config_path} <input.fasta>"
-                )
-
-        self.advise_on_base_url()
 
         print(f"{STEP}Update check complete! Have a Biosafe-and-secure day!")
 
-    def advise_on_base_url(self) -> None:
+    def write_example_config(self, working_directory: os.PathLike | str) -> None:
         """
-        Point at the config that needs to record the base URL, when this run
-        isn't the one writing that config.
+        Write the example config into the databases directory, replacing any
+        previous one.
 
-        Only the config named with -y, which is the only one this run has read.
-        A config sitting in the databases directory is deliberately left unread,
-        so what it records is unknown: it is noted in the log when it is passed
-        over, and warned about when it blocks a config being written, but it
-        cannot be reported on here without guessing at its contents.
-
-        Shared by real and mock runs, so `-m/--mock` previews the same advice
-        rather than leaving it to be discovered on the run that matters.
+        Overwriting is the point: the file is only ever generated, so it always
+        describes the databases this run installed. That it is a copy to work from
+        rather than a file to edit is said in the run's own output, below, rather
+        than in the file, so the file stays a plain config that can be copied and
+        used as-is. Failing to write it does not fail the run -- the databases are
+        downloaded either way.
         """
-        if self.config_filepath is None:
-            return
-        # No config yet means setup is about to write one, or would have on a
-        # real run, and a config setup writes already carries the URL.
-        if not os.path.isfile(self.recording_config_path):
+        self.config["base_paths"]["default"] = str(Path(working_directory).resolve())
+        try:
+            with open(
+                self.example_config_path, "w", encoding="utf-8"
+            ) as output_config_file:
+                # Unsorted, so the written config keeps the same key order as
+                # the packaged default, base_url included.
+                yaml.safe_dump(self.config, output_config_file, sort_keys=False)
+        except OSError as e:
+            print(
+                f"{WARNING_CHECK}Could not write the example config to"
+                f" {self.example_config_path}: {e}"
+            )
             return
 
-        warn_base_url_not_recorded(
-            self.recording_config_path, self.base_url, self.recorded_base_url
+        # Nothing reads this file on its own, and editing it in place is wasted
+        # work, so saying it exists is only half the message.
+        print(
+            f"{STEP}An example config describing this install was written to"
+            f" {self.example_config_path}."
+            "\n   Every setup run rewrites it, and nothing reads it automatically."
+            "\n   To screen with custom settings, copy it and pass the edited copy:"
+            f"\n     cp {self.example_config_path} my-config.yaml"
+            "\n     commec screen -y my-config.yaml <input.fasta>"
         )
 
 
@@ -749,56 +641,6 @@ def resolve_base_url(
     return YamlIO.validate_base_url(config["base_url"], config_source)
 
 
-def normalized_base_url(value, source: str) -> str | None:
-    """
-    Normalize a base URL for comparison, or None if it isn't one we could use.
-
-    For a value that is only being consulted, not obeyed -- whether a config
-    already records the URL in play. Anything that must reject a bad value calls
-    `validate_base_url` directly, so the user hears about it.
-    """
-    if value is None:
-        return None
-    try:
-        return YamlIO.validate_base_url(value, source)
-    except ValueError:
-        return None
-
-
-def warn_base_url_not_recorded(
-    config_filepath: os.PathLike | str, base_url: str, recorded_base_url: str | None
-) -> None:
-    """
-    Say how to make a base URL stick, when the config recording this install does
-    not record it and this run isn't the one writing that config.
-
-    A later run given that config with -y takes the URL from it, so leaving the two
-    disagreeing means updates fetch from a host the databases did not come from.
-
-    `recorded_base_url` is what that config currently names, already normalized,
-    so it compares like for like against the URL actually used. Re-reading the
-    file here instead would compare a raw value against a normalized one and
-    report a config that differs only by a trailing slash as not recording it.
-    """
-    if recorded_base_url == base_url:
-        return
-
-    consequence = (
-        f"will fetch from {recorded_base_url} instead"
-        if recorded_base_url
-        else "will not be able to read a host from it"
-    )
-    # Neutral about whether the file already has a base_url line: once a config
-    # is merged with the packaged defaults it always names a host, so there is
-    # no longer any way to tell an explicit default from an inherited one.
-    print(
-        f"{WARNING_CHECK}{config_filepath} does not record the base URL used here."
-        f"\n   Set base_url in it to the following, or a later run given it with"
-        f"\n   -y, including automatic updates during 'commec screen', {consequence}:"
-        f"\n     base_url: {base_url}"
-    )
-
-
 def connection_failure_notes(err: BaseException, url: str) -> str | None:
     """
     Return some notes to print alongside a failed download, or None if we have
@@ -1004,54 +846,6 @@ def print_progress(downloaded: int, total_size: int) -> None:
     sys.stdout.flush()
 
 
-def read_config_yaml_for_database_setup(
-    config_yaml_filepath: os.PathLike | str, database_dir: os.PathLike | str = None
-):
-    """
-    Reads a config yaml, updated from the defaults, and parses the output for
-    the control_list directory as per a commec screen run. Used instead of passing
-    the directory of the control list
-
-    :param config_yaml_filepath: Description
-    :type config_yaml_filepath: os.PathLike | str
-    :param database_dir: The parent directory named by `-d`, when one was given.
-        Wins over the config's own base_paths.default, so a config may leave that
-        unset and be shared across machines that keep databases in different
-        places. Paths the config states outright are left alone, which is how a
-        database is kept on a separate volume.
-    """
-
-    output_config = None
-
-    # Read package-level configuration defaults
-    default_yaml = importlib.resources.files("commec").joinpath(
-        DEFAULT_CONFIG_YAML_PATH
-    )
-    if default_yaml.exists():
-        output_config = YamlIO.load_config_from_yaml(str(default_yaml))
-    else:
-        raise FileNotFoundError(
-            f"No default yaml found. Expected at {DEFAULT_CONFIG_YAML_PATH}"
-        )
-
-    # Override configuration with any in user-provided YAML file. A path that
-    # isn't there is named as such, rather than left to surface later as a
-    # puzzling complaint about a key the config never had a chance to set.
-    # `commec screen` reports the same mistake the same way, and as the same kind
-    # of error, so the CLI turns both into one line instead of a traceback.
-    if not os.path.exists(config_yaml_filepath):
-        raise YamlIOValidationError(f"--config YAML not found: {config_yaml_filepath}")
-
-    output_config = YamlIO.update_config_from_yaml(output_config, config_yaml_filepath)
-
-    if database_dir is not None:
-        output_config["base_paths"]["default"] = str(Path(database_dir).resolve())
-
-    output_config = YamlIO.format_config_paths(output_config)
-
-    return output_config
-
-
 def check_directory_is_writable(input_directory: str) -> str:
     """
     Checks a directory is viable by
@@ -1127,10 +921,11 @@ def check_for_updates(config: dict) -> tuple[bool, dict[str, CommecDatabaseUpdat
     which require updates. Call perform_update() on updates to complete updates.
     Requests latest updates only.
 
-    Fetches from the config's base_url if it records one (as written by
-    `commec setup --base-url`), so an update triggered from a screen given that
-    config with -y uses the same host the databases were installed from. A screen
-    given only -d has no config to read a host from, and falls back to the default;
+    Fetches from the config's base_url if it records one (as carried by a copy of
+    the example config `commec setup --base-url` writes), so an update triggered
+    from a screen given that config with -y uses the same host the databases were
+    installed from. A screen given only -d has no config to read a host from, and
+    falls back to the default;
     automatic updates are off unless a config turns them on, so the two go together.
     """
     base_url = resolve_base_url(None, config)

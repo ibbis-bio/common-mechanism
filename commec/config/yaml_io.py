@@ -21,7 +21,7 @@ import yaml
 from commec.config.constants import (
     DEFAULT_CONFIG_YAML_PATH,
     DEPRECATED_CONFIG_KEYS,
-    SETUP_CONFIG_FILENAME,
+    SETUP_EXAMPLE_CONFIG_FILENAME,
 )
 from commec.utils.dict_utils import deep_update
 from commec.utils.file_utils import expand_and_normalize
@@ -72,19 +72,18 @@ def note_unread_directory_config(
     database_dir: str | os.PathLike, config_filepath: str | os.PathLike | None = None
 ) -> None:
     """
-    Note a config sitting unread in a databases directory.
+    Note the example config `commec setup` leaves in a databases directory.
 
-    `-d` names a directory of databases and nothing more: a config found in one is
-    not read, since it may describe a different install altogether, down to paths
-    in another directory. Both `setup` and `screen` take that line, so both say so
-    the same way.
+    `-d` names a directory of databases and nothing more. The file setup writes
+    there is an example describing that install, rewritten by every setup run, so
+    it is not read: settings are applied by copying it and naming the copy with `-y`.
 
     Logged rather than printed, so a run that never wanted the file stays quiet
     while the reason is still in the log for a run that expected it to apply.
 
     Silent when that file is the one `-y` named, which is not unread at all.
     """
-    directory_config = os.path.join(database_dir, SETUP_CONFIG_FILENAME)
+    directory_config = os.path.join(database_dir, SETUP_EXAMPLE_CONFIG_FILENAME)
     if not os.path.isfile(directory_config):
         return
     if config_filepath and os.path.abspath(config_filepath) == os.path.abspath(
@@ -92,7 +91,8 @@ def note_unread_directory_config(
     ):
         return
     logger.info(
-        "Not reading %s; pass it with -y/--config to apply its settings",
+        "Not reading %s; it is an example rewritten by every `commec setup` run."
+        " Copy it, edit the copy, and pass that with -y/--config to apply its settings",
         directory_config,
     )
 
