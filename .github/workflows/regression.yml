@@ -22,7 +22,7 @@ concurrency:
 jobs:
   dispatch:
     runs-on: ubuntu-latest
-    environment: infohazard        # <-- the required-reviewers gate lives here
+    environment: IBBIS-Staff-CI        # <-- the required-reviewers gate lives here
     steps:
       - name: Trigger commec-test regression
         env:
