@@ -1554,6 +1554,9 @@ def status():
     return jsonify({"busy": busy, "active": active})
 
 
+_SSE_BATCH_LINES = 500
+
+
 @app.route("/events/<job_id>")
 def events(job_id):
     """Stream the job log live via Server-Sent Events, replaying from start
@@ -1567,9 +1570,12 @@ def events(job_id):
         while True:
             log = job["log"]
             while sent < len(log):
-                payload = json.dumps({"line": log[sent]})
+                # Batched: one frame per line swamps the browser on the backlog
+                # replay of a large run.
+                batch = log[sent : sent + _SSE_BATCH_LINES]
+                payload = json.dumps({"lines": batch})
                 yield f"event: log\ndata: {payload}\n\n"
-                sent += 1
+                sent += len(batch)
             if job["done"] and sent >= len(job["log"]):
                 payload = json.dumps(
                     {
