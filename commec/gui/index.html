@@ -1243,6 +1243,10 @@ fetch("/config").then(r => r.json()).then(c => {
 });
 
 /* ---- Helpers --------------------------------------------------------- */
+/* Drawn in bounded chunks: one innerHTML write for many rows is enough on
+   its own to exhaust the renderer. Order matches the source spreadsheet. */
+const QUERY_CHUNK = 500;
+
 /* The terminal pane is just the tail, the full log is on disk in the
    run directory. Appending with `logEl.textContent +=` is quadratic, and on a
    large screen the stream outruns it until the tab dies. So: buffer
@@ -1282,10 +1286,6 @@ function flushLog() {
   }
   if (atBottom) logEl.scrollTop = logEl.scrollHeight;
 }
-
-/* Drawn in bounded chunks: one innerHTML write for many rows is enough on
-   its own to exhaust the renderer. Order matches the source spreadsheet. */
-const QUERY_CHUNK = 500;
 
 function queryRowHtml(query) {
   return `<div class="qrow">
