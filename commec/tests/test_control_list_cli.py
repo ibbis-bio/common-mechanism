@@ -215,8 +215,8 @@ def test_generate_output_summary_csv(tmp_path):
     assert output_path.exists()
     df = pd.read_csv(output_path)
     # One-hot encoded list acronym columns should be present
-    assert "EC" in df.columns
-    assert "PL" in df.columns
+    assert "NZ_EC" in df.columns
+    assert "AU_PL" in df.columns
 
 
 def test_generate_output_summary_csv_suffix_correction(tmp_path):
