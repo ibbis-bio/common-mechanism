@@ -288,7 +288,7 @@ class ScreenIO:
         """
         Write a FASTA, cleaning headers of special characters and sequences of
         whitespace, non-ASCII characters, and non-IUPAC codes.
-        
+
         Headers have non-ASCII whitespace (such as non-breaking spaces) and `#`
         characters replaced with underscores, since Biopython finds record id by
         splitting headers on Unicode whitespace.
