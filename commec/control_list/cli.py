@@ -151,7 +151,7 @@ def generate_output_summary_csv(output_filepath: str | os.PathLike):
     """
     # Deferred import: control_list imports this module, so importing at
     # module level here would create a circular import.
-    from .control_list import get_control_lists, get_regulation 
+    from .control_list import get_control_lists, get_regulation
 
     # One row per accession (there may be multiple rows per index, one per list).
     output_data = (

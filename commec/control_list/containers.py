@@ -217,7 +217,7 @@ class ControlList:
         """
         acronym = self.acronym
         if self.acronym.startswith(self.region.acronym):
-            acronym = self.acronym[len(self.region.acronym):]
+            acronym = self.acronym[len(self.region.acronym) :]
         return f"{self.region.acronym}_{acronym}"
 
     def __str__(self):

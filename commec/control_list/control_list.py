@@ -365,9 +365,7 @@ def run(arguments: argparse.Namespace):
             )
 
     if arguments.output_prefix:
-        logger.info(
-            'Writing output list summary to "%s" ...', arguments.output_prefix
-        )
+        logger.info('Writing output list summary to "%s" ...', arguments.output_prefix)
         generate_output_summary_csv(arguments.output_prefix)
 
     logger.info("", extra={"no_prefix": True, "box_up": True})
