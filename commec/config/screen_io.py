@@ -286,17 +286,16 @@ class ScreenIO:
 
     def _write_clean_fasta(self) -> None:
         """
-        Write a FASTA in which header lines have non-ASCII whitespace (such as
-        non-breaking spaces) and `#` characters replaced with underscores, since
-        Biopython splits headers on any Unicode whitespace, truncating the record
-        id.
+        Write a FASTA, cleaning headers of special characters and sequences of
+        whitespace, non-ASCII characters, and non-IUPAC codes.
+        
+        Headers have non-ASCII whitespace (such as non-breaking spaces) and `#`
+        characters replaced with underscores, since Biopython finds record id by
+        splitting headers on Unicode whitespace.
 
-        Sequence lines have all whitespace removed, rather than substituted,
-        since it is a formatting artefact rather than a base. Any other non-ASCII
-        character is replaced with an underscore, so that hit coordinates remain
-        valid; Biopython sequences are ASCII-only, so the character cannot be
-        left in place for `substitute_non_iupac` to handle, but an underscore is
-        not an IUPAC code, so it is still masked with 'N' and counted there.
+        Sequence lines have all whitespace removed. Any other non-ASCII character
+        is replaced with an underscore, so that hit coordinates remain valid. The
+        underscores then are replaced with 'N' by `substitute_non_iupac` masking.
 
         The input is read as `utf-8-sig` so that a leading byte order mark is
         consumed by the decoder, rather than being mistaken for sequence.
