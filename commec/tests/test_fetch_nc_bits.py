@@ -99,12 +99,13 @@ def test_fetch_nocoding_regions(tmp_path):
         """
     )
 
+    # Sequences are upper-cased when queries are parsed, so the regions come back upper-cased
     expected_output = textwrap.dedent(
         """\
         >NC_TEST01_0 (1-100)
-        ggtagttccctaaacttatcattaagcgatcttcatcgtcaggtatctcgattggtgcagcaagagagcggtgattgtaccgggaaattaagaggtaacg
+        GGTAGTTCCCTAAACTTATCATTAAGCGATCTTCATCGTCAGGTATCTCGATTGGTGCAGCAAGAGAGCGGTGATTGTACCGGGAAATTAAGAGGTAACG
         >NC_TEST01_1 (201-300)
-        aaatgttgttctaactcaagaagataccgctaagctattgcaaagtacggtaaagcataatttgaataattatgacttaagaagtgtcggcaatggtaat
+        AAATGTTGTTCTAACTCAAGAAGATACCGCTAAGCTATTGCAAAGTACGGTAAAGCATAATTTGAATAATTATGACTTAAGAAGTGTCGGCAATGGTAAT
         """
     )
 

@@ -151,7 +151,7 @@ def generate_output_summary_csv(output_filepath: str | os.PathLike):
     """
     # Deferred import: control_list imports this module, so importing at
     # module level here would create a circular import.
-    from .control_list import get_regulation
+    from .control_list import get_control_lists, get_regulation
 
     # One row per accession (there may be multiple rows per index, one per list).
     output_data = (
@@ -172,6 +172,14 @@ def generate_output_summary_csv(output_filepath: str | os.PathLike):
             output_data.loc[accession, regulation.list] = 1
 
     output_data = output_data.sort_values("display_name")
+
+    # Rename the control list headings to the str of the list object
+    rename_headings = {}
+    for col_heading in output_data.columns:
+        _list = get_control_lists(col_heading)
+        if _list:
+            rename_headings[col_heading] = _list.__repr__()
+    output_data = output_data.rename(columns=rename_headings)
 
     # Export - ensure .csv suffix
     output_path = Path(output_filepath).resolve()
