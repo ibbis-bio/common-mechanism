@@ -11,24 +11,23 @@ dependencies:
   - pandas
   - pyyaml
   - pycountry
+  # Runtime GUI (web kiosk) server deps
+  - flask
   - openpyxl
   - xlrd
-  - xlwt
-  # Web GUI (`commec gui`)
-  - flask
+  - werkzeug
   - psutil
+  - mkcert
   # Runtime non-Python dependencies
   - blast>=2.17
   - hmmer
   - infernal
-  - yaml
-  - wget
   - tar
   - zstd
   # Development dependencies
   - pip
   - pytest
-  - matplotlib
+  - xlwt
   - ruff>=0.15.10,<0.16.0
   - pip:
       - -e .
