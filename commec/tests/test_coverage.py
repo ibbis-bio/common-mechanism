@@ -9,8 +9,9 @@ The following behaviour is expected:
 
 import pandas as pd
 import pytest
-from commec.screeners.check_low_concern import _calculate_coverage
+
 from commec.config.result import MatchRange
+from commec.screeners.check_low_concern import _calculate_coverage
 
 # Test the following hmmer configuration:
 # 10-----------------50 (Largest, should stay.)

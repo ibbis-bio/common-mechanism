@@ -12,30 +12,29 @@ import logging
 
 import pandas as pd
 
-from commec.tools.search_handler import SearchHandler
+from commec.config.constants import BAD_ACCESSIONS, N_NON_REGIONAL_HITS_TO_WARN
 from commec.config.query import Query
-from commec.tools.blast_tools import (
-    read_blast,
-    get_controlled_labels,
-    find_clusters,
-    get_top_hits,
-)
 from commec.config.result import (
-    ScreenResult,
     HitResult,
-    ScreenStep,
-    ScreenStatus,
     HitScreenStatus,
     MatchRange,
+    ScreenResult,
+    ScreenStatus,
+    ScreenStep,
 )
 from commec.control_list import (
+    ListMode,
     get_control_lists,
     get_regulation,
     is_regulated,
-    ListMode,
 )
-
-from commec.config.constants import N_NON_REGIONAL_HITS_TO_WARN, BAD_ACCESSIONS
+from commec.tools.blast_tools import (
+    find_clusters,
+    get_controlled_labels,
+    get_top_hits,
+    read_blast,
+)
+from commec.tools.search_handler import SearchHandler
 
 pd.set_option("display.max_colwidth", 10000)
 

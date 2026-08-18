@@ -3,19 +3,22 @@ Command-line-interface (cli) functionality for the Regulation module.
 Argument declarations and
 """
 
-import os
 import argparse
-import pandas as pd
 import importlib
+import os
 from pathlib import Path
-from commec.utils.file_utils import directory_arg, file_arg
+
+import pandas as pd
+
 import commec.config.yaml_io as YamlIO
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
+from commec.utils.file_utils import directory_arg, file_arg
+
+from . import list_data as data
 from .containers import (
     ControlListOutput,
     ListMode,
 )
-from . import list_data as data
 
 
 def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -67,9 +70,8 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "-r",
         "--regions",
         dest="regions",
-        nargs="+",
-        default=[],
-        help="A list of countries or regions to add context to control list compliance",
+        default="",
+        help="A comma-separated list of countries or regions to add context to list compliance, e.g. 'NZ,EU'",
     )
     parser_obj.add_argument(
         "-o",

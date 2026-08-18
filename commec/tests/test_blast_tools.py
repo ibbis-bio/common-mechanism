@@ -1,8 +1,10 @@
-from io import StringIO
-import pytest
 import textwrap
+from io import StringIO
+
 import numpy as np
 import pandas as pd
+import pytest
+
 from commec.tools.blast_tools import read_blast
 
 

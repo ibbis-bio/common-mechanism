@@ -20,8 +20,8 @@ Also defines the storage data for
 
 import re
 from dataclasses import dataclass, field
-from typing import Optional
 from enum import StrEnum
+from typing import Optional
 
 
 class AccessionFormat(StrEnum):

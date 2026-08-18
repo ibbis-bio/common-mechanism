@@ -15,30 +15,52 @@ Command-line usage examples:
     - commec -v, --version
 """
 
+from commec import __version__ as COMMEC_VERSION
 from commec.control_list import (
     DESCRIPTION as list_DESCRIPTION,
+)
+from commec.control_list import (
     add_args as list_add_args,
+)
+from commec.control_list import (
     run as list_run,
 )
 from commec.flag import (
     DESCRIPTION as flag_DESCRIPTION,
+)
+from commec.flag import (
     add_args as flag_add_args,
+)
+from commec.flag import (
     run as flag_run,
 )
 from commec.screen import (
-    DESCRIPTION as screen_DESCRIPTION,
-    add_args as screen_add_args,
-    run as screen_run,
     ScreenArgumentParser,
+    DESCRIPTION as screen_DESCRIPTION,
+)
+from commec.screen import (
+    ScreenArgumentParser,
+)
+from commec.screen import (
+    add_args as screen_add_args,
+)
+from commec.screen import (
+    run as screen_run,
 )
 from commec.setup import (
     DESCRIPTION as setup_DESCRIPTION,
+)
+from commec.setup import (
     add_args as setup_add_args,
+)
+from commec.setup import (
     run as setup_run,
 )
-
-from commec import __version__ as COMMEC_VERSION
-
+from commec.gui.server import (
+    DESCRIPTION as gui_DESCRIPTION,
+    add_args as gui_add_args,
+    run as gui_run,
+)
 
 def main():
     """
@@ -76,6 +98,10 @@ def main():
     list_parser = subparsers.add_parser("list", description=list_DESCRIPTION)
     list_add_args(list_parser)
 
+    # Sub-command for "gui"
+    gui_parser = subparsers.add_parser("gui", description=gui_DESCRIPTION)
+    gui_add_args(gui_parser)
+
     args = parser.parse_args()
 
     if args.command == "screen":
@@ -86,6 +112,8 @@ def main():
         setup_run(args)
     elif args.command == "list":
         list_run(args)
+    elif args.command == "gui":
+        gui_run(args)
     elif args.version:
         print(
             "Commec  : The Common Mechanism\n"

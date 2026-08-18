@@ -1,25 +1,27 @@
-import pytest
 from dataclasses import asdict
+
+import pytest
+
 from commec.config.json_io import (
+    JSON_COMMEC_FORMAT_VERSION,
+    encode_dict_to_screen_data,
     encode_screen_data_to_json,
     get_screen_data_from_json,
-    encode_dict_to_screen_data,
-    JSON_COMMEC_FORMAT_VERSION,
 )
 from commec.config.result import (
-    ScreenResult,
-    ScreenStatus,
-    ScreenRunInfo,
+    DatabaseInfo,
+    HitResult,
+    HitScreenStatus,
+    MatchRange,
     QueryResult,
     QueryScreenStatus,
-    DatabaseInfo,
-    SearchToolInfo,
-    HitScreenStatus,
-    HitResult,
     ScreenQueryInfo,
-    compare,
-    MatchRange,
+    ScreenResult,
+    ScreenRunInfo,
+    ScreenStatus,
     ScreenStep,
+    SearchToolInfo,
+    compare,
 )
 from commec.tools.search_handler import SearchToolVersion
 

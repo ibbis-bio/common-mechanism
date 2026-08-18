@@ -27,20 +27,20 @@ control-lists/  		     # This is the level at which pass to yaml / cli
 ```
 """
 
-import os
 import logging
+import os
+
 import pandas as pd
 
+from . import list_data as ld
 from .containers import (
+    Accession,
     CategoryType,
     ControlList,
     ListMode,
     ListUseAcronym,
     Region,
-    Accession,
 )
-
-from . import list_data as ld
 from .region import get_regions_set
 
 logger = logging.getLogger(__name__)
