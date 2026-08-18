@@ -27,9 +27,12 @@ from commec.config.yaml_io import (
 )
 from commec.screen import add_args as screen_add_args
 from commec.setup import (
+    R2_PUBLIC_BASE_URL,
+    CommecDatabaseUpdater,
     CommecSetup,
     add_args,
     check_for_updates,
+    fetch_latest_revisions,
     resolve_base_url,
 )
 
@@ -86,6 +89,20 @@ def test_resolve_base_url_precedence():
     assert resolve_base_url(None, {"base_url": MIRROR}) == MIRROR
     assert resolve_base_url(None, {"base_url": None}) == DEFAULT
     assert resolve_base_url(None, {}) == DEFAULT
+
+
+def test_legacy_database_api_uses_public_default(database_dir):
+    """Existing callers may omit the base URL and import its public constant."""
+    assert R2_PUBLIC_BASE_URL == DEFAULT
+
+    with patch(
+        "commec.setup.fetch_r2_object", return_value=b'{"latest": {}}'
+    ) as fetched:
+        assert fetch_latest_revisions() == {"latest": {}}
+    fetched.assert_called_once_with("latest.json", base_url=DEFAULT)
+
+    updater = CommecDatabaseUpdater(database_dir / "biorisk")
+    assert updater.base_url == DEFAULT
 
 
 def test_base_url_is_not_treated_as_a_path():

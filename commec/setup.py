@@ -27,6 +27,9 @@ from commec.config import yaml_io as YamlIO
 from commec.config.constants import SETUP_EXAMPLE_CONFIG_FILENAME
 from commec.utils.file_utils import expand_and_normalize, remove_filename_from_path
 
+# Backward-compatible alias; the packaged config remains the source of truth.
+R2_PUBLIC_BASE_URL = YamlIO.default_base_url()
+
 DESCRIPTION = """Helper script for downloading or updating the databases
  required for running the Common Mechanism Screen"""
 
@@ -379,7 +382,9 @@ def fetch_revisions_from_json(filename: str | os.PathLike) -> dict | None:
     return db_revisions
 
 
-def fetch_latest_revisions(base_url: str) -> dict | None:
+def fetch_latest_revisions(
+    base_url: str = R2_PUBLIC_BASE_URL,
+) -> dict | None:
     """
     A latest.json manifest exists at the root of the R2 bucket, listing
     the latest revision of each database. Downloads and parses it into a
@@ -416,7 +421,11 @@ class CommecDatabaseUpdater:
     Handles fetching, writing, and version management.
     """
 
-    def __init__(self, existing_location: os.PathLike, base_url: str):
+    def __init__(
+        self,
+        existing_location: os.PathLike,
+        base_url: str = R2_PUBLIC_BASE_URL,
+    ):
         self.name = None
         self.write_location = existing_location
         self.base_url = base_url

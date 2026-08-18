@@ -176,6 +176,23 @@ def load_presets(path):
     return presets
 
 
+def _resolve_presets_path(requested):
+    """Resolve default presets across deployment and packaged layouts."""
+    requested = Path(requested)
+    packaged = Path(__file__).parent / "presets.yaml"
+    deployed = Path.cwd() / "presets.yaml"
+    if (
+        requested.resolve() == packaged.resolve()
+        and not requested.exists()
+        and deployed.is_file()
+    ):
+        return deployed
+    example = Path(str(requested) + ".example")
+    if not requested.exists() and example.exists():
+        return example
+    return requested
+
+
 def _preset(preset_id):
     for p in CFG["presets"]:
         if p["id"] == preset_id:
@@ -2193,9 +2210,8 @@ def run(args):
     CFG["threads"] = args.threads or (os.cpu_count() or 1)
     # presets.yaml is deployment-specific (gitignored; the kiosk image provisions
     # it). Fall back to the tracked template so a fresh checkout still runs.
-    presets_path = args.presets
-    if not os.path.exists(presets_path) and os.path.exists(presets_path + ".example"):
-        presets_path += ".example"
+    presets_path = _resolve_presets_path(args.presets)
+    if str(presets_path) != args.presets:
         print(f"No {args.presets}; using {presets_path}")
     CFG["presets"] = load_presets(presets_path)
     print(
