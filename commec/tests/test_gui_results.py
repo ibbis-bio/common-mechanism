@@ -26,7 +26,9 @@ def test_all_too_short_run_retains_too_short_verdict(tmp_path):
     summary = _summary(tmp_path, ["Skip (too short)"])
     assert summary["overall"] == "Skip (too short)"
     assert summary["overall_score"] == ScreenStatus.SKIP_SHORT.importance * 10
-    assert summary["score_max"] == max(status.importance for status in ScreenStatus) * 10
+    assert (
+        summary["score_max"] == max(status.importance for status in ScreenStatus) * 10
+    )
     assert summary["queries"][0]["score"] == summary["overall_score"]
 
 
@@ -119,9 +121,7 @@ def test_errored_run_can_be_rerun_in_a_clean_directory(
                 }
             }
         }
-        (source / "failed.output.json").write_text(
-            json.dumps(output), encoding="utf-8"
-        )
+        (source / "failed.output.json").write_text(json.dumps(output), encoding="utf-8")
 
     monkeypatch.setitem(server.CFG, "runs_dir", runs_dir)
     monkeypatch.setitem(server.CFG, "password_hash", None)

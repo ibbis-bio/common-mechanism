@@ -36,12 +36,20 @@ import webbrowser
 import zipfile
 from pathlib import Path
 
-import pycountry
 import openpyxl
+import pycountry
 import xlrd
 import yaml
-from flask import (Flask, Response, jsonify, redirect, request, send_file,
-                   session, url_for)
+from flask import (
+    Flask,
+    Response,
+    jsonify,
+    redirect,
+    request,
+    send_file,
+    session,
+    url_for,
+)
 from werkzeug.security import check_password_hash
 
 from commec.config.result import ScreenStatus
@@ -63,10 +71,13 @@ app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
 
 @app.errorhandler(413)
 def _too_large(_e):
-    return jsonify({
-        "error": "Uploaded file is too large (max 200 MB).",
-        "field": "sequence",
-    }), 413
+    return jsonify(
+        {
+            "error": "Uploaded file is too large (max 200 MB).",
+            "field": "sequence",
+        }
+    ), 413
+
 
 # ---------------------------------------------------------------------------
 # Config, populated from argparse in main(). Kept on the app for test access.
@@ -78,13 +89,13 @@ CFG = {
     # together and are kept on disk (the box is treated as secured). This
     # enables post-run debugging and future run-resume.
     "runs_dir": Path("runs").resolve(),
-    "retention_days": 0,    # completed-run lifetime; 0 = unlimited (forever)
+    "retention_days": 0,  # completed-run lifetime; 0 = unlimited (forever)
     "default_databases": "",
-    "threads": None,        # CPU threads passed to commec (-t); None = don't set
+    "threads": None,  # CPU threads passed to commec (-t); None = don't set
     "browse_root": Path.home(),  # file browser is confined to this directory
     "password_hash": None,  # set from --password-file; None = no auth
     "require_local_auth": False,  # also require the password from localhost
-    "presets": [],          # list of {id, label, description, config}
+    "presets": [],  # list of {id, label, description, config}
 }
 
 _RETENTION_FILENAME = ".retention.json"
@@ -131,6 +142,7 @@ def _save_retention_days(days):
     except OSError:
         temporary.unlink(missing_ok=True)
         raise
+
 
 # The polished, self-contained artifacts. The GUI's Results panel shows these
 # by default; everything else in a run dir (input.fasta, raw search output) is
@@ -236,8 +248,11 @@ def _commec_db_paths():
     db_dir = CFG.get("default_databases") or ""
     base, dbs = db_dir, {}
     try:
-        cfg = yaml.safe_load(importlib.resources.files("commec")
-                             .joinpath("screen-default-config.yaml").read_text())
+        cfg = yaml.safe_load(
+            importlib.resources.files("commec")
+            .joinpath("screen-default-config.yaml")
+            .read_text()
+        )
         base = (cfg.get("base_paths") or {}).get("default") or db_dir
         dbs = cfg.get("databases", {}) or {}
     except Exception:
@@ -258,11 +273,13 @@ def _commec_db_paths():
         return p.replace("{default}", base) if p else os.path.join(db_dir, name)
 
     return {
-        "biorisk":               resolve("biorisk", "biorisk"),
-        "low_concern":           resolve("low_concern", "low_concern"),
-        "best_match_protein":    resolve("best_match/protein", "best_match", "protein"),
-        "best_match_nucleotide": resolve("best_match/nucleotide", "best_match", "nucleotide"),
-        "control_lists":         resolve("control_lists", "control_lists"),
+        "biorisk": resolve("biorisk", "biorisk"),
+        "low_concern": resolve("low_concern", "low_concern"),
+        "best_match_protein": resolve("best_match/protein", "best_match", "protein"),
+        "best_match_nucleotide": resolve(
+            "best_match/nucleotide", "best_match", "nucleotide"
+        ),
+        "control_lists": resolve("control_lists", "control_lists"),
     }
 
 
@@ -286,11 +303,17 @@ def _region_choices(include_single_country_groups=False):
             continue
         code = str(group.get("acronym") or "").strip().upper()
         name = str(group.get("name") or "").strip()
-        region_codes = list(dict.fromkeys(
-            str(region).strip().upper()
-            for region in group.get("regions", [])
-            if str(region).strip()
-        )) if isinstance(group.get("regions"), list) else []
+        region_codes = (
+            list(
+                dict.fromkeys(
+                    str(region).strip().upper()
+                    for region in group.get("regions", [])
+                    if str(region).strip()
+                )
+            )
+            if isinstance(group.get("regions"), list)
+            else []
+        )
         if not code or not name:
             continue
         group_codes.add(code)
@@ -335,8 +358,12 @@ def _missing_databases(preset):
     if not db_dir or not os.path.isdir(db_dir):
         return []
     paths = _commec_db_paths()
-    return [name for name in _required_db_dirs(preset["config"])
-            if not _db_present(paths.get(name, ""))]
+    return [
+        name
+        for name in _required_db_dirs(preset["config"])
+        if not _db_present(paths.get(name, ""))
+    ]
+
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 REPORT_ASSETS_DIR = importlib.resources.files("commec").joinpath(
@@ -368,8 +395,9 @@ def report_badge_css():
     css = REPORT_ASSETS_DIR.joinpath("report.css").read_text(encoding="utf-8")
     match = re.search(r"(?ms)^\.badge\s*\{.*?^\}", css)
     if not match:
-        return Response("Report badge style not found.\n", status=500,
-                        mimetype="text/plain")
+        return Response(
+            "Report badge style not found.\n", status=500, mimetype="text/plain"
+        )
     return Response(match.group(0) + "\n", mimetype="text/css")
 
 
@@ -400,8 +428,13 @@ def _iface_kind(iface, ip):
 def network_addresses():
     """This host's IPv4 addresses, one per interface, by kind. [] if unknown."""
     try:
-        out = subprocess.run(["ip", "-j", "-4", "addr", "show"],
-                             capture_output=True, text=True, timeout=3, check=True).stdout
+        out = subprocess.run(
+            ["ip", "-j", "-4", "addr", "show"],
+            capture_output=True,
+            text=True,
+            timeout=3,
+            check=True,
+        ).stdout
         data = json.loads(out)
     except (OSError, subprocess.SubprocessError, ValueError):
         return []
@@ -504,11 +537,13 @@ def _dir_size(d):
 def metrics():
     cpu = _cpu_percent()
     mem = _mem_info()
-    return jsonify({
-        "cpu": cpu,
-        "ram": ({"pct": mem[0], "used": mem[1], "total": mem[2]} if mem else None),
-        "disk": _disk_info(),
-    })
+    return jsonify(
+        {
+            "cpu": cpu,
+            "ram": ({"pct": mem[0], "used": mem[1], "total": mem[2]} if mem else None),
+            "disk": _disk_info(),
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -526,7 +561,11 @@ def _lsblk():
     try:
         out = subprocess.run(
             ["lsblk", "-J", "-o", "NAME,PATH,RM,TYPE,FSTYPE,MOUNTPOINT,LABEL"],
-            capture_output=True, text=True, timeout=5, check=True).stdout
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=True,
+        ).stdout
         data = json.loads(out)
     except (OSError, subprocess.SubprocessError, ValueError):
         return []
@@ -559,19 +598,33 @@ def _removable_volumes():
         if n.get("type") == "part" and _rm(n) and n.get("fstype"):
             mp = _mountpoint(n)
             if mp:
-                vols.append({"label": n.get("label") or n.get("name"),
-                             "mountpoint": mp, "dev": n.get("path")})
+                vols.append(
+                    {
+                        "label": n.get("label") or n.get("name"),
+                        "mountpoint": mp,
+                        "dev": n.get("path"),
+                    }
+                )
     return vols
 
 
 def _automount_removable():
     """Mount any unmounted removable partition read-only (best-effort)."""
     for n in _lsblk():
-        if (n.get("type") == "part" and _rm(n) and n.get("fstype")
-                and not _mountpoint(n) and n.get("path")):
+        if (
+            n.get("type") == "part"
+            and _rm(n)
+            and n.get("fstype")
+            and not _mountpoint(n)
+            and n.get("path")
+        ):
             try:
-                subprocess.run(["udisksctl", "mount", "-b", n["path"], "-o", "ro"],
-                               capture_output=True, text=True, timeout=20)
+                subprocess.run(
+                    ["udisksctl", "mount", "-b", n["path"], "-o", "ro"],
+                    capture_output=True,
+                    text=True,
+                    timeout=20,
+                )
             except (OSError, subprocess.SubprocessError):
                 pass
 
@@ -621,24 +674,30 @@ def browse():
                 is_dir = p.is_dir()
             except OSError:
                 continue
-            entries.append({
-                "name": p.name, "path": str(p), "dir": is_dir,
-                "size": (p.stat().st_size if not is_dir else None),
-            })
+            entries.append(
+                {
+                    "name": p.name,
+                    "path": str(p),
+                    "dir": is_dir,
+                    "size": (p.stat().st_size if not is_dir else None),
+                }
+            )
     except OSError as exc:
         return jsonify({"error": f"Cannot read directory: {exc}"}), 400
-    return jsonify({
-        "path": str(cur),
-        "parent": (str(cur.parent) if cur != base else None),
-        "entries": entries,
-    })
+    return jsonify(
+        {
+            "path": str(cur),
+            "parent": (str(cur.parent) if cur != base else None),
+            "entries": entries,
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
 # Job tracking. One job at a time behind a lock: screening is CPU-bound and
 # --threads already saturates the box, so a queue would be over-engineering.
 # ---------------------------------------------------------------------------
-JOBS = {}          # job_id -> job dict
+JOBS = {}  # job_id -> job dict
 JOB_LOCK = threading.Lock()
 
 
@@ -768,9 +827,14 @@ def _tabular_preview(data, filename, sheet=""):
     if suffix not in _TABULAR_SUFFIXES:
         raise ValueError("Supported formats are .xlsx, .xls, .csv, and .tsv.")
     sheets, rows = _tabular_rows(data, suffix, sheet)
-    column_count = min(max((len(row) for row in rows[:_TABULAR_PREVIEW_ROWS]), default=0), _TABULAR_PREVIEW_COLS)
-    preview = [["" if cell is None else str(cell) for cell in row[:column_count]]
-               for row in rows[:_TABULAR_PREVIEW_ROWS]]
+    column_count = min(
+        max((len(row) for row in rows[:_TABULAR_PREVIEW_ROWS]), default=0),
+        _TABULAR_PREVIEW_COLS,
+    )
+    preview = [
+        ["" if cell is None else str(cell) for cell in row[:column_count]]
+        for row in rows[:_TABULAR_PREVIEW_ROWS]
+    ]
     return {
         "sheets": sheets,
         "sheet": sheet or sheets[0],
@@ -786,13 +850,18 @@ def spreadsheet_preview():
     if not uploaded or not uploaded.filename:
         return jsonify({"error": "Choose a spreadsheet first."}), 400
     try:
-        return jsonify(_tabular_preview(uploaded.read(), uploaded.filename,
-                                        request.form.get("sheet") or ""))
+        return jsonify(
+            _tabular_preview(
+                uploaded.read(), uploaded.filename, request.form.get("sheet") or ""
+            )
+        )
     except (OSError, ValueError, xlrd.XLRDError, zipfile.BadZipFile) as exc:
         return jsonify({"error": f"Could not read spreadsheet: {exc}"}), 400
 
 
-def _parse_tabular_upload(uploaded, sheet, nucleotide_column, name_column, skip_first_row):
+def _parse_tabular_upload(
+    uploaded, sheet, nucleotide_column, name_column, skip_first_row
+):
     """Map one selected worksheet column pair into FASTA records."""
     suffix = Path(uploaded.filename).suffix.lower()
     if suffix not in _TABULAR_SUFFIXES:
@@ -810,8 +879,14 @@ def _parse_tabular_upload(uploaded, sheet, nucleotide_column, name_column, skip_
         seq = row[nucleotide_column] if nucleotide_column < len(row) else ""
         if seq is None or not str(seq).strip():
             continue
-        name = row[name_column] if name_column is not None and name_column < len(row) else ""
-        records.append((str(name).strip() or f"{sheet}_row_{row_number}", str(seq).strip()))
+        name = (
+            row[name_column]
+            if name_column is not None and name_column < len(row)
+            else ""
+        )
+        records.append(
+            (str(name).strip() or f"{sheet}_row_{row_number}", str(seq).strip())
+        )
     return records
 
 
@@ -822,7 +897,9 @@ def _normalise_records(records):
         if not seq:
             continue
         name = re.sub(r"\s+", "_", (name or "").strip())
-        name = re.sub(r"[<>&\"'`]", "", name) or f"sequence_{i + 1}"  # keep names HTML-safe
+        name = (
+            re.sub(r"[<>&\"'`]", "", name) or f"sequence_{i + 1}"
+        )  # keep names HTML-safe
         base, n = name, 2
         while name in used:
             name, n = f"{base}_{n}", n + 1
@@ -836,7 +913,7 @@ def _write_fasta(records, path):
         for name, seq in records:
             fh.write(f">{name}\n")
             for j in range(0, len(seq), 70):
-                fh.write(seq[j:j + 70] + "\n")
+                fh.write(seq[j : j + 70] + "\n")
 
 
 def _build_command(fasta, outdir, config_path, prefix, resume=False):
@@ -873,9 +950,11 @@ def _error_hint(log_lines):
     if "Duplicate sequence identifier generated" in text:
         m = re.search(r'Duplicate sequence identifier generated:\s*"([^"]+)"', text)
         which = f' (e.g. "{m.group(1)}")' if m else ""
-        return ("Duplicate sequence names in your input" + which + ". Each FASTA "
-                "header must be unique within its first 64 characters -- rename "
-                "the duplicates and run again.")
+        return (
+            "Duplicate sequence names in your input" + which + ". Each FASTA "
+            "header must be unique within its first 64 characters -- rename "
+            "the duplicates and run again."
+        )
     return None
 
 
@@ -883,11 +962,16 @@ def _job_meta(job, status, summary=None):
     """The meta.json payload for a job at a given status (the durable marker
     that survives a restart and drives the results/recent views)."""
     return {
-        "id": job["id"], "label": job["label"], "prefix": job["prefix"],
-        "fasta": job.get("fasta"), "status": status,
+        "id": job["id"],
+        "label": job["label"],
+        "prefix": job["prefix"],
+        "fasta": job.get("fasta"),
+        "status": status,
         "query_count": job.get("query_count"),
-        "returncode": job["returncode"], "created": job["created"],
-        "finished": job.get("finished"), "summary": summary,
+        "returncode": job["returncode"],
+        "created": job["created"],
+        "finished": job.get("finished"),
+        "summary": summary,
         "error_hint": job.get("error_hint"),
         "rerun_of": job.get("rerun_of"),
     }
@@ -1006,8 +1090,11 @@ def _sweep_orphans():
                 pgid_file.unlink()
             except OSError:
                 pass
-        meta.update(id=meta.get("id", d.name), label=meta.get("label", d.name),
-                    status="interrupted")
+        meta.update(
+            id=meta.get("id", d.name),
+            label=meta.get("label", d.name),
+            status="interrupted",
+        )
         if not meta.get("finished"):
             meta["finished"] = d.stat().st_mtime
         _save_meta(d, meta)
@@ -1128,7 +1215,9 @@ def _gate():
     # client could submit until first-run setup has written a hash, so expose no
     # part of the GUI over LAN in that state.
     if not CFG["password_hash"] and request.remote_addr not in _LOCAL_ADDRS:
-        return jsonify({"error": "Remote access is unavailable until an operator password is set."}), 503
+        return jsonify(
+            {"error": "Remote access is unavailable until an operator password is set."}
+        ), 503
     if request.endpoint in _AUTH_EXEMPT:
         return
     if _auth_required() and not session.get("authed"):
@@ -1174,19 +1263,23 @@ def config():
     presets = []
     for p in CFG["presets"]:
         missing = _missing_databases(p)
-        presets.append({
-            "id": p["id"],
-            "label": p["label"],
-            "config": p["config"],
-            "recommended": p.get("recommended"),
-            "available": not missing,
-            "missing": [DB_LABELS.get(m, m) for m in missing],
-        })
-    return jsonify({
-        "presets": presets,
-        "regions": _region_choices(),
-        "retention_days": CFG["retention_days"],
-    })
+        presets.append(
+            {
+                "id": p["id"],
+                "label": p["label"],
+                "config": p["config"],
+                "recommended": p.get("recommended"),
+                "available": not missing,
+                "missing": [DB_LABELS.get(m, m) for m in missing],
+            }
+        )
+    return jsonify(
+        {
+            "presets": presets,
+            "regions": _region_choices(),
+            "retention_days": CFG["retention_days"],
+        }
+    )
 
 
 @app.route("/retention", methods=["POST"])
@@ -1248,9 +1341,11 @@ def screen():
     if raw_regions.lower() == "all":
         regions = "all"
     else:
-        region_codes = list(dict.fromkeys(
-            code.strip().upper() for code in raw_regions.split(",") if code.strip()
-        ))
+        region_codes = list(
+            dict.fromkeys(
+                code.strip().upper() for code in raw_regions.split(",") if code.strip()
+            )
+        )
         allowed_regions = {
             choice.get("value", choice["code"])
             for choice in _region_choices(include_single_country_groups=True)
@@ -1347,7 +1442,9 @@ def screen():
         # to defeat symlink/.. escapes, matching /browse and /results/file.
         target = Path(picked).resolve()
         if not any(target == r or r in target.parents for r in _allowed_roots()):
-            return _screen_error("That file is outside the allowed directory.", "sequence")
+            return _screen_error(
+                "That file is outside the allowed directory.", "sequence"
+            )
         if not target.is_file():
             return _screen_error(
                 f"FASTA path not found on server: {target}", "sequence"
@@ -1388,7 +1485,9 @@ def screen():
             )
 
         job_id = uuid.uuid4().hex[:12]
-        rundir = CFG["runs_dir"] / job_id  # persistent: sequence + intermediates + results
+        rundir = (
+            CFG["runs_dir"] / job_id
+        )  # persistent: sequence + intermediates + results
         rundir.mkdir(parents=True, exist_ok=True)
 
         # Write the preset's config into the run dir (also a reproducibility
@@ -1441,13 +1540,17 @@ def status():
         else:
             job = max(JOBS.values(), key=lambda j: j["created"], default=None)
             busy = False
-    active = None if job is None else {
-        "job_id": job["id"],
-        "label": job["label"],
-        "query_count": job.get("query_count"),
-        "status": job["status"],
-        "returncode": job["returncode"],
-    }
+    active = (
+        None
+        if job is None
+        else {
+            "job_id": job["id"],
+            "label": job["label"],
+            "query_count": job.get("query_count"),
+            "status": job["status"],
+            "returncode": job["returncode"],
+        }
+    )
     return jsonify({"busy": busy, "active": active})
 
 
@@ -1468,11 +1571,13 @@ def events(job_id):
                 yield f"event: log\ndata: {payload}\n\n"
                 sent += 1
             if job["done"] and sent >= len(job["log"]):
-                payload = json.dumps({
-                    "status": job["status"],
-                    "returncode": job["returncode"],
-                    "error_hint": job.get("error_hint"),
-                })
+                payload = json.dumps(
+                    {
+                        "status": job["status"],
+                        "returncode": job["returncode"],
+                        "error_hint": job.get("error_hint"),
+                    }
+                )
                 yield f"event: end\ndata: {payload}\n\n"
                 return
             time.sleep(0.3)
@@ -1481,7 +1586,9 @@ def events(job_id):
 
 
 _STATUS_SCORE_FACTOR = 10
-_MAX_STATUS_SCORE = max(status.importance for status in ScreenStatus) * _STATUS_SCORE_FACTOR
+_MAX_STATUS_SCORE = (
+    max(status.importance for status in ScreenStatus) * _STATUS_SCORE_FACTOR
+)
 
 
 def _status_score(value):
@@ -1509,13 +1616,15 @@ def _summarize_output(outdir):
     for name, v in (data.get("queries") or {}).items():
         st = v.get("status") or {}
         status = st.get("screen_status", "Unknown")
-        rows.append({
-            "name": name,
-            "length": v.get("length"),
-            "status": status,
-            "score": _status_score(status),
-            "rationale": st.get("rationale", "") or "",
-        })
+        rows.append(
+            {
+                "name": name,
+                "length": v.get("length"),
+                "status": status,
+                "score": _status_score(status),
+                "rationale": st.get("rationale", "") or "",
+            }
+        )
     if not rows:
         return None
     overall = max(rows, key=lambda row: row["score"])
@@ -1531,7 +1640,9 @@ def _summarize_output(outdir):
 def _is_rerunnable(status, summary):
     """True for process failures and completed screens with an Error verdict."""
     return status == "error" or (
-        status == "done" and summary and summary.get("overall") == str(ScreenStatus.ERROR)
+        status == "done"
+        and summary
+        and summary.get("overall") == str(ScreenStatus.ERROR)
     )
 
 
@@ -1567,11 +1678,13 @@ def _list_run_files(d):
         rel = p.relative_to(d)
         if any(part.startswith(".") for part in rel.parts):
             continue  # dotfiles (.pgid) and anything under a dotdir
-        files.append({
-            "name": rel.as_posix(),
-            "size": p.stat().st_size,
-            "advanced": not _is_primary(rel),
-        })
+        files.append(
+            {
+                "name": rel.as_posix(),
+                "size": p.stat().st_size,
+                "advanced": not _is_primary(rel),
+            }
+        )
     files.sort(key=lambda f: (f["advanced"], f["name"]))
     return files
 
@@ -1597,24 +1710,27 @@ def results(job_id):
     # rule as /runs. (A live or finished job has status running/done, so this
     # naturally excludes them; being in JOBS is irrelevant -- a stopped run
     # stays in JOBS as 'interrupted' and is very much resumable.)
-    resumable = (status == "interrupted"
-                 and d is not None and (d / "config.used.yaml").is_file())
+    resumable = (
+        status == "interrupted" and d is not None and (d / "config.used.yaml").is_file()
+    )
     rerunnable = (
         d is not None
         and _is_rerunnable(status, summary)
         and (d / "config.used.yaml").is_file()
         and (d / "input.fasta").is_file()
     )
-    return jsonify({
-        "status": status,
-        "returncode": returncode,
-        "label": label,
-        "files": files,
-        "summary": summary,
-        "resumable": resumable,
-        "rerunnable": rerunnable,
-        "error_hint": error_hint,
-    })
+    return jsonify(
+        {
+            "status": status,
+            "returncode": returncode,
+            "label": label,
+            "files": files,
+            "summary": summary,
+            "resumable": resumable,
+            "rerunnable": rerunnable,
+            "error_hint": error_hint,
+        }
+    )
 
 
 def _read_meta(d):
@@ -1676,30 +1792,37 @@ def runs():
                         meta["summary"] = summary
                         _save_meta(d, meta)
             overall = summary.get("overall")
-            entries.append((finished, {
-                "id": meta.get("id", d.name),
-                "label": meta.get("label", d.name),
-                "status": status,
-                "returncode": meta.get("returncode"),
-                "finished": finished,
-                "overall": overall,
-                "overall_score": summary.get(
-                    "overall_score",
-                    _status_score(overall) if overall else None,
-                ),
-                "score_max": summary.get("score_max", _MAX_STATUS_SCORE),
-                "n": summary.get("n"),
-                "size": _dir_size(d),  # bytes on disk (intermediates included)
-                # Resumable only if we still have what -R needs (the config; the
-                # input is re-checked at resume time, since it may be external).
-                "resumable": (status == "interrupted"
-                              and (d / "config.used.yaml").is_file()),
-                "rerunnable": (
-                    _is_rerunnable(status, summary)
-                    and (d / "config.used.yaml").is_file()
-                    and (d / "input.fasta").is_file()
-                ),
-            }))
+            entries.append(
+                (
+                    finished,
+                    {
+                        "id": meta.get("id", d.name),
+                        "label": meta.get("label", d.name),
+                        "status": status,
+                        "returncode": meta.get("returncode"),
+                        "finished": finished,
+                        "overall": overall,
+                        "overall_score": summary.get(
+                            "overall_score",
+                            _status_score(overall) if overall else None,
+                        ),
+                        "score_max": summary.get("score_max", _MAX_STATUS_SCORE),
+                        "n": summary.get("n"),
+                        "size": _dir_size(d),  # bytes on disk (intermediates included)
+                        # Resumable only if we still have what -R needs (the config; the
+                        # input is re-checked at resume time, since it may be external).
+                        "resumable": (
+                            status == "interrupted"
+                            and (d / "config.used.yaml").is_file()
+                        ),
+                        "rerunnable": (
+                            _is_rerunnable(status, summary)
+                            and (d / "config.used.yaml").is_file()
+                            and (d / "input.fasta").is_file()
+                        ),
+                    },
+                )
+            )
     entries.sort(key=lambda e: e[0], reverse=True)
     return jsonify({"runs": [e[1] for e in entries[:50]]})
 
@@ -1763,15 +1886,15 @@ def resume_run(job_id):
     steps are reused. Refuses if a screen is already running (one at a time)."""
     with JOB_LOCK:
         if any(not j["done"] for j in JOBS.values()):
-            return jsonify({"error": "A screen is already running. "
-                                     "Wait for it to finish."}), 409
+            return jsonify(
+                {"error": "A screen is already running. Wait for it to finish."}
+            ), 409
     d = (CFG["runs_dir"] / job_id).resolve()
     if d.parent != CFG["runs_dir"].resolve() or not d.is_dir():
         return jsonify({"error": "not found"}), 404
     meta = _read_meta(d)
     if _effective_status(meta, False) != "interrupted":
-        return jsonify({"error": "That run isn't interrupted; nothing to "
-                                 "resume."}), 400
+        return jsonify({"error": "That run isn't interrupted; nothing to resume."}), 400
     prefix = meta.get("prefix")
     config_path = d / "config.used.yaml"
     if not prefix or not config_path.is_file():
@@ -1796,18 +1919,30 @@ def resume_run(job_id):
     killed = _drop_interrupted_artifact(d, prefix)
     cmd = _build_command(fasta, d, config_path, prefix, resume=True)
     job = {
-        "id": d.name, "label": meta.get("label", d.name), "prefix": prefix,
-        "fasta": fasta, "created": meta.get("created", time.time()),
+        "id": d.name,
+        "label": meta.get("label", d.name),
+        "prefix": prefix,
+        "fasta": fasta,
+        "created": meta.get("created", time.time()),
         "query_count": meta.get("query_count") or _fasta_query_count(fasta),
-        "finished": None, "cmd": cmd, "dir": d, "log": [],
-        "status": "starting", "returncode": None, "done": False,
-        "stopped": False, "proc": None, "pgid": None,
+        "finished": None,
+        "cmd": cmd,
+        "dir": d,
+        "log": [],
+        "status": "starting",
+        "returncode": None,
+        "done": False,
+        "stopped": False,
+        "proc": None,
+        "pgid": None,
     }
     with JOB_LOCK:
         JOBS[d.name] = job
     if killed:
-        job["log"].append(f"[gui] Resuming run; re-running the interrupted step "
-                          f"(dropped {killed}). Completed steps are reused.")
+        job["log"].append(
+            f"[gui] Resuming run; re-running the interrupted step "
+            f"(dropped {killed}). Completed steps are reused."
+        )
     else:
         job["log"].append("[gui] Resuming run with -R; existing output reused.")
     job["log"].append("$ " + " ".join(shlex.quote(c) for c in cmd))
@@ -1837,12 +1972,15 @@ def rerun_run(job_id):
     source_config = source / "config.used.yaml"
     source_fasta = source / "input.fasta"
     if not prefix or not source_config.is_file() or not source_fasta.is_file():
-        return jsonify({"error": "Can't rerun: the original input or config is missing."}), 400
+        return jsonify(
+            {"error": "Can't rerun: the original input or config is missing."}
+        ), 400
 
     with JOB_LOCK:
         if any(not j["done"] for j in JOBS.values()):
-            return jsonify({"error": "A screen is already running. "
-                                     "Wait for it to finish."}), 409
+            return jsonify(
+                {"error": "A screen is already running. Wait for it to finish."}
+            ), 409
 
         new_id = uuid.uuid4().hex[:12]
         rundir = CFG["runs_dir"] / new_id
@@ -1859,14 +1997,23 @@ def rerun_run(job_id):
         source_label = meta.get("label", source.name)
         cmd = _build_command(str(fasta_path), rundir, config_path, prefix)
         job = {
-            "id": new_id, "label": f"{source_label} (rerun)", "prefix": prefix,
-            "fasta": str(fasta_path), "created": time.time(), "finished": None,
-            "query_count": (
-                meta.get("query_count") or _fasta_query_count(fasta_path)
-            ),
-            "cmd": cmd, "dir": rundir, "log": [], "status": "starting",
-            "returncode": None, "done": False, "stopped": False, "proc": None,
-            "pgid": None, "rerun_of": source.name,
+            "id": new_id,
+            "label": f"{source_label} (rerun)",
+            "prefix": prefix,
+            "fasta": str(fasta_path),
+            "created": time.time(),
+            "finished": None,
+            "query_count": (meta.get("query_count") or _fasta_query_count(fasta_path)),
+            "cmd": cmd,
+            "dir": rundir,
+            "log": [],
+            "status": "starting",
+            "returncode": None,
+            "done": False,
+            "stopped": False,
+            "proc": None,
+            "pgid": None,
+            "rerun_of": source.name,
         }
         JOBS[new_id] = job
 
@@ -1885,58 +2032,112 @@ DESCRIPTION = "Launch the commec screening web GUI (spawns a local Flask server)
 def add_args(parser):
     """Register the GUI server's command-line arguments (subcommand contract)."""
     ap = parser  # local alias keeps the argument definitions below unchanged
-    ap.add_argument("--host", default=None,
-                    help="Bind address. Default: 127.0.0.1, or 0.0.0.0 if --lan.")
-    ap.add_argument("--port", type=int, default=443,
-                    help="Port to serve on (default: 443). Binding <1024 needs "
-                         "a privilege grant for the unprivileged server -- see "
-                         "deploy-notes.md. Use a high port (e.g. 8765) without one.")
-    ap.add_argument("--lan", action="store_true",
-                    help="Bind 0.0.0.0 so other machines on the LAN can connect.")
-    ap.add_argument("--kiosk", action="store_true",
-                    help="Auto-open a browser at the server (local kiosk mode).")
-    ap.add_argument("--commec-bin", default="commec",
-                    help="Path to the commec binary (default: commec on PATH).")
-    ap.add_argument("--runs-dir", default="runs",
-                    help="Persistent dir holding one directory per run: the "
-                         "submitted sequence, commec's search intermediates, "
-                         "and the polished results, all kept on disk "
-                         "(default: ./runs).")
-    ap.add_argument("--retention-days", type=_parse_retention_days, default=None,
-                    help="Completed-run retention in whole days. 0 keeps "
-                         "everything. The persisted GUI setting is used when "
-                         "this option is omitted.")
-    ap.add_argument("--sweep-interval", type=int, default=300,
-                    help="Seconds between orphan-process sweeps (default: 300).")
-    ap.add_argument("--databases", default="",
-                    help="Database directory passed to every screen (via -d).")
-    ap.add_argument("--browse-root", default=str(Path.home()),
-                    help="Root directory the file browser is confined to "
-                         "(default: the user's home directory).")
-    ap.add_argument("--password-file",
-                    default=str(Path.home() / ".config" / "commec-gui" / "password.hash"),
-                    help="File holding the access-password hash (werkzeug "
-                         "format). Non-localhost access is blocked until it is "
-                         "present + non-empty, then requires login. Default: "
-                         "~/.config/commec-gui/password.hash")
-    ap.add_argument("--require-local-auth", action="store_true",
-                    help="Also require the password from localhost (the walk-up "
-                         "kiosk), not just remote clients.")
-    ap.add_argument("--threads", type=int, default=0,
-                    help="CPU threads passed to commec search tools (-t). "
-                         "0 (default) uses all logical cores: one screen runs "
-                         "at a time, so the kiosk is dedicated to it.")
-    ap.add_argument("--presets", default=str(Path(__file__).parent / "presets.yaml"),
-                    help="Path to the presets manifest (default: presets.yaml).")
-    ap.add_argument("--tls-cert", default="",
-                    help="Path to a TLS certificate (PEM). Enables HTTPS when "
-                         "given together with --tls-key.")
-    ap.add_argument("--tls-key", default="",
-                    help="Path to the TLS private key (PEM) matching --tls-cert.")
-    ap.add_argument("--tls-auto", action="store_true",
-                    help="Serve HTTPS, generating a per-user cert "
-                         "(~/.local/share/commec-gui/certs) on first startup "
-                         "(via gen-cert.sh) if it doesn't exist.")
+    ap.add_argument(
+        "--host",
+        default=None,
+        help="Bind address. Default: 127.0.0.1, or 0.0.0.0 if --lan.",
+    )
+    ap.add_argument(
+        "--port",
+        type=int,
+        default=443,
+        help="Port to serve on (default: 443). Binding <1024 needs "
+        "a privilege grant for the unprivileged server -- see "
+        "deploy-notes.md. Use a high port (e.g. 8765) without one.",
+    )
+    ap.add_argument(
+        "--lan",
+        action="store_true",
+        help="Bind 0.0.0.0 so other machines on the LAN can connect.",
+    )
+    ap.add_argument(
+        "--kiosk",
+        action="store_true",
+        help="Auto-open a browser at the server (local kiosk mode).",
+    )
+    ap.add_argument(
+        "--commec-bin",
+        default="commec",
+        help="Path to the commec binary (default: commec on PATH).",
+    )
+    ap.add_argument(
+        "--runs-dir",
+        default="runs",
+        help="Persistent dir holding one directory per run: the "
+        "submitted sequence, commec's search intermediates, "
+        "and the polished results, all kept on disk "
+        "(default: ./runs).",
+    )
+    ap.add_argument(
+        "--retention-days",
+        type=_parse_retention_days,
+        default=None,
+        help="Completed-run retention in whole days. 0 keeps "
+        "everything. The persisted GUI setting is used when "
+        "this option is omitted.",
+    )
+    ap.add_argument(
+        "--sweep-interval",
+        type=int,
+        default=300,
+        help="Seconds between orphan-process sweeps (default: 300).",
+    )
+    ap.add_argument(
+        "--databases",
+        default="",
+        help="Database directory passed to every screen (via -d).",
+    )
+    ap.add_argument(
+        "--browse-root",
+        default=str(Path.home()),
+        help="Root directory the file browser is confined to "
+        "(default: the user's home directory).",
+    )
+    ap.add_argument(
+        "--password-file",
+        default=str(Path.home() / ".config" / "commec-gui" / "password.hash"),
+        help="File holding the access-password hash (werkzeug "
+        "format). Non-localhost access is blocked until it is "
+        "present + non-empty, then requires login. Default: "
+        "~/.config/commec-gui/password.hash",
+    )
+    ap.add_argument(
+        "--require-local-auth",
+        action="store_true",
+        help="Also require the password from localhost (the walk-up "
+        "kiosk), not just remote clients.",
+    )
+    ap.add_argument(
+        "--threads",
+        type=int,
+        default=0,
+        help="CPU threads passed to commec search tools (-t). "
+        "0 (default) uses all logical cores: one screen runs "
+        "at a time, so the kiosk is dedicated to it.",
+    )
+    ap.add_argument(
+        "--presets",
+        default=str(Path(__file__).parent / "presets.yaml"),
+        help="Path to the presets manifest (default: presets.yaml).",
+    )
+    ap.add_argument(
+        "--tls-cert",
+        default="",
+        help="Path to a TLS certificate (PEM). Enables HTTPS when "
+        "given together with --tls-key.",
+    )
+    ap.add_argument(
+        "--tls-key",
+        default="",
+        help="Path to the TLS private key (PEM) matching --tls-cert.",
+    )
+    ap.add_argument(
+        "--tls-auto",
+        action="store_true",
+        help="Serve HTTPS, generating a per-user cert "
+        "(~/.local/share/commec-gui/certs) on first startup "
+        "(via gen-cert.sh) if it doesn't exist.",
+    )
     return parser
 
 
@@ -1973,14 +2174,21 @@ def run(args):
     CFG["browse_root"] = Path(args.browse_root).resolve()
     CFG["require_local_auth"] = args.require_local_auth
     try:
-        CFG["password_hash"] = (Path(args.password_file)
-                                .read_text(encoding="utf-8").strip()) or None
+        CFG["password_hash"] = (
+            Path(args.password_file).read_text(encoding="utf-8").strip()
+        ) or None
     except OSError:
         CFG["password_hash"] = None
-    print("Auth: " + ("ON (password required for "
-          + ("all clients" if args.require_local_auth else "non-localhost")
-          + ")" if CFG["password_hash"] else
-          "LAN blocked (no password file; localhost only)"))
+    print(
+        "Auth: "
+        + (
+            "ON (password required for "
+            + ("all clients" if args.require_local_auth else "non-localhost")
+            + ")"
+            if CFG["password_hash"]
+            else "LAN blocked (no password file; localhost only)"
+        )
+    )
     # 0 => all logical cores (one screen at a time, so dedicate the box to it).
     CFG["threads"] = args.threads or (os.cpu_count() or 1)
     # presets.yaml is deployment-specific (gitignored; the kiosk image provisions
@@ -1990,18 +2198,23 @@ def run(args):
         presets_path += ".example"
         print(f"No {args.presets}; using {presets_path}")
     CFG["presets"] = load_presets(presets_path)
-    print(f"Loaded {len(CFG['presets'])} preset(s): "
-          + ", ".join(p["id"] for p in CFG["presets"]))
+    print(
+        f"Loaded {len(CFG['presets'])} preset(s): "
+        + ", ".join(p["id"] for p in CFG["presets"])
+    )
     print(f"commec search tools will use {CFG['threads']} thread(s).")
     retention = CFG["retention_days"]
-    print(f"runs dir: {CFG['runs_dir']}; retention: "
-          + (f"{retention} day(s)" if retention else "forever"))
+    print(
+        f"runs dir: {CFG['runs_dir']}; retention: "
+        + (f"{retention} day(s)" if retention else "forever")
+    )
 
     # Kill any process group orphaned by a previous (crashed/killed) run, then
     # sweep periodically. Kill in-flight children on shutdown too.
     _sweep()
-    threading.Thread(target=_sweep_loop, args=(args.sweep_interval,),
-                     daemon=True).start()
+    threading.Thread(
+        target=_sweep_loop, args=(args.sweep_interval,), daemon=True
+    ).start()
     # Auto-mount removable media (read-only) so USB sticks just appear.
     threading.Thread(target=_automount_loop, args=(3,), daemon=True).start()
     atexit.register(_kill_running_jobs)
@@ -2019,25 +2232,34 @@ def run(args):
     # read-only site-packages the server user cannot write. Explicit
     # --tls-cert/--tls-key still take precedence.
     if args.tls_auto and not (cert or key):
-        cert_dir = (Path(os.environ.get("XDG_DATA_HOME")
-                         or Path.home() / ".local" / "share")
-                    / "commec-gui" / "certs")
+        cert_dir = (
+            Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share")
+            / "commec-gui"
+            / "certs"
+        )
         cert = str(cert_dir / "server.crt")
         key = str(cert_dir / "server.key")
         if not (os.path.isfile(cert) and os.path.isfile(key)):
-            print(f"No TLS cert found; generating one with gen-cert.sh into {cert_dir} ...")
+            print(
+                f"No TLS cert found; generating one with gen-cert.sh into {cert_dir} ..."
+            )
             try:
-                subprocess.run(["bash", str(here / "gen-cert.sh")], check=True,
-                               env={**os.environ, "COMMEC_GUI_CERT_DIR": str(cert_dir)})
+                subprocess.run(
+                    ["bash", str(here / "gen-cert.sh")],
+                    check=True,
+                    env={**os.environ, "COMMEC_GUI_CERT_DIR": str(cert_dir)},
+                )
             except (subprocess.CalledProcessError, OSError) as exc:
-                raise SystemExit(f"commec gui: error: automatic cert generation "
-                                 f"failed: {exc}")
+                raise SystemExit(
+                    f"commec gui: error: automatic cert generation failed: {exc}"
+                )
 
     ssl_context = None
     if cert or key:
         if not (cert and key):
-            raise SystemExit("commec gui: error: --tls-cert and --tls-key must "
-                             "be given together.")
+            raise SystemExit(
+                "commec gui: error: --tls-cert and --tls-key must be given together."
+            )
         for label, path in (("cert", cert), ("key", key)):
             if not os.path.isfile(path):
                 raise SystemExit(f"commec gui: error: TLS {label} not found: {path}")
@@ -2048,15 +2270,19 @@ def run(args):
     # but transport is cleartext (login + cookie would be exposed).
     app.config["SESSION_COOKIE_SECURE"] = bool(ssl_context)
     if CFG["password_hash"] and not ssl_context:
-        print("WARNING: auth password is set but TLS is OFF -- credentials "
-              "would be sent in cleartext. Serve HTTPS in production.")
+        print(
+            "WARNING: auth password is set but TLS is OFF -- credentials "
+            "would be sent in cleartext. Serve HTTPS in production."
+        )
     host = args.host or ("0.0.0.0" if args.lan else "127.0.0.1")
     # Omit the port from the opened URL when it's the scheme default.
     default_port = 443 if ssl_context else 80
     portpart = "" if args.port == default_port else f":{args.port}"
     url = f"{scheme}://127.0.0.1{portpart}/"
-    print(f"commec-gui serving on {scheme}://{host}:{args.port}/  "
-          f"(runs dir: {CFG['runs_dir']})")
+    print(
+        f"commec-gui serving on {scheme}://{host}:{args.port}/  "
+        f"(runs dir: {CFG['runs_dir']})"
+    )
 
     if args.kiosk:
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()
