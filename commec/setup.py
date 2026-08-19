@@ -382,15 +382,16 @@ def fetch_revisions_from_json(filename: str | os.PathLike) -> dict | None:
     return db_revisions
 
 
-def fetch_latest_revisions(
-    base_url: str = R2_PUBLIC_BASE_URL,
-) -> dict | None:
+def fetch_latest_revisions(base_url: str | None = None) -> dict | None:
     """
     A latest.json manifest exists at the root of the R2 bucket, listing
     the latest revision of each database. Downloads and parses it into a
     dict. Returns None if it could not be fetched or parsed.
+
+    base_url defaults to the packaged config's host, resolved per call so it
+    tracks that file rather than whatever it said at import.
     """
-    raw = fetch_r2_object("latest.json", base_url=base_url)
+    raw = fetch_r2_object("latest.json", base_url=base_url or YamlIO.default_base_url())
     if raw is None:
         return None
 
@@ -421,14 +422,10 @@ class CommecDatabaseUpdater:
     Handles fetching, writing, and version management.
     """
 
-    def __init__(
-        self,
-        existing_location: os.PathLike,
-        base_url: str = R2_PUBLIC_BASE_URL,
-    ):
+    def __init__(self, existing_location: os.PathLike, base_url: str | None = None):
         self.name = None
         self.write_location = existing_location
-        self.base_url = base_url
+        self.base_url = base_url or YamlIO.default_base_url()
         # 0.0 reads as "not installed", which is exactly what an unreadable
         # manifest tells us. Leaving this None makes every later .invalid()
         # call an AttributeError, which aborts a screen mid-setup.
