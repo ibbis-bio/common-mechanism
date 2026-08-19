@@ -14,6 +14,7 @@ dependencies:
   - openpyxl
   - xlrd
   - xlwt
+  - oligraph
   # Web GUI (`commec gui`)
   - flask
   - psutil
