@@ -27,6 +27,10 @@ The [GitHub Wiki](https://github.com/ibbis-screening/common-mechanism/wiki) has 
 
 More information about the Common Mechanism project is available on the [commec.ibbis.bio](https://commec.ibbis.bio/) and [IBBIS project page](https://ibbis.bio/common-mechanism/).
 
+## Google Colab Demo
+You can quickly see what `commec` is all about with our easy to use [commec screen google colab notebook](https://colab.research.google.com/github/ibbis-bio/common-mechanism/blob/main/notebooks/commec_colab_screen.ipynb). Simple click `Run all` to initialise the notebook, and paste in your fasta sequence, or upload a fasta file, and click run!
+Your outputs will be displayed, as well as the HTML report, and JSON data made available to download.
+
 ## Quick start
 `commec` and its package dependencies are installed via conda. The reference databases that support screening are downloaded and kept up to date with the `commec setup` command, which retrieves them from [databases.commec.io](https://databases.commec.io).
 
@@ -50,6 +54,10 @@ conda activate commec-dev
 ```
 
 From here, you should have an interactive version of the package installed via `pip -e .` and the necessary shell dependencies.
+
+### Code Style/Formatting
+
+We use `ruff` for formatting, including import sorting. Please lint your code by running `uvx ruff format` (or using your preferred python package manager).
 
 ## License
 `commec` is released under the [MIT License](LICENSE).

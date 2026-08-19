@@ -1,0 +1,22 @@
+# Presets for the commec screen GUI.
+
+
+presets:
+  - id: full
+    label: Full screen
+    recommended: true
+    description: >-
+      Complete pipeline using BLAST multithreading mode 0 for fast local storage.
+    config:
+      skip_taxonomy_search: false
+      skip_nt_search: false
+      blast_mt_mode: 0
+
+  - id: full-mt-mode-1
+    label: Full screen (BLAST MT mode 1)
+    description: >-
+      Better suited to slower or networked storage.
+    config:
+      skip_taxonomy_search: false
+      skip_nt_search: false
+      blast_mt_mode: 1

@@ -11,6 +11,13 @@ dependencies:
   - pandas
   - pyyaml
   - pycountry
+  - openpyxl
+  - xlrd
+  - xlwt
+  - oligraph
+  # Web GUI (`commec gui`)
+  - flask
+  - psutil
   # Runtime non-Python dependencies
   - blast>=2.17
   - hmmer
@@ -23,5 +30,6 @@ dependencies:
   - pip
   - pytest
   - matplotlib
+  - ruff>=0.15.10,<0.16.0
   - pip:
       - -e .

@@ -3,6 +3,7 @@
 
 import os
 from dataclasses import dataclass
+
 from Bio import Seq
 from Bio.SeqRecord import SeqRecord
 

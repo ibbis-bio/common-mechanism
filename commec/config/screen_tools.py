@@ -6,8 +6,9 @@ Container for search handlers used throughout the Commec screen workflow.
 Sets and alters defaults based on input parameters.
 """
 
-import logging
 import argparse
+import logging
+
 from commec.config.screen_io import ScreenIO
 from commec.tools.blastn import BlastNHandler
 from commec.tools.blastx import BlastXHandler

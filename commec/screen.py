@@ -48,39 +48,44 @@ Output file handling:
 
 import argparse
 import datetime
-import time
 import logging
 import sys
+import time
 import traceback
-import pandas as pd
-from Bio.Data.CodonTable import TranslationError
 
-from commec.config.screen_io import ScreenIO, IoValidationError
+import oligraph
+import pandas as pd
+from Bio import SeqIO
+from Bio.Data.CodonTable import TranslationError
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+
+import commec.control_list as control_list
+from commec.config.constants import MAXIMUM_QUERY_LENGTH, MINIMUM_QUERY_LENGTH
+from commec.config.json_io import encode_screen_data_to_json
 from commec.config.query import Query
-from commec.utils.logger import (
-    setup_console_logging,
-    setup_file_logging,
-    set_log_level,
-)
-from commec.config.screen_tools import ScreenTools
 from commec.config.result import (
-    ScreenResult,
-    ScreenStep,
-    QueryResult,
-    ScreenStatus,
     ControlListResult,
+    QueryResult,
+    ScreenResult,
+    ScreenStatus,
+    ScreenStep,
 )
-from commec.utils.file_utils import file_arg, directory_arg
-from commec.utils.json_html_output import generate_html_from_screen_data
+from commec.config.screen_io import IoValidationError, ScreenIO
+from commec.config.screen_tools import ScreenTools
 from commec.screeners.check_biorisk import parse_biorisk_hits
 from commec.screeners.check_low_concern import parse_low_concern_hits
 from commec.screeners.check_reg_path import parse_taxonomy_hits
+from commec.setup import check_for_updates, read_manifest
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.tools.search_handler import DatabaseValidationError
-from commec.config.json_io import encode_screen_data_to_json
-from commec.setup import check_for_updates, read_manifest
-import commec.control_list as control_list
-from commec.config.constants import MINIMUM_QUERY_LENGTH, MAXIMUM_QUERY_LENGTH
+from commec.utils.file_utils import directory_arg, file_arg
+from commec.utils.json_html_output import generate_html_from_screen_data
+from commec.utils.logger import (
+    set_log_level,
+    setup_console_logging,
+    setup_file_logging,
+)
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -235,8 +240,8 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "-r",
         "--regions",
         dest="regions",
-        default=[],
-        help="A comma separated list of countries or regions to add context to list compliance i.e. NZ,US,CH",
+        default="",
+        help="A comma-separated list of countries or regions to add context to list compliance, e.g. 'NZ,EU'",
     )
     return parser
 
@@ -418,6 +423,12 @@ class Screen:
             logger.error(e)
             self.early_exit()
 
+        # Try to assemble the queries
+
+        # 1. Check for tags, signatures (TODO)
+        # 2. Check for overlaps, add assembled contigs to queries (oligraph)
+        self.queries.update(self._assemble_queries())
+
         total_query_length = 0
 
         # Ensure that the translation aa is cleared.
@@ -540,6 +551,91 @@ class Screen:
         self.screen_data.commec_info.date_run = datetime.datetime.now().strftime(
             "%Y-%m-%d %H:%M:%S"
         )
+
+    def _assemble_queries(self) -> dict[str, Query]:
+        """
+        Assemble the input queries into contigs with oligraph, and return those
+        contigs as additional queries to screen, keyed by query name.
+
+        Contigs are also appended to the cleaned nucleotide FASTA, so the
+        nucleotide searches cover them as well as the protein searches do.
+        """
+        # oligraph caps sequences at MAX_SEQUENCE_LENGTH (320 bases), and a
+        # single over-length query would otherwise make the whole build() call
+        # fail. Pre-filter to oligo-scale queries so a typical mixed input still
+        # gets its short oligos assembled; anything longer is screened as-is.
+        oligo_queries = {
+            name: query.sequence
+            for name, query in self.queries.items()
+            if query.length <= oligraph.MAX_SEQUENCE_LENGTH
+        }
+        if len(oligo_queries) < 2:
+            return {}
+
+        try:
+            graph = oligraph.build(oligo_queries, min_overlap=20, method="pca")
+        except (TypeError, ValueError) as e:
+            logger.warning("Skipping assembly of the input queries: %s", e)
+            return {}
+
+        if graph.skipped:
+            logger.debug(
+                "Not assembled (empty or non-ACGT): %s", ", ".join(graph.skipped)
+            )
+
+        contigs: dict[str, Query] = {}
+        for i, contig in enumerate(graph.contigs):
+            # A single-oligo contig is a copy of a query that is screened already.
+            if contig.n_oligos < 2:
+                continue
+
+            contig_id = f"contig_{i}"
+            # SeqRecord descriptions parsed from FASTA are prefixed with the
+            # record id, which Query strips back off, so match that convention.
+            record = SeqRecord(
+                Seq(contig.sequence),
+                id=contig_id,
+                description=(
+                    f"{contig_id} {contig.topology.name.lower()} assembly"
+                    f" of {contig.n_oligos} queries"
+                ),
+            )
+            query = Query(record)
+
+            if query.name in self.queries or query.name in contigs:
+                logger.warning(
+                    "Assembled contig %s clashes with an existing query name,"
+                    " screening the original query only.",
+                    query.name,
+                )
+                continue
+
+            logger.debug(
+                "Assembled %s (%i bases) from %s",
+                query.name,
+                query.length,
+                ", ".join(f"{name}{strand.symbol}" for name, strand in contig.path),
+            )
+            contigs[query.name] = query
+
+        if not contigs:
+            return contigs
+
+        # Append to the cleaned FASTA the nucleotide searches read, applying the
+        # same length filter used for the input records.
+        with open(self.params.nt_path, "a", encoding="utf-8") as fasta_file:
+            SeqIO.write(
+                [
+                    SeqRecord(Seq(query.sequence), id=query.name, description="")
+                    for query in contigs.values()
+                    if MINIMUM_QUERY_LENGTH < query.length <= MAXIMUM_QUERY_LENGTH
+                ],
+                fasta_file,
+                "fasta",
+            )
+
+        logger.info("Assembled %i contig(s) from the input queries", len(contigs))
+        return contigs
 
     def run(self, args: argparse.Namespace):
         """
