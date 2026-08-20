@@ -154,8 +154,8 @@ class ScreenIO:
                         f"Ensure that the first {MAXIMUM_QUERY_NAME_LENGTH} characters for each fasta record are unique."
                     )
                 queries[query.name] = query
-                # Override the original cleaned fasta, with queries above a given length and updated names
-                if MINIMUM_QUERY_LENGTH < len(record.seq) <= MAXIMUM_QUERY_LENGTH:
+                # Override the original cleaned fasta, with queries within the valid length range and updated names
+                if MINIMUM_QUERY_LENGTH <= len(record.seq) <= MAXIMUM_QUERY_LENGTH:
                     # Creating new SeqRecord to avoid overwriting the seq_record object inside query and preserve the original seq id
                     updated_records.append(
                         SeqRecord(record.seq, id=query.name, description="")

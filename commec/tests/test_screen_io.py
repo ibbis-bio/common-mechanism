@@ -2,9 +2,11 @@ import os
 from unittest.mock import patch
 
 import pytest
+from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
+from commec.config.constants import MAXIMUM_QUERY_LENGTH, MINIMUM_QUERY_LENGTH
 from commec.config.screen_io import IoValidationError, ScreenIO, substitute_non_iupac
 from commec.screen import ScreenArgumentParser, add_args
 
@@ -228,3 +230,51 @@ def test_parse_input_fasta_warns_when_substitutions_exceed_threshold(
 
     assert len(not_dna_warnings) == 1
     assert record_id in not_dna_warnings[0]
+
+
+@pytest.mark.parametrize(
+    "length,expect_in_nt_fasta",
+    [
+        pytest.param(MINIMUM_QUERY_LENGTH - 1, False, id="below_minimum"),
+        # A query of exactly MINIMUM_QUERY_LENGTH is screened rather than skipped by
+        # `screen.py`, so it must also reach the nucleotide FASTA, or it would be
+        # protein-screened only and still report as a normal pass
+        pytest.param(MINIMUM_QUERY_LENGTH, True, id="exactly_minimum"),
+        pytest.param(MINIMUM_QUERY_LENGTH + 1, True, id="above_minimum"),
+        pytest.param(MAXIMUM_QUERY_LENGTH, True, id="exactly_maximum"),
+        pytest.param(MAXIMUM_QUERY_LENGTH + 1, False, id="above_maximum"),
+    ],
+)
+def test_parse_input_fasta_length_boundaries(
+    length, expect_in_nt_fasta, database_dir, tmp_path
+):
+    input_fasta = tmp_path / "boundary.fasta"
+    sequence = "ATG" * (length // 3 + 1)
+    input_fasta.write_text(f">boundary\n{sequence[:length]}\n", encoding="utf-8")
+
+    with patch(
+        "sys.argv",
+        [
+            "test.py",
+            "--skip-tx",
+            str(input_fasta),
+            "-d",
+            database_dir,
+            "-o",
+            str(tmp_path),
+        ],
+    ):
+        parser = ScreenArgumentParser()
+        add_args(parser)
+        screen_io = ScreenIO(parser.parse_args())
+        screen_io.setup()
+
+    queries = screen_io.parse_input_fasta()
+
+    # Every record becomes a query, regardless of length, so that it can be reported on
+    assert queries["boundary"].length == length
+
+    with open(screen_io.nt_path, "r", encoding="utf-8") as nt_fasta:
+        nt_records = list(SeqIO.parse(nt_fasta, "fasta"))
+
+    assert bool(nt_records) == expect_in_nt_fasta
