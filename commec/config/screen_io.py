@@ -203,9 +203,20 @@ class ScreenIO:
         cli_config_yaml = args.config_yaml.strip()
         if cli_config_yaml:
             if not os.path.exists(cli_config_yaml):
-                raise FileNotFoundError(f"--config YAML not found: {cli_config_yaml}")
+                raise YamlIO.YamlIOValidationError(
+                    f"--config YAML not found: {cli_config_yaml}"
+                )
             logger.debug("Overriding defaults in with values from %s", cli_config_yaml)
             self.config = YamlIO.update_config_from_yaml(self.config, cli_config_yaml)
+
+        # The example config `commec setup` leaves in the databases directory
+        # describes that install, but it is not read here: it is an example
+        # rewritten by every setup run, and screening against databases other than
+        # the ones -d asked for is a worse outcome than losing a setting.
+        if self.db_dir is not None:
+            YamlIO.note_unread_directory_config(
+                expand_and_normalize(self.db_dir), cli_config_yaml
+            )
 
         # Override configuration with any user-provided CLI arguments
         self.config = YamlIO.update_config_from_cli(self.config, args)
