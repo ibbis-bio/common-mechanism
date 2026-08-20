@@ -1,8 +1,35 @@
 """Startup diagnostics for the Commec GUI."""
 
+from pathlib import Path
+
 import pytest
 
 from commec.gui import server
+
+
+def test_deployment_presets_override_missing_packaged_presets(monkeypatch, tmp_path):
+    deployed = tmp_path / "presets.yaml"
+    deployed.write_text("presets: []\n")
+    monkeypatch.chdir(tmp_path)
+
+    packaged = Path(server.__file__).parent / "presets.yaml"
+    assert not packaged.exists()
+    assert server._resolve_presets_path(packaged) == deployed
+
+
+def test_explicit_presets_do_not_fall_back_to_deployment(monkeypatch, tmp_path):
+    (tmp_path / "presets.yaml").write_text("presets: []\n")
+    monkeypatch.chdir(tmp_path)
+
+    explicit = tmp_path / "missing.yaml"
+    assert server._resolve_presets_path(explicit) == explicit
+
+
+def test_packaged_example_is_default_without_deployment(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+
+    packaged = Path(server.__file__).parent / "presets.yaml"
+    assert server._resolve_presets_path(packaged) == Path(str(packaged) + ".example")
 
 
 @pytest.mark.parametrize(
