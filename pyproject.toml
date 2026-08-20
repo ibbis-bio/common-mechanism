@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "commec"
-version = '2.0.0'
+version = '2.1.0'
 requires-python = ">=3.10"
 # This is not a pure python project; dependencies are managed through environment.yml
 authors = [
@@ -12,7 +12,7 @@ authors = [
   { name = "Jen Lu" },
   { name = "Michael Barnett" },
   { name = "Manu Shivakumara" },
-  { name = "Tessa Alexanian", email = "tessa@ibbis.bio" },
+  { name = "Tessa Alexanian" },
 ]
 maintainers = [
   { name = "International Biosecurity and Biosafety Initiative for Science (IBBIS)", email = "info@ibbis.bio" },
