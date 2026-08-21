@@ -54,31 +54,7 @@ environment active, start the local interface on an unprivileged port with:
 commec gui --kiosk --port 8765 --databases /path/to/databases
 ```
 
-LAN access is blocked until a password hash exists. Locate and run the packaged
-password helper, then start the HTTPS server:
-
-```bash
-GUI_DIR="$(python -c 'from pathlib import Path; import commec.gui; print(Path(commec.gui.__file__).parent)')"
-COMMEC_CONDA_ENV="$CONDA_DEFAULT_ENV" "$GUI_DIR/set-password.sh"
-commec gui --lan --tls-auto --port 8765 --databases /path/to/databases
-```
-
-Clients connect to `https://<server-address>:8765/`. See the
-[GUI guide](commec/gui/README.md) for configuration, certificate setup,
-presets, results, resume, and retention.
-
-> **LAN and data-storage warnings**
->
-> - `--lan` exposes the service on every network interface. Restrict the port
->   to trusted LAN or VPN clients with the host firewall.
-> - Keep TLS enabled. The automatically generated certificate uses a local CA,
->   so remote clients must install that CA certificate to avoid a browser
->   warning. Distribute only the CA certificate, never its private key.
-> - Localhost kiosk access does not require the GUI password by default because
->   it assumes physical access. Use `--require-local-auth` if that assumption is
->   not appropriate.
-> - Submitted sequences, intermediates, and results persist under `--runs-dir`.
->   Protect that directory and configure retention for sensitive inputs.
+See the [GUI guide](commec/gui/README.md) for configuration, LAN access, certificate setup, presets, results, resume, and retention.
 
 ## Development
 The `commec` package is being actively developed by IBBIS staff. We welcome contributions! To get started, install conda, and make sure
