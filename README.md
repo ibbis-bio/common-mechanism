@@ -12,6 +12,7 @@ The `commec` package is a tool for DNA sequence screening that is part of the
     screen  Run Common Mechanism screening on an input FASTA.
     flag    Parse .screen or .json files in a directory and create CSVs of flags raised
     list    Display information on available annotated control lists
+    gui     Run the browser-based screening interface
 
 The `commec screen` command runs an input FASTA through the following screening steps:
 
@@ -23,7 +24,7 @@ The `commec screen` command runs an input FASTA through the following screening 
 
 ![Flowchart of the commec screening steps, from input FASTA through the biorisk, best match / taxonomy, and low-concern screening to a Warning, Flag, or Clear outcome.](docs/images/common-mechanism-screening-flow-v2.jpg "Commec screening decision flow")
 
-The [GitHub Wiki](https://github.com/ibbis-screening/common-mechanism/wiki) has documentation for this package, including information about installing `commec` and interpreting screening results.
+The [GitHub Wiki](https://github.com/ibbis-bio/common-mechanism/wiki) has documentation for this package, including information about installing `commec` and interpreting screening results.
 
 More information about the Common Mechanism project is available on the [commec.ibbis.bio](https://commec.ibbis.bio/) and [IBBIS project page](https://ibbis.bio/common-mechanism/).
 
@@ -41,12 +42,47 @@ commec setup -d /path/to/databases
 commec screen -d /path/to/databases input.fasta
 ```
 
-See the [GitHub Wiki](https://github.com/ibbis-screening/common-mechanism/wiki) for full installation instructions.
+See the [GitHub Wiki](https://github.com/ibbis-bio/common-mechanism/wiki) for full installation instructions.
 
+## Browser GUI
+
+Commec includes a browser interface for local kiosk use and authenticated use
+from another computer on the same trusted network. With the Commec conda
+environment active, start the local interface on an unprivileged port with:
+
+```bash
+commec gui --kiosk --port 8765 --databases /path/to/databases
+```
+
+LAN access is blocked until a password hash exists. Locate and run the packaged
+password helper, then start the HTTPS server:
+
+```bash
+GUI_DIR="$(python -c 'from pathlib import Path; import commec.gui; print(Path(commec.gui.__file__).parent)')"
+COMMEC_CONDA_ENV="$CONDA_DEFAULT_ENV" "$GUI_DIR/set-password.sh"
+commec gui --lan --tls-auto --port 8765 --databases /path/to/databases
+```
+
+Clients connect to `https://<server-address>:8765/`. See the
+[GUI guide](commec/gui/README.md) for configuration, certificate setup,
+presets, results, resume, and retention.
+
+> **LAN and data-storage warnings**
+>
+> - `--lan` exposes the service on every network interface. Restrict the port
+>   to trusted LAN or VPN clients with the host firewall.
+> - Keep TLS enabled. The automatically generated certificate uses a local CA,
+>   so remote clients must install that CA certificate to avoid a browser
+>   warning. Distribute only the CA certificate, never its private key.
+> - Localhost kiosk access does not require the GUI password by default because
+>   it assumes physical access. Use `--require-local-auth` if that assumption is
+>   not appropriate.
+> - Submitted sequences, intermediates, and results persist under `--runs-dir`.
+>   Protect that directory and configure retention for sensitive inputs.
 
 ## Development
 The `commec` package is being actively developed by IBBIS staff. We welcome contributions! To get started, install conda, and make sure
-that [your channels are configured correctly](http://bioconda.github.io/). Then create the dev environment with:
+that [your channels are configured correctly](https://bioconda.github.io/). Then create the dev environment with:
 
 ```
 conda env create -f environment.yaml

@@ -1,11 +1,11 @@
 # commec-gui
 
-A tiny web frontend for `commec screen` One small Flask server serves a single page; the same server powers
+A tiny web frontend for `commec screen`. One small Flask server serves a single page; the same server powers
 both usage modes:
 
 - **Kiosk** (local): binds `127.0.0.1` and opens a browser on this machine.
 - **LAN** (remote): binds `0.0.0.0` so other machines on the network connect
-  to `http://<this-machine-ip>:<port>/`.
+  to `https://<this-machine-ip>:<port>/`.
 
 The server shells out to the `commec` binary, so run it inside the
 `commec-dev` conda env (or point `--commec-bin` at the binary).
