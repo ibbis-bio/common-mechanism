@@ -21,9 +21,9 @@ Additionally, it includes three columns indicating whether the sequence was flag
 virus, bacteria, or eukaryote.
 """
 
-import os
-import csv
 import argparse
+import csv
+import os
 import re
 
 

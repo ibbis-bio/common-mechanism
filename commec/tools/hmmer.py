@@ -7,10 +7,12 @@ Instantiate a HmmerHandler, with input local database, input fasta, and output f
 Throws if inputs are invalid. Creates a temporary log file, which is deleted on completion.
 """
 
+import itertools
 import re
 import subprocess
+
 import pandas as pd
-import itertools
+
 from commec.config.constants import HMMSCAN_MAX_THREAD_LIMIT
 from commec.config.query import Query
 from commec.tools.search_handler import SearchHandler, SearchToolVersion

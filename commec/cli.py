@@ -15,29 +15,58 @@ Command-line usage examples:
     - commec -v, --version
 """
 
+import sys
+
+from commec import __version__ as COMMEC_VERSION
+from commec.config.yaml_io import YamlIOValidationError
 from commec.control_list import (
     DESCRIPTION as list_DESCRIPTION,
+)
+from commec.control_list import (
     add_args as list_add_args,
+)
+from commec.control_list import (
     run as list_run,
 )
 from commec.flag import (
     DESCRIPTION as flag_DESCRIPTION,
+)
+from commec.flag import (
     add_args as flag_add_args,
+)
+from commec.flag import (
     run as flag_run,
+)
+from commec.gui.server import (
+    DESCRIPTION as gui_DESCRIPTION,
+)
+from commec.gui.server import (
+    add_args as gui_add_args,
+)
+from commec.gui.server import (
+    run as gui_run,
 )
 from commec.screen import (
     DESCRIPTION as screen_DESCRIPTION,
-    add_args as screen_add_args,
-    run as screen_run,
+)
+from commec.screen import (
     ScreenArgumentParser,
+)
+from commec.screen import (
+    add_args as screen_add_args,
+)
+from commec.screen import (
+    run as screen_run,
 )
 from commec.setup import (
     DESCRIPTION as setup_DESCRIPTION,
+)
+from commec.setup import (
     add_args as setup_add_args,
+)
+from commec.setup import (
     run as setup_run,
 )
-
-from commec import __version__ as COMMEC_VERSION
 
 
 def main():
@@ -76,25 +105,39 @@ def main():
     list_parser = subparsers.add_parser("list", description=list_DESCRIPTION)
     list_add_args(list_parser)
 
+    # Sub-command for "gui"
+    gui_parser = subparsers.add_parser("gui", description=gui_DESCRIPTION)
+    gui_add_args(gui_parser)
+
     args = parser.parse_args()
 
-    if args.command == "screen":
-        screen_run(args)
-    elif args.command == "flag":
-        flag_run(args)
-    elif args.command == "setup":
-        setup_run(args)
-    elif args.command == "list":
-        list_run(args)
-    elif args.version:
-        print(
-            "Commec  : The Common Mechanism\n"
-            f"Version : {COMMEC_VERSION}\n"
-            "Copyright IBBIS (c) 2021-2025\n"
-            "International Biosecurity and Biosafety Initiative for Science"
-        )
-    else:
-        parser.print_help()
+    # A malformed or contradictory configuration is a user error, not a defect,
+    # so it is reported as one line rather than a traceback. Every subcommand
+    # that reads a config raises this from somewhere different, so it is caught
+    # once here instead of in each of them.
+    try:
+        if args.command == "screen":
+            screen_run(args)
+        elif args.command == "flag":
+            flag_run(args)
+        elif args.command == "setup":
+            setup_run(args)
+        elif args.command == "list":
+            list_run(args)
+        elif args.command == "gui":
+            gui_run(args)
+        elif args.version:
+            print(
+                "Commec  : The Common Mechanism\n"
+                f"Version : {COMMEC_VERSION}\n"
+                "Copyright IBBIS (c) 2021-2025\n"
+                "International Biosecurity and Biosafety Initiative for Science"
+            )
+        else:
+            parser.print_help()
+    except YamlIOValidationError as e:
+        print(f"Configuration error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

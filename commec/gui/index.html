@@ -1,0 +1,1916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Common Mechanism - Sequence Screening</title>
+<link rel="stylesheet" href="/report-badge.css">
+<style>
+  @font-face {
+    font-family: "Crimson Pro";
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url("/fonts/CrimsonPro.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url("/fonts/Manrope.woff2") format("woff2");
+  }
+  :root {
+    /* IBBIS brand tokens (from ibbis.bio) */
+    --navy: #232A58;
+    --teal: #419BB9;
+    --orange: #F05023;
+    /* neutrals */
+    --paper: #F4F6F9;
+    --panel: #ffffff;
+    --line: #E4E8EF;
+    --ink: #1B2030;
+    --muted: #5B6577;
+    --faint: #8a93a3;
+    --ok: #2f8f5b;
+    /* themed surfaces (overridden by body.dark) */
+    --heading: #232A58; --field: #fbfcfd; --track: #eaeef3; --hover: #eef6f9; --tint: #f3f9fb;
+    /* type */
+    --display: "Crimson Pro", Georgia, serif;
+    --ui: "Crimson Pro", Georgia, serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-small: 12px;
+    --font-compact: 14px;
+    --font-base: 16px;
+    --font-title: 20px;
+    --content-width: 1040px;
+    --card-width: 880px;
+    --badge-radius: 4px;
+    --section-rule: var(--navy);
+  }
+  /* Dark mode: re-point the neutral/surface tokens. Brand colors (navy header,
+     teal, orange, ok-green) and the always-dark terminal log stay as-is. */
+  body.dark {
+    --paper: #0f1419; --panel: #171d26; --line: #2a3441;
+    --ink: #e6edf3; --muted: #97a3b4; --faint: #6b7686;
+    --heading: #e6edf3; --field: #0d1117; --track: #2a3441;
+    --hover: #1d2632; --tint: #16242e;
+    --section-rule: color-mix(in srgb, var(--navy) 55%, white);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  @media (min-width: 1280px) {
+    html { zoom: 1.1; }
+  }
+  @media (min-width: 1800px) {
+    html { zoom: 1.2; }
+  }
+  body {
+    font: var(--font-base)/1.55 var(--ui);
+    background: var(--paper); color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--teal); }
+
+  /* ---- Header ---------------------------------------------------------- */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--navy); color: #fff;
+    border-bottom: 3px solid var(--orange);
+  }
+  .topbar-in {
+    max-width: var(--content-width); margin: 0 auto; padding: 16px 24px;
+    display: flex; align-items: center; gap: 18px;
+  }
+  .brand {
+    min-width: 0; display: flex; flex-direction: column;
+    align-items: flex-start; gap: 9px;
+  }
+  .brand img { height: 38px; width: auto; display: block; }
+  .queue {
+    margin: 0 0 0 8px; display: flex; align-items: center; gap: 10px;
+    font: 700 var(--font-base)/1.2 var(--ui); color: #cfe0ea;
+    max-width: min(520px, 55vw);
+  }
+  .queue-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .queue .dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--ok); flex: none;
+  }
+  .queue.busy { color: #fff; }
+  .queue.busy .dot { background: var(--orange); animation: pulse 1.2s ease-in-out infinite; }
+  /* Right-side status cluster: controls, IPs, CPU/RAM, then support. */
+  .hstatus {
+    margin-left: auto; display: flex; flex-direction: column;
+    align-items: flex-end; gap: 7px; min-width: 0;
+  }
+  .net { display: flex; gap: 16px; }
+  .chip {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    font: 500 var(--font-small)/1 var(--mono); color: #cfe0ea; white-space: nowrap;
+  }
+  .chip .lab { color: #8fa6b6; text-transform: uppercase; letter-spacing: .08em; font-size: var(--font-small); }
+  .hmeters { display: flex; gap: 16px; }
+  .hmeter {
+    display: flex; align-items: center; gap: 7px; color: #8fa6b6;
+    font: 500 var(--font-small)/1 var(--mono); text-transform: uppercase; letter-spacing: .08em;
+  }
+  .hmeter .hbar { width: 48px; height: 5px; background: rgba(255,255,255,.16); border-radius: 999px; overflow: hidden; }
+  .hmeter .hbar > i { display: block; height: 100%; width: 0; background: var(--teal); border-radius: 999px; }
+  .hmeter.cpu .hbar > i { background: var(--orange); }
+  .hmeter b { color: #cfe0ea; font: 600 var(--font-small)/1 var(--mono); letter-spacing: 0; text-transform: none; }
+
+  /* ---- Layout ---------------------------------------------------------- */
+  .wrap { max-width: var(--card-width); margin: 0 auto; padding: 28px 24px 64px; }
+  .issue-link { margin: 0; color: #8fa6b6; font-size: var(--font-small); }
+  .issue-link a { color: #cfe0ea; }
+
+  .card {
+    position: relative; background: transparent; padding: 28px 0 24px; margin: 0;
+  }
+  .card::before {
+    content: ""; position: absolute; top: 0; left: 0;
+    width: 100%; height: 1px; background: var(--section-rule);
+  }
+  .wrap > .card:first-child { padding-top: 0; }
+  .wrap > .card:first-child::before { display: none; }
+  .step-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+  .step-no {
+    font: 800 var(--font-compact)/1 var(--display); color: var(--orange);
+    letter-spacing: .02em;
+  }
+  .step-title { font: 800 var(--font-title)/1 var(--display); color: var(--heading); }
+  .step-sub { color: var(--muted); font-size: var(--font-compact); margin-left: auto; }
+  .settings-section + .settings-section {
+    border-top: 1px solid var(--line); margin-top: 20px; padding-top: 20px;
+  }
+  .settings-title {
+    color: var(--heading); font: 700 var(--font-compact)/1 var(--display); margin-bottom: 12px;
+  }
+
+  /* soon = sketched, not yet wired */
+  .soon {
+    font: 600 var(--font-small)/1 var(--display); text-transform: uppercase; letter-spacing: .1em;
+    color: var(--teal); border: 1px solid #cfe2ea; background: var(--hover);
+    border-radius: var(--badge-radius); padding: 4px 8px; vertical-align: middle;
+  }
+  .sketch { position: relative; }
+
+  /* ---- Tabs ------------------------------------------------------------ */
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+  .tab {
+    appearance: none; background: none; border: none; cursor: pointer;
+    font: 600 var(--font-compact) var(--ui); color: var(--muted);
+    padding: 9px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--heading); border-bottom-color: var(--orange); }
+  .tab.usb { color: var(--orange); }
+  @keyframes tabflash { 0%, 100% { background: transparent; } 50% { background: #fde4d8; } }
+  .tab.flash { animation: tabflash 0.9s ease-in-out 5; }
+  .pane { display: none; }
+  .pane.active { display: block; }
+
+  /* ---- Inputs ---------------------------------------------------------- */
+  label.lbl { display: block; font-size: var(--font-compact); color: var(--muted); margin-bottom: 7px; }
+  input[type=text] {
+    width: 100%; background: var(--field); border: 1px solid var(--line);
+    color: var(--ink); border-radius: 8px; padding: 11px 12px;
+    font: var(--font-compact) var(--mono);
+  }
+  textarea {
+    width: 100%; min-height: 150px; resize: vertical;
+    background: var(--field); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 8px; padding: 12px 13px; font: var(--font-compact)/1.5 var(--mono);
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(65,155,185,.14); }
+  .field-error, .card-message { color: var(--orange); margin-top: 8px; font-size: var(--font-compact); }
+  .field-error:empty, .card-message:empty { display: none; }
+  .card-message.info { color: var(--muted); }
+  .field-foot { display: flex; align-items: center; gap: 14px; margin-top: 9px; font-size: var(--font-small); color: var(--faint); }
+  .bp { font: 500 var(--font-small) var(--mono); color: var(--muted); }
+  .bp b { color: var(--heading); }
+  .hint { color: var(--faint); }
+
+  /* Regulatory-jurisdiction picker */
+  .region-picker {
+    position: relative; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--field);
+  }
+  .region-picker > summary {
+    cursor: pointer; padding: 11px 13px; color: var(--ink);
+    font: var(--font-compact) var(--ui); list-style-position: inside;
+  }
+  .region-picker[open] > summary { border-bottom: 1px solid var(--line); }
+  .region-menu { padding: 12px; }
+  .region-all, .region-option {
+    display: flex; align-items: center; gap: 9px; padding: 7px 8px;
+    color: var(--ink); font-size: var(--font-compact); cursor: pointer; border-radius: 6px;
+  }
+  .region-option > span:first-of-type { min-width: 0; }
+  .region-all:hover, .region-option:hover { background: var(--hover); }
+  .region-all { border-bottom: 1px solid var(--line); margin-bottom: 7px; padding-bottom: 11px; }
+  .region-all input, .region-option input { accent-color: var(--teal); }
+  .region-options { max-height: 240px; overflow-y: auto; }
+  .region-group-title {
+    display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px;
+    color: var(--faint); font: 600 var(--font-small) var(--display); text-transform: uppercase;
+    letter-spacing: .08em; padding: 9px 8px 4px;
+  }
+  .region-support {
+    margin-left: auto; color: var(--muted); font: 400 var(--font-small) var(--ui);
+    text-transform: none; letter-spacing: 0;
+  }
+  .region-support a { color: var(--teal); }
+
+  /* upload dropzone (sketch) */
+  .drop {
+    display: block; border: 1.5px dashed #c4ccd8; border-radius: 8px; padding: 30px;
+    text-align: center; color: var(--muted); background: var(--field); cursor: pointer;
+    transition: border-color .12s, background .12s;
+  }
+  .drop:hover { border-color: var(--teal); }
+  .drop.drag { border-color: var(--teal); background: var(--tint); }
+  .drop b { color: var(--ink); }
+  .sheet-warning { color: #9a6a12; background: #fbf3e3; border: 1px solid #eed9ad; border-radius: 7px; padding: 8px 10px; font-size: var(--font-compact); margin: 12px 0; }
+  .sheet-tabs { display: flex; gap: 6px; overflow-x: auto; margin: 12px 0; }
+  .sheet-tabs button { border: 1px solid var(--line); border-radius: 6px; background: var(--field); color: var(--muted); padding: 6px 10px; font: 600 var(--font-compact) var(--ui); cursor: pointer; white-space: nowrap; }
+  .sheet-tabs button.active { color: var(--heading); border-color: var(--teal); background: var(--tint); }
+  .sheet-map { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+  .sheet-map select { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--field); color: var(--ink); font: var(--font-compact) var(--ui); }
+  .sheet-preview { overflow-x: auto; border: 1px solid var(--line); border-radius: 7px; }
+  .sheet-preview table { border-collapse: collapse; width: 100%; font: var(--font-small) var(--mono); }
+  .sheet-preview td, .sheet-preview th { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+  .sheet-preview thead th { color: var(--faint); background: var(--field); }
+  .sheet-preview tr.skip { opacity: .42; }
+  .sheet-preview tr.more td { color: var(--muted); text-align: center; }
+
+  /* Server-side file browser */
+  .browser { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--field); }
+  .browser-path {
+    font: var(--font-small) var(--mono); color: var(--muted); padding: 8px 12px;
+    border-bottom: 1px solid var(--line); white-space: nowrap; overflow-x: auto;
+  }
+  .browser-list { max-height: 240px; overflow-y: auto; }
+  .browser-list .row {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    cursor: pointer; border-bottom: 1px solid var(--line);
+  }
+  .browser-list .row:last-child { border-bottom: none; }
+  .browser-list .row:hover { background: var(--hover); }
+  .browser-list .row.sel { background: var(--tint); }
+  .browser-list .row .nm { font: var(--font-compact) var(--mono); color: var(--ink); word-break: break-all; }
+  .browser-list .row.dir .nm { color: var(--teal); font-weight: 600; }
+  .browser-list .row .sz { margin-left: auto; color: var(--faint); font-size: var(--font-small); white-space: nowrap; }
+  .browser-sel b, #browse-sel b { color: var(--heading); }
+
+  /* ---- Presets --------------------------------------------------------- */
+  .preset-options { display: flex; flex-direction: column; gap: 10px; }
+  .presets { display: flex; flex-direction: column; gap: 10px; }
+  .preset {
+    display: flex; gap: 12px; align-items: flex-start; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 9px; padding: 13px 15px;
+    transition: border-color .12s, background .12s;
+  }
+  .preset:hover { border-color: var(--teal); }
+  .preset.sel { border-color: var(--teal); background: var(--tint); box-shadow: inset 3px 0 0 var(--teal); }
+  .preset input { margin-top: 3px; accent-color: var(--teal); }
+  .preset .pl { display: block; font-weight: 600; color: var(--heading); }
+  .preset .pd { display: block; color: var(--muted); font-size: var(--font-compact); margin-top: 3px; }
+  .preset.unavail { opacity: .55; cursor: not-allowed; }
+  .preset.unavail:hover { border-color: var(--line); }
+  .preset .pd.warn { color: var(--orange); margin-top: 5px; }
+  #custom-config {
+    width: 100%; box-sizing: border-box; min-height: 130px; margin-top: 10px;
+    padding: 10px 12px; font: var(--font-compact)/1.5 var(--mono); resize: vertical;
+    color: var(--ink); background: var(--field);
+    border: 1px solid var(--line); border-radius: 8px;
+  }
+  /* Recommendation badge */
+  .rec {
+    --rec-accent: #1f6e44;
+    font: 600 var(--font-small) var(--display); text-transform: uppercase; letter-spacing: .06em;
+    padding: 2px 7px; border-radius: var(--badge-radius); color: var(--rec-accent);
+    background: color-mix(in srgb, var(--rec-accent) 10%, white);
+    white-space: nowrap;
+  }
+  .rec.no { --rec-accent: #b1310f; }
+  body.dark .rec {
+    color: color-mix(in srgb, var(--rec-accent) 55%, white);
+    background: color-mix(in srgb, var(--rec-accent) 18%, var(--panel));
+  }
+
+  /* Global "Advanced options" master toggle: gates the screening-depth card
+     and advanced output files. */
+  /* Header controls (fullscreen + advanced), styled for the navy bar. */
+  .hcontrols { display: flex; align-items: center; gap: 14px; }
+  .hbtn {
+    appearance: none; background: none; cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, .28); color: #dce7ef;
+    border-radius: 6px; padding: 4px 11px; font: 500 var(--font-small) var(--ui);
+  }
+  .hbtn:hover { border-color: rgba(255, 255, 255, .6); color: #fff; }
+  .hswitch {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    color: #cfe0ea; font-size: var(--font-small); user-select: none;
+  }
+  .hswitch input { width: 15px; height: 15px; accent-color: var(--teal); }
+  .adv-only { display: none; }
+  body.advanced .adv-only { display: block; }
+
+  /* ---- Run bar --------------------------------------------------------- */
+  .runbar {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center; row-gap: 10px;
+  }
+  .runbar button.run { grid-column: 2; }
+  .run-terminal {
+    grid-column: 3; justify-self: end;
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    color: var(--muted); font-size: var(--font-small); user-select: none;
+  }
+  .run-terminal input { width: 15px; height: 15px; accent-color: var(--teal); }
+  .run-inputs {
+    grid-column: 1 / -1; color: var(--muted); font-size: var(--font-compact);
+    text-align: center; min-height: 1em;
+  }
+  .run-inputs b { color: var(--heading); font-weight: 600; }
+  button.run {
+    background: var(--orange); color: #fff; border: none; border-radius: 8px;
+    padding: 13px 28px; font: 700 var(--font-base) var(--display); cursor: pointer;
+    transition: filter .12s;
+  }
+  button.run:hover { filter: brightness(.94); }
+  button.run:disabled { opacity: .45; cursor: not-allowed; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+  .err-msg { margin-top: 12px; text-align: center; }
+
+  /* ---- Run / progress panel ------------------------------------------- */
+  #resultcard { display: none; }
+  /* The Run card is always visible. Progress appears once a run starts;
+     terminal visibility is controlled independently. */
+  .progress-row { display: none; align-items: center; gap: 14px; margin: 16px 0 0; }
+  #runpanel.active .progress-row { display: flex; }
+  #runpanel.terminal-open #log { display: block; }
+  /* Stage progress: one rectangle per commec step, width ~ its share of
+     runtime (from speedtest data). Empty -> flashing (active) -> filled (done). */
+  .stages { flex: 1; display: flex; gap: 5px; height: 10px; }
+  .stage {
+    min-width: 8px; background: var(--track); border-radius: 3px;
+  }
+  .stage.done { background: var(--teal); }
+  .stage.active { animation: stageflash 1.1s ease-in-out infinite; }
+  .stage.failed { background: var(--orange); animation: none; }
+  .stage.interrupted { background: #5a6b7a; animation: none; }
+  @keyframes stageflash {
+    0%, 100% { background: var(--track); }
+    50% { background: var(--teal); }
+  }
+  .progress-row { gap: 12px; align-items: center; }
+  button.stop {
+    appearance: none; cursor: pointer; white-space: nowrap; background: none;
+    color: var(--orange); border: 1px solid var(--orange); border-radius: 8px;
+    padding: 6px 14px; font: 600 var(--font-compact) var(--ui);
+  }
+  button.stop:hover:not(:disabled) { background: var(--orange); color: #fff; }
+  button.stop:disabled { opacity: .55; cursor: default; }
+  .log-actions { display: none; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; }
+  #runpanel.active.terminal-open .log-actions { display: flex; }
+  .log-actions .issue-link { color: var(--muted); }
+  .log-actions .issue-link a { color: var(--teal); }
+  button.copy-log {
+    appearance: none; cursor: pointer; white-space: nowrap;
+    background: none; color: var(--muted); border: 1px solid var(--line);
+    border-radius: 7px; padding: 5px 10px; font: 600 var(--font-small) var(--ui);
+  }
+  button.copy-log:hover:not(:disabled) { color: var(--heading); border-color: var(--teal); }
+  button.copy-log:disabled { opacity: .45; cursor: default; }
+  #log {
+    background: #0f1320; border: 1px solid #1d2333; border-radius: 8px;
+    padding: 13px 14px; height: 300px; overflow-y: auto;
+    font: var(--font-small)/1.5 var(--mono); white-space: pre-wrap; word-break: break-word;
+    color: #c7d2e0; display: none; margin-top: 4px;
+  }
+  #log:empty::before { content: "Terminal output will appear when a run starts."; color: #7f8da3; }
+
+  /* ---- Verdict summary ------------------------------------------------- */
+  #summary { display: none; margin: 4px 0 18px; }
+  .verdict {
+    display: flex; align-items: center; gap: 10px;
+    font: 700 var(--font-base) var(--display); padding: 12px 16px;
+    border: 1px solid var(--line); border-radius: 9px; margin-bottom: 12px;
+    background: var(--field); color: var(--heading);
+  }
+  .verdict .vc { margin-left: auto; font: 500 var(--font-small) var(--ui); opacity: .85; }
+  .qtable { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .qrow {
+    display: grid; grid-template-columns: 88px minmax(120px, 1fr) 2fr; gap: 12px;
+    align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line);
+    font-size: var(--font-compact);
+  }
+  .qrow:last-child { border-bottom: none; }
+  .qrow .badge, .run-row .badge { justify-self: start; }
+  .q-int { color: #5a6b7a; background: #e8edf2; }  /* run state: interrupted */
+  body.dark .q-int { color: #aebac7; background: #27313b; }
+  .qn { font: var(--font-compact) var(--mono); color: var(--heading); word-break: break-all; }
+  .qr { color: var(--muted); }
+
+  /* ---- Report / results ------------------------------------------------ */
+  .report-cta {
+    display: flex; align-items: center; gap: 16px; padding: 16px 18px;
+    border: 1px solid #cfe2ea; background: var(--tint); border-radius: 9px;
+    margin-bottom: 16px;
+  }
+  .report-cta.err { border-color: #f6c4b5; background: #fdeee9; }
+  .report-cta.err .rt { color: #b1310f; }
+  .report-cta .rt { font-weight: 700; color: var(--heading); }
+  .report-cta .rd { font-size: var(--font-compact); color: var(--muted); }
+  .report-cta .btn {
+    margin-left: auto; background: var(--navy); color: #fff; text-decoration: none;
+    padding: 10px 18px; border-radius: 8px; font: 600 var(--font-compact) var(--ui); white-space: nowrap;
+    appearance: none; border: none; cursor: pointer;
+  }
+  .files h3, #queries h3 { font: 600 var(--font-small) var(--display); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; }
+  #queries { margin-top: 16px; }
+  .file-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: var(--font-compact); }
+  .file-row a { text-decoration: none; }
+  .file-row a:hover { text-decoration: underline; }
+  .file-row .nm { font: var(--font-compact) var(--mono); }
+  .file-row .sz { color: var(--faint); font-size: var(--font-small); }
+  .file-row .dl { margin-left: auto; }
+  /* Intermediate files (raw search output, input): shown only under Advanced. */
+  .file-row.adv-file { display: none; }
+  body.advanced .file-row.adv-file { display: flex; }
+
+  /* ---- Recent results ------------------------------------------------- */
+  .recent {
+    display: flex; flex-direction: column; max-height: 360px;
+  }
+  .retention-control {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+    margin: 0 0 10px; color: var(--muted); font-size: var(--font-small);
+  }
+  .retention-control label { display: flex; align-items: center; gap: 7px; }
+  .retention-control input {
+    width: 64px; box-sizing: border-box; padding: 5px 7px;
+    color: var(--ink); background: var(--field); border: 1px solid var(--line);
+    border-radius: 6px; font: var(--font-small) var(--mono);
+  }
+  .retention-control button {
+    appearance: none; cursor: pointer; padding: 5px 9px;
+    color: var(--heading); background: var(--field); border: 1px solid var(--line);
+    border-radius: 6px; font: 600 var(--font-small) var(--ui);
+  }
+  .retention-control button:hover:not(:disabled) { border-color: var(--teal); }
+  .retention-control button:disabled { opacity: .55; cursor: default; }
+  .retention-hint { flex-basis: 100%; color: var(--faint); }
+  .retention-summary {
+    margin: -4px 0 10px; color: var(--faint); font-size: var(--font-small);
+  }
+  .retention-status { color: var(--faint); }
+  #recent-list {
+    min-height: 0; overflow-y: auto;
+  }
+  .run-row {
+    display: flex; align-items: center; gap: 12px; padding: 10px 0;
+    border-bottom: 1px solid var(--line); cursor: pointer;
+  }
+  .run-row:last-child { border-bottom: none; }
+  .run-row:hover .rl { text-decoration: underline; }
+  .run-row .rl { font-weight: 600; color: var(--heading); word-break: break-all; }
+  .run-row .rm { color: var(--faint); font-size: var(--font-small); margin-left: auto; white-space: nowrap; padding-left: 10px; }
+  .run-row .del {
+    appearance: none; background: none; border: none; cursor: pointer;
+    color: var(--faint); font: 500 var(--font-small) var(--ui); padding: 2px 4px; margin-left: 12px;
+  }
+  .run-row .del:hover { color: var(--orange); text-decoration: underline; }
+  .run-row .resume, .run-row .rerun {
+    appearance: none; background: none; border: none; cursor: pointer;
+    color: var(--teal); font: 600 var(--font-small) var(--ui); padding: 2px 4px; margin-left: 12px;
+  }
+  .run-row .resume:hover, .run-row .rerun:hover { text-decoration: underline; }
+  .delall {
+    appearance: none; background: none; border: none; cursor: pointer;
+    color: var(--faint); font: 500 var(--font-small) var(--ui); padding: 2px 4px;
+  }
+  .delall:hover { color: var(--orange); text-decoration: underline; }
+  .recent .empty { color: var(--faint); font-size: var(--font-compact); padding: 6px 0; }
+
+  @media (max-width: 620px) {
+    .brand img { height: 32px; }
+    .net, .hmeters { display: none; }
+    .recent { max-height: 320px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <img src="/assets/commec_ibbis_logo.png" alt="Commec | IBBIS">
+      <span class="queue" id="queue" title="Whether a screen is running on this server">
+        <span class="dot"></span><span class="queue-text">Screener idle</span>
+      </span>
+    </div>
+    <!-- Right-side status: controls, network addresses, CPU/RAM, and support. -->
+    <div class="hstatus">
+      <div class="hcontrols">
+        <button type="button" id="theme" class="hbtn">Dark</button>
+        <button type="button" id="fs" class="hbtn">Fullscreen</button>
+        <label class="hswitch"><input type="checkbox" id="adv-toggle"><span>Advanced options</span></label>
+      </div>
+      <div class="net" id="net" title="Addresses this machine can be reached on"></div>
+      <div class="hmeters">
+        <div class="hmeter cpu">CPU<div class="hbar"><i id="cpu-bar"></i></div><b id="cpu-val">-- %</b></div>
+        <div class="hmeter">RAM<div class="hbar"><i id="ram-bar"></i></div><b id="ram-val">-- %</b></div>
+        <div class="hmeter" title="Free space on the runs disk">DISK<b id="disk-val">--</b></div>
+      </div>
+      <p class="issue-link">Problem with commec-gui? <a href="https://github.com/ibbis-bio/common-mechanism/issues/new" target="_blank" rel="noopener">File an issue</a>.</p>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- Run label (names the output files) -->
+  <section class="card" id="run-label-card">
+    <div class="step-head">
+      <span class="step-title">Run label</span>
+    </div>
+    <input type="text" id="run-label" placeholder="e.g. vendor-order-114"
+           autocomplete="off" maxlength="80" aria-label="Run label"
+           aria-describedby="run-label-error" required>
+    <div class="field-error" id="run-label-error" role="alert"></div>
+  </section>
+
+  <form id="form">
+
+    <!-- ============ 01 Sequence ============ -->
+    <section class="card" id="sequence-card">
+      <div class="step-head">
+        <span class="step-title">Sequence</span>
+      </div>
+
+      <div class="tabs">
+        <button type="button" class="tab active" data-tab="paste">Paste sequence</button>
+        <button type="button" class="tab" data-tab="path">Server file path</button>
+        <button type="button" class="tab" data-tab="upload">Upload file</button>
+        <button type="button" class="tab" data-tab="spreadsheet">Spreadsheet</button>
+      </div>
+
+      <!-- Paste (sketch: parses FASTA + spreadsheet paste later) -->
+      <div class="pane active" data-pane="paste">
+        <label class="lbl" for="seq-paste">Paste FASTA, sequences separated by a blank line, or spreadsheet rows</label>
+        <textarea id="seq-paste" spellcheck="false"
+          placeholder=">sequence_1&#10;ATGAGTGAACGGCTGGACATT...&#10;&#10;No headers? Separate raw sequences with a blank line (a sequence may wrap across lines). Spreadsheet (name &amp; sequence) paste also works."></textarea>
+        <div class="field-foot">
+          <span class="bp"><b id="bp-count">0</b> bp &middot; <span id="rec-count">0</span> records</span>
+          <span class="hint" id="paste-note"></span>
+        </div>
+      </div>
+
+      <!-- Server path: interactive file browser -->
+      <div class="pane" data-pane="path">
+        <label class="lbl">Browse for a FASTA file on the server</label>
+        <div class="browser">
+          <div class="browser-path" id="browse-path"></div>
+          <div class="browser-list" id="browse-list"></div>
+        </div>
+        <div class="field-foot"><span class="bp" id="browse-sel">No file selected.</span></div>
+      </div>
+
+      <!-- Upload a FASTA file from the browser -->
+      <div class="pane" data-pane="upload">
+        <label class="drop" id="dropzone" for="upload-file">
+          <b>Choose a FASTA file</b><br>or drag &amp; drop it here
+          <input type="file" id="upload-file"
+                 accept=".fasta,.fa,.fna,.ffn,.frn,.txt,.csv,.tsv" hidden>
+        </label>
+        <div class="field-foot"><span class="bp" id="upload-info"></span></div>
+      </div>
+
+      <div class="pane" data-pane="spreadsheet">
+        <label class="drop" for="spreadsheet-file">
+          <b>Choose a spreadsheet</b><br>.xlsx, .xls, .csv, or .tsv
+          <input type="file" id="spreadsheet-file" accept=".xlsx,.xls,.csv,.tsv" hidden>
+        </label>
+        <div class="field-foot"><span class="bp" id="spreadsheet-info"></span></div>
+        <div id="spreadsheet-controls" hidden>
+          <div class="sheet-warning" id="sheet-warning" hidden>Warning: file has multiple sheets. Select the one to screen.</div>
+          <div class="sheet-tabs" id="sheet-tabs"></div>
+          <div class="sheet-map">
+            <label class="lbl">Nucleotide column<select id="sheet-nucleotide"><option value="">Choose column</option></select></label>
+            <label class="lbl">Sequence name column (optional)<select id="sheet-name"><option value="">Generate names</option></select></label>
+          </div>
+          <label class="lbl"><input type="checkbox" id="sheet-skip" checked> Skip first row</label>
+          <div class="sheet-preview" id="sheet-preview"></div>
+        </div>
+      </div>
+      <div class="card-message" id="sequence-error" role="alert"></div>
+    </section>
+
+    <!-- ============ 02 Settings ======================================= -->
+    <section class="card" id="settings-card">
+      <div class="step-head">
+        <span class="step-title">Settings</span>
+      </div>
+      <div class="settings-section" id="region-card">
+        <div class="settings-title">Regulatory jurisdiction</div>
+        <details class="region-picker" id="region-picker">
+          <summary id="region-summary">All jurisdictions</summary>
+          <div class="region-menu">
+            <label class="region-all">
+              <input type="checkbox" id="region-all" checked>
+              <span>All jurisdictions</span>
+            </label>
+            <div class="region-options" id="region-options"></div>
+          </div>
+        </details>
+      </div>
+      <!-- Screening options remain controlled by the Advanced options toggle. -->
+      <div class="settings-section adv-only" id="depth-card">
+        <div class="settings-title">Screening options</div>
+        <div class="preset-options">
+          <div class="presets" id="presets"></div>
+          <label class="preset" id="custom-opt">
+            <input type="radio" name="preset" value="__custom__">
+            <span>
+              <span class="pl">Custom (raw config)</span>
+              <span class="pd">Enter <code>commec screen</code> configuration keys as
+                YAML. See the <a href="https://github.com/ibbis-bio/common-mechanism/wiki/Tutorial#using-yaml-to-configure-commec-screen"
+                target="_blank" rel="noopener">YAML configuration tutorial</a>.</span>
+            </span>
+          </label>
+        </div>
+        <textarea id="custom-config" spellcheck="false" hidden
+          placeholder="skip_nt_search: true&#10;blast_mt_mode: 0"></textarea>
+      </div>
+      <div class="card-message" id="settings-error" role="alert"></div>
+    </section>
+
+    <!-- ============ Run (button + live progress) ============ -->
+    <section class="card" id="runpanel">
+      <div class="step-head">
+        <span class="step-title">Run</span>
+      </div>
+      <div class="runbar">
+        <button type="submit" class="run" id="run" disabled>Run</button>
+        <label class="run-terminal"><input type="checkbox" id="terminal-toggle"><span>Terminal</span></label>
+        <div class="run-inputs" id="input-summary"></div>
+      </div>
+      <div class="card-message err-msg" id="errmsg" role="alert"></div>
+
+      <!-- Activity bar (system CPU/RAM meters live in the header). -->
+      <div class="progress-row">
+        <div class="stages" id="stages" title="Screening stages: biorisk, protein, nucleotide, low-concern">
+          <span class="stage" data-step="1" style="flex-grow:2"></span>
+          <span class="stage" data-step="2" style="flex-grow:57"></span>
+          <span class="stage" data-step="3" style="flex-grow:39"></span>
+          <span class="stage" data-step="4" style="flex-grow:2"></span>
+        </div>
+        <button type="button" class="stop" id="stop" hidden>Stop</button>
+      </div>
+      <div id="log"></div>
+      <div class="log-actions">
+        <p class="issue-link">Problem with commec-gui? <a href="https://github.com/ibbis-bio/common-mechanism/issues/new" target="_blank" rel="noopener">File an issue</a>.</p>
+        <button type="button" class="copy-log" id="copy-log" disabled>Copy log</button>
+      </div>
+    </section>
+  </form>
+
+  <!-- ============ Results list (Feature 7) ============ -->
+  <section class="card recent" id="recent">
+    <div class="step-head">
+      <span class="step-title">Results</span>
+      <span class="step-sub" id="recent-sub"></span>
+      <button type="button" class="delall" id="delall" hidden>delete all</button>
+    </div>
+    <p class="retention-summary" id="retention-summary">Runs are currently kept forever.</p>
+    <div class="card-message" id="results-message" role="status"></div>
+    <div class="adv-only">
+      <div class="retention-control">
+        <label for="retention-days">Keep completed runs for
+          <input type="number" id="retention-days" min="0" step="1" value="0">
+          days
+        </label>
+        <button type="button" id="retention-save">Save</button>
+        <span class="retention-hint">Set to 0 to keep runs indefinitely.</span>
+        <span class="retention-status" id="retention-status"></span>
+      </div>
+    </div>
+    <div id="recent-list"></div>
+  </section>
+
+  <!-- ============ Detail for the current run or a clicked past run ==== -->
+  <section class="card" id="resultcard">
+    <div class="step-head">
+      <span class="step-title" id="result-title">Result</span>
+    </div>
+    <!-- Feature 6/9: overall verdict, embedded report, output files, then the
+         (potentially long) per-sequence list LAST so report/files stay reachable -->
+    <div id="summary"></div>
+    <div id="report"></div>
+    <div class="files" id="files"></div>
+    <div id="queries"></div>
+  </section>
+</div>
+
+<script>
+const form = document.getElementById("form");
+const runBtn = document.getElementById("run");
+const logEl = document.getElementById("log");
+const filesEl = document.getElementById("files");
+const reportEl = document.getElementById("report");
+const summaryDiv = document.getElementById("summary");
+const queriesEl = document.getElementById("queries");
+const errEl = document.getElementById("errmsg");
+const presetsEl = document.getElementById("presets");
+const runPanel = document.getElementById("runpanel");
+const terminalToggle = document.getElementById("terminal-toggle");
+const copyLogBtn = document.getElementById("copy-log");
+const queueEl = document.getElementById("queue");
+const queueText = queueEl.querySelector(".queue-text");
+const runLabel = document.getElementById("run-label");
+const runLabelError = document.getElementById("run-label-error");
+const runLabelCard = document.getElementById("run-label-card");
+const sequenceCard = document.getElementById("sequence-card");
+const sequenceError = document.getElementById("sequence-error");
+const settingsCard = document.getElementById("settings-card");
+const settingsError = document.getElementById("settings-error");
+const resultsCard = document.getElementById("recent");
+const resultsMessage = document.getElementById("results-message");
+const topbar = document.querySelector(".topbar");
+const stagesEl = document.getElementById("stages");
+
+/* ---- Stage progress bar (driven by commec's STEP log markers) -------- */
+function _stage(n) { return stagesEl.querySelector('.stage[data-step="' + n + '"]'); }
+function resetStages() {
+  stagesEl.querySelectorAll(".stage").forEach(s => s.className = "stage");
+}
+function setStageActive(n) {
+  stagesEl.querySelectorAll(".stage").forEach(s => {
+    const step = +s.dataset.step;
+    s.classList.remove("active", "failed", "interrupted");
+    s.classList.toggle("done", step < n);
+    if (step === n) s.classList.add("active");
+  });
+}
+function setStageDone(n) {
+  const s = _stage(n);
+  if (s) { s.classList.remove("active"); s.classList.add("done"); }
+}
+// commec logs ">> STEP N: Checking..." (start) and "STEP N completed at..." for
+// every step, even skipped ones (those just complete instantly).
+function parseStageLine(line) {
+  let m = line.match(/\bSTEP\s+(\d)\s+completed\b/i);
+  if (m) { setStageDone(+m[1]); return; }
+  m = line.match(/\bSTEP\s+(\d)\s*:/i);
+  if (m) setStageActive(+m[1]);
+}
+function finishStages(status) {
+  const active = stagesEl.querySelector(".stage.active");
+  stagesEl.querySelectorAll(".stage").forEach(s => s.classList.remove("active"));
+  if (status === "done") {
+    stagesEl.querySelectorAll(".stage").forEach(s => s.classList.add("done"));
+  } else if (active) {
+    active.classList.add(status === "interrupted" ? "interrupted" : "failed");
+  }
+}
+const stopBtn = document.getElementById("stop");
+const recentList = document.getElementById("recent-list");
+const recentSub = document.getElementById("recent-sub");
+const delallBtn = document.getElementById("delall");
+const retentionSummary = document.getElementById("retention-summary");
+const retentionDays = document.getElementById("retention-days");
+const retentionSave = document.getElementById("retention-save");
+const retentionStatus = document.getElementById("retention-status");
+const uploadInput = document.getElementById("upload-file");
+const uploadInfo = document.getElementById("upload-info");
+const spreadsheetInput = document.getElementById("spreadsheet-file");
+const spreadsheetInfo = document.getElementById("spreadsheet-info");
+const spreadsheetControls = document.getElementById("spreadsheet-controls");
+const sheetTabs = document.getElementById("sheet-tabs");
+const sheetWarning = document.getElementById("sheet-warning");
+const sheetNucleotide = document.getElementById("sheet-nucleotide");
+const sheetName = document.getElementById("sheet-name");
+const sheetSkip = document.getElementById("sheet-skip");
+const sheetPreview = document.getElementById("sheet-preview");
+const dropzone = document.getElementById("dropzone");
+const resultCard = document.getElementById("resultcard");
+const resultTitle = document.getElementById("result-title");
+const advToggle = document.getElementById("adv-toggle");
+const regionAll = document.getElementById("region-all");
+const regionOptions = document.getElementById("region-options");
+const regionSummary = document.getElementById("region-summary");
+let viewingJobId = null;  // run currently shown in the detail card
+
+// Shared/synced state across clients.
+let streamingJobId = null;     // job we're attached to via SSE (the live run)
+let liveJobId = null;          // the currently-running job (from /status), Stop target
+let runPanelJobId = null;      // job whose transcript is in the Run card
+let mySubmitInFlight = false;  // suppress the poller re-enabling Run mid-submit
+let noPresetAvailable = true;  // set once /config loads
+let terminalPreferred = localStorage.getItem("commec-terminal") === "1";
+let terminalErrorJobId = null;
+let terminalDismissedJobId = null;
+
+/* ---- Advanced options master toggle (gates depth + advanced files) --- */
+function setAdvancedOptions(on) {
+  advToggle.checked = on;
+  document.body.classList.toggle("advanced", on);
+  localStorage.setItem("commec-adv", on ? "1" : "0");
+}
+(function () {
+  setAdvancedOptions(localStorage.getItem("commec-adv") === "1");
+  advToggle.addEventListener("change", () => {
+    setAdvancedOptions(advToggle.checked);
+  });
+})();
+
+const messageAreas = {
+  label: { element: runLabelError, card: runLabelCard },
+  sequence: { element: sequenceError, card: sequenceCard },
+  settings: { element: settingsError, card: settingsCard },
+  run: { element: errEl, card: runPanel },
+  results: { element: resultsMessage, card: resultsCard },
+};
+
+function clearCardMessage(area) {
+  const target = messageAreas[area];
+  target.element.textContent = "";
+  target.element.classList.remove("info");
+}
+
+function scrollToCard(card) {
+  const offset = topbar.getBoundingClientRect().height + 12;
+  const top = window.scrollY + card.getBoundingClientRect().top - offset;
+  window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+}
+
+function showCardMessage(area, message, options = {}) {
+  const target = messageAreas[area] || messageAreas.run;
+  if (options.advanced) setAdvancedOptions(true);
+  target.element.textContent = message;
+  target.element.classList.toggle("info", options.info === true);
+  target.element.setAttribute("role", options.info === true ? "status" : "alert");
+  if (options.focus) options.focus.focus({ preventScroll: true });
+  if (options.scroll !== false)
+    requestAnimationFrame(() => scrollToCard(target.card));
+}
+
+/* ---- Terminal visibility: user preference plus temporary error-open -- */
+function updateTerminalVisibility() {
+  const errorOpen = runPanelJobId && terminalErrorJobId === runPanelJobId;
+  const open = terminalPreferred || errorOpen;
+  terminalToggle.checked = open;
+  runPanel.classList.toggle("terminal-open", open);
+  if (open)
+    requestAnimationFrame(() => { logEl.scrollTop = logEl.scrollHeight; });
+}
+function openTerminalForError(jobId) {
+  if (jobId !== runPanelJobId || terminalDismissedJobId === jobId) return;
+  terminalErrorJobId = jobId;
+  updateTerminalVisibility();
+}
+terminalToggle.addEventListener("change", () => {
+  terminalPreferred = terminalToggle.checked;
+  localStorage.setItem("commec-terminal", terminalPreferred ? "1" : "0");
+  if (!terminalToggle.checked && terminalErrorJobId === runPanelJobId) {
+    terminalDismissedJobId = runPanelJobId;
+    terminalErrorJobId = null;
+  }
+  updateTerminalVisibility();
+});
+updateTerminalVisibility();
+
+/* ---- Dark-mode toggle (persisted) ------------------------------------ */
+(function () {
+  const btn = document.getElementById("theme");
+  const apply = (dark) => {
+    document.body.classList.toggle("dark", dark);
+    btn.textContent = dark ? "Light" : "Dark";
+  };
+  apply(localStorage.getItem("commec-dark") === "1");
+  btn.addEventListener("click", () => {
+    const dark = !document.body.classList.contains("dark");
+    apply(dark);
+    localStorage.setItem("commec-dark", dark ? "1" : "0");
+  });
+})();
+
+/* ---- Fullscreen toggle (DOM Fullscreen API) -------------------------- */
+(function () {
+  const fsBtn = document.getElementById("fs");
+  fsBtn.addEventListener("click", () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen().catch(() => {});
+  });
+  document.addEventListener("fullscreenchange", () => {
+    fsBtn.textContent = document.fullscreenElement ? "Exit fullscreen" : "Fullscreen";
+  });
+})();
+
+function escapeHtml(s) {
+  return (s || "").replace(/[&<>"]/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+/* ---- Network addresses (how to reach this machine) ------------------- */
+const netEl = document.getElementById("net");
+const NET_LABEL = { ethernet: "eth", wifi: "wifi", tailscale: "vpn" };
+function loadNet() {
+  fetch("/net").then(r => r.json()).then(d => {
+    const addrs = (d.addresses || []);
+    netEl.innerHTML = addrs.map(a =>
+      `<span class="chip" title="${escapeHtml(a.iface)}">` +
+      `<span class="lab">${escapeHtml(NET_LABEL[a.kind] || a.kind)}</span>` +
+      `${escapeHtml(a.ip)}</span>`).join("");
+  }).catch(() => { netEl.innerHTML = ""; });
+}
+loadNet();
+setInterval(loadNet, 60000);  // pick up DHCP / link changes
+
+/* ---- Tabs (delegated, so dynamically-added USB tabs work too) -------- */
+const tabsEl = document.querySelector(".tabs");
+let activeTab = "paste";
+tabsEl.addEventListener("click", (e) => {
+  const t = e.target.closest(".tab");
+  if (!t) return;
+  activeTab = t.dataset.tab;
+  tabsEl.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
+  document.querySelectorAll(".pane").forEach(p =>
+    p.classList.toggle("active", p.dataset.pane === activeTab));
+  if (activeTab === "path") {            // the server-path tab OR a USB tab
+    selectedPath = null; browseSel.textContent = "No file selected.";
+    browseTo(t.dataset.mount || null);   // re-root at the USB mount, or home
+  }
+  updateInputSummary();
+});
+
+/* ---- Removable media (USB): mounted volumes appear as tabs, flash new */
+let mediaMounts = [];
+async function loadMedia() {
+  try {
+    const vols = (await (await fetch("/media")).json()).volumes || [];
+    const now = vols.map(v => v.mountpoint);
+    tabsEl.querySelectorAll(".tab.usb").forEach(t => {
+      if (!now.includes(t.dataset.mount)) {           // volume removed
+        const wasActive = t.classList.contains("active");
+        t.remove();
+        if (wasActive) tabsEl.querySelector('.tab[data-tab="paste"]').click();
+      }
+    });
+    for (const v of vols) {                            // new volume(s)
+      if (mediaMounts.includes(v.mountpoint)) continue;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tab usb flash";
+      btn.dataset.tab = "path";
+      btn.dataset.mount = v.mountpoint;
+      btn.textContent = "USB: " + (v.label || "drive");
+      tabsEl.appendChild(btn);
+      setTimeout(() => btn.classList.remove("flash"), 6000);
+    }
+    mediaMounts = now;
+  } catch (e) { /* ignore */ }
+}
+loadMedia();
+setInterval(loadMedia, 2500);
+
+/* ---- Server-side file browser ("Server file path" tab) --------------- */
+const browseList = document.getElementById("browse-list");
+const browsePathEl = document.getElementById("browse-path");
+const browseSel = document.getElementById("browse-sel");
+let selectedPath = null;
+let browseLoaded = false;
+
+async function browseTo(path) {
+  try {
+    const d = await (await fetch("/browse" + (path ? "?path=" + encodeURIComponent(path) : ""))).json();
+    browseLoaded = true;
+    if (d.error) { browseList.innerHTML = `<div class="row"><span class="nm">${escapeHtml(d.error)}</span></div>`; return; }
+    browsePathEl.textContent = d.path;
+    let rows = "";
+    if (d.parent) rows += `<div class="row dir" data-path="${escapeHtml(d.parent)}"><span class="nm">../</span></div>`;
+    for (const e of d.entries) {
+      if (e.dir) {
+        rows += `<div class="row dir" data-path="${escapeHtml(e.path)}"><span class="nm">${escapeHtml(e.name)}/</span></div>`;
+      } else {
+        rows += `<div class="row file" data-path="${escapeHtml(e.path)}"><span class="nm">${escapeHtml(e.name)}</span>`
+              + `<span class="sz">${(e.size || 0).toLocaleString()} B</span></div>`;
+      }
+    }
+    browseList.innerHTML = rows || `<div class="row"><span class="nm">(empty)</span></div>`;
+    browseList.querySelectorAll(".row.dir").forEach(r =>
+      r.addEventListener("click", () => browseTo(r.dataset.path)));
+    browseList.querySelectorAll(".row.file").forEach(r =>
+      r.addEventListener("click", () => {
+        selectedPath = r.dataset.path;
+        browseList.querySelectorAll(".row").forEach(x => x.classList.remove("sel"));
+        r.classList.add("sel");
+        browseSel.innerHTML = `Selected: <b>${escapeHtml(selectedPath)}</b>`;
+        updateInputSummary();
+      }));
+  } catch (e) { /* ignore */ }
+}
+
+/* ---- Live bp counter on the paste box (signature interaction) -------- */
+const seqPaste = document.getElementById("seq-paste");
+const bpCount = document.getElementById("bp-count");
+const recCount = document.getElementById("rec-count");
+seqPaste.addEventListener("input", () => {
+  const text = seqPaste.value;
+  const lines = text.split(/\r?\n/);
+  // bp = sequence letters (exclude FASTA header lines).
+  let bp = 0;
+  for (const line of lines) if (!line.startsWith(">")) bp += line.replace(/[^A-Za-z]/g, "").length;
+  let records = 0;
+  if (lines.some(l => l.startsWith(">"))) {
+    records = lines.filter(l => l.startsWith(">")).length;       // FASTA: per header
+  } else if (text.includes("\t") || text.includes(",")) {
+    records = lines.filter(l => l.trim()).length;                // spreadsheet: per row
+  } else if (text.trim()) {
+    records = text.trim().split(/\n\s*\n/)                        // raw: per blank-line block
+                  .filter(b => /[A-Za-z]/.test(b)).length;
+  }
+  bpCount.textContent = bp.toLocaleString();
+  recCount.textContent = records;
+  updateInputSummary();
+});
+
+// Show what a Run will screen, combined across ALL populated inputs (paste +
+// upload + picked file), so nothing sitting in a hidden tab is screened
+// silently. Filenames only (exact per-source counts land in the run log).
+const inputSummaryEl = document.getElementById("input-summary");
+function updateInputSummary() {
+  const parts = [];
+  if (seqPaste.value.trim()) parts.push(`${recCount.textContent} pasted`);
+  const uf = uploadInput.files[0];
+  if (uf) parts.push(`${uf.name} (upload)`);
+  const sf = spreadsheetInput.files[0];
+  if (sf) parts.push(`${sf.name} (spreadsheet)`);
+  if (selectedPath) parts.push(`${selectedPath.split("/").pop()} (file)`);
+  inputSummaryEl.innerHTML = parts.length
+    ? "Will screen: " + parts.map(p => `<b>${escapeHtml(p)}</b>`).join(" + ")
+    : "";
+}
+
+/* ---- Upload tab: file picker + drag-and-drop ------------------------- */
+function showUpload() {
+  const f = uploadInput.files[0];
+  uploadInfo.textContent = f ? `${f.name} — ${f.size.toLocaleString()} B` : "";
+  updateInputSummary();
+}
+uploadInput.addEventListener("change", showUpload);
+["dragover", "dragenter"].forEach(ev => dropzone.addEventListener(ev, e => {
+  e.preventDefault(); dropzone.classList.add("drag");
+}));
+["dragleave", "dragend", "drop"].forEach(ev => dropzone.addEventListener(ev, e => {
+  e.preventDefault(); dropzone.classList.remove("drag");
+}));
+dropzone.addEventListener("drop", e => {
+  if (e.dataTransfer.files.length) { uploadInput.files = e.dataTransfer.files; showUpload(); }
+});
+
+let spreadsheetPreview = null;
+function columnLabel(index) {
+  let label = ""; index += 1;
+  while (index) { const r = (index - 1) % 26; label = String.fromCharCode(65 + r) + label; index = Math.floor((index - 1) / 26); }
+  return label;
+}
+function renderSpreadsheetPreview(data) {
+  spreadsheetPreview = data;
+  spreadsheetControls.hidden = false;
+  sheetWarning.hidden = data.sheets.length < 2;
+  sheetTabs.innerHTML = data.sheets.map(sheet => `<button type="button" class="${sheet === data.sheet ? "active" : ""}" data-sheet="${escapeHtml(sheet)}">${escapeHtml(sheet)}</button>`).join("");
+  sheetTabs.querySelectorAll("button").forEach(button => button.addEventListener("click", () => loadSpreadsheetPreview(button.dataset.sheet)));
+  const oldNucleotide = sheetNucleotide.value, oldName = sheetName.value;
+  const options = data.columns.map(index =>
+    `<option value="${index}">${columnLabel(index)}</option>`).join("");
+  sheetNucleotide.innerHTML = '<option value="">Choose column</option>' + options;
+  sheetName.innerHTML = '<option value="">Generate names</option>' + options;
+  sheetNucleotide.value = oldNucleotide;
+  sheetName.value = oldName;
+  const previewRows = data.rows.map((row, i) => `<tr class="${i === 0 && sheetSkip.checked ? "skip" : ""}"><th>${i + 1}</th>${data.columns.map(c => `<td>${escapeHtml(row[c] || "")}</td>`).join("")}</tr>`).join("");
+  const moreRows = data.has_more_rows ? `<tr class="more"><th>...</th><td colspan="${data.columns.length}">...</td></tr>` : "";
+  sheetPreview.innerHTML = `<table><thead><tr><th></th>${data.columns.map(c => `<th>${columnLabel(c)}</th>`).join("")}</tr></thead><tbody>${previewRows}${moreRows}</tbody></table>`;
+  updateInputSummary();
+}
+async function loadSpreadsheetPreview(sheet = "") {
+  const file = spreadsheetInput.files[0];
+  if (!file) return;
+  const data = new FormData(); data.append("spreadsheet_file", file); if (sheet) data.append("sheet", sheet);
+  const response = await fetch("/spreadsheet-preview", { method: "POST", body: data });
+  const body = await response.json();
+  if (!response.ok) { spreadsheetInfo.textContent = body.error || "Could not read spreadsheet."; spreadsheetControls.hidden = true; return; }
+  spreadsheetInfo.textContent = `${file.name} - ${body.sheets.length} sheet${body.sheets.length === 1 ? "" : "s"}`;
+  renderSpreadsheetPreview(body);
+}
+spreadsheetInput.addEventListener("change", () => { sheetNucleotide.value = ""; sheetName.value = ""; sheetSkip.checked = true; loadSpreadsheetPreview(); });
+sheetSkip.addEventListener("change", () => { if (spreadsheetPreview) renderSpreadsheetPreview(spreadsheetPreview); });
+
+/* ---- Presets (functional) -------------------------------------------- */
+let PRESETS = [];
+let REGION_CHOICES = [];
+
+function selectedRegionCodes() {
+  return [...regionOptions.querySelectorAll("input:checked")].map(input => input.value);
+}
+
+function updateRegionSummary() {
+  const selected = selectedRegionCodes();
+  if (!selected.length) {
+    regionAll.checked = true;
+    regionSummary.textContent = "All jurisdictions";
+    return;
+  }
+  regionAll.checked = false;
+  const choices = new Map(REGION_CHOICES.map(region => [region.value || region.code, region]));
+  regionSummary.textContent = selected.length <= 3
+    ? selected.map(value => {
+        const region = choices.get(value);
+        return region ? `${region.name} (${region.code})` : value;
+      }).join(", ")
+    : `${selected.length} jurisdictions selected`;
+}
+
+function renderRegions(regions) {
+  REGION_CHOICES = regions || [];
+  const regionLabel = region => {
+    const memberships = region.memberships && region.memberships.length
+      ? ` - ${region.memberships.join(", ")}` : "";
+    return `${region.name} (${region.code})${memberships}`;
+  };
+  const renderSection = (title, choices, supportPrompt = false) => choices.length ? `
+    <div class="region-group-title">
+      <span>${escapeHtml(title)}</span>
+      ${supportPrompt ? `<span class="region-support">Don't see your country? <a href="https://github.com/ibbis-bio/common-mechanism/issues/new" target="_blank" rel="noopener">File an issue</a>.</span>` : ""}
+    </div>
+    ${choices.map(region => `
+      <label class="region-option">
+        <input type="checkbox" value="${escapeHtml(region.value || region.code)}">
+        <span>${escapeHtml(regionLabel(region))}</span>
+      </label>`).join("")}` : "";
+  regionOptions.innerHTML =
+    renderSection("Region groups", REGION_CHOICES.filter(region => region.group))
+    + renderSection("Supported countries", REGION_CHOICES.filter(region => !region.group), true);
+  regionOptions.querySelectorAll("input").forEach(input => {
+    input.addEventListener("change", () => {
+      if (input.checked) regionAll.checked = false;
+      updateRegionSummary();
+    });
+  });
+  updateRegionSummary();
+}
+
+regionAll.addEventListener("change", () => {
+  if (regionAll.checked) {
+    regionOptions.querySelectorAll("input").forEach(input => { input.checked = false; });
+  }
+  updateRegionSummary();
+});
+
+// Recommendation badge: green "recommended" / red "NOT RECOMMENDED".
+function recBadge(p) {
+  if (p.recommended === true) return ` <span class="rec">recommended</span>`;
+  if (p.recommended === false) return ` <span class="rec no">NOT RECOMMENDED</span>`;
+  return "";
+}
+
+const customCfgEl = document.getElementById("custom-config");
+let customSelected = false;
+
+// Shared handler for any screening-choice change (presets + the custom radio).
+function onPresetChange() {
+  const r = form.querySelector("input[name=preset]:checked");
+  document.querySelectorAll(".preset").forEach(el => el.classList.remove("sel"));
+  if (r) r.closest(".preset")?.classList.add("sel");
+  customSelected = !!r && r.value === "__custom__";
+  customCfgEl.hidden = !customSelected;
+  refreshStatus();  // custom can run even if no preset's DBs are installed
+}
+form.addEventListener("change", (e) => {
+  if (e.target && e.target.name === "preset") onPresetChange();
+});
+
+function retentionSummaryText(days) {
+  return Number(days)
+    ? `Runs currently expire after ${days} day${days === 1 ? "" : "s"}.`
+    : "Runs are currently kept forever.";
+}
+
+fetch("/config").then(r => r.json()).then(c => {
+  PRESETS = c.presets || [];
+  renderRegions(c.regions);
+  retentionDays.value = c.retention_days ?? 0;
+  retentionSummary.textContent = retentionSummaryText(c.retention_days);
+  // Default to a full screen for real use; fall back to the first available
+  // preset (e.g. when the full-screen databases aren't installed).
+  const isAvail = p => p.available !== false;
+  let defaultIdx = PRESETS.findIndex(p => p.id === "full" && isAvail(p));
+  if (defaultIdx < 0) defaultIdx = PRESETS.findIndex(isAvail);
+
+  presetsEl.innerHTML = PRESETS.map((p, i) => {
+    const avail = isAvail(p);
+    const sel = i === defaultIdx;
+    const description = p.description
+      ? `<span class="pd">${escapeHtml(p.description)}</span>` : "";
+    const warn = (p.missing && p.missing.length)
+      ? `<span class="pd warn">Unavailable here - missing databases: ${escapeHtml(p.missing.join(", "))}</span>`
+      : "";
+    return `
+    <label class="preset${avail ? "" : " unavail"}${sel ? " sel" : ""}">
+      <input type="radio" name="preset" value="${escapeHtml(p.id)}" ${sel ? "checked" : ""} ${avail ? "" : "disabled"}>
+      <span>
+        <span class="pl">${escapeHtml(p.label)}${recBadge(p)}</span>
+        ${description}
+        ${warn}
+      </span>
+    </label>`;
+  }).join("");
+  noPresetAvailable = defaultIdx < 0;
+  if (noPresetAvailable) {
+    showCardMessage(
+      "settings",
+      "No preset can run: required databases are not installed.",
+      { advanced: true },
+    );
+  }
+  refreshStatus();
+}).catch(() => {
+  showCardMessage("settings", "Could not load presets.", { advanced: true });
+});
+
+/* ---- Helpers --------------------------------------------------------- */
+/* Drawn in bounded chunks: one innerHTML write for many rows is enough on
+   its own to exhaust the renderer. Order matches the source spreadsheet. */
+const QUERY_CHUNK = 500;
+
+/* The terminal pane is just the tail, the full log is on disk in the
+   run directory. Appending with `logEl.textContent +=` is quadratic, and on a
+   large screen the stream outruns it until the tab dies. So: buffer
+   lines, flush once per frame, and trim with hysteresis. */
+const LOG_MAX_LINES = 5000;   // trim trigger
+const LOG_KEEP_LINES = 4000;  // trim target
+let logLines = [];
+let logPending = [];
+let logDropped = 0;
+let logFlushQueued = false;
+
+function logHeader() {
+  return logDropped
+    ? `[... ${logDropped.toLocaleString()} earlier lines trimmed; full log is in the run directory ...]\n`
+    : "";
+}
+
+function resetLog() {
+  logLines = []; logPending = []; logDropped = 0;
+  logEl.textContent = "";
+}
+
+function flushLog() {
+  logFlushQueued = false;
+  if (!logPending.length) return;
+  // Once per flush, before mutating: a scrollHeight read per line forces a reflow.
+  const atBottom = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 4;
+  const chunk = logPending.join("\n") + "\n";
+  for (const line of logPending) logLines.push(line);
+  logPending = [];
+  if (logLines.length > LOG_MAX_LINES) {
+    logDropped += logLines.length - LOG_KEEP_LINES;
+    logLines = logLines.slice(-LOG_KEEP_LINES);
+    logEl.textContent = logHeader() + logLines.join("\n") + "\n";
+  } else {
+    logEl.appendChild(document.createTextNode(chunk));
+  }
+  if (atBottom) logEl.scrollTop = logEl.scrollHeight;
+}
+
+function queryRowHtml(query) {
+  return `<div class="qrow">
+          ${screeningBadge(query.status)}
+          <span class="qn">${escapeHtml(query.name)}</span>
+          <span class="qr">${escapeHtml(query.rationale)}</span>
+        </div>`;
+}
+
+function renderQueryRows(queries) {
+  queriesEl.innerHTML = '<h3>Per-sequence results</h3><div class="qtable"></div>';
+  const table = queriesEl.querySelector(".qtable");
+  const more = document.createElement("button");
+  more.type = "button";
+  more.className = "btn";
+  let shown = 0;
+  const draw = () => {
+    const slice = queries.slice(shown, shown + QUERY_CHUNK);
+    table.insertAdjacentHTML("beforeend", slice.map(queryRowHtml).join(""));
+    shown += slice.length;
+    const left = queries.length - shown;
+    if (!left) { more.remove(); return; }
+    more.textContent = `Show ${Math.min(QUERY_CHUNK, left).toLocaleString()} more (${left.toLocaleString()} remaining)`;
+    queriesEl.appendChild(more);
+  };
+  more.addEventListener("click", draw);
+  draw();
+}
+
+function appendLog(line) {
+  logPending.push(line);
+  copyLogBtn.disabled = false;
+  if (!logFlushQueued) { logFlushQueued = true; requestAnimationFrame(flushLog); }
+}
+
+async function copyLog() {
+  const text = logEl.textContent;
+  if (!text) return;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const area = document.createElement("textarea");
+      area.value = text;
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      const copied = document.execCommand("copy");
+      area.remove();
+      if (!copied) throw new Error("copy command failed");
+    }
+    copyLogBtn.textContent = "Copied";
+    setTimeout(() => { copyLogBtn.textContent = "Copy log"; }, 1500);
+  } catch (err) {
+    copyLogBtn.textContent = "Copy failed";
+    setTimeout(() => { copyLogBtn.textContent = "Copy log"; }, 2000);
+  }
+}
+copyLogBtn.addEventListener("click", copyLog);
+
+function reportStatus(status) {
+  const value = String(status || "");
+  if (value.startsWith("Skip") || value === "Error" || value === "Incomplete")
+    return "Skipped";
+  if (value === "Flag") return "Flag";
+  if (value.startsWith("Warning") && !value.includes("Cleared")) return "Warning";
+  return "Clear";
+}
+
+const reportBadgeColors = {
+  Flag: "#F05023",
+  Warning: "#D98A00",
+  Clear: "#419BB9",
+  Skipped: "#8a8f9e",
+};
+function screeningBadge(status) {
+  const label = reportStatus(status);
+  return `<span class="badge" style="background:${reportBadgeColors[label]}; color:#fff;">${label}</span>`;
+}
+
+function showScreenStartError(body) {
+  const area = messageAreas[body.field] ? body.field : "run";
+  showCardMessage(area, body.error || "Failed to start.", {
+    advanced: area === "settings",
+    focus: area === "label" ? runLabel : null,
+  });
+  if (area === "label") runLabel.setAttribute("aria-invalid", "true");
+}
+
+/* ---- Submit (only the server-path tab is wired so far) --------------- */
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  ["label", "sequence", "settings", "run"].forEach(clearCardMessage);
+  runLabel.removeAttribute("aria-invalid");
+
+  if (!runLabel.value.trim()) {
+    runLabel.setAttribute("aria-invalid", "true");
+    showCardMessage("label", "Enter a run label.", { focus: runLabel });
+    return;
+  }
+
+  const data = new FormData();
+  const selectedRegions = selectedRegionCodes();
+  data.append("regions", selectedRegions.length ? selectedRegions.join(",") : "all");
+  // Screen EVERY populated input together (paste + upload + picked file),
+  // regardless of the active tab -- the summary by the Run button shows what's
+  // included so nothing hidden gets screened silently.
+  let anyInput = false;
+  const pasteText = seqPaste.value.trim();
+  if (pasteText) { data.append("sequence_text", pasteText); anyInput = true; }
+  const upFile = uploadInput.files[0];
+  if (upFile) { data.append("upload_file", upFile); anyInput = true; }
+  const spreadsheetFile = spreadsheetInput.files[0];
+  if (spreadsheetFile) {
+    if (!spreadsheetPreview || sheetNucleotide.value === "") {
+      tabsEl.querySelector('.tab[data-tab="spreadsheet"]').click();
+      showCardMessage(
+        "sequence",
+        "Choose the spreadsheet sheet and nucleotide column first.",
+        { focus: sheetNucleotide },
+      );
+      return;
+    }
+    data.append("spreadsheet_file", spreadsheetFile);
+    data.append("spreadsheet_sheet", spreadsheetPreview.sheet);
+    data.append("spreadsheet_nucleotide_column", sheetNucleotide.value);
+    data.append("spreadsheet_name_column", sheetName.value);
+    if (sheetSkip.checked) data.append("spreadsheet_skip_first_row", "1");
+    anyInput = true;
+  }
+  if (selectedPath) { data.append("fasta_file", selectedPath); anyInput = true; }
+  if (!anyInput) {
+    showCardMessage(
+      "sequence",
+      "Add sequences first: paste, upload, or pick a file (you can combine them).",
+    );
+    return;
+  }
+  const preset = form.querySelector("input[name=preset]:checked");
+  if (preset) data.append("preset", preset.value);
+  if (preset && preset.value === "__custom__") {
+    const cfg = customCfgEl.value.trim();
+    if (!cfg) {
+      showCardMessage(
+        "settings",
+        "Enter a custom config (YAML), or pick a preset.",
+        { advanced: true, focus: customCfgEl },
+      );
+      return;
+    }
+    data.append("custom_config", cfg);
+  }
+  data.append("label", runLabel.value.trim());
+
+  runPanel.classList.add("active");
+  runPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  runBtn.disabled = true;
+  runBtn.textContent = "Running...";
+  mySubmitInFlight = true;
+
+  try {
+    const res = await fetch("/screen", { method: "POST", body: data });
+    const body = await res.json();
+    if (!res.ok) {
+      showScreenStartError(body);
+      mySubmitInFlight = false;
+      refreshStatus();
+      return;
+    }
+    attach(body.job_id);
+    clearInputs();   // a run started -> clear the form so it can't be resubmitted as-is
+  } catch (err) {
+    showCardMessage("run", "Request failed: " + err);
+    mySubmitInFlight = false;
+    refreshStatus();
+  }
+});
+
+runLabel.addEventListener("input", () => {
+  if (!runLabel.value.trim()) return;
+  clearCardMessage("label");
+  runLabel.removeAttribute("aria-invalid");
+});
+["input", "change"].forEach(eventName => {
+  sequenceCard.addEventListener(eventName, () => clearCardMessage("sequence"));
+  settingsCard.addEventListener(eventName, () => clearCardMessage("settings"));
+});
+
+// Empty the input fields once a run has started (label, paste, upload, picked path).
+function clearInputs() {
+  runLabel.value = "";
+  seqPaste.value = ""; bpCount.textContent = "0"; recCount.textContent = "0";
+  uploadInput.value = ""; uploadInfo.textContent = "";
+  spreadsheetInput.value = ""; spreadsheetInfo.textContent = "";
+  spreadsheetControls.hidden = true; spreadsheetPreview = null;
+  selectedPath = null; browseSel.textContent = "No file selected.";
+  browseList.querySelectorAll(".row.sel").forEach(x => x.classList.remove("sel"));
+  updateInputSummary();
+}
+
+// Attach to the LIVE run's log via SSE (replays from the start, so a late join
+// or a second browser sees the full history). Drives only the Run card; the
+// Results card fills in when the run ends.
+function attach(jobId) {
+  if (streamingJobId === jobId) return;
+  clearCardMessage("run");
+  streamingJobId = jobId;
+  runPanelJobId = jobId;
+  terminalErrorJobId = null;
+  terminalDismissedJobId = null;
+  updateTerminalVisibility();
+  // Clear the separate Results card; it populates when this run finishes.
+  resultCard.style.display = "none";
+  summaryDiv.innerHTML = ""; reportEl.innerHTML = ""; filesEl.innerHTML = ""; queriesEl.innerHTML = ""; resultTitle.textContent = "Result";
+  resetLog();
+  copyLogBtn.disabled = true;
+  copyLogBtn.textContent = "Copy log";
+  runPanel.classList.add("active");
+  resetStages();
+  setStageActive(1);  // commec's prep/biorisk phase; refined as STEP markers stream
+  stopBtn.hidden = false; stopBtn.disabled = false; stopBtn.textContent = "Stop";
+  const es = new EventSource("/events/" + jobId);
+  es.addEventListener("log", (e) => {
+    for (const line of JSON.parse(e.data).lines) {
+      appendLog(line);
+      parseStageLine(line);
+    }
+  });
+  es.addEventListener("end", (e) => {
+    const d = JSON.parse(e.data);
+    es.close();
+    streamingJobId = null;  // stream done -> allow re-attach (e.g. resuming this same job)
+    mySubmitInFlight = false;
+    stopBtn.hidden = true;
+    finishStages(d.status);
+    if (d.status === "interrupted")
+      showCardMessage(
+        "run",
+        "Run stopped - saved as Interrupted; resume it from Results.",
+        { info: true },
+      );
+    else if (d.status !== "done")
+      // Surface a user-fixable error (e.g. duplicate names) plainly; fall back
+      // to the generic "see the log" only when we don't recognise it.
+      showCardMessage(
+        "run",
+        d.error_hint || `Screen failed (exit ${d.returncode}) - see the log.`,
+      );
+    if (d.status === "error") openTerminalForError(jobId);
+    showResults(jobId);
+    refreshStatus();
+    loadRecent();
+  });
+  es.onerror = () => {
+    es.close();
+    if (streamingJobId === jobId) streamingJobId = null;
+  };
+}
+
+// Clicking a recent run shows its results in the Results card only -- it does
+// NOT touch the live Run card, so a run in progress still reads as in progress.
+function viewRun(id) {
+  showResults(id);
+  resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+async function loadRecent() {
+  try {
+    const runs = (await (await fetch("/runs")).json()).runs || [];
+    recentSub.textContent = runs.length ? `${runs.length} run${runs.length === 1 ? "" : "s"}` : "";
+    delallBtn.hidden = !runs.length;
+    if (!runs.length) {
+      recentList.innerHTML = `<div class="empty">No runs yet.</div>`;
+      return;
+    }
+    recentList.innerHTML = runs.map(r => {
+      let pill;
+      if (r.status === "interrupted") pill = `<span class="badge q-int">Interrupted</span>`;
+      else if (r.overall) pill = screeningBadge(r.overall);
+      else pill = `<span class="badge q-int">${r.status === "error" ? "Error" : "Done"}</span>`;
+      const when = r.finished ? fmtDateTime(r.finished) : "";
+      const nq = r.status === "interrupted" ? "interrupted"
+        : (r.n ? `${r.n} quer${r.n === 1 ? "y" : "ies"}` : (r.status === "error" ? "failed" : ""));
+      const sz = r.size != null ? humanBytes(r.size) : "";
+      const meta = [nq, sz, when].filter(Boolean).join(" · ");
+      const resume = r.resumable
+        ? `<button type="button" class="resume" data-id="${escapeHtml(r.id)}" title="Re-run the interrupted step and continue">resume</button>`
+        : "";
+      const rerun = r.rerunnable
+        ? `<button type="button" class="rerun" data-id="${escapeHtml(r.id)}" title="Start a fresh run with the same input and configuration">rerun</button>`
+        : "";
+      return `<div class="run-row" data-id="${escapeHtml(r.id)}">
+        ${pill}<span class="rl">${escapeHtml(r.label)}</span>
+        <span class="rm">${escapeHtml(meta)}</span>
+        ${resume}${rerun}
+        <button type="button" class="del" data-id="${escapeHtml(r.id)}" title="Delete this result">delete</button>
+      </div>`;
+    }).join("");
+    recentList.querySelectorAll(".run-row").forEach(row =>
+      row.addEventListener("click", () => viewRun(row.dataset.id)));
+    recentList.querySelectorAll(".resume").forEach(btn =>
+      btn.addEventListener("click", (e) => { e.stopPropagation(); resumeRun(btn.dataset.id); }));
+    recentList.querySelectorAll(".rerun").forEach(btn =>
+      btn.addEventListener("click", (e) => { e.stopPropagation(); rerunRun(btn.dataset.id); }));
+    recentList.querySelectorAll(".del").forEach(btn =>
+      btn.addEventListener("click", (e) => { e.stopPropagation(); deleteRun(btn.dataset.id); }));
+  } catch (err) {
+    if (!resultsMessage.textContent)
+      showCardMessage("results", "Could not load saved runs.", { scroll: false });
+  }
+}
+
+// Stop the live run. The server kills it and finalizes it as Interrupted
+// (resumable); the SSE 'end' event then updates the UI.
+async function stopRun() {
+  if (!liveJobId) return;
+  if (!confirm("Stop this run? It will be saved as Interrupted and can be "
+             + "resumed (or deleted) from Results.")) return;
+  clearCardMessage("run");
+  stopBtn.disabled = true; stopBtn.textContent = "Stopping...";
+  try {
+    const res = await fetch("/runs/" + liveJobId + "/stop", { method: "POST" });
+    if (!res.ok) {
+      const b = await res.json().catch(() => ({}));
+      showCardMessage("run", b.error || "Couldn't stop the run.");
+      stopBtn.disabled = false; stopBtn.textContent = "Stop";
+    }
+  } catch (err) {
+    showCardMessage("run", "Stop failed: " + err);
+    stopBtn.disabled = false; stopBtn.textContent = "Stop";
+  }
+}
+stopBtn.addEventListener("click", stopRun);
+
+// Continue an interrupted run: the server re-runs the step it died on and
+// reuses the rest, then we attach to the live log like a fresh submit.
+async function resumeRun(id) {
+  return restartSavedRun(id, "resume");
+}
+async function rerunRun(id) {
+  return restartSavedRun(id, "rerun");
+}
+async function restartSavedRun(id, action) {
+  clearCardMessage("results");
+  runBtn.disabled = true; runBtn.textContent = "Running...";
+  mySubmitInFlight = true;
+  try {
+    const res = await fetch("/runs/" + id + "/" + action, { method: "POST" });
+    const body = await res.json();
+    if (!res.ok) {
+      showCardMessage("results", body.error || `Couldn't ${action}.`);
+      mySubmitInFlight = false; refreshStatus(); loadRecent();
+      return;
+    }
+    attach(body.job_id);
+    requestAnimationFrame(() => scrollToCard(runPanel));
+    loadRecent();  // drop the now-live run from the recent list (no stale buttons)
+  } catch (err) {
+    showCardMessage(
+      "results",
+      `${action === "resume" ? "Resume" : "Rerun"} failed: ` + err,
+    );
+    mySubmitInFlight = false; refreshStatus();
+  }
+}
+
+async function deleteRun(id) {
+  if (!confirm("Delete this result? Its saved report and outputs are removed.")) return;
+  clearCardMessage("results");
+  try {
+    const res = await fetch("/runs/" + id, { method: "DELETE" });
+    if (!res.ok) {
+      // e.g. 409 while the run is still in progress -- don't pretend it's gone.
+      const b = await res.json().catch(() => ({}));
+      showCardMessage("results", b.error || "Couldn't delete that run.");
+      loadRecent();
+      return;
+    }
+    if (viewingJobId === id) { resultCard.style.display = "none"; viewingJobId = null; }
+    loadRecent();
+  } catch (err) {
+    showCardMessage("results", "Delete failed: " + err);
+  }
+}
+
+async function deleteAllRuns() {
+  if (!confirm("Delete ALL results? Every saved run and its outputs are "
+             + "removed (a run still in progress is kept).")) return;
+  clearCardMessage("results");
+  try {
+    const res = await fetch("/runs", { method: "DELETE" });
+    const b = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showCardMessage("results", b.error || "Couldn't delete saved runs.");
+      return;
+    }
+    if (b && b.skipped) showCardMessage(
+      "results",
+      "Deleted all finished runs; the in-progress run was kept.",
+      { info: true },
+    );
+    resultCard.style.display = "none"; viewingJobId = null;
+    loadRecent();
+  } catch (err) {
+    showCardMessage("results", "Delete failed: " + err);
+  }
+}
+delallBtn.addEventListener("click", deleteAllRuns);
+
+async function saveRetention() {
+  if (!retentionDays.value.trim()) {
+    retentionStatus.textContent = "Enter a non-negative whole number.";
+    return;
+  }
+  const days = Number(retentionDays.value);
+  if (!Number.isInteger(days) || days < 0) {
+    retentionStatus.textContent = "Enter a non-negative whole number.";
+    return;
+  }
+  if (days > 0 && !confirm(
+    `Keep completed runs for ${days} day${days === 1 ? "" : "s"}? `
+    + "Runs already older than this will be deleted immediately."
+  )) return;
+  retentionSave.disabled = true;
+  retentionSave.textContent = "Saving...";
+  try {
+    const res = await fetch("/retention", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ days }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      retentionStatus.textContent = body.error || "Could not save retention.";
+      return;
+    }
+    retentionDays.value = body.retention_days;
+    retentionSummary.textContent = retentionSummaryText(body.retention_days);
+    retentionStatus.textContent = "Saved.";
+    if (body.deleted)
+      retentionStatus.textContent += ` Deleted ${body.deleted} expired run${body.deleted === 1 ? "" : "s"}.`;
+    loadRecent();
+    loadMetrics();
+  } catch (err) {
+    retentionStatus.textContent = "Could not save retention: " + err;
+  } finally {
+    retentionSave.disabled = false;
+    retentionSave.textContent = "Save";
+  }
+}
+retentionSave.addEventListener("click", saveRetention);
+
+// Poll the shared screener state so any browser reflects the busy/idle status
+// and auto-joins an in-progress run started elsewhere.
+let wasBusy = false;
+async function refreshStatus() {
+  try {
+    const s = await (await fetch("/status")).json();
+    if (s.busy) {
+      const label = (s.active && s.active.label) || "run";
+      const queryCount = s.active && s.active.query_count;
+      const queries = Number.isInteger(queryCount)
+        ? ` (${queryCount} quer${queryCount === 1 ? "y" : "ies"})`
+        : "";
+      queueEl.classList.add("busy");
+      queueText.textContent = `Screening: ${label}${queries}`;
+    } else {
+      queueEl.classList.remove("busy");
+      queueText.textContent = "Screener idle";
+    }
+    if (!mySubmitInFlight) runBtn.disabled = s.busy || (noPresetAvailable && !customSelected);
+    runBtn.textContent = (s.busy || mySubmitInFlight) ? "Running..." : "Run";
+    // Track the live run as the Stop target; keep the button visible while busy
+    // (don't touch its disabled/label here, so a mid-stop "Stopping..." sticks).
+    liveJobId = (s.busy && s.active) ? s.active.job_id : null;
+    if (!s.busy) stopBtn.hidden = true;
+    else if (streamingJobId === (s.active && s.active.job_id)) stopBtn.hidden = false;
+    if (s.active && s.active.status === "running" && streamingJobId !== s.active.job_id) {
+      attach(s.active.job_id);
+    }
+    if (wasBusy && !s.busy) loadRecent();  // a run just finished (here or elsewhere)
+    wasBusy = s.busy;
+  } catch (e) { /* ignore */ }
+}
+refreshStatus();
+setInterval(refreshStatus, 3000);
+loadRecent();
+
+/* ---- Live system meters (CPU / RAM) ---------------------------------- */
+// Bytes -> compact human string (e.g. 1.4 GB). Used for disk + per-run sizes.
+function humanBytes(n) {
+  if (n == null) return "--";
+  const u = ["B", "KB", "MB", "GB", "TB"];
+  let i = 0;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return (i === 0 ? n : n.toFixed(1)) + " " + u[i];
+}
+// Format an epoch (seconds) as local YYYY-MM-DD HH:MM (24-hour), so dates read
+// the same regardless of the browser's locale (toLocaleString gives M/D/YYYY in en-US).
+function fmtDateTime(epochSec) {
+  const d = new Date(epochSec * 1000);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} `
+       + `${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+async function loadMetrics() {
+  try {
+    const m = await (await fetch("/metrics")).json();
+    const cpuVal = document.getElementById("cpu-val"), cpuBar = document.getElementById("cpu-bar");
+    if (m.cpu == null) { cpuVal.textContent = "-- %"; cpuBar.style.width = "0"; }
+    else { cpuVal.textContent = Math.round(m.cpu) + " %"; cpuBar.style.width = Math.round(m.cpu) + "%"; }
+    const ramVal = document.getElementById("ram-val"), ramBar = document.getElementById("ram-bar");
+    if (m.ram && m.ram.pct != null) {
+      const gb = x => (x / 1073741824).toFixed(1);
+      ramVal.textContent = `${gb(m.ram.used)}/${gb(m.ram.total)} GB`;
+      ramBar.style.width = Math.round(m.ram.pct) + "%";
+    } else { ramVal.textContent = "-- %"; ramBar.style.width = "0"; }
+    const diskVal = document.getElementById("disk-val");
+    diskVal.textContent = (m.disk && m.disk.free != null)
+      ? humanBytes(m.disk.free) + " free" : "--";
+  } catch (e) { /* ignore */ }
+}
+loadMetrics();
+setInterval(loadMetrics, 2000);
+
+// Deep-link: /?job=<id> shows that run's results in the Results card.
+(function () {
+  const jobId = new URLSearchParams(location.search).get("job");
+  if (jobId) viewRun(jobId);
+})();
+
+// Populate the Results card for a run (the just-finished live run, or a clicked
+// past run). Never touches the Run card / progress bar / live status text.
+async function showResults(jobId) {
+  try {
+    const body = await (await fetch("/results/" + jobId)).json();
+    viewingJobId = jobId;
+    resultTitle.textContent = body.label || "Result";
+    summaryDiv.innerHTML = ""; summaryDiv.style.display = "none";
+    reportEl.innerHTML = "";
+    filesEl.innerHTML = "";
+    queriesEl.innerHTML = "";
+    if (jobId === runPanelJobId
+        && (body.status === "error" || (body.summary && body.summary.overall === "Error")))
+      openTerminalForError(jobId);
+
+    // Interrupted run: explain, and offer to continue it (re-runs the cut-off
+    // step and reuses the rest).
+    if (body.status === "interrupted") {
+      reportEl.innerHTML = `
+        <div class="report-cta">
+          <div>
+            <div class="rt">Run interrupted</div>
+            <div class="rd">This run was cut off before finishing${body.resumable ? "" : " (can't be resumed: input or config is missing)"}.</div>
+          </div>
+          ${body.resumable ? `<button type="button" class="btn" id="resume-result">Resume run</button>` : ""}
+        </div>`;
+      const rb = document.getElementById("resume-result");
+      if (rb) rb.addEventListener("click", () => resumeRun(jobId));
+    }
+
+    // A recognised user-fixable error (e.g. duplicate FASTA names): show it on
+    // the card, so it's visible without opening the advanced-only log.
+    if (body.status === "error" && body.error_hint) {
+      reportEl.innerHTML += `
+        <div class="report-cta err">
+          <div>
+            <div class="rt">Screen failed</div>
+            <div class="rd">${escapeHtml(body.error_hint)}</div>
+          </div>
+        </div>`;
+    }
+
+    if (body.rerunnable) {
+      reportEl.innerHTML += `
+        <div class="report-cta">
+          <div>
+            <div class="rt">Run failed</div>
+            <div class="rd">Start a fresh run with the same input and configuration. Previous intermediates and outputs will not be reused.</div>
+          </div>
+          <button type="button" class="btn" id="rerun-result">Rerun from scratch</button>
+        </div>`;
+      document.getElementById("rerun-result").addEventListener("click", () => rerunRun(jobId));
+    }
+
+    // Verdict summary, parsed from commec's output JSON. The overall verdict
+    // stays at the top; the per-query list goes LAST (#queries) so a huge list
+    // doesn't push the report button + file links off-screen.
+    const sm = body.summary;
+    if (sm && sm.n) {
+      summaryDiv.innerHTML =
+        `<div class="verdict">Overall ${screeningBadge(sm.overall)}`
+        + `<span class="vc">${sm.n} quer${sm.n === 1 ? "y" : "ies"}</span></div>`;
+      summaryDiv.style.display = "block";
+      renderQueryRows(sm.queries);
+    }
+
+    const files = body.files || [];
+    const report = files.find(f => /_summary\.html?$/i.test(f.name));
+    if (report) {
+      const url = `/results/${jobId}/file/${encodeURIComponent(report.name)}?view=1`;
+      reportEl.innerHTML += `
+        <div class="report-cta">
+          <div class="rt">Screening report</div>
+          <a class="btn" href="${url}" target="_blank" rel="noopener">Open full report</a>
+        </div>`;
+    }
+    if (files.length) {
+      let html = "<h3>Output files</h3>";
+      for (const f of files) {
+        // Encode each path segment but keep the slashes (nested intermediates).
+        const enc = f.name.split("/").map(encodeURIComponent).join("/");
+        const base = `/results/${jobId}/file/${enc}`;
+        const cls = f.advanced ? "file-row adv-file" : "file-row";
+        html += `<div class="${cls}">
+          <a class="nm" href="${base}?view=1" target="_blank" rel="noopener">${escapeHtml(f.name)}</a>
+          <span class="sz">${(f.size).toLocaleString()} B</span>
+          <a class="dl" href="${base}">download</a>
+        </div>`;
+      }
+      filesEl.innerHTML = html;
+    }
+    resultCard.style.display = "block";
+  } catch (err) { /* ignore */ }
+}
+</script>
+</body>
+</html>

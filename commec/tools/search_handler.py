@@ -4,11 +4,11 @@
 Abstract base class defining a shared interface for search tools.
 """
 
-from abc import ABC, abstractmethod
-import os
-from dataclasses import dataclass
-import subprocess
 import logging
+import os
+import subprocess
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 

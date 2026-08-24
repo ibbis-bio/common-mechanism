@@ -48,39 +48,40 @@ Output file handling:
 
 import argparse
 import datetime
-import time
 import logging
 import sys
+import time
 import traceback
+
 import pandas as pd
 from Bio.Data.CodonTable import TranslationError
 
-from commec.config.screen_io import ScreenIO, IoValidationError
+import commec.control_list as control_list
+from commec.config.constants import MAXIMUM_QUERY_LENGTH, MINIMUM_QUERY_LENGTH
+from commec.config.json_io import encode_screen_data_to_json
 from commec.config.query import Query
-from commec.utils.logger import (
-    setup_console_logging,
-    setup_file_logging,
-    set_log_level,
-)
-from commec.config.screen_tools import ScreenTools
 from commec.config.result import (
-    ScreenResult,
-    ScreenStep,
-    QueryResult,
-    ScreenStatus,
     ControlListResult,
+    QueryResult,
+    ScreenResult,
+    ScreenStatus,
+    ScreenStep,
 )
-from commec.utils.file_utils import file_arg, directory_arg
-from commec.utils.json_html_output import generate_html_from_screen_data
+from commec.config.screen_io import IoValidationError, ScreenIO
+from commec.config.screen_tools import ScreenTools
 from commec.screeners.check_biorisk import parse_biorisk_hits
 from commec.screeners.check_low_concern import parse_low_concern_hits
 from commec.screeners.check_reg_path import parse_taxonomy_hits
+from commec.setup import check_for_updates, read_manifest
 from commec.tools.fetch_nc_bits import calculate_noncoding_regions_per_query
 from commec.tools.search_handler import DatabaseValidationError
-from commec.config.json_io import encode_screen_data_to_json
-from commec.setup import check_for_updates, read_manifest
-import commec.control_list as control_list
-from commec.config.constants import MINIMUM_QUERY_LENGTH, MAXIMUM_QUERY_LENGTH
+from commec.utils.file_utils import directory_arg, file_arg
+from commec.utils.json_html_output import generate_html_from_screen_data
+from commec.utils.logger import (
+    set_log_level,
+    setup_console_logging,
+    setup_file_logging,
+)
 
 DESCRIPTION = "Run Common Mechanism screening on an input FASTA."
 
@@ -235,8 +236,8 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "-r",
         "--regions",
         dest="regions",
-        default=[],
-        help="A comma separated list of countries or regions to add context to list compliance i.e. NZ,US,CH",
+        default="",
+        help="A comma-separated list of countries or regions to add context to list compliance, e.g. 'NZ,EU'",
     )
     return parser
 
@@ -329,7 +330,17 @@ class Screen:
         # Check for database updates.
         if self.params.config["auto_update_databases"]:
             logger.info("Checking for database updates ... ")
-            updates_required, updaters = check_for_updates(self.params.config)
+            try:
+                updates_required, updaters = check_for_updates(self.params.config)
+            except (ValueError, OSError, KeyError) as e:
+                # The databases needed to screen are already on disk, so a bad
+                # base_url or an unusable latest.json is not worth aborting for.
+                logger.warning(
+                    "Could not check for database updates, continuing with the"
+                    " databases already installed: %s",
+                    e,
+                )
+                updates_required, updaters = False, {}
             if updates_required:
                 names = [
                     updater.name

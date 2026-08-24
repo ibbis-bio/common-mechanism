@@ -1,18 +1,18 @@
 import os
-import pandas as pd
-import pytest
 import textwrap
 from unittest.mock import patch
 
+import pandas as pd
+import pytest
+
+from commec.config.result import QueryResult, ScreenStatus
+from commec.config.screen_io import ScreenIO
+from commec.screen import ScreenArgumentParser, add_args
+from commec.tools.blastx import BlastXHandler
 from commec.tools.fetch_nc_bits import (
     _get_ranges_with_no_hits,
     calculate_noncoding_regions_per_query,
 )
-
-from commec.config.screen_io import ScreenIO
-from commec.config.result import QueryResult, ScreenStatus
-from commec.screen import add_args, ScreenArgumentParser
-from commec.tools.blastx import BlastXHandler
 
 DATABASE_DIRECTORY = os.path.join(os.path.dirname(__file__), "test_dbs")
 
@@ -99,12 +99,13 @@ def test_fetch_nocoding_regions(tmp_path):
         """
     )
 
+    # Sequences are upper-cased when queries are parsed, so the regions come back upper-cased
     expected_output = textwrap.dedent(
         """\
         >NC_TEST01_0 (1-100)
-        ggtagttccctaaacttatcattaagcgatcttcatcgtcaggtatctcgattggtgcagcaagagagcggtgattgtaccgggaaattaagaggtaacg
+        GGTAGTTCCCTAAACTTATCATTAAGCGATCTTCATCGTCAGGTATCTCGATTGGTGCAGCAAGAGAGCGGTGATTGTACCGGGAAATTAAGAGGTAACG
         >NC_TEST01_1 (201-300)
-        aaatgttgttctaactcaagaagataccgctaagctattgcaaagtacggtaaagcataatttgaataattatgacttaagaagtgtcggcaatggtaat
+        AAATGTTGTTCTAACTCAAGAAGATACCGCTAAGCTATTGCAAAGTACGGTAAAGCATAATTTGAATAATTATGACTTAAGAAGTGTCGGCAATGGTAAT
         """
     )
 

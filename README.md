@@ -12,6 +12,7 @@ The `commec` package is a tool for DNA sequence screening that is part of the
     screen  Run Common Mechanism screening on an input FASTA.
     flag    Parse .screen or .json files in a directory and create CSVs of flags raised
     list    Display information on available annotated control lists
+    gui     Run the browser-based screening interface
 
 The `commec screen` command runs an input FASTA through the following screening steps:
 
@@ -23,9 +24,13 @@ The `commec screen` command runs an input FASTA through the following screening 
 
 ![Flowchart of the commec screening steps, from input FASTA through the biorisk, best match / taxonomy, and low-concern screening to a Warning, Flag, or Clear outcome.](docs/images/common-mechanism-screening-flow-v2.jpg "Commec screening decision flow")
 
-The [GitHub Wiki](https://github.com/ibbis-screening/common-mechanism/wiki) has documentation for this package, including information about installing `commec` and interpreting screening results.
+The [GitHub Wiki](https://github.com/ibbis-bio/common-mechanism/wiki) has documentation for this package, including information about installing `commec` and interpreting screening results.
 
 More information about the Common Mechanism project is available on the [commec.ibbis.bio](https://commec.ibbis.bio/) and [IBBIS project page](https://ibbis.bio/common-mechanism/).
+
+## Google Colab Demo
+You can quickly see what `commec` is all about with our easy to use [commec screen google colab notebook](https://colab.research.google.com/github/ibbis-bio/common-mechanism/blob/main/notebooks/commec_colab_screen.ipynb). Simple click `Run all` to initialise the notebook, and paste in your fasta sequence, or upload a fasta file, and click run!
+Your outputs will be displayed, as well as the HTML report, and JSON data made available to download.
 
 ## Quick start
 `commec` and its package dependencies are installed via conda. The reference databases that support screening are downloaded and kept up to date with the `commec setup` command, which retrieves them from [databases.commec.io](https://databases.commec.io).
@@ -37,12 +42,23 @@ commec setup -d /path/to/databases
 commec screen -d /path/to/databases input.fasta
 ```
 
-See the [GitHub Wiki](https://github.com/ibbis-screening/common-mechanism/wiki) for full installation instructions.
+See the [GitHub Wiki](https://github.com/ibbis-bio/common-mechanism/wiki) for full installation instructions.
 
+## Browser GUI
+
+Commec includes a browser interface for local kiosk use and authenticated use
+from another computer on the same trusted network. With the Commec conda
+environment active, start the local interface on an unprivileged port with:
+
+```bash
+commec gui --kiosk --port 8765 --databases /path/to/databases
+```
+
+See the [GUI guide](commec/gui/README.md) for configuration, LAN access, certificate setup, presets, results, resume, and retention.
 
 ## Development
 The `commec` package is being actively developed by IBBIS staff. We welcome contributions! To get started, install conda, and make sure
-that [your channels are configured correctly](http://bioconda.github.io/). Then create the dev environment with:
+that [your channels are configured correctly](https://bioconda.github.io/). Then create the dev environment with:
 
 ```
 conda env create -f environment.yaml
@@ -50,6 +66,10 @@ conda activate commec-dev
 ```
 
 From here, you should have an interactive version of the package installed via `pip -e .` and the necessary shell dependencies.
+
+### Code Style/Formatting
+
+We use `ruff` for formatting, including import sorting. Please lint your code by running `uvx ruff format` (or using your preferred python package manager).
 
 ## License
 `commec` is released under the [MIT License](LICENSE).

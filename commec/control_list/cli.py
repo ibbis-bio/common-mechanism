@@ -3,19 +3,22 @@ Command-line-interface (cli) functionality for the Regulation module.
 Argument declarations and
 """
 
-import os
 import argparse
-import pandas as pd
 import importlib
+import os
 from pathlib import Path
-from commec.utils.file_utils import directory_arg, file_arg
+
+import pandas as pd
+
 import commec.config.yaml_io as YamlIO
 from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
+from commec.utils.file_utils import directory_arg, file_arg
+
+from . import list_data as data
 from .containers import (
     ControlListOutput,
     ListMode,
 )
-from . import list_data as data
 
 
 def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -67,9 +70,8 @@ def add_args(parser_obj: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "-r",
         "--regions",
         dest="regions",
-        nargs="+",
-        default=[],
-        help="A list of countries or regions to add context to control list compliance",
+        default="",
+        help="A comma-separated list of countries or regions to add context to list compliance, e.g. 'NZ,EU'",
     )
     parser_obj.add_argument(
         "-o",
@@ -149,7 +151,7 @@ def generate_output_summary_csv(output_filepath: str | os.PathLike):
     """
     # Deferred import: control_list imports this module, so importing at
     # module level here would create a circular import.
-    from .control_list import get_regulation
+    from .control_list import get_control_lists, get_regulation
 
     # One row per accession (there may be multiple rows per index, one per list).
     output_data = (
@@ -170,6 +172,14 @@ def generate_output_summary_csv(output_filepath: str | os.PathLike):
             output_data.loc[accession, regulation.list] = 1
 
     output_data = output_data.sort_values("display_name")
+
+    # Rename the control list headings to the str of the list object
+    rename_headings = {}
+    for col_heading in output_data.columns:
+        _list = get_control_lists(col_heading)
+        if _list:
+            rename_headings[col_heading] = _list.__repr__()
+    output_data = output_data.rename(columns=rename_headings)
 
     # Export - ensure .csv suffix
     output_path = Path(output_filepath).resolve()

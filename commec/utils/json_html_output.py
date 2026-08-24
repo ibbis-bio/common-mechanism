@@ -25,14 +25,14 @@ and tab status are derived (in report.js) from commec's own authoritative per-hi
 status, so the report always agrees with commec's flag counts.
 """
 
+import argparse
+import base64
+import importlib.resources
+import json
+import logging
+import math
 import os
 import re
-import math
-import json
-import base64
-import argparse
-import logging
-import importlib.resources
 from urllib.parse import unquote
 
 from commec.config.json_io import get_screen_data_from_json

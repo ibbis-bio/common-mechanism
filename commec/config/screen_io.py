@@ -6,28 +6,32 @@ Objects responsible for parsing and interpreting user input for
 the screen workflow of commec.
 """
 
-import os
-import sys
-import glob
 import argparse
+import glob
 import logging
 import multiprocessing
-from pprint import pformat
+import os
+import sys
 from pathlib import Path
-from Bio import SeqIO
+from pprint import pformat
+
 import yaml
+from Bio import SeqIO
+from Bio.Data import IUPACData
+from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 import commec.config.yaml_io as YamlIO
-from commec.config.query import Query
-from commec.utils.file_utils import expand_and_normalize
 from commec.config.constants import (
-    MINIMUM_QUERY_LENGTH,
-    MAXIMUM_QUERY_LENGTH,
     MAXIMUM_FILENAME_SIZE,
+    MAXIMUM_QUERY_LENGTH,
     MAXIMUM_QUERY_NAME_LENGTH,
+    MINIMUM_QUERY_LENGTH,
+    NON_IUPAC_SUBSTITUTION_THRESHOLD,
     VALID_BLAST_MT_MODES,
 )
+from commec.config.query import Query
+from commec.utils.file_utils import expand_and_normalize
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +128,25 @@ class ScreenIO:
 
         for record in records:
             try:
+                substitutions = substitute_non_iupac(record)
+                if substitutions:
+                    logger.warning(
+                        "Query %s: substituted %i non-IUPAC nucleotide characters with 'N'",
+                        record.id,
+                        substitutions,
+                    )
+                    # A high proportion of masked characters suggests the input isn't a
+                    # nucleotide sequence (e.g. a protein FASTA), in which case screening
+                    # results are meaningless
+                    proportion_substituted = substitutions / len(record.seq)
+                    if proportion_substituted > NON_IUPAC_SUBSTITUTION_THRESHOLD:
+                        logger.warning(
+                            "Query %s: %.1f%% of characters were not IUPAC nucleotide codes. "
+                            "This may not be a nucleotide sequence; screening it may not "
+                            "give valid results.",
+                            record.id,
+                            proportion_substituted * 100,
+                        )
                 query = Query(record)
                 if query.name in queries:
                     raise ValueError(
@@ -131,8 +154,8 @@ class ScreenIO:
                         f"Ensure that the first {MAXIMUM_QUERY_NAME_LENGTH} characters for each fasta record are unique."
                     )
                 queries[query.name] = query
-                # Override the original cleaned fasta, with queries above a given length and updated names
-                if MINIMUM_QUERY_LENGTH < len(record.seq) <= MAXIMUM_QUERY_LENGTH:
+                # Override the original cleaned fasta, with queries within the valid length range and updated names
+                if MINIMUM_QUERY_LENGTH <= len(record.seq) <= MAXIMUM_QUERY_LENGTH:
                     # Creating new SeqRecord to avoid overwriting the seq_record object inside query and preserve the original seq id
                     updated_records.append(
                         SeqRecord(record.seq, id=query.name, description="")
@@ -180,9 +203,20 @@ class ScreenIO:
         cli_config_yaml = args.config_yaml.strip()
         if cli_config_yaml:
             if not os.path.exists(cli_config_yaml):
-                raise FileNotFoundError(f"--config YAML not found: {cli_config_yaml}")
+                raise YamlIO.YamlIOValidationError(
+                    f"--config YAML not found: {cli_config_yaml}"
+                )
             logger.debug("Overriding defaults in with values from %s", cli_config_yaml)
             self.config = YamlIO.update_config_from_yaml(self.config, cli_config_yaml)
+
+        # The example config `commec setup` leaves in the databases directory
+        # describes that install, but it is not read here: it is an example
+        # rewritten by every setup run, and screening against databases other than
+        # the ones -d asked for is a worse outcome than losing a setting.
+        if self.db_dir is not None:
+            YamlIO.note_unread_directory_config(
+                expand_and_normalize(self.db_dir), cli_config_yaml
+            )
 
         # Override configuration with any user-provided CLI arguments
         self.config = YamlIO.update_config_from_cli(self.config, args)
@@ -216,30 +250,30 @@ class ScreenIO:
             prefix/output_name/name
             prefix/input_name/name
 
-        - If no prefix was given, use the input filename as name.
-        - If a directory was given, use the input filename
-            as file prefix within that directory.
+        The output file location and name will be based on the prefix provided by the user,
+         with a fallback to the input file directory and basename if one is not given.
         """
+        # By default, the output name is the basename of the input file
         name = os.path.splitext(os.path.basename(input_file))[0]
         name = name[:MAXIMUM_FILENAME_SIZE]
 
-        directory = prefix_arg or os.path.dirname(input_file)
+        # File prefix provided; override output name, and use prefix directory if applicable
+        if prefix_arg and not (
+            os.path.isdir(prefix_arg)
+            or prefix_arg.endswith(os.path.sep)
+            or prefix_arg in {".", "..", "~"}
+        ):
+            name = os.path.splitext(os.path.basename(prefix_arg))[0]
+            base = os.path.dirname(prefix_arg)
+        else:
+            base = prefix_arg
 
-        # Update the directory/name but only:
-        # if the prefix argument was given,
-        # if it is not a directory
-        if prefix_arg:
-            if not (
-                os.path.isdir(prefix_arg)
-                or prefix_arg.endswith(os.path.sep)
-                or prefix_arg in {".", "..", "~"}
-            ):
-                name = os.path.splitext(os.path.basename(directory))[0]
-                directory = os.path.dirname(input_file)
+        # If no output location extracted from prefix, outputs go in input file directory
+        if not base:
+            base = os.path.dirname(input_file)
 
-        base = directory
-        outputs = os.path.join(directory, f"output_{name}/")
-        inputs = os.path.join(directory, f"input_{name}/")
+        outputs = os.path.join(base, f"output_{name}/")
+        inputs = os.path.join(base, f"input_{name}/")
 
         for path in [base, outputs, inputs]:
             os.makedirs(expand_and_normalize(path), exist_ok=True)
@@ -261,28 +295,39 @@ class ScreenIO:
         with open(output_filepath, "w", encoding="utf-8") as stream_out:
             yaml.safe_dump(self.config, stream_out, default_flow_style=False)
 
-    def _write_clean_fasta(self) -> str:
+    def _write_clean_fasta(self) -> None:
         """
-        Write a FASTA in which whitespace (excluding in header), including non-breaking spaces and
-        illegal characters are replaced with underscores.
+        Write a FASTA, cleaning headers of special characters and sequences of
+        whitespace, non-ASCII characters, and non-IUPAC codes.
+
+        Headers have non-ASCII whitespace (such as non-breaking spaces) and `#`
+        characters replaced with underscores, since Biopython finds record id by
+        splitting headers on Unicode whitespace.
+
+        Sequence lines have all whitespace removed. Any other non-ASCII character
+        is replaced with an underscore, so that hit coordinates remain valid. The
+        underscores then are replaced with 'N' by `substitute_non_iupac` masking.
+
+        The input is read as `utf-8-sig` so that a leading byte order mark is
+        consumed by the decoder, rather than being mistaken for sequence.
         """
 
         with (
-            open(self.input_fasta_path, "r", encoding="utf-8") as fin,
+            open(self.input_fasta_path, "r", encoding="utf-8-sig") as fin,
             open(self.nt_path, "w", encoding="utf-8") as fout,
         ):
             for line in fin:
                 line = line.strip()
                 if line.startswith(">"):
-                    modified_line = "".join(
-                        "_" if c == "\xc2\xa0" or c == "#" else c for c in line
-                    )
-                else:
-                    modified_line = "".join(
-                        "_" if c.isspace() or c == "\xc2\xa0" or c == "#" else c
+                    line = "".join(
+                        "_" if c == "#" or (c.isspace() and not c.isascii()) else c
                         for c in line
                     )
-                fout.write(f"{modified_line}{os.linesep}")
+                else:
+                    line = "".join(
+                        "" if c.isspace() else (c if c.isascii() else "_") for c in line
+                    )
+                fout.write(f"{line}{os.linesep}")
 
     @property
     def should_do_protein_screening(self) -> bool:
@@ -297,6 +342,33 @@ class ScreenIO:
     @property
     def should_do_low_concern_screening(self) -> bool:
         return True
+
+
+def substitute_non_iupac(record: SeqRecord) -> int:
+    """
+    Upper-case a record's sequence and replace every character that is not an IUPAC
+    nucleotide code with `N` ("any base"), modifying the record in place.
+
+    Returns the number of characters substituted.
+    """
+    # The unambiguous bases (GATC, plus U for RNA) and the ambiguity codes (RYWSMKHBVDN)
+    iupac_codes = frozenset(
+        IUPACData.ambiguous_dna_letters + IUPACData.ambiguous_rna_letters
+    )
+
+    bases = []
+    substitutions = 0
+    # Biopython sequences are ASCII-only, so upper-casing cannot change the length
+    for base in str(record.seq).upper():
+        if base in iupac_codes:
+            bases.append(base)
+        else:
+            bases.append("N")
+            substitutions += 1
+
+    record.seq = Seq("".join(bases))
+
+    return substitutions
 
 
 class IoValidationError(ValueError):

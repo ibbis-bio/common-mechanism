@@ -1,7 +1,7 @@
 """Tests for commec.control_list.list_data — module-level state management."""
 
-import pytest
 import pandas as pd
+import pytest
 
 import commec.control_list.list_data as ld
 from commec.control_list.containers import (

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in &middot; Common Mechanism</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #232A58; --teal: #419BB9; --orange: #F05023;
+    --panel: #fff; --line: #E4E8EF; --ink: #1B2030; --muted: #5B6577;
+    --display: "Archivo", system-ui, sans-serif;
+    --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-small: 12px;
+    --font-compact: 14px;
+    --font-base: 16px;
+    --font-title: 20px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font: var(--font-base)/1.5 var(--ui); background: var(--navy); color: var(--ink);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 24px; }
+  .logo { height: 40px; width: auto; }
+  .card {
+    background: var(--panel); border-radius: 14px; padding: 34px 32px;
+    width: 360px; max-width: 92vw; box-shadow: 0 12px 44px rgba(0,0,0,.32);
+  }
+  label { display: block; font-size: var(--font-compact); color: var(--muted); margin-bottom: 7px; }
+  input[type=password] {
+    width: 100%; background: #fbfcfd; border: 1px solid var(--line); border-radius: 8px;
+    padding: 11px 12px; font: var(--font-compact) var(--mono); color: var(--ink);
+  }
+  input:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(65,155,185,.14); }
+  button {
+    margin-top: 18px; width: 100%; background: var(--orange); color: #fff; border: none;
+    border-radius: 8px; padding: 12px; font: 700 var(--font-base) var(--display); cursor: pointer;
+  }
+  button:hover { filter: brightness(.94); }
+  .err { color: var(--orange); font-size: var(--font-compact); margin-top: 12px; min-height: 18px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <img class="logo" src="/assets/commec_ibbis_logo.png" alt="Commec | IBBIS">
+    <form class="card" method="POST" action="/login">
+      <input type="hidden" name="next" id="next" value="/">
+      <label for="pw">Password</label>
+      <input type="password" name="password" id="pw" autocomplete="current-password" autofocus required>
+      <button type="submit">Sign in</button>
+      <div class="err" id="err"></div>
+    </form>
+  </div>
+<script>
+  const q = new URLSearchParams(location.search);
+  if (q.get("error")) document.getElementById("err").textContent = "Incorrect password.";
+  const n = q.get("next");
+  if (n && n.startsWith("/") && !n.startsWith("//")) document.getElementById("next").value = n;
+</script>
+</body>
+</html>

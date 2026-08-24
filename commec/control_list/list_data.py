@@ -10,6 +10,7 @@ As well as methods for interacting safely with these globals:
 """
 
 import logging
+
 import pandas as pd
 
 from .containers import ControlList

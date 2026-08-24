@@ -5,42 +5,49 @@ Module for CLI setup of Commec, such that required
 databases are downloaded in a desired database directory.
 """
 
-import sys
+import argparse
+import hashlib
+import importlib.resources
+import json
 import os
 import shutil
-import argparse
+import ssl
 import subprocess
+import sys
 import time
-import hashlib
-from pathlib import Path
-import importlib.resources
-from urllib import request, error
-import yaml
-import json
 from dataclasses import dataclass
+from pathlib import Path
+from urllib import error, request
+from urllib.parse import urlparse
 
-from commec.config.constants import DEFAULT_CONFIG_YAML_PATH
-from commec.config import yaml_io as YamlIO
-from commec.utils.file_utils import expand_and_normalize, remove_filename_from_path
+import yaml
 
 from commec import __version__ as VERSION
+from commec.config import yaml_io as YamlIO
+from commec.config.constants import SETUP_EXAMPLE_CONFIG_FILENAME
+from commec.utils.file_utils import expand_and_normalize, remove_filename_from_path
+
+# Backward-compatible alias; the packaged config remains the source of truth.
+R2_PUBLIC_BASE_URL = YamlIO.default_base_url()
 
 DESCRIPTION = """Helper script for downloading or updating the databases
  required for running the Common Mechanism Screen"""
 
 C_F_ORANGE = "\033[38;5;202m"  # Colour Foreground Orange.
+C_F_AMBER = "\033[38;5;214m"  # Colour Foreground Amber
 C_F_GRAY = "\033[38;5;242m"  # Colour Foreground Gray
 C_F_BLUE = "\033[38;5;17m"  # Colour Foreground Blue
 C_B_BLUE = "\033[48;5;17m"  # Colour Background Blue
 C_RESET = "\033[0m"  # Reset Console Formatting.
 C_BOLD = "\033[1m"  # Reset Console Formatting.
 
+# Something failed: the run is over, or this database won't be updated.
 ERROR_CHECK = C_F_ORANGE + C_BOLD + " X " + C_RESET
+# Something is worth knowing but the run carries on regardless. Kept visually
+# distinct so a successful run needing a nudge doesn't read as a failed one.
+WARNING_CHECK = C_F_AMBER + C_BOLD + " ! " + C_RESET
 STEP = " ➔ "
 BULLET = "  ● "
-
-# Custom domain URL of the R2 bucket that hosts the commec databases and latest.json
-R2_PUBLIC_BASE_URL = "https://databases.commec.io"
 
 SPLASH_IMAGE = f"""
                         Welcome to
@@ -70,21 +77,15 @@ def add_args(input_options: argparse.ArgumentParser) -> argparse.ArgumentParser:
     Add module arguments to an ArgumentParser object.
     """
 
-    # These two should be a mutually exclusive group.
-    exclusive_group = input_options.add_mutually_exclusive_group(required=True)
-    exclusive_group.add_argument(
+    # The one thing setup must be told: a config cannot stand in for it, since
+    # setup downloads a fixed set of databases into one parent directory and
+    # there is no safe default yet for where that is.
+    input_options.add_argument(
         "-d",
         "--databases",
         dest="database_dir",
-        default=None,
+        required=True,
         help="Path to a parent directory to download, or update, the Commec databases.",
-    )
-    exclusive_group.add_argument(
-        "-y",
-        "--config",
-        dest="config_yaml",
-        default="",
-        help="Alternative to -d, --databases. Specify databases location with a commec yaml configuration file",
     )
 
     # Optional
@@ -114,39 +115,75 @@ def add_args(input_options: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="Point setup to a commec screen output json file to replicate the databases used for that run.",
     )
 
+    input_options.add_argument(
+        "--base-url",
+        dest="base_url",
+        default=None,
+        type=_base_url_arg,
+        help="Base URL to download the databases.",
+    )
+
     return input_options
+
+
+def _base_url_arg(value: str) -> str:
+    """
+    argparse `type` for --base-url, so an unusable URL is rejected at parse time
+    with the reason shown, rather than surfacing much later as a download failure.
+    """
+    try:
+        return YamlIO.validate_base_url(value, "--base-url")
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e)) from e
 
 
 class CommecSetup:
     def __init__(self, args):
-        working_directory = Path()
         # Updaters dictionary, of {[name : UpdaterObject]}
         updaters = {}
-        self.yaml_mode = False
         self.config = YamlIO.get_defaults()
+        # False if any part of this setup run failed. Callers (and `run()`, which turns this
+        # into a non-zero exit code) rely on it: a failed download must not look like success.
+        # Set before anything that can fail, so the attribute always exists.
+        self.success = True
 
-        # Derive databases directory / yaml outputs.abs
-        if args.database_dir:
-            working_directory = expand_and_normalize(args.database_dir)
-        elif args.config_yaml:
-            self.config = read_config_yaml_for_database_setup(args.config_yaml)
-            working_directory = expand_and_normalize(
-                self.config.get("base_paths").get("default")
+        working_directory = expand_and_normalize(args.database_dir)
+
+        # The example config this run writes into the databases directory. It is
+        # rewritten on every run, first install or update alike, so it always
+        # describes the databases that are actually there and the host they came
+        # from -- and so is never a file to edit in place.
+        self.example_config_path = os.path.join(
+            working_directory, SETUP_EXAMPLE_CONFIG_FILENAME
+        )
+
+        # Recorded into the config written below, so a copy of it fetches from the
+        # same host, including during automatic updates from `commec screen`.
+        try:
+            self.base_url = resolve_base_url(
+                getattr(args, "base_url", None), self.config
             )
-            self.yaml_mode = True
-            updaters = create_updaters_from_config(self.config)
-        else:
-            print(
-                "{ERROR_CHECK}Neither database working directory, of configuration yaml provided. Exiting now."
-            )
+        except ValueError as e:
+            print(f"{ERROR_CHECK}{e}")
             sys.exit(1)
-            return
+        self.config["base_url"] = self.base_url
 
-        # Ensure working_directory is a valid path (even if it doesn't exist yet)
+        # Always, rather than only for a custom host: naming the host on every
+        # run is what makes an install that has quietly gone back to the default
+        # visible, and it costs one line.
+        print(f"{STEP}Fetching databases from {self.base_url}")
+
+        dry_run = getattr(args, "dry_run", False)
+
+        # Ensure working_directory is a valid path (even if it doesn't exist yet).
+        # Nothing downloadable can land anywhere if the parent cannot be written,
+        # so this stops here rather than spending the transfer to fail later.
         if not check_directory_is_writable(working_directory):
             print(
                 f"{ERROR_CHECK}Failed to parse working directory: {working_directory}"
             )
+            self.success = False
+            return
 
         databases = None
         # Fetch latest.json from R2.abs
@@ -155,7 +192,11 @@ class CommecSetup:
                 print(
                     f"{ERROR_CHECK}Provided argument for import revisions from JSON file not a valid file: {args.restore_json}"
                 )
-                raise FileNotFoundError(args.restore_json)
+                # Reported the same one-line way as every other bad input here,
+                # rather than as a traceback: naming a file that isn't there is a
+                # user mistake, not a defect.
+                self.success = False
+                return
             print(
                 f"{STEP}A json database file was provided, fetching revision information..."
             )
@@ -172,15 +213,17 @@ class CommecSetup:
                     '       "control_lists" : "1.0"\n'
                     "    }\n  }\n}"
                 )
+                self.success = False
                 return
         else:
             print(f"{STEP}Fetching latest commec database revision information ...")
-            latest = fetch_latest_revisions()
+            latest = fetch_latest_revisions(self.base_url)
 
             if not latest:
                 print(
                     f"{ERROR_CHECK} Could not fetch latest revisions. Check internet connection and try again."
                 )
+                self.success = False
                 return
 
             # For each database, create an updater.
@@ -193,28 +236,18 @@ class CommecSetup:
             print(
                 f"{ERROR_CHECK}An issue occured when fetching databases. Exiting now."
             )
+            self.success = False
             return
 
+        # Every database goes under the directory `-d` named, in the layout the
+        # packaged default config describes, which is what makes the config
+        # written at the end of the run describe this install.
         for database_name, revision in databases.items():
-            updater = updaters.get(database_name)
-            if not updater:
-                download_location = os.path.join(working_directory, database_name)
-                updater = CommecDatabaseUpdater(download_location)
-                updaters[database_name] = updater
-                if self.yaml_mode:
-                    print(
-                        f"{ERROR_CHECK}{database_name} not present in provided configuration yaml, it may be out of date."
-                    )
+            download_location = os.path.join(working_directory, database_name)
+            updater = CommecDatabaseUpdater(download_location, self.base_url)
+            updaters[database_name] = updater
             updater.name = database_name
             updater.check_for_update(revision)
-
-        # Check for orphaned databases:
-        for db_name, updater in updaters.items():
-            if db_name not in databases.keys():
-                print(
-                    f"{ERROR_CHECK}{db_name} has no formal update route. Input yaml has deprecated database entries."
-                )
-                updater.update_required = False
 
         updated_required = False
         # Each updater, reports on its status, does it need to update?
@@ -224,8 +257,11 @@ class CommecSetup:
             updated_required = updated_required or updater.update_required
 
         # Log output of intended changes.
-        dry_run = args.dry_run if hasattr(args, "dry_run") else False
         if dry_run:
+            print(
+                f"{STEP}A real run would write an example config describing this"
+                f" install to {self.example_config_path}."
+            )
             print(
                 f"\n{C_F_GRAY}This was a mock run. Run {C_F_ORANGE}'commec"
                 f" setup'{C_F_GRAY} again without {C_F_ORANGE}'-m/--mock'{C_F_GRAY}"
@@ -235,25 +271,64 @@ class CommecSetup:
 
         # Perform the database updates, consider making this async.
         os.makedirs(working_directory, exist_ok=True)
+        failed = []
         for database_name, updater in updaters.items():
-            updater.perform_update()
+            if not updater.perform_update():
+                failed.append(database_name)
 
-        # Create example config.yaml if we only passed a directory, and if one doens't already exist.
-        if not self.yaml_mode:
-            self.config["base_paths"]["default"] = str(
-                Path(working_directory).resolve()
+        # Written on every run rather than only the first, and whether or not
+        # every download succeeded: it is an example describing where these
+        # databases live and which host they come from, not a record of a
+        # finished install, and a part-finished one has the same layout.
+        self.write_example_config(working_directory)
+
+        if failed:
+            self.success = False
+            print(
+                f"{ERROR_CHECK}The following databases were NOT updated: "
+                f"{', '.join(failed)}. See the errors above."
             )
-            output_yaml_filepath = os.path.join(working_directory, "config.yaml")
-            if not os.path.isfile(output_yaml_filepath):
-                with open(
-                    output_yaml_filepath, "w", encoding="utf-8"
-                ) as output_config_file:
-                    yaml.safe_dump(self.config, output_config_file)
-                print(
-                    f"{STEP}An example config.yaml for commec was created in the provided directory."
-                )
+            return
 
         print(f"{STEP}Update check complete! Have a Biosafe-and-secure day!")
+
+    def write_example_config(self, working_directory: os.PathLike | str) -> None:
+        """
+        Write the example config into the databases directory, replacing any
+        previous one.
+
+        Overwriting is the point: the file is only ever generated, so it always
+        describes the databases this run installed. That it is a copy to work from
+        rather than a file to edit is said in the run's own output, below, rather
+        than in the file, so the file stays a plain config that can be copied and
+        used as-is. Failing to write it does not fail the run -- the databases are
+        downloaded either way.
+        """
+        self.config["base_paths"]["default"] = str(Path(working_directory).resolve())
+        try:
+            with open(
+                self.example_config_path, "w", encoding="utf-8"
+            ) as output_config_file:
+                # Unsorted, so the written config keeps the same key order as
+                # the packaged default, base_url included.
+                yaml.safe_dump(self.config, output_config_file, sort_keys=False)
+        except OSError as e:
+            print(
+                f"{WARNING_CHECK}Could not write the example config to"
+                f" {self.example_config_path}: {e}"
+            )
+            return
+
+        # Nothing reads this file on its own, and editing it in place is wasted
+        # work, so saying it exists is only half the message.
+        print(
+            f"{STEP}An example config describing this install was written to"
+            f" {self.example_config_path}."
+            "\n   Every setup run rewrites it, and nothing reads it automatically."
+            "\n   To screen with custom settings, copy it and pass the edited copy:"
+            f"\n     cp {self.example_config_path} my-config.yaml"
+            "\n     commec screen -y my-config.yaml <input.fasta>"
+        )
 
 
 def fetch_supported_revisions() -> dict | None:
@@ -307,13 +382,16 @@ def fetch_revisions_from_json(filename: str | os.PathLike) -> dict | None:
     return db_revisions
 
 
-def fetch_latest_revisions() -> dict | None:
+def fetch_latest_revisions(base_url: str | None = None) -> dict | None:
     """
     A latest.json manifest exists at the root of the R2 bucket, listing
     the latest revision of each database. Downloads and parses it into a
     dict. Returns None if it could not be fetched or parsed.
+
+    base_url defaults to the packaged config's host, resolved per call so it
+    tracks that file rather than whatever it said at import.
     """
-    raw = fetch_r2_object("latest.json")
+    raw = fetch_r2_object("latest.json", base_url=base_url or YamlIO.default_base_url())
     if raw is None:
         return None
 
@@ -344,10 +422,14 @@ class CommecDatabaseUpdater:
     Handles fetching, writing, and version management.
     """
 
-    def __init__(self, existing_location: os.PathLike):
+    def __init__(self, existing_location: os.PathLike, base_url: str | None = None):
         self.name = None
         self.write_location = existing_location
-        self.existing_revision = None
+        self.base_url = base_url or YamlIO.default_base_url()
+        # 0.0 reads as "not installed", which is exactly what an unreadable
+        # manifest tells us. Leaving this None makes every later .invalid()
+        # call an AttributeError, which aborts a screen mid-setup.
+        self.existing_revision = DatabaseRevision()
         try:
             self.name, self.existing_revision = read_manifest(existing_location)
         except json.JSONDecodeError as e:
@@ -377,9 +459,9 @@ class CommecDatabaseUpdater:
         if min_revision:
             if self.requested_revision >= max_revision:
                 print(
-                    f"{ERROR_CHECK}Version {VERSION} of commec supports "
+                    f"{WARNING_CHECK}Version {VERSION} of commec supports "
                     f"to {self.name} <{str(max_revision)} and does not support"
-                    f" revision {str(max_revision)}.  "
+                    f" revision {str(self.requested_revision)}.  "
                     f"\n   We recommend {C_F_ORANGE}you update commec{C_RESET}, and rerun this setup."
                 )
                 self.update_required = False
@@ -409,9 +491,14 @@ class CommecDatabaseUpdater:
         self.update_required = False
         return
 
-    def perform_update(self):
+    def perform_update(self) -> bool:
+        """
+        Download and extract this database. Returns True on success (including when no
+        update was required), False if the download or extraction failed - callers must
+        not treat a failed update as a completed one.
+        """
         if not self.update_required:
-            return
+            return True
 
         os.makedirs(self.write_location, exist_ok=True)
 
@@ -429,11 +516,13 @@ class CommecDatabaseUpdater:
         tar_write_location = os.path.join(self.write_location, f"{self.name}.tar.zst")
 
         # Download tar from R2 self.fetch_location.
-        download_success = save_r2_object(tar_fetch_location, tar_write_location)
+        download_success = save_r2_object(
+            tar_fetch_location, tar_write_location, base_url=self.base_url
+        )
 
         if not download_success:
             print(f"{ERROR_CHECK}Failed to download {self.name} ... ")
-            return
+            return False
 
         # Extract the Database tar.
         # Stdlib tarfile only gained native zstd support ('r:zst') in
@@ -446,10 +535,10 @@ class CommecDatabaseUpdater:
         )
         if output.returncode > 0:
             print(f"{ERROR_CHECK}Error during Extraction: {output.stdout}")
-            return
+            return False
 
         # Remove the tar
-        # os.remove(tar_write_location)
+        os.remove(tar_write_location)
 
         # Write updated local manifest.
         manifest_data = {
@@ -459,10 +548,12 @@ class CommecDatabaseUpdater:
         with open(manifest_write_location, mode="w", encoding="utf-8") as manifest_json:
             json.dump(manifest_data, manifest_json, indent=2)
 
-        return
+        return True
 
 
-def create_updaters_from_config(config: dict) -> dict[str, CommecDatabaseUpdater]:
+def create_updaters_from_config(
+    config: dict, base_url: str
+) -> dict[str, CommecDatabaseUpdater]:
     """
     Given a yaml config dict, create a named dict of updaters.
     """
@@ -472,7 +563,7 @@ def create_updaters_from_config(config: dict) -> dict[str, CommecDatabaseUpdater
         # databases don't. It is best to just detect suffix, and remove, as
         # checking on name would affect other databases too.
         fileless_path = remove_filename_from_path(database_info.get("path"))
-        updaters[database_name] = CommecDatabaseUpdater(fileless_path)
+        updaters[database_name] = CommecDatabaseUpdater(fileless_path, base_url)
         updaters[database_name].name = database_name
     return updaters
 
@@ -535,9 +626,64 @@ class DatabaseRevision:
         return f"{self.major}.{self.minor}"
 
 
+def resolve_base_url(
+    cli_base_url: str | None,
+    config: dict,
+    config_source: str = "base_url in the config",
+) -> str:
+    """
+    Work out which host to fetch databases from: a --base-url given on the
+    command line wins, otherwise the config's base_url. `config_source` names
+    the config in the message if its value is unusable, since the config may be
+    one the user did not name explicitly.
+
+    Any config merged from the packaged defaults carries a base_url already; the
+    fallback is for one assembled by hand, which has no defaults behind it.
+    """
+    if cli_base_url is not None:
+        return YamlIO.validate_base_url(cli_base_url, "--base-url")
+    if config.get("base_url") is None:
+        return YamlIO.default_base_url()
+    return YamlIO.validate_base_url(config["base_url"], config_source)
+
+
+def connection_failure_notes(err: BaseException, url: str) -> str | None:
+    """
+    Return some notes to print alongside a failed download, or None if we have
+    nothing useful to add.
+    """
+    # urllib wraps the underlying error as URLError.reason. An ssl.SSLError also
+    # has a .reason, but it's a string ("CERTIFICATE_VERIFY_FAILED"), so the
+    # exception itself has to be checked as well as what it wraps.
+    if not isinstance(err, ssl.SSLError) and not isinstance(
+        getattr(err, "reason", None), ssl.SSLError
+    ):
+        return None
+
+    host = urlparse(url).hostname or ""
+    return (
+        f"\n{C_F_GRAY}   Notes: this is a TLS/certificate failure rather than an HTTP\n"
+        "   error, so the connection did not get far enough to download anything.\n"
+        "   Possible causes, roughly in order of how often they turn up:\n"
+        "     - A proxy, firewall, or antivirus product on the network is inspecting\n"
+        "       HTTPS traffic and presenting its own certificate. If so, its root\n"
+        "       certificate needs to be trusted (see SSL_CERT_FILE below), or the\n"
+        "       host needs to be exempted from inspection.\n"
+        "     - The CA certificates available to Python are out of date or\n"
+        "       incomplete, which conda environments are especially prone to.\n"
+        "     - A genuine problem with the certificate being served.\n"
+        "   To see which certificate is actually arriving:\n"
+        f"     openssl s_client -connect {host}:443 -servername {host} </dev/null \\\n"
+        "       | openssl x509 -noout -issuer -subject -dates\n"
+        "   To point commec at a specific CA bundle:\n"
+        "     SSL_CERT_FILE=/path/to/ca-bundle.pem commec setup ...\n"
+        f"{C_RESET}"
+    )
+
+
 def fetch_r2_object(
     object_path: str,
-    base_url: str = R2_PUBLIC_BASE_URL,
+    base_url: str,
     timeout: int = 10,
     max_retries: int = 3,
     retry_delay: float = 2.0,
@@ -550,9 +696,9 @@ def fetch_r2_object(
     network failures up to `max_retries` times with a short backoff.
 
     `object_path` is the object's key/path within the bucket and is joined onto
-    `base_url`. `base_url` defaults to the public r2.dev endpoint but can
-    be swapped for a stable custom domain fronting the same bucket without
-    changing any calling code.
+    `base_url`, which callers must supply -- it comes from `resolve_base_url`,
+    so it is either the public default or whatever host the user pointed
+    `commec setup --base-url` at.
 
     Returns the raw bytes of the object, or None if every attempt failed.
     """
@@ -573,6 +719,11 @@ def fetch_r2_object(
                 break  # Client errors (404, 403, ...) won't succeed on retry.
         except error.URLError as e:
             print(f"{ERROR_CHECK}URL Error fetching {url}: {e.reason}")
+            # Only once the retries are spent, so it isn't repeated per attempt.
+            if attempt == max_retries:
+                notes = connection_failure_notes(e, url)
+                if notes:
+                    print(notes)
 
         if attempt < max_retries:
             time.sleep(retry_delay * attempt)
@@ -583,7 +734,7 @@ def fetch_r2_object(
 def save_r2_object(
     object_path: str,
     destination_path: os.PathLike | str,
-    base_url: str = R2_PUBLIC_BASE_URL,
+    base_url: str,
     max_retries: int = 3,
     retry_delay: float = 2.0,
     chunk_size: int = 8 * 1024 * 1024,
@@ -593,20 +744,19 @@ def save_r2_object(
     stream it to disk at `destination_path`, rather than holding it in
     memory like `fetch_r2_object`.
 
-    An MD5 checksum is expected to exist alongside the object, at
-    `object_path` with ".md5" appended, and is fetched via
-    `fetch_r2_object`. If found, the object is hashed as it's streamed to
-    disk, and the result is compared against this checksum, with a
-    mismatch triggering a retry. If no checksum is found, the download is
-    still attempted, just without any verification.
+    A SHA-256 checksum is expected to exist alongside the object, at
+    `object_path` with ".sha256" appended, and is fetched via
+    `fetch_r2_object`. The object is hashed as it's streamed to disk, and
+    the result is compared against this checksum, with a mismatch
+    triggering a retry. A missing checksum fails the download, rather than
+    leaving an unverified file in place.
 
     A failed download, or a checksum mismatch, is retried up to
     `max_retries` times.
 
-    Returns True if the file was downloaded successfully (and verified,
-    if a checksum was available), False otherwise.
+    Returns True if the file was downloaded and verified, False otherwise.
     """
-    expected_sha256_raw = fetch_r2_object(f"{object_path}.sha256")
+    expected_sha256_raw = fetch_r2_object(f"{object_path}.sha256", base_url=base_url)
     expected_sha256 = None
     if expected_sha256_raw is None:
         print(f"{ERROR_CHECK}Could not fetch checksum for {object_path}")
@@ -659,6 +809,10 @@ def save_r2_object(
                 break  # Client errors (404, 403, ...) won't succeed on retry.
         except (error.URLError, OSError) as e:
             print(f"{ERROR_CHECK}Error fetching {url}: {e}")
+            if attempt == max_retries:
+                notes = connection_failure_notes(e, url)
+                if notes:
+                    print(notes)
 
         if attempt < max_retries:
             time.sleep(retry_delay * attempt)
@@ -696,40 +850,6 @@ def print_progress(downloaded: int, total_size: int) -> None:
 
     sys.stdout.write(f"\033[2K\r{line}")
     sys.stdout.flush()
-
-
-def read_config_yaml_for_database_setup(config_yaml_filepath: os.PathLike | str):
-    """
-    Reads a config yaml, updated from the defaults, and parses the output for
-    the control_list directory as per a commec screen run. Used instead of passing
-    the directory of the control list
-
-    :param config_yaml_filepath: Description
-    :type config_yaml_filepath: os.PathLike | str
-    """
-
-    output_config = None
-
-    # Read package-level configuration defaults
-    default_yaml = importlib.resources.files("commec").joinpath(
-        DEFAULT_CONFIG_YAML_PATH
-    )
-    if default_yaml.exists():
-        output_config = YamlIO.load_config_from_yaml(str(default_yaml))
-    else:
-        raise FileNotFoundError(
-            f"No default yaml found. Expected at {DEFAULT_CONFIG_YAML_PATH}"
-        )
-
-    # Override configuration with any in user-provided YAML file
-    if os.path.exists(config_yaml_filepath):
-        output_config = YamlIO.update_config_from_yaml(
-            output_config, config_yaml_filepath
-        )
-
-    output_config = YamlIO.format_config_paths(output_config)
-
-    return output_config
 
 
 def check_directory_is_writable(input_directory: str) -> str:
@@ -783,8 +903,14 @@ def check_directory_is_writable(input_directory: str) -> str:
             continue
         break
 
-    # Create the directory, and delete anything created.
-    os.makedirs(path, exist_ok=True)
+    # Create the directory, and delete anything created. Failing to create it is
+    # the answer this function exists to give, so it is reported by returning
+    # falsy like every other rejection here, rather than as a raised OSError that
+    # callers checking the return value would never think to catch.
+    try:
+        os.makedirs(path, exist_ok=True)
+    except OSError:
+        return ""
     if path.exists():
         try:
             shutil.rmtree(path_to_remove_dirs)
@@ -800,9 +926,21 @@ def check_for_updates(config: dict) -> tuple[bool, dict[str, CommecDatabaseUpdat
     required for yaml config dict, and output the updaters of those databases
     which require updates. Call perform_update() on updates to complete updates.
     Requests latest updates only.
+
+    Fetches from the config's base_url if it records one (as carried by a copy of
+    the example config `commec setup --base-url` writes), so an update triggered
+    from a screen given that config with -y uses the same host the databases were
+    installed from. A screen given only -d has no config to read a host from, and
+    falls back to the default;
+    automatic updates are off unless a config turns them on, so the two go together.
     """
-    updaters = create_updaters_from_config(config)
-    revisions = fetch_latest_revisions()
+    base_url = resolve_base_url(None, config)
+    updaters = create_updaters_from_config(config, base_url)
+    revisions = fetch_latest_revisions(base_url)
+    if not revisions:
+        # Unreachable host, or a latest.json that wouldn't parse. Nothing to
+        # compare against, so leave the installed databases as they are.
+        return False, {}
     latest_revisions = revisions["latest"]
     for dbname, latest in latest_revisions.items():
         db_to_update = updaters.get(dbname)
@@ -824,7 +962,12 @@ def run(arguments):
     """Entry point for CommecSetup"""
     print(SPLASH_IMAGE)
     print(SPLASH_TEXT)
-    CommecSetup(arguments)
+    setup = CommecSetup(arguments)
+    # Exit non-zero when anything failed. Without this a failed download still ends on
+    # "Update check complete!" and exit 0, so automated callers (and CI) cannot tell a
+    # completed update from a broken one.
+    if not setup.success:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
