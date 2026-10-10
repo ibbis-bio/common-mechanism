@@ -28,6 +28,7 @@ from commec.config.constants import (
     MAXIMUM_QUERY_NAME_LENGTH,
     MINIMUM_QUERY_LENGTH,
     NON_IUPAC_SUBSTITUTION_THRESHOLD,
+    NUCLEOTIDE_COMPOSITION_THRESHOLD,
     VALID_BLAST_MT_MODES,
 )
 from commec.config.query import Query
@@ -148,6 +149,21 @@ class ScreenIO:
                                 record.id,
                                 proportion_substituted * 100,
                             )
+                    # The substitution test cannot catch a nucleotide record in a
+                    # --protein run, because A, C, G and T are all valid amino acid
+                    # codes, so test the composition directly.
+                    nt_fraction = sum(
+                        c in "ACGTNU" for c in str(record.seq).upper()
+                    ) / len(record.seq)
+                    if nt_fraction >= NUCLEOTIDE_COMPOSITION_THRESHOLD:
+                        logger.warning(
+                            "Query %s: %.1f%% of characters are nucleotide codes "
+                            "(A, C, G, T, N, U). This looks like a nucleotide "
+                            "sequence, but --protein treats every record as amino "
+                            "acids; screening it as protein may not give valid results.",
+                            record.id,
+                            nt_fraction * 100,
+                        )
                 else:
                     substitutions = substitute_non_iupac(record)
                     if substitutions:

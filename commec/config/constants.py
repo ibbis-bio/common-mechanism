@@ -6,6 +6,11 @@ MINIMUM_QUERY_LENGTH = 41
 MINIMUM_PROTEIN_QUERY_LENGTH = MINIMUM_QUERY_LENGTH // 3
 MAXIMUM_QUERY_LENGTH = 100000
 NON_IUPAC_SUBSTITUTION_THRESHOLD = 0.1
+# Fraction of nucleotide-alphabet characters (ACGTNU) above which a record in a
+# --protein run is warned as looking nucleotide. A, C, G and T are all valid
+# amino acid codes, so a substitution count cannot detect this; composition can.
+# Real proteins essentially never exceed 50 percent ACGTNU content.
+NUCLEOTIDE_COMPOSITION_THRESHOLD = 0.9
 BAD_ACCESSIONS = [
     "YP_009724390",
 ]

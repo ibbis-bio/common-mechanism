@@ -228,3 +228,43 @@ class TestBioriskEvalueFilterMultiRow:
         result = biorisk_evalue_filter(df)
         assert "target name" in result.columns
         assert result["target name"].iloc[0] == "some_target"
+
+
+class TestBioriskEvalueFilterProteinRows:
+    """Protein rows (frame == 0) carry aa length in nt_qlen.
+
+    The short-query cutoff formula was calibrated on nucleotide lengths, so
+    protein rows must be scaled to nt-equivalent length (x3) before applying
+    it. Otherwise a 60 aa query gets the L=60 cutoff rather than L=180, making
+    the protein path ~17x more permissive for the same sequence.
+    """
+
+    def test_protein_row_filtered_at_nt_equivalent_cutoff(self):
+        # 1e-5 sits between the 180 nt cutoff (~1.4e-6) and the naive 60 aa
+        # cutoff (~2.4e-5): without scaling, the protein row would pass.
+        df = pd.DataFrame(
+            {"E-value": [1e-5, 1e-5], "nt_qlen": [180, 60], "frame": [1, 0]}
+        )
+        result = biorisk_evalue_filter(df)
+        assert len(result) == 0
+
+    def test_protein_row_passes_below_nt_equivalent_cutoff(self):
+        # 1e-7 is below the 180 nt cutoff (~1.4e-6): both rows pass.
+        df = pd.DataFrame(
+            {"E-value": [1e-7, 1e-7], "nt_qlen": [180, 60], "frame": [1, 0]}
+        )
+        result = biorisk_evalue_filter(df)
+        assert len(result) == 2
+
+    def test_protein_row_uses_aa_threshold_for_short_query_decision(self):
+        # 100 aa is above the aa short-query threshold (66), so the long-query
+        # cutoff applies even though 100 < 200 nt.
+        df = pd.DataFrame(
+            {
+                "E-value": [BIORISK_LONG_QUERY_EVALUE_THRESHOLD * 0.1],
+                "nt_qlen": [100],
+                "frame": [0],
+            }
+        )
+        result = biorisk_evalue_filter(df)
+        assert len(result) == 1

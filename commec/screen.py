@@ -707,29 +707,43 @@ class Screen:
 
     def screen_proteins(self):
         """
-        Call `run_blastx.sh` followed by `check_reg_path.py` to add regulated
-        pathogen protein screening results to `screen_file`.
-        For protein input queries, blastp is run instead of blastx.
+        Call `blastx` on the nucleotide FASTA followed by `check_reg_path.py` to
+        add regulated pathogen protein screening results to `screen_file`.
+        For protein input queries, blastp is run on the protein FASTA.
+
+        Each search runs only when its input FASTA exists and is non-empty.
+        On a `--protein` run the nucleotide FASTA has no records, and blastx
+        on an empty query file aborts STEP 2 before blastp would run.
         """
-        self.database_tools.regulated_protein.search()
-        if not self.database_tools.regulated_protein.validate_output():
-            self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.ERROR)
-            raise RuntimeError(
-                "ERROR: Expected protein search output not created: "
-                + self.database_tools.regulated_protein.out_file
+        nt_has_sequences = (
+            os.path.isfile(self.params.nt_path)
+            and os.path.getsize(self.params.nt_path) > 0
+        )
+        if nt_has_sequences:
+            self.database_tools.regulated_protein.search()
+            if not self.database_tools.regulated_protein.validate_output():
+                self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.ERROR)
+                raise RuntimeError(
+                    "ERROR: Expected protein search output not created: "
+                    + self.database_tools.regulated_protein.out_file
+                )
+
+            exit_status = parse_taxonomy_hits(
+                self.database_tools.regulated_protein,
+                self.screen_data,
+                self.queries,
+                ScreenStep.TAXONOMY_AA,
+                self.params.config["threads"],
             )
 
-        exit_status = parse_taxonomy_hits(
-            self.database_tools.regulated_protein,
-            self.screen_data,
-            self.queries,
-            ScreenStep.TAXONOMY_AA,
-            self.params.config["threads"],
-        )
-
-        if exit_status != 0:
-            raise RuntimeError(
-                f"Output of protein taxonomy search could not be processed: {self.database_tools.regulated_protein.out_file}"
+            if exit_status != 0:
+                raise RuntimeError(
+                    f"Output of protein taxonomy search could not be processed: {self.database_tools.regulated_protein.out_file}"
+                )
+        else:
+            logger.info(
+                "\t...skipping blastx (no nucleotide queries after parsing; "
+                "with --protein every input record is screened as protein)."
             )
 
         # Step 5: run blastp for protein input queries; skip if no protein sequences were found

@@ -180,6 +180,53 @@ def test_protein_input_flag_absent_when_unchecked(tmp_path, client):
     assert config.get("protein_input") is not True
 
 
+def test_spreadsheet_paste_keeps_protein_rows_when_protein_input(tmp_path, client):
+    """With 'Protein input' ticked, a spreadsheet paste must keep protein rows."""
+    protein = "MFLIPWEQ" * 8
+    response = _submit(
+        client,
+        protein_input="1",
+        sequence_text=f"myprotein\t{protein}\n",
+    )
+
+    assert response.status_code == 200
+    run_dir = next(path for path in (tmp_path / "runs").iterdir() if path.is_dir())
+    assert (run_dir / "input.fasta").read_text(encoding="utf-8") == (
+        f">myprotein\n{protein}\n"
+    )
+
+
+def test_spreadsheet_paste_drops_protein_rows_without_protein_input(client):
+    """Without the flag, a protein spreadsheet paste finds no sequence field."""
+    protein = "MFLIPWEQ" * 8
+    response = _submit(client, sequence_text=f"myprotein\t{protein}\n")
+
+    assert response.status_code == 400
+    assert response.get_json()["field"] == "sequence"
+
+
+def test_spreadsheet_paste_protein_ignores_description_column(tmp_path, client):
+    """A long description field must not displace the peptide as the sequence.
+
+    The extended amino acid alphabet covers all 26 letters, so an alphabet
+    test cannot tell a peptide from a word; a description longer than the
+    peptide would otherwise be picked by the longest-field rule.
+    """
+    protein = "MFLIPWEQ" * 8
+    description = "Homo sapiens sample twentythree with extra annotation text beyond peptide length"
+    response = _submit(
+        client,
+        protein_input="1",
+        sequence_text=f"myprotein\t{protein}\t{description}\n",
+    )
+
+    assert response.status_code == 200
+    run_dir = next(path for path in (tmp_path / "runs").iterdir() if path.is_dir())
+    assert (run_dir / "input.fasta").read_text(encoding="utf-8") == (
+        f">myprotein\n{protein}\n"
+    )
+
+
 def test_hidden_single_country_alias_is_accepted(tmp_path, client):
     response = _submit(client, regions="UK")
 

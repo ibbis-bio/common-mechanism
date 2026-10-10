@@ -52,6 +52,7 @@ from flask import (
 )
 from werkzeug.security import check_password_hash
 
+from commec.config.constants import MINIMUM_PROTEIN_QUERY_LENGTH
 from commec.config.result import ScreenStatus
 
 # CPU/RAM meters read Linux /proc directly (zero-dep; the kiosk path). psutil is
@@ -738,6 +739,20 @@ def _looks_like_dna(s):
     return acgtn / len(s) >= 0.9
 
 
+def _looks_like_protein(s):
+    """Protein counterpart of _looks_like_dna for the spreadsheet paste path.
+
+    Alphabet membership cannot discriminate a peptide from English text: the
+    extended amino acid alphabet (20 standard residues plus BZXJUO) covers
+    all 26 letters, and _clean_seq strips everything else, so a composition
+    test passes any word. The reliable shape of a sequence field is a single
+    token of letters: no spaces, no digits, no punctuation, and at least the
+    protein minimum length. A description column fails on spaces; a short
+    name column fails on length.
+    """
+    return s.isalpha() and len(s) >= MINIMUM_PROTEIN_QUERY_LENGTH
+
+
 def _parse_fasta_text(text):
     """Parse FASTA text into [(name, seq)] records."""
     records, name, seq = [], None, []
@@ -761,20 +776,30 @@ def _fasta_query_count(path):
         return None
 
 
-def _parse_spreadsheet_text(text):
-    """Tab/comma-delimited rows (Excel/CSV paste): the most DNA-like field is
-    the sequence; another field, if present, names it. Rows with no DNA-like
-    field (e.g. a header row) are skipped."""
+def _parse_spreadsheet_text(text, is_protein=False):
+    """Tab/comma-delimited rows (Excel/CSV paste): the most sequence-like field
+    is the sequence; another field, if present, names it. Rows with no
+    sequence-like field (e.g. a header row) are skipped and counted.
+
+    With is_protein, fields are tested for protein sequence shape (a single
+    letter-only token of at least the protein minimum length), so protein
+    rows are not silently dropped. Returns (records, skipped_rows).
+    """
     records = []
+    skipped = 0
+    looks_like_seq = _looks_like_protein if is_protein else _looks_like_dna
     for i, line in enumerate(text.splitlines()):
         fields = [f.strip() for f in re.split(r"[\t,]", line) if f.strip()]
-        dna = [f for f in fields if _looks_like_dna(f)]
-        if not dna:
+        if not fields:
             continue
-        seq = max(dna, key=len)
+        seqs = [f for f in fields if looks_like_seq(f)]
+        if not seqs:
+            skipped += 1
+            continue
+        seq = max(seqs, key=len)
         names = [f for f in fields if f is not seq]
         records.append((names[0] if names else f"sequence_{i + 1}", seq))
-    return records
+    return records, skipped
 
 
 def _parse_blocks_text(text):
@@ -789,17 +814,20 @@ def _parse_blocks_text(text):
     return records
 
 
-def parse_pasted_sequences(text):
+def parse_pasted_sequences(text, is_protein=False):
     """Turn pasted text into FASTA records, accepting FASTA, raw sequences
-    (separated by blank lines), or spreadsheet rows."""
+    (separated by blank lines), or spreadsheet rows. With is_protein, the
+    spreadsheet path detects sequence fields by protein token shape rather
+    than the nucleotide alphabet.
+    Returns (records, skipped_rows); only the spreadsheet path skips rows."""
     text = text.strip()
     if not text:
-        return []
+        return [], 0
     if re.search(r"^\s*>", text, re.M):
-        return _parse_fasta_text(text)
+        return _parse_fasta_text(text), 0
     if "\t" in text or "," in text:
-        return _parse_spreadsheet_text(text)
-    return _parse_blocks_text(text)
+        return _parse_spreadsheet_text(text, is_protein=is_protein)
+    return _parse_blocks_text(text), 0
 
 
 _TABULAR_SUFFIXES = {".xlsx", ".xls", ".csv", ".tsv"}
@@ -1386,7 +1414,8 @@ def screen():
         )
     control_list_config["regions"] = regions
 
-    if request.form.get("protein_input") == "1":
+    protein_input = request.form.get("protein_input") == "1"
+    if protein_input:
         run_config["protein_input"] = True
 
     # Required run label -> output-file prefix, sanitised to a filename-safe
@@ -1414,7 +1443,7 @@ def screen():
 
     text = request.form.get("sequence_text") or ""
     if text.strip():
-        r = parse_pasted_sequences(text)
+        r, skipped = parse_pasted_sequences(text, is_protein=protein_input)
         if not r:
             return _screen_error(
                 "Couldn't find any sequences in the pasted text. Paste FASTA, "
@@ -1422,11 +1451,15 @@ def screen():
                 "sequence",
             )
         records += r
-        sources.append(f"{len(r)} pasted")
+        sources.append(
+            f"{len(r)} pasted" + (f", {skipped} rows skipped" if skipped else "")
+        )
 
     f = request.files.get("upload_file")
     if f and f.filename:
-        r = parse_pasted_sequences(f.read().decode("utf-8", errors="replace"))
+        r, skipped = parse_pasted_sequences(
+            f.read().decode("utf-8", errors="replace"), is_protein=protein_input
+        )
         if not r:
             return _screen_error(
                 f"No sequences found in the uploaded file '{f.filename}' "
@@ -1434,7 +1467,10 @@ def screen():
                 "sequence",
             )
         records += r
-        sources.append(f"{len(r)} from {f.filename}")
+        sources.append(
+            f"{len(r)} from {f.filename}"
+            + (f", {skipped} rows skipped" if skipped else "")
+        )
 
     spreadsheet = request.files.get("spreadsheet_file")
     if spreadsheet and spreadsheet.filename:

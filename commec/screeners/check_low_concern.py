@@ -77,15 +77,23 @@ def _filter_low_concern_proteins(
         low_concern_protein_for_query_trimmed.shape,
         low_concern_protein_for_query_trimmed[["coverage_nt", "coverage_ratio"]].head(),
     )
+    # Hit coordinates are in nucleotides for nucleotide queries and in amino
+    # acids for protein queries, so the absolute coverage floor follows the
+    # query's units (50 nt, or 50 // 3 = 16 aa, for the same stringency).
+    min_coverage = (
+        MINIMUM_PEPTIDE_COVERAGE // 3 if query.is_protein else MINIMUM_PEPTIDE_COVERAGE
+    )
+    unit = "aa" if query.is_protein else "bp"
     # Ensure that this low_concern hit covers at least 50 nucleotides of the query
     low_concern_protein_for_query_trimmed = low_concern_protein_for_query_trimmed[
-        low_concern_protein_for_query_trimmed["coverage_nt"] > MINIMUM_PEPTIDE_COVERAGE
+        low_concern_protein_for_query_trimmed["coverage_nt"] > min_coverage
     ]
 
     if low_concern_protein_for_query_trimmed.empty:
         logger.info(
-            "\t --> Insufficient coverage (<%i bp) for housekeeping protein to clear %s (%i-%i).",
-            int(MINIMUM_PEPTIDE_COVERAGE),
+            "\t --> Insufficient coverage (<%i %s) for housekeeping protein to clear %s (%i-%i).",
+            int(min_coverage),
+            unit,
             hit.name,
             region.query_start,
             region.query_end,
@@ -359,9 +367,13 @@ def _update_low_concern_data_for_query(
 
     # We only care about the low_concern data for this query, but we need to check for size.
     if not low_concern_protein.empty:
-        low_concern_protein_for_query = low_concern_protein[
-            low_concern_protein["query name"].str.rsplit("_", n=1).str[0] == query.name
-        ]
+        names = low_concern_protein["query name"]
+        if not query.is_protein:
+            # Nucleotide hmmscan records are named <query>_<frame>; strip the
+            # frame suffix. Protein records are written under the bare query
+            # name, which may itself contain underscores (e.g. WP_0001).
+            names = names.str.rsplit("_", n=1).str[0]
+        low_concern_protein_for_query = low_concern_protein[names == query.name]
 
     if not low_concern_rna.empty:
         low_concern_rna_for_query = low_concern_rna[

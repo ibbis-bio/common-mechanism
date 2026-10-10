@@ -239,6 +239,74 @@ def test_parse_input_fasta_warns_when_substitutions_exceed_threshold(
 
 
 @pytest.mark.parametrize(
+    "fasta_name,record_id,expect_nt_warning",
+    [
+        pytest.param(
+            "single_record.fasta",
+            "BBa_K380009",
+            True,
+            id="nucleotide_record_warns_under_protein",
+        ),
+        pytest.param(
+            "is_protein_sequence.fasta",
+            "haemagglutinin_fragment",
+            False,
+            id="protein_record_no_warning_under_protein",
+        ),
+    ],
+)
+def test_parse_input_fasta_protein_warns_on_nucleotide_composition(
+    fasta_name,
+    record_id,
+    expect_nt_warning,
+    test_data_dir,
+    database_dir,
+    tmp_path,
+    caplog,
+):
+    """A --protein record that looks nucleotide must fire a warning.
+
+    The non-IUPAC substitution test cannot catch this case: A, C, G and T are
+    all valid amino acid codes, so a DNA record produces zero substitutions
+    and previously passed without any complaint.
+    """
+    input_fasta = os.path.join(test_data_dir, fasta_name)
+    with patch(
+        "sys.argv",
+        [
+            "test.py",
+            "--skip-tx",
+            "--protein",
+            input_fasta,
+            "-d",
+            database_dir,
+            "-o",
+            str(tmp_path),
+        ],
+    ):
+        parser = ScreenArgumentParser()
+        add_args(parser)
+        screen_io = ScreenIO(parser.parse_args())
+        screen_io.setup()
+
+    with caplog.at_level("WARNING"):
+        screen_io.parse_input_fasta()
+
+    nt_warnings = [
+        r.getMessage()
+        for r in caplog.records
+        if "looks like a nucleotide sequence" in r.getMessage()
+    ]
+
+    if not expect_nt_warning:
+        assert not nt_warnings
+        return
+
+    assert len(nt_warnings) == 1
+    assert record_id in nt_warnings[0]
+
+
+@pytest.mark.parametrize(
     "length,expect_in_nt_fasta",
     [
         pytest.param(MINIMUM_QUERY_LENGTH - 1, False, id="below_minimum"),

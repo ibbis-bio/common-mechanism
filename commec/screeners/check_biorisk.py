@@ -105,7 +105,12 @@ def biorisk_evalue_filter(hmmer: pd.DataFrame) -> pd.DataFrame:
         }
     )
     short_query = df["nt_qlen"] < threshold
-    short_cutoff = 1 / (1 + df["nt_qlen"] ** BIORISK_SHORT_QUERY_EVALUE_EXPONENT)
+    # The cutoff formula was calibrated on nucleotide lengths, but protein rows
+    # carry the aa length in nt_qlen. Scale those to nt-equivalent length,
+    # otherwise a 60 aa query gets the L=60 cutoff rather than L=180, making
+    # the protein path ~17x more permissive for the same sequence.
+    effective_length = df["nt_qlen"].where(~is_protein_row, df["nt_qlen"] * 3)
+    short_cutoff = 1 / (1 + effective_length**BIORISK_SHORT_QUERY_EVALUE_EXPONENT)
 
     mask = (short_query & (df["E-value"] < short_cutoff)) | (
         ~short_query & (df["E-value"] < BIORISK_LONG_QUERY_EVALUE_THRESHOLD)

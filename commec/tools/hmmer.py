@@ -229,12 +229,15 @@ def append_nt_querylength_info(hmmer: pd.DataFrame, queries: dict[str, Query]):
     """
 
     def _base_name(q_name: str) -> str:
-        # A direct hit in queries means this is a protein query; its name has no frame suffix
-        # to strip. Without this check, a protein query named e.g. ORF_1 would have _1 stripped
-        # to ORF, which is not a key in queries and raises a KeyError.
-        if q_name in queries:
+        # Only a protein query may appear in queries under its bare (unsuffixed)
+        # record name. Name membership alone cannot decide this: in a nucleotide
+        # run, a query named A_1 collides with frame 1 of a query named A, and
+        # treating it as a direct key would attribute the hit to the wrong query
+        # and skip the aa-to-nt coordinate conversion.
+        q = queries.get(q_name)
+        if q is not None and q.is_protein:
             return q_name
-        suffix = q_name.split("_")[-1]
+        suffix = q_name.rsplit("_", 1)[-1]
         if suffix.isdigit():
             return q_name[: -(len(suffix) + 1)]
         return q_name
@@ -242,5 +245,8 @@ def append_nt_querylength_info(hmmer: pd.DataFrame, queries: dict[str, Query]):
     hmmer["nt_qlen"] = [queries[_base_name(q)].length for q in hmmer["query name"]]
     # readhmmer sets frame by parsing the query name suffix. A protein query named ORF_1
     # would be assigned frame=1 instead of frame=0. Correct that here using the queries dict
-    # as the authoritative source: any row whose query name is a direct key is protein (frame=0).
-    hmmer.loc[hmmer["query name"].isin(queries), "frame"] = 0
+    # as the authoritative source: only a row whose name is a direct protein key is frame=0.
+    is_protein_row = hmmer["query name"].map(
+        lambda n: n in queries and queries[n].is_protein
+    )
+    hmmer.loc[is_protein_row, "frame"] = 0

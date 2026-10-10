@@ -378,6 +378,7 @@ def build_report_model(screen: ScreenResult) -> dict:
                 "name": getattr(query, "query", ""),
                 "desc": getattr(query, "description", "") or "",
                 "length": getattr(query, "length", 0),
+                "isProtein": is_protein,
                 "screenStatus": str(getattr(status, "screen_status", "") or ""),
                 "rationale": str(getattr(status, "rationale", "") or ""),
                 "hits": [
