@@ -34,5 +34,8 @@ force: False
 skip_taxonomy_search: False
 resume: False
 skip_nt_search: False
+# Set to True when the input FASTA contains amino acid sequences rather than nucleotide sequences.
+# Equivalent to passing --protein on the command line.
+protein_input: False
 verbose: False
 auto_update_databases: False

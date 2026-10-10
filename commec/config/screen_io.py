@@ -28,6 +28,7 @@ from commec.config.constants import (
     MAXIMUM_QUERY_NAME_LENGTH,
     MINIMUM_QUERY_LENGTH,
     NON_IUPAC_SUBSTITUTION_THRESHOLD,
+    NUCLEOTIDE_COMPOSITION_THRESHOLD,
     VALID_BLAST_MT_MODES,
 )
 from commec.config.query import Query
@@ -61,6 +62,8 @@ class ScreenIO:
         self.nt_path = f"{self.input_prefix}.cleaned.fasta"
         self.aa_path = f"{self.input_prefix}.faa"
         self.nc_path = f"{self.input_prefix}.noncoding.fasta"
+        # Step 2: protein queries go here; aa_path also contains 6-frame translations so blastp needs its own file
+        self.protein_path = f"{self.input_prefix}.protein.faa"
 
         # Get configuration based on defaults and CLI args (including YAML config if supplied)
         self.config = {}
@@ -128,38 +131,70 @@ class ScreenIO:
 
         for record in records:
             try:
-                substitutions = substitute_non_iupac(record)
-                if substitutions:
-                    logger.warning(
-                        "Query %s: substituted %i non-IUPAC nucleotide characters with 'N'",
-                        record.id,
-                        substitutions,
-                    )
-                    # A high proportion of masked characters suggests the input isn't a
-                    # nucleotide sequence (e.g. a protein FASTA), in which case screening
-                    # results are meaningless
-                    proportion_substituted = substitutions / len(record.seq)
-                    if proportion_substituted > NON_IUPAC_SUBSTITUTION_THRESHOLD:
+                protein = self.config.get("protein_input", False)
+                if protein:
+                    substitutions = substitute_non_iupac_aa(record)
+                    if substitutions:
                         logger.warning(
-                            "Query %s: %.1f%% of characters were not IUPAC nucleotide codes. "
-                            "This may not be a nucleotide sequence; screening it may not "
-                            "give valid results.",
+                            "Query %s: substituted %i non-IUPAC amino acid characters with 'X'",
                             record.id,
-                            proportion_substituted * 100,
+                            substitutions,
                         )
-                query = Query(record)
+                        proportion_substituted = substitutions / len(record.seq)
+                        if proportion_substituted > NON_IUPAC_SUBSTITUTION_THRESHOLD:
+                            logger.warning(
+                                "Query %s: %.1f%% of characters were not IUPAC amino acid codes. "
+                                "This may not be a protein sequence; screening it may not "
+                                "give valid results.",
+                                record.id,
+                                proportion_substituted * 100,
+                            )
+                    # The substitution test cannot catch a nucleotide record in a
+                    # --protein run, because A, C, G and T are all valid amino acid
+                    # codes, so test the composition directly.
+                    nt_fraction = sum(
+                        c in "ACGTNU" for c in str(record.seq).upper()
+                    ) / len(record.seq)
+                    if nt_fraction >= NUCLEOTIDE_COMPOSITION_THRESHOLD:
+                        logger.warning(
+                            "Query %s: %.1f%% of characters are nucleotide codes "
+                            "(A, C, G, T, N, U). This looks like a nucleotide "
+                            "sequence, but --protein treats every record as amino "
+                            "acids; screening it as protein may not give valid results.",
+                            record.id,
+                            nt_fraction * 100,
+                        )
+                else:
+                    substitutions = substitute_non_iupac(record)
+                    if substitutions:
+                        logger.warning(
+                            "Query %s: substituted %i non-IUPAC nucleotide characters with 'N'",
+                            record.id,
+                            substitutions,
+                        )
+                        proportion_substituted = substitutions / len(record.seq)
+                        if proportion_substituted > NON_IUPAC_SUBSTITUTION_THRESHOLD:
+                            logger.warning(
+                                "Query %s: %.1f%% of characters were not IUPAC nucleotide codes. "
+                                "This may not be a nucleotide sequence; screening it may not "
+                                "give valid results.",
+                                record.id,
+                                proportion_substituted * 100,
+                            )
+                query = Query(record, is_protein=protein)
                 if query.name in queries:
                     raise ValueError(
                         f'Duplicate sequence identifier generated: "{query.name}" from record: {record}\n'
                         f"Ensure that the first {MAXIMUM_QUERY_NAME_LENGTH} characters for each fasta record are unique."
                     )
                 queries[query.name] = query
-                # Override the original cleaned fasta, with queries within the valid length range and updated names
                 if MINIMUM_QUERY_LENGTH <= len(record.seq) <= MAXIMUM_QUERY_LENGTH:
                     # Creating new SeqRecord to avoid overwriting the seq_record object inside query and preserve the original seq id
-                    updated_records.append(
-                        SeqRecord(record.seq, id=query.name, description="")
-                    )
+                    # Step 2: protein records stay out of nt_path so blastn and cmscan never see them
+                    if not query.is_protein:
+                        updated_records.append(
+                            SeqRecord(record.seq, id=query.name, description="")
+                        )
             except Exception as e:
                 raise IoValidationError(
                     f"Failed to parse input fasta: {self.nt_path}, {e}"
@@ -342,6 +377,29 @@ class ScreenIO:
     @property
     def should_do_low_concern_screening(self) -> bool:
         return True
+
+
+def substitute_non_iupac_aa(record: SeqRecord) -> int:
+    """
+    Upper-case a record's sequence and replace every character that is not an IUPAC
+    amino acid code with `X` ("any amino acid"), modifying the record in place.
+
+    Returns the number of characters substituted.
+    """
+    iupac_codes = frozenset(IUPACData.extended_protein_letters)
+
+    bases = []
+    substitutions = 0
+    for aa in str(record.seq).upper():
+        if aa in iupac_codes:
+            bases.append(aa)
+        else:
+            bases.append("X")
+            substitutions += 1
+
+    record.seq = Seq("".join(bases))
+
+    return substitutions
 
 
 def substitute_non_iupac(record: SeqRecord) -> int:

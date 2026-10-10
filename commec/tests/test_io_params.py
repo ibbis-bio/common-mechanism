@@ -46,6 +46,7 @@ def expected_defaults():
         "skip_taxonomy_search": False,
         "resume": False,
         "skip_nt_search": False,
+        "protein_input": False,
         "verbose": False,
         "auto_update_databases": False,
     }
@@ -95,6 +96,7 @@ def expected_updated_from_custom_yaml():
         "skip_taxonomy_search": True,
         "resume": False,
         "skip_nt_search": False,
+        "protein_input": False,
         "verbose": False,
         "auto_update_databases": False,
     }

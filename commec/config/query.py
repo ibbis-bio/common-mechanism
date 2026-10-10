@@ -16,15 +16,18 @@ class Query:
     A query to screen. Contains a sequence record and derived information, such
     as translated sequences.
 
-    At present, we only support nucleotide queries, though we may add suport for
-    amino acid queries in future.
+    Supports both nucleotide and amino acid input. Set is_protein=True when the
+    sequence is already amino acid; translation is then skipped and the sequence
+    is written directly to the amino acid file for hmmscan and blastp.
     """
 
-    def __init__(self, seq_record: SeqRecord):
+    def __init__(self, seq_record: SeqRecord, is_protein: bool = False):
         Query.validate_sequence_record(seq_record)
         self._seq_record = seq_record
         self.name = self.create_id(seq_record.id)
         self.description = seq_record.description[len(seq_record.id) :].strip()
+        # Step 1: track whether this query is protein or nucleotide
+        self.is_protein: bool = is_protein
         self.non_coding_regions: list[
             tuple[int, int]
         ] = []  # 1 based coordinates for Non-Coding Regions.
@@ -48,13 +51,28 @@ class Query:
 
     def translate(self, output_path: str | os.PathLike) -> None:
         """
-        Append the six-frame translation of the query to the output file.
+        Append amino acid sequence to the output file.
+
+        For nucleotide input, performs six-frame translation and writes all six frames.
+        For protein input, writes the sequence directly under a single header.
         """
+        if self.is_protein:
+            self._write_protein(output_path)
+            return
         self._translate()
         with open(output_path, "a", encoding="utf-8") as outfile:
             for translation in self.translations:
                 outfile.write(f">{self.name}_{translation.frame}\n")
                 outfile.write(f"{translation.sequence}\n")
+
+    def _write_protein(self, output_path: str | os.PathLike) -> None:
+        """
+        Append the amino acid sequence to the output file without translation.
+        Used when the input sequence is already protein.
+        """
+        with open(output_path, "a", encoding="utf-8") as outfile:
+            outfile.write(f">{self.name}\n")
+            outfile.write(f"{self.sequence}\n")
 
     def _translate(self) -> None:
         """

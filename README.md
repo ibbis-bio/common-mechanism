@@ -24,6 +24,10 @@ The `commec screen` command runs an input FASTA through the following screening 
 
 ![Flowchart of the commec screening steps, from input FASTA through the biorisk, best match / taxonomy, and low-concern screening to a Warning, Flag, or Clear outcome.](docs/images/common-mechanism-screening-flow-v2.jpg "Commec screening decision flow")
 
+Protein (amino acid) FASTA files can be screened directly using the `--protein` flag. Protein sequences are passed to hmmscan and BLASTP without 6-frame translation; nucleotide-only steps (BLASTN taxonomy and low-concern) are skipped.
+
+![Flowchart of the commec screening steps for protein input, showing that biorisk uses hmmscan, best match uses BLASTP, and nucleotide steps are skipped.](docs/images/commec-protein-input-flow.png "Commec screening decision flow for protein input")
+
 The [GitHub Wiki](https://github.com/ibbis-bio/common-mechanism/wiki) has documentation for this package, including information about installing `commec` and interpreting screening results.
 
 More information about the Common Mechanism project is available on the [commec.ibbis.bio](https://commec.ibbis.bio/) and [IBBIS project page](https://ibbis.bio/common-mechanism/).
@@ -40,6 +44,7 @@ Once installed, download the reference databases and screen a FASTA file with:
 ```
 commec setup -d /path/to/databases
 commec screen -d /path/to/databases input.fasta
+commec screen -d /path/to/databases --protein protein_input.fasta
 ```
 
 See the [GitHub Wiki](https://github.com/ibbis-bio/common-mechanism/wiki) for full installation instructions.

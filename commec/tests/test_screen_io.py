@@ -7,7 +7,12 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 from commec.config.constants import MAXIMUM_QUERY_LENGTH, MINIMUM_QUERY_LENGTH
-from commec.config.screen_io import IoValidationError, ScreenIO, substitute_non_iupac
+from commec.config.screen_io import (
+    IoValidationError,
+    ScreenIO,
+    substitute_non_iupac,
+    substitute_non_iupac_aa,
+)
 from commec.screen import ScreenArgumentParser, add_args
 
 
@@ -187,12 +192,13 @@ def test_write_clean_fasta_handles_non_ascii_characters(
             False,
             id="below_threshold",
         ),
-        # Amino acid codes are mostly not IUPAC nucleotide codes, so this blows the threshold
+        # Without --protein, a protein sequence is treated as nucleotide and the high
+        # substitution rate triggers the "may not be nucleotide" warning
         pytest.param(
             "is_protein_sequence.fasta",
             "haemagglutinin_fragment",
             True,
-            id="above_threshold",
+            id="protein_sequence_exceeds_substitution_threshold",
         ),
     ],
 )
@@ -230,6 +236,74 @@ def test_parse_input_fasta_warns_when_substitutions_exceed_threshold(
 
     assert len(not_dna_warnings) == 1
     assert record_id in not_dna_warnings[0]
+
+
+@pytest.mark.parametrize(
+    "fasta_name,record_id,expect_nt_warning",
+    [
+        pytest.param(
+            "single_record.fasta",
+            "BBa_K380009",
+            True,
+            id="nucleotide_record_warns_under_protein",
+        ),
+        pytest.param(
+            "is_protein_sequence.fasta",
+            "haemagglutinin_fragment",
+            False,
+            id="protein_record_no_warning_under_protein",
+        ),
+    ],
+)
+def test_parse_input_fasta_protein_warns_on_nucleotide_composition(
+    fasta_name,
+    record_id,
+    expect_nt_warning,
+    test_data_dir,
+    database_dir,
+    tmp_path,
+    caplog,
+):
+    """A --protein record that looks nucleotide must fire a warning.
+
+    The non-IUPAC substitution test cannot catch this case: A, C, G and T are
+    all valid amino acid codes, so a DNA record produces zero substitutions
+    and previously passed without any complaint.
+    """
+    input_fasta = os.path.join(test_data_dir, fasta_name)
+    with patch(
+        "sys.argv",
+        [
+            "test.py",
+            "--skip-tx",
+            "--protein",
+            input_fasta,
+            "-d",
+            database_dir,
+            "-o",
+            str(tmp_path),
+        ],
+    ):
+        parser = ScreenArgumentParser()
+        add_args(parser)
+        screen_io = ScreenIO(parser.parse_args())
+        screen_io.setup()
+
+    with caplog.at_level("WARNING"):
+        screen_io.parse_input_fasta()
+
+    nt_warnings = [
+        r.getMessage()
+        for r in caplog.records
+        if "looks like a nucleotide sequence" in r.getMessage()
+    ]
+
+    if not expect_nt_warning:
+        assert not nt_warnings
+        return
+
+    assert len(nt_warnings) == 1
+    assert record_id in nt_warnings[0]
 
 
 @pytest.mark.parametrize(
@@ -278,3 +352,47 @@ def test_parse_input_fasta_length_boundaries(
         nt_records = list(SeqIO.parse(nt_fasta, "fasta"))
 
     assert bool(nt_records) == expect_in_nt_fasta
+
+
+@pytest.mark.parametrize(
+    "sequence,expected,expected_substitutions",
+    [
+        pytest.param(
+            "ACDEFGHIKLMNPQRSTVWY",
+            "ACDEFGHIKLMNPQRSTVWY",
+            0,
+            id="standard_amino_acids_kept",
+        ),
+        pytest.param(
+            "BXZJUO",
+            "BXZJUO",
+            0,
+            id="iupac_ambiguity_codes_kept",
+        ),
+        pytest.param(
+            "acdefghik",
+            "ACDEFGHIK",
+            0,
+            id="lower_case_upper_cased_not_masked",
+        ),
+        pytest.param(
+            "MFLI*WEQ?",
+            "MFLIXWEQX",
+            2,
+            id="non_iupac_characters_substituted",
+        ),
+        pytest.param(
+            "MFL_WEQ",
+            "MFLXWEQ",
+            1,
+            id="non_ascii_placeholder_substituted",
+        ),
+    ],
+)
+def test_substitute_non_iupac_aa(sequence, expected, expected_substitutions):
+    record = SeqRecord(Seq(sequence), id="test_protein")
+    substitutions = substitute_non_iupac_aa(record)
+
+    assert str(record.seq) == expected
+    assert len(record.seq) == len(sequence)
+    assert substitutions == expected_substitutions

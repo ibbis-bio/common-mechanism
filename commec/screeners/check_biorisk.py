@@ -14,6 +14,7 @@ import pandas as pd
 
 from commec.config.constants import (
     BIORISK_LONG_QUERY_EVALUE_THRESHOLD,
+    BIORISK_SHORT_QUERY_AA_THRESHOLD,
     BIORISK_SHORT_QUERY_EVALUE_EXPONENT,
     BIORISK_SHORT_QUERY_NT_THRESHOLD,
 )
@@ -82,19 +83,34 @@ def biorisk_evalue_filter(hmmer: pd.DataFrame) -> pd.DataFrame:
     """
     Filter hmmscan hits by E-value, using a length-dependent threshold for short queries.
 
-    For queries shorter than BIORISK_SHORT_QUERY_NT_THRESHOLD nucleotides, the cutoff is:
+    For queries shorter than the length threshold, the cutoff is:
         E-value < 1 / (1 + nt_qlen ^ BIORISK_SHORT_QUERY_EVALUE_EXPONENT)
     For all other queries the cutoff is BIORISK_LONG_QUERY_EVALUE_THRESHOLD.
 
-    Expects numeric 'E-value' and 'nt_qlen' columns; coerces them if needed.
+    Protein rows (frame == 0) use BIORISK_SHORT_QUERY_AA_THRESHOLD because their
+    nt_qlen holds amino acid length, not nucleotide length.
+
+    Expects numeric 'E-value', 'nt_qlen', and 'frame' columns; coerces them if needed.
     Returns a filtered copy of the input DataFrame.
     """
     df = hmmer.copy()
     df["E-value"] = pd.to_numeric(df["E-value"], errors="coerce")
     df["nt_qlen"] = pd.to_numeric(df["nt_qlen"], errors="coerce")
 
-    short_query = df["nt_qlen"] < BIORISK_SHORT_QUERY_NT_THRESHOLD
-    short_cutoff = 1 / (1 + df["nt_qlen"] ** BIORISK_SHORT_QUERY_EVALUE_EXPONENT)
+    is_protein_row = df["frame"] == 0
+    threshold = is_protein_row.map(
+        {
+            True: BIORISK_SHORT_QUERY_AA_THRESHOLD,
+            False: BIORISK_SHORT_QUERY_NT_THRESHOLD,
+        }
+    )
+    short_query = df["nt_qlen"] < threshold
+    # The cutoff formula was calibrated on nucleotide lengths, but protein rows
+    # carry the aa length in nt_qlen. Scale those to nt-equivalent length,
+    # otherwise a 60 aa query gets the L=60 cutoff rather than L=180, making
+    # the protein path ~17x more permissive for the same sequence.
+    effective_length = df["nt_qlen"].where(~is_protein_row, df["nt_qlen"] * 3)
+    short_cutoff = 1 / (1 + effective_length**BIORISK_SHORT_QUERY_EVALUE_EXPONENT)
 
     mask = (short_query & (df["E-value"] < short_cutoff)) | (
         ~short_query & (df["E-value"] < BIORISK_LONG_QUERY_EVALUE_THRESHOLD)
@@ -187,7 +203,9 @@ def parse_biorisk_hits(
         logger.debug("\tProcessing query: %s", affected_query)
         biorisk_overall: ScreenStatus = ScreenStatus.PASS
 
-        query_data, _ = data.get_query(affected_query)
+        # Step 6: get_query strips frame suffixes (_1 to _6) for NT queries; protein queries
+        # have no suffix, so base_query_name equals affected_query directly
+        query_data, base_query_name = data.get_query(affected_query)
         if not query_data:
             logger.error(
                 "Query during hmmscan could not be found! [%s]", affected_query
@@ -250,8 +268,8 @@ def parse_biorisk_hits(
             log_message = (
                 f"\t --> {regulation_str} found at coordinates: {match_string}."
             )
-            logger.debug(f"{affected_query[:-2]:<25}" + log_message)
-            log_container[affected_query[:-2]].append(log_message)
+            logger.debug(f"{base_query_name:<25}" + log_message)
+            log_container[base_query_name].append(log_message)
 
             # Deal with whether this biorisk should collapse into an existing hit or not.
 

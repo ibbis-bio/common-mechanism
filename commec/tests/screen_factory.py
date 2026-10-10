@@ -82,8 +82,11 @@ class ScreenTesterFactory:
         self.tmp_path = tmp_path
         self.tx_reg_info = []
         self.queries = {}
+        # Step 6: track whether each query is protein so add_hit can format hits correctly
+        self.query_is_protein = {}
         self.biorisks = []
         self.protein_tx = []
+        self.protein_tx_blastp = []
         self.nucl_tx = []
         self.lowconcern_protein = []
         self.lowconcern_dna = []
@@ -128,6 +131,9 @@ class ScreenTesterFactory:
             "--verbose",
         ]
 
+        if any(self.query_is_protein.values()):
+            arguments.append("--protein")
+
         arguments.extend(args)
 
         print("Using the following Control Lists: ", ld.CONTROL_LISTS)
@@ -168,8 +174,15 @@ class ScreenTesterFactory:
 
         return actual_screen_result
 
-    def add_query(self, name, size):
-        self.queries[name] = "a" * size
+    def add_query(self, name, size, is_protein=False):
+        if is_protein:
+            protein_chars = "MFLIPWEQ"
+            self.queries[name] = (protein_chars * (size // len(protein_chars) + 1))[
+                :size
+            ]
+        else:
+            self.queries[name] = "a" * size
+        self.query_is_protein[name] = is_protein
 
     def add_dummy_cl_data(self):
         ld.add_control_list(
@@ -203,8 +216,8 @@ class ScreenTesterFactory:
         self,
         to_step,  # Which step this hit belongs to...
         to_query,  # Which query this hit belongs to...
-        start,  # Start Nucleotide in Query coords.
-        stop,  # End Nucleotide in Query Coords...
+        start,  # Start position in query coords (AA for protein queries, NT for nucleotide).
+        stop,  # End position in query coords.
         title="untitled",
         accession="12345",
         taxid=0,
@@ -261,27 +274,33 @@ class ScreenTesterFactory:
             ]
 
         query_length = len(self.queries[to_query])
-        query_length_aa = math.floor(query_length / 3)
-        # Calculate frame if appropriate:
-        frame = (start - 1) % 3 + 1
-        if start > stop:
-            # Frame must be reversed.
-            frame += 3
-
-            # Flip the start and stop to account for reverse frames.
-            start = query_length - start
-            stop = query_length - stop
+        # Step 6: protein queries are already in AA space; NT queries need divide-by-3
+        is_protein_query = self.query_is_protein.get(to_query, False)
+        if is_protein_query:
+            query_length_aa = query_length
+            query_name = to_query
+            start_aa = start
+            end_aa = stop
+            length_aa = abs(stop - start)
+            length = length_aa
+            frame = 1
+        else:
+            query_length_aa = math.floor(query_length / 3)
+            # Calculate frame if appropriate:
+            frame = (start - 1) % 3 + 1
+            if start > stop:
+                # Frame must be reversed.
+                frame += 3
+                # Flip the start and stop to account for reverse frames.
+                start = query_length - start
+                stop = query_length - stop
+            start_aa = math.floor(start / 3)
+            end_aa = math.floor(stop / 3)
+            query_name = f"{to_query}_{str(frame)}"
+            length = abs(stop - start)
+            length_aa = abs(end_aa - start_aa)
 
         print(f"Added Hit using frame {frame}")
-
-        start_aa = math.floor(start / 3)
-        end_aa = math.floor(stop / 3)
-
-        # Used if HMMSCAN i.e. protein based.
-        query_name = f"{to_query}_{str(frame)}"
-
-        length = abs(stop - start)
-        length_aa = abs(end_aa - start_aa)
 
         if to_step == ScreenStep.BIORISK:
             BIORISK_ANNOTATIONS_DATA.loc[len(BIORISK_ANNOTATIONS_DATA)] = [
@@ -296,9 +315,12 @@ class ScreenTesterFactory:
             return
 
         if to_step == ScreenStep.TAXONOMY_AA:
-            self.protein_tx.append(
-                f"{to_query}\t{title}\t{accession}\t{taxid}\t{evalue}\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
-            )
+            # Step 6: protein queries produce blastp hits; NT queries produce blastx hits
+            line = f"{to_query}\t{title}\t{accession}\t{taxid}\t{evalue}\tBITSCORE\t99.999\t{query_length}\t{start}\t{stop}\t{length}\t1\t{length}"
+            if is_protein_query:
+                self.protein_tx_blastp.append(line)
+            else:
+                self.protein_tx.append(line)
             return
 
         if to_step == ScreenStep.TAXONOMY_NT:
@@ -361,6 +383,14 @@ class ScreenTesterFactory:
         blastnr_to_parse = "\n".join(self.protein_tx)
         nr_db_output_path.write_text(blastnr_to_parse)
         print("writing blast nr: \n", blastnr_to_parse)
+
+        # Step 6: write blastp hits for protein queries; empty for NT-only tests
+        blastp_db_output_path = (
+            self.tmp_path / f"output_{self.name}/{self.name}.nr.blastp"
+        )
+        blastp_to_parse = "\n".join(self.protein_tx_blastp)
+        blastp_db_output_path.write_text(blastp_to_parse)
+        print("writing blast blastp: \n", blastp_to_parse)
 
         # TAXONOMY NT FILES (outfmt 6 tabular: no header lines):
         nt_db_output_path = self.tmp_path / f"output_{self.name}/{self.name}.nt.blastn"

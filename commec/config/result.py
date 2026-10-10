@@ -453,6 +453,8 @@ class QueryResult:
     query: str = ""
     description: str = ""
     length: int = 0
+    # True when the input sequence is an amino acid sequence rather than nucleotide.
+    is_protein: bool = False
     status: QueryScreenStatus = field(default_factory=QueryScreenStatus)
     hits: list[HitResult] = field(default_factory=list)
 

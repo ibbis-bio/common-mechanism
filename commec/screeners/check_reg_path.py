@@ -119,7 +119,7 @@ def parse_taxonomy_hits(
         "%s Controlled Labels applied: shape %s\n%s", step, blast.shape, blast.head()
     )
 
-    # Step 2: Per-query analysis
+    # Per-query analysis
     unique_query_accs = blast["query acc."].unique()
     logger.debug(
         "%s: %d unique queries with controlled hits", step, len(unique_query_accs)

@@ -77,15 +77,23 @@ def _filter_low_concern_proteins(
         low_concern_protein_for_query_trimmed.shape,
         low_concern_protein_for_query_trimmed[["coverage_nt", "coverage_ratio"]].head(),
     )
+    # Hit coordinates are in nucleotides for nucleotide queries and in amino
+    # acids for protein queries, so the absolute coverage floor follows the
+    # query's units (50 nt, or 50 // 3 = 16 aa, for the same stringency).
+    min_coverage = (
+        MINIMUM_PEPTIDE_COVERAGE // 3 if query.is_protein else MINIMUM_PEPTIDE_COVERAGE
+    )
+    unit = "aa" if query.is_protein else "bp"
     # Ensure that this low_concern hit covers at least 50 nucleotides of the query
     low_concern_protein_for_query_trimmed = low_concern_protein_for_query_trimmed[
-        low_concern_protein_for_query_trimmed["coverage_nt"] > MINIMUM_PEPTIDE_COVERAGE
+        low_concern_protein_for_query_trimmed["coverage_nt"] > min_coverage
     ]
 
     if low_concern_protein_for_query_trimmed.empty:
         logger.info(
-            "\t --> Insufficient coverage (<%i bp) for housekeeping protein to clear %s (%i-%i).",
-            int(MINIMUM_PEPTIDE_COVERAGE),
+            "\t --> Insufficient coverage (<%i %s) for housekeeping protein to clear %s (%i-%i).",
+            int(min_coverage),
+            unit,
             hit.name,
             region.query_start,
             region.query_end,
@@ -359,9 +367,13 @@ def _update_low_concern_data_for_query(
 
     # We only care about the low_concern data for this query, but we need to check for size.
     if not low_concern_protein.empty:
-        low_concern_protein_for_query = low_concern_protein[
-            low_concern_protein["query name"].str.rsplit("_", n=1).str[0] == query.name
-        ]
+        names = low_concern_protein["query name"]
+        if not query.is_protein:
+            # Nucleotide hmmscan records are named <query>_<frame>; strip the
+            # frame suffix. Protein records are written under the bare query
+            # name, which may itself contain underscores (e.g. WP_0001).
+            names = names.str.rsplit("_", n=1).str[0]
+        low_concern_protein_for_query = low_concern_protein[names == query.name]
 
     if not low_concern_rna.empty:
         low_concern_rna_for_query = low_concern_rna[
@@ -480,8 +492,8 @@ def _update_low_concern_data_for_query(
 
 def parse_low_concern_hits(
     protein_handler: HmmerHandler,
-    rna_handler: CmscanHandler,
-    dna_handler: BlastNHandler,
+    rna_handler: CmscanHandler | None,
+    dna_handler: BlastNHandler | None,
     queries: dict[str, Query],
     low_concern_desc: pd.DataFrame,
 ):
@@ -491,11 +503,16 @@ def parse_low_concern_hits(
     This function processes hit data from the respective handlers, and updates each query's result handle with
     low-concern status information based on these outcomes.
     Queries with no relevant flagged or warned hits are marked as SKIP.
+
+    rna_handler and dna_handler may be None when the input is protein-only. In that case,
+    the RNA and DNA low-concern steps are skipped and their result DataFrames are empty.
     ----
     ## Parameters:
     * `protein_handler` (HmmerHandler): Handler for HMMER-based protein search results.
-    * `rna_handler` (CmscanHandler): Handler for CMSCAN-based RNA search results.
-    * `dna_handler` (BlastNHandler): Handler for BLASTN-based DNA search results.
+    * `rna_handler` (CmscanHandler | None): Handler for CMSCAN-based RNA search results.
+      Pass None to skip the RNA low-concern step (protein input only).
+    * `dna_handler` (BlastNHandler | None): Handler for BLASTN-based DNA search results.
+      Pass None to skip the DNA low-concern step (protein input only).
     * `queries` (dict[str, Query]): Dictionary of Query objects, i.e. screen fasta input.
     * `low_concern_desc` (pd.DataFrame): DataFrame containing descriptions for low-concern hits.
     -----
@@ -515,14 +532,19 @@ def parse_low_concern_hits(
         low_concern_protein_screen_data.head(),
     )
 
-    low_concern_rna_screen_data = rna_handler.read_output()
-    logger.debug(
-        "\tLow-concern RNA Data: shape: %s preview:\n%s",
-        low_concern_rna_screen_data.shape,
-        low_concern_rna_screen_data.head(),
-    )
+    if rna_handler is not None:
+        low_concern_rna_screen_data = rna_handler.read_output()
+        logger.debug(
+            "\tLow-concern RNA Data: shape: %s preview:\n%s",
+            low_concern_rna_screen_data.shape,
+            low_concern_rna_screen_data.head(),
+        )
+    else:
+        low_concern_rna_screen_data = pd.DataFrame()
 
-    low_concern_dna_screen_data = dna_handler.read_output()
+    low_concern_dna_screen_data = (
+        dna_handler.read_output() if dna_handler is not None else pd.DataFrame()
+    )
 
     for query in queries.values():
         skip = True

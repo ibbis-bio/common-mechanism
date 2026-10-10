@@ -130,8 +130,12 @@ def readhmmer(fileh):
     hmmer["ali to"] = pd.to_numeric(hmmer["ali to"])
     hmmer["qlen"] = pd.to_numeric(hmmer["qlen"])
     hmmer["query name"] = hmmer["query name"].astype(str)
-    # Extract the frame information.
-    hmmer["frame"] = hmmer["query name"].str.split("_").str[-1].astype(int)
+    # Step 6: use frame 0 as a sentinel for protein input; NT frames are 1-6.
+    hmmer["frame"] = (
+        pd.to_numeric(hmmer["query name"].str.split("_").str[-1], errors="coerce")
+        .fillna(0)
+        .astype(int)
+    )
     return hmmer
 
 
@@ -203,12 +207,19 @@ def recalculate_hmmer_query_coordinates(hmmer: pd.DataFrame):
         "passed to calculate nt coordinates, ensure that the dataframe has "
         "been processed to include nucleotide query length data."
     )
-    hmmer["q. start"], hmmer["q. end"] = convert_protein_to_nucleotide_coords(
-        hmmer["frame"].to_numpy(),
-        hmmer["ali from"].to_numpy(),
-        hmmer["ali to"].to_numpy(),
-        hmmer["nt_qlen"].to_numpy(),
-    )
+    # Step 6: frame 0 marks protein input; skip coordinate conversion for those rows.
+    nt_mask = hmmer["frame"] != 0
+    hmmer["q. start"] = hmmer["ali from"].copy()
+    hmmer["q. end"] = hmmer["ali to"].copy()
+    if nt_mask.any():
+        nt_start, nt_end = convert_protein_to_nucleotide_coords(
+            hmmer.loc[nt_mask, "frame"].to_numpy(),
+            hmmer.loc[nt_mask, "ali from"].to_numpy(),
+            hmmer.loc[nt_mask, "ali to"].to_numpy(),
+            hmmer.loc[nt_mask, "nt_qlen"].to_numpy(),
+        )
+        hmmer.loc[nt_mask, "q. start"] = nt_start
+        hmmer.loc[nt_mask, "q. end"] = nt_end
 
 
 def append_nt_querylength_info(hmmer: pd.DataFrame, queries: dict[str, Query]):
@@ -216,4 +227,26 @@ def append_nt_querylength_info(hmmer: pd.DataFrame, queries: dict[str, Query]):
     Take the hmmer output, and add a series (nt_qlen)
     of the true nt length based on query name.
     """
-    hmmer["nt_qlen"] = [queries[q[:-2]].length for q in hmmer["query name"]]
+
+    def _base_name(q_name: str) -> str:
+        # Only a protein query may appear in queries under its bare (unsuffixed)
+        # record name. Name membership alone cannot decide this: in a nucleotide
+        # run, a query named A_1 collides with frame 1 of a query named A, and
+        # treating it as a direct key would attribute the hit to the wrong query
+        # and skip the aa-to-nt coordinate conversion.
+        q = queries.get(q_name)
+        if q is not None and q.is_protein:
+            return q_name
+        suffix = q_name.rsplit("_", 1)[-1]
+        if suffix.isdigit():
+            return q_name[: -(len(suffix) + 1)]
+        return q_name
+
+    hmmer["nt_qlen"] = [queries[_base_name(q)].length for q in hmmer["query name"]]
+    # readhmmer sets frame by parsing the query name suffix. A protein query named ORF_1
+    # would be assigned frame=1 instead of frame=0. Correct that here using the queries dict
+    # as the authoritative source: only a row whose name is a direct protein key is frame=0.
+    is_protein_row = hmmer["query name"].map(
+        lambda n: n in queries and queries[n].is_protein
+    )
+    hmmer.loc[is_protein_row, "frame"] = 0

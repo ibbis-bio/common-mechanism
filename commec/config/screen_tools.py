@@ -11,6 +11,7 @@ import logging
 
 from commec.config.screen_io import ScreenIO
 from commec.tools.blastn import BlastNHandler
+from commec.tools.blastp import BlastPHandler
 from commec.tools.blastx import BlastXHandler
 from commec.tools.cmscan import CmscanHandler
 from commec.tools.hmmer import HmmerHandler
@@ -28,6 +29,8 @@ class ScreenTools:
     def __init__(self, params: ScreenIO):
         self.biorisk: HmmerHandler = None
         self.regulated_protein: BlastXHandler = None
+        # Step 4: blastp handler for protein queries
+        self.regulated_protein_blastp: BlastPHandler = None
         self.regulated_nt: BlastNHandler = None
         self.low_concern_hmm: HmmerHandler = None
         self.low_concern_blastn: BlastNHandler = None
@@ -65,6 +68,17 @@ class ScreenTools:
             self.regulated_protein.arguments_dictionary["-mt_mode"] = params.config[
                 "blast_mt_mode"
             ]
+            # Step 4: same protein database as blastx but takes protein input directly
+            self.regulated_protein_blastp = BlastPHandler(
+                params.config["databases"]["best_match"]["protein"]["path"],
+                input_file=params.protein_path,
+                out_file=f"{params.output_prefix}.nr.blastp",
+                threads=params.config["threads"],
+                force=params.config["force"],
+            )
+            self.regulated_protein_blastp.arguments_dictionary["-mt_mode"] = (
+                params.config["blast_mt_mode"]
+            )
 
         if params.should_do_nucleotide_screening:
             self.regulated_nt = BlastNHandler(

@@ -628,6 +628,13 @@
           </div>
         </details>
       </div>
+      <div class="settings-section" id="molecule-card">
+        <div class="settings-title">Sequence type</div>
+        <label class="lbl" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="protein-input">
+          <span>Protein input &mdash; sequences are amino acids, not nucleotides</span>
+        </label>
+      </div>
       <!-- Screening options remain controlled by the Advanced options toggle. -->
       <div class="settings-section adv-only" id="depth-card">
         <div class="settings-title">Screening options</div>
@@ -1440,6 +1447,8 @@ form.addEventListener("submit", async (e) => {
     data.append("custom_config", cfg);
   }
   data.append("label", runLabel.value.trim());
+  const proteinInput = document.getElementById("protein-input");
+  if (proteinInput && proteinInput.checked) data.append("protein_input", "1");
 
   runPanel.classList.add("active");
   runPanel.scrollIntoView({ behavior: "smooth", block: "start" });

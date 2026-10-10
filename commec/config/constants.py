@@ -3,8 +3,14 @@
 
 # SCREENING
 MINIMUM_QUERY_LENGTH = 41
+MINIMUM_PROTEIN_QUERY_LENGTH = MINIMUM_QUERY_LENGTH // 3
 MAXIMUM_QUERY_LENGTH = 100000
 NON_IUPAC_SUBSTITUTION_THRESHOLD = 0.1
+# Fraction of nucleotide-alphabet characters (ACGTNU) above which a record in a
+# --protein run is warned as looking nucleotide. A, C, G and T are all valid
+# amino acid codes, so a substitution count cannot detect this; composition can.
+# Real proteins essentially never exceed 50 percent ACGTNU content.
+NUCLEOTIDE_COMPOSITION_THRESHOLD = 0.9
 BAD_ACCESSIONS = [
     "YP_009724390",
 ]
@@ -21,6 +27,7 @@ NON_CODING_REGION_PERCENT_IDENTITY_THRESHOLD = 80
 # BIORISK E-VALUE FILTERING
 # Sequences shorter than this threshold use a length-dependent E-value cutoff.
 BIORISK_SHORT_QUERY_NT_THRESHOLD = 200
+BIORISK_SHORT_QUERY_AA_THRESHOLD = BIORISK_SHORT_QUERY_NT_THRESHOLD // 3
 # Exponent for the length-dependent E-value formula: E < 1 / (1 + L^EXPONENT)
 BIORISK_SHORT_QUERY_EVALUE_EXPONENT = 2.598
 # E-value cutoff applied to sequences at or above the length threshold.

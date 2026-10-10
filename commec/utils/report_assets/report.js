@@ -92,7 +92,7 @@
     if (left + w > 100) left = Math.max(0, 100 - w);
     return { left: left, w: w };
   };
-  Report.prototype.coord = function (h) { return this.num(h.qs) + "–" + this.num(h.qe) + " bp"; };
+  Report.prototype.coord = function (h) { return this.num(h.qs) + "–" + this.num(h.qe) + (h.isProtein ? " aa" : " bp"); };
 
   // Group hits by organism, choose a representative, sort by severity + e-value.
   Report.prototype.model = function (s) {
@@ -330,7 +330,7 @@
       var s = t.s, sid = s.id;
       var skip = t.status === "Skipped";
       var open = !!self.state.open[sid] && !skip;
-      var lengthLabel = self.num(s.length) + " bp";
+      var lengthLabel = self.num(s.length) + (s.isProtein ? " aa" : " bp");
 
       var finding = "", mapBars = [];
       if (!skip) {
@@ -401,7 +401,7 @@
 
     return {
       mFile: m.file || "Screening report",
-      mLine1: (m.nQueries != null ? m.nQueries : seqs.length) + " sequences · " + this.num(m.totalLen) + " bp · screened " + (m.date || "") + " · run " + (m.time || ""),
+      mLine1: (m.nQueries != null ? m.nQueries : seqs.length) + " sequences · " + this.num(m.totalLen) + (seqs.length > 0 && seqs.every(function (s) { return s.isProtein; }) ? " aa" : " bp") + " · screened " + (m.date || "") + " · run " + (m.time || ""),
       mLine2: "commec " + (m.version || "") + " · output " + (m.output || "") + (m.tools ? " · " + m.tools : ""),
       mRevs: m.revisions ? ("databases · " + m.revisions) : "",
       tabs: tabs, rows: rows,

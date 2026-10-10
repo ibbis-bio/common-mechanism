@@ -24,6 +24,7 @@ from commec.config.result import (
     compare,
 )
 from commec.tools.search_handler import SearchToolVersion
+from commec.utils.json_html_output import build_report_model
 
 
 @pytest.fixture
@@ -160,3 +161,16 @@ def test_adding_data_to_existing():
     write_query, _ = new_screen_data.get_query("test01")
     write_info(write_query)
     assert new_screen_data.queries["test01"].status.biorisk == ScreenStatus.PASS
+
+
+def test_report_model_marks_protein_sequences_without_hits():
+    """build_report_model must set isProtein on every sequence, including
+    protein queries with no hits, so report.js can label lengths in aa."""
+    screen = ScreenResult()
+    screen.queries["prot1"] = QueryResult(query="prot1", length=60, is_protein=True)
+    screen.queries["nt1"] = QueryResult(query="nt1", length=180)
+
+    model = build_report_model(screen)
+    by_id = {s["id"]: s for s in model["sequences"]}
+    assert by_id["prot1"]["isProtein"] is True
+    assert by_id["nt1"]["isProtein"] is False

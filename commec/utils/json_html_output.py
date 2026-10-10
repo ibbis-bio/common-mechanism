@@ -293,7 +293,7 @@ def _taxon_lists(taxon: dict, list_lookup: dict) -> list:
     return out
 
 
-def _build_hit(hit, list_lookup: dict) -> dict:
+def _build_hit(hit, list_lookup: dict, is_protein: bool = False) -> dict:
     rec = getattr(hit, "recommendation", None)
     step = str(getattr(rec, "from_step", "") or "")
     region = getattr(hit, "region", None)
@@ -304,6 +304,8 @@ def _build_hit(hit, list_lookup: dict) -> dict:
         "rawStatus": str(getattr(rec, "status", "") or ""),
         "name": _clean_text(getattr(hit, "name", "")) or "",
         "desc": _clean_text(getattr(hit, "description", "")) or "",
+        # isProtein drives the coordinate unit label in the HTML report ("aa" vs "bp").
+        "isProtein": is_protein,
         "qs": getattr(region, "query_start", None) if region else None,
         "qe": getattr(region, "query_end", None) if region else None,
         "eValue": _fmt_evalue(getattr(region, "e_value", None) if region else None),
@@ -369,16 +371,19 @@ def build_report_model(screen: ScreenResult) -> dict:
     sequences = []
     for query in getattr(screen, "queries", {}).values():
         status = getattr(query, "status", None)
+        is_protein = getattr(query, "is_protein", False)
         sequences.append(
             {
                 "id": getattr(query, "query", ""),
                 "name": getattr(query, "query", ""),
                 "desc": getattr(query, "description", "") or "",
                 "length": getattr(query, "length", 0),
+                "isProtein": is_protein,
                 "screenStatus": str(getattr(status, "screen_status", "") or ""),
                 "rationale": str(getattr(status, "rationale", "") or ""),
                 "hits": [
-                    _build_hit(h, list_lookup) for h in getattr(query, "hits", [])
+                    _build_hit(h, list_lookup, is_protein)
+                    for h in getattr(query, "hits", [])
                 ],
             }
         )

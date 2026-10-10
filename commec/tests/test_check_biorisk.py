@@ -96,9 +96,9 @@ def test_check_biorisk_return_codes(
 # ---------------------------------------------------------------------------
 
 
-def _make_hmmer(nt_qlen: int, evalue: float) -> pd.DataFrame:
+def _make_hmmer(nt_qlen: int, evalue: float, frame: int = 1) -> pd.DataFrame:
     """Return a minimal single-row hmmscan DataFrame."""
-    return pd.DataFrame({"E-value": [evalue], "nt_qlen": [nt_qlen]})
+    return pd.DataFrame({"E-value": [evalue], "nt_qlen": [nt_qlen], "frame": [frame]})
 
 
 def _short_cutoff(nt_qlen: float) -> float:
@@ -176,13 +176,14 @@ class TestBioriskEvalueFilterMultiRow:
                     BIORISK_LONG_QUERY_EVALUE_THRESHOLD * 10,  # long, filtered
                 ],
                 "nt_qlen": [nt_qlen_short, nt_qlen_short, nt_qlen_long, nt_qlen_long],
+                "frame": [1, 1, 1, 1],
             }
         )
         result = biorisk_evalue_filter(df)
         assert len(result) == 2
 
     def test_empty_dataframe_returns_empty(self):
-        df = pd.DataFrame({"E-value": [], "nt_qlen": []})
+        df = pd.DataFrame({"E-value": [], "nt_qlen": [], "frame": []})
         result = biorisk_evalue_filter(df)
         assert len(result) == 0
 
@@ -190,19 +191,21 @@ class TestBioriskEvalueFilterMultiRow:
         """readhmmer returns string columns; filter must coerce them."""
         nt_qlen = 100
         evalue = _short_cutoff(nt_qlen) * 0.5
-        df = pd.DataFrame({"E-value": [str(evalue)], "nt_qlen": [str(nt_qlen)]})
+        df = pd.DataFrame(
+            {"E-value": [str(evalue)], "nt_qlen": [str(nt_qlen)], "frame": [1]}
+        )
         result = biorisk_evalue_filter(df)
         assert len(result) == 1
 
     def test_non_numeric_evalues_are_dropped(self):
         """Rows with non-coercible E-values become NaN and should be excluded."""
-        df = pd.DataFrame({"E-value": ["not_a_number"], "nt_qlen": [100]})
+        df = pd.DataFrame({"E-value": ["not_a_number"], "nt_qlen": [100], "frame": [1]})
         result = biorisk_evalue_filter(df)
         assert len(result) == 0
 
     def test_input_dataframe_is_not_mutated(self):
         """The function must return a copy; the original dtypes must be unchanged."""
-        df = pd.DataFrame({"E-value": ["1e-25"], "nt_qlen": ["500"]})
+        df = pd.DataFrame({"E-value": ["1e-25"], "nt_qlen": ["500"], "frame": [1]})
         original_dtype_evalue = df["E-value"].dtype
         original_dtype_qlen = df["nt_qlen"].dtype
         _ = biorisk_evalue_filter(df)
@@ -217,6 +220,7 @@ class TestBioriskEvalueFilterMultiRow:
             {
                 "E-value": [evalue],
                 "nt_qlen": [nt_qlen],
+                "frame": [1],
                 "target name": ["some_target"],
                 "query name": ["some_query"],
             }
@@ -224,3 +228,43 @@ class TestBioriskEvalueFilterMultiRow:
         result = biorisk_evalue_filter(df)
         assert "target name" in result.columns
         assert result["target name"].iloc[0] == "some_target"
+
+
+class TestBioriskEvalueFilterProteinRows:
+    """Protein rows (frame == 0) carry aa length in nt_qlen.
+
+    The short-query cutoff formula was calibrated on nucleotide lengths, so
+    protein rows must be scaled to nt-equivalent length (x3) before applying
+    it. Otherwise a 60 aa query gets the L=60 cutoff rather than L=180, making
+    the protein path ~17x more permissive for the same sequence.
+    """
+
+    def test_protein_row_filtered_at_nt_equivalent_cutoff(self):
+        # 1e-5 sits between the 180 nt cutoff (~1.4e-6) and the naive 60 aa
+        # cutoff (~2.4e-5): without scaling, the protein row would pass.
+        df = pd.DataFrame(
+            {"E-value": [1e-5, 1e-5], "nt_qlen": [180, 60], "frame": [1, 0]}
+        )
+        result = biorisk_evalue_filter(df)
+        assert len(result) == 0
+
+    def test_protein_row_passes_below_nt_equivalent_cutoff(self):
+        # 1e-7 is below the 180 nt cutoff (~1.4e-6): both rows pass.
+        df = pd.DataFrame(
+            {"E-value": [1e-7, 1e-7], "nt_qlen": [180, 60], "frame": [1, 0]}
+        )
+        result = biorisk_evalue_filter(df)
+        assert len(result) == 2
+
+    def test_protein_row_uses_aa_threshold_for_short_query_decision(self):
+        # 100 aa is above the aa short-query threshold (66), so the long-query
+        # cutoff applies even though 100 < 200 nt.
+        df = pd.DataFrame(
+            {
+                "E-value": [BIORISK_LONG_QUERY_EVALUE_THRESHOLD * 0.1],
+                "nt_qlen": [100],
+                "frame": [0],
+            }
+        )
+        result = biorisk_evalue_filter(df)
+        assert len(result) == 1

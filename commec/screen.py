@@ -32,6 +32,8 @@ Screen run logic:
   --skip-tx             Skip taxonomy homology search (only toxins and other proteins included in the biorisk database will be flagged)
   --skip-nt             Skip nucleotide search (regulated pathogens will only be identified based on
                         protein hits)
+  --protein             Treat all input sequences as amino acid sequences. Use when the input FASTA
+                        contains protein rather than nucleotide sequences.
 
 Parallelisation:
   -t THREADS, --threads THREADS
@@ -49,6 +51,7 @@ Output file handling:
 import argparse
 import datetime
 import logging
+import os
 import sys
 import time
 import traceback
@@ -57,7 +60,11 @@ import pandas as pd
 from Bio.Data.CodonTable import TranslationError
 
 import commec.control_list as control_list
-from commec.config.constants import MAXIMUM_QUERY_LENGTH, MINIMUM_QUERY_LENGTH
+from commec.config.constants import (
+    MAXIMUM_QUERY_LENGTH,
+    MINIMUM_PROTEIN_QUERY_LENGTH,
+    MINIMUM_QUERY_LENGTH,
+)
 from commec.config.json_io import encode_screen_data_to_json
 from commec.config.query import Query
 from commec.config.result import (
@@ -173,6 +180,16 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help=(
             "Skip nucleotide search (regulated pathogens will only be"
             " identified based on biorisk database and protein hits)"
+        ),
+    )
+
+    screen_logic_group.add_argument(
+        "--protein",
+        dest="protein_input",
+        action="store_true",
+        help=(
+            "Treat all input sequences as amino acid sequences. "
+            "Use when the input FASTA contains protein rather than nucleotide sequences."
         ),
     )
 
@@ -434,6 +451,9 @@ class Screen:
         # Ensure that the translation aa is cleared.
         with open(self.params.aa_path, "w", encoding="utf-8"):
             ...
+        # Step 5: clear protein_path so blastp starts from a clean file each run
+        with open(self.params.protein_path, "w", encoding="utf-8"):
+            ...
 
         try:
             for query in self.queries.values():
@@ -443,16 +463,22 @@ class Screen:
 
                 # Link query to the output data.
                 qr = QueryResult(query.original_name, query.description, query.length)
+                qr.is_protein = query.is_protein
                 self.screen_data.queries[query.name] = qr
                 query.result = qr
 
                 # Determine out-of-range queries as skipped:
-                if query.length < MINIMUM_QUERY_LENGTH:
+                min_length = (
+                    MINIMUM_PROTEIN_QUERY_LENGTH
+                    if query.is_protein
+                    else MINIMUM_QUERY_LENGTH
+                )
+                if query.length < min_length:
                     logger.warning(
                         "%s length %i is less than %i",
                         query.name,
                         query.length,
-                        MINIMUM_QUERY_LENGTH,
+                        min_length,
                     )
                     qr.skip(ScreenStatus.SKIP_SHORT)
                     continue
@@ -469,6 +495,9 @@ class Screen:
                 # Only translate if valid.
                 try:
                     query.translate(self.params.aa_path)
+                    # Step 5: write protein queries to protein_path for blastp input
+                    if query.is_protein:
+                        query.translate(self.params.protein_path)
                 except TranslationError as e:
                     logger.error(
                         "An error occured when translating %s:\n %s",
@@ -511,9 +540,12 @@ class Screen:
         _info = self.screen_data.database_info.search_tool_info
         _info.biorisk_search_info = _tools.biorisk.get_version_information()
         if self.params.should_do_protein_screening:
-            _info.protein_search_info = (
-                _tools.regulated_protein.get_version_information()
+            protein_tool = (
+                _tools.regulated_protein_blastp
+                if self.params.config.get("protein_input", False)
+                else _tools.regulated_protein
             )
+            _info.protein_search_info = protein_tool.get_version_information()
         if self.params.should_do_nucleotide_screening:
             _info.nucleotide_search_info = _tools.regulated_nt.get_version_information()
         if self.params.should_do_low_concern_screening:
@@ -675,29 +707,70 @@ class Screen:
 
     def screen_proteins(self):
         """
-        Call `run_blastx.sh` followed by `check_reg_path.py` to add regulated
-        pathogen protein screening results to `screen_file`.
+        Call `blastx` on the nucleotide FASTA followed by `check_reg_path.py` to
+        add regulated pathogen protein screening results to `screen_file`.
+        For protein input queries, blastp is run on the protein FASTA.
+
+        Each search runs only when its input FASTA exists and is non-empty.
+        On a `--protein` run the nucleotide FASTA has no records, and blastx
+        on an empty query file aborts STEP 2 before blastp would run.
         """
-        self.database_tools.regulated_protein.search()
-        if not self.database_tools.regulated_protein.validate_output():
-            self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.ERROR)
-            raise RuntimeError(
-                "ERROR: Expected protein search output not created: "
-                + self.database_tools.regulated_protein.out_file
-            )
-
-        exit_status = parse_taxonomy_hits(
-            self.database_tools.regulated_protein,
-            self.screen_data,
-            self.queries,
-            ScreenStep.TAXONOMY_AA,
-            self.params.config["threads"],
+        nt_has_sequences = (
+            os.path.isfile(self.params.nt_path)
+            and os.path.getsize(self.params.nt_path) > 0
         )
+        if nt_has_sequences:
+            self.database_tools.regulated_protein.search()
+            if not self.database_tools.regulated_protein.validate_output():
+                self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.ERROR)
+                raise RuntimeError(
+                    "ERROR: Expected protein search output not created: "
+                    + self.database_tools.regulated_protein.out_file
+                )
 
-        if exit_status != 0:
-            raise RuntimeError(
-                f"Output of protein taxonomy search could not be processed: {self.database_tools.regulated_protein.out_file}"
+            exit_status = parse_taxonomy_hits(
+                self.database_tools.regulated_protein,
+                self.screen_data,
+                self.queries,
+                ScreenStep.TAXONOMY_AA,
+                self.params.config["threads"],
             )
+
+            if exit_status != 0:
+                raise RuntimeError(
+                    f"Output of protein taxonomy search could not be processed: {self.database_tools.regulated_protein.out_file}"
+                )
+        else:
+            logger.info(
+                "\t...skipping blastx (no nucleotide queries after parsing; "
+                "with --protein every input record is screened as protein)."
+            )
+
+        # Step 5: run blastp for protein input queries; skip if no protein sequences were found
+        protein_input_has_sequences = (
+            self.database_tools.regulated_protein_blastp is not None
+            and os.path.isfile(self.params.protein_path)
+            and os.path.getsize(self.params.protein_path) > 0
+        )
+        if protein_input_has_sequences:
+            self.database_tools.regulated_protein_blastp.search()
+            if not self.database_tools.regulated_protein_blastp.validate_output():
+                self.reset_query_statuses(ScreenStep.TAXONOMY_AA, ScreenStatus.ERROR)
+                raise RuntimeError(
+                    "ERROR: Expected blastp output not created: "
+                    + self.database_tools.regulated_protein_blastp.out_file
+                )
+            exit_status = parse_taxonomy_hits(
+                self.database_tools.regulated_protein_blastp,
+                self.screen_data,
+                self.queries,
+                ScreenStep.TAXONOMY_AA,
+                self.params.config["threads"],
+            )
+            if exit_status != 0:
+                raise RuntimeError(
+                    f"Output of blastp taxonomy search could not be processed: {self.database_tools.regulated_protein_blastp.out_file}"
+                )
 
     def screen_nucleotides(self):
         """
@@ -709,6 +782,12 @@ class Screen:
         """
         # By Default, this should be overriden.
         self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.ERROR)
+
+        # Protein input has no nucleotide sequences, so nucleotide taxonomy is meaningless.
+        if self.params.config.get("protein_input", False):
+            logger.info("\t...skipping nucleotide search (protein input).")
+            self.reset_query_statuses(ScreenStep.TAXONOMY_NT, ScreenStatus.SKIP)
+            return
 
         # Calculate non-coding information for each Query.
         calculate_noncoding_regions_per_query(
@@ -779,10 +858,22 @@ class Screen:
         # Run the low_concern tools:
         logger.debug("\t...running low-concern hmmer.")
         self.database_tools.low_concern_hmm.search()
-        logger.debug("\t...running low-concern blastn")
-        self.database_tools.low_concern_blastn.search()
-        logger.debug("\t...running low-concern cmscan")
-        self.database_tools.low_concern_cmscan.search()
+
+        # blastn and cmscan require a nucleotide FASTA. For protein-only input,
+        # protein records are not written to the nucleotide FASTA, so those files
+        # are empty. Skip both steps and pass None to the parser.
+        protein_only = self.params.config.get("protein_input", False)
+        if protein_only:
+            logger.info("\t...skipping low-concern blastn and cmscan (protein input).")
+            rna_handler = None
+            dna_handler = None
+        else:
+            logger.debug("\t...running low-concern blastn")
+            self.database_tools.low_concern_blastn.search()
+            logger.debug("\t...running low-concern cmscan")
+            self.database_tools.low_concern_cmscan.search()
+            rna_handler = self.database_tools.low_concern_cmscan
+            dna_handler = self.database_tools.low_concern_blastn
 
         # Update Screen Data with low_concern outputs.
         low_concern_desc = pd.read_csv(
@@ -791,8 +882,8 @@ class Screen:
 
         parse_low_concern_hits(
             self.database_tools.low_concern_hmm,
-            self.database_tools.low_concern_cmscan,
-            self.database_tools.low_concern_blastn,
+            rna_handler,
+            dna_handler,
             self.queries,
             low_concern_desc,
         )
