@@ -444,7 +444,11 @@ def _logo_svg() -> str:
 
 def render_report_html(screen: ScreenResult) -> str:
     """Build the complete self-contained HTML document for a screen result."""
-    model = build_report_model(screen)
+    return render_report_model(build_report_model(screen))
+
+
+def render_report_model(model: dict) -> str:
+    """Render a report model, including models with attributed assembly evidence."""
     # allow_nan=False is safe because _clean() removed every NaN; escape "</" so a stray
     # "</script>" inside a description can't break out of the data <script> block.
     data_json = json.dumps(model, allow_nan=False, ensure_ascii=False).replace(
