@@ -359,6 +359,7 @@
         // biorisk hit is never masked and neither lane looks less important than the other.
         buildTrack(function (x) { return isBio(x) ? 0 : (x.d === "flagbest" ? 2 : 1); }, function (sev) { return sev === 2 ? "#F05023" : "rgba(65,155,185,.5)"; }, 4, 3);
         buildTrack(function (x) { return !isBio(x) ? 0 : (x.d === "flagbio" ? 2 : 1); }, function (sev) { return sev === 2 ? "#C23A14" : "#E0A020"; }, 8, 3);
+        // Workflow step 7: Show assembly coverage in the existing verdict tabs.
         if (s.assembly && s.assembly.enabled) {
           var sourceLabel = s.directStatus === "Pass" && mm.hasFlag ? "Assembly-derived" : "Direct and assembly evidence";
           var coverageLabel = { screened: "Assembly screened", incomplete: "Assembly incomplete", no_contig: "No contig", excluded: "Excluded from assembly", failed: "Assembly failed", pending: "Assembly pending" }[s.assembly.coverage] || s.assembly.coverage;

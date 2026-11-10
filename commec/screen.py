@@ -598,6 +598,7 @@ class Screen:
             "%Y-%m-%d %H:%M:%S"
         )
 
+    # ## Workflow steps 5 and 6: Attribute contig hits and combine results.
     def finalize_assembly_results(self):
         """Attach assembly evidence after both independent screening passes."""
         if not self.params.config["assemble_oligos"]:
@@ -661,6 +662,7 @@ class Screen:
         if self.assembly_manifest.get("path"):
             write_json(self.assembly_manifest["path"], self.assembly_manifest)
 
+    # ## Workflow steps 2 to 4: Assemble and screen every returned contig.
     def prepare_oligo_assembly(self):
         """Assemble without changing the direct queries or their screening."""
         if not self.params.config["assemble_oligos"]:
