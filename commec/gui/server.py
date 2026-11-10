@@ -1638,14 +1638,23 @@ def _summarize_output(outdir):
     rows = []
     for name, v in (data.get("queries") or {}).items():
         st = v.get("status") or {}
-        status = st.get("screen_status", "Unknown")
+        assembly = v.get("assembly") or {}
+        status = (
+            v.get("combined_status", st.get("screen_status", "Unknown"))
+            if assembly.get("enabled")
+            else st.get("screen_status", "Unknown")
+        )
+        rationale = st.get("rationale", "") or ""
+        if assembly.get("enabled"):
+            coverage = assembly.get("coverage_status", "unknown")
+            rationale = f"{rationale} Assembly coverage: {coverage}."
         rows.append(
             {
                 "name": name,
                 "length": v.get("length"),
                 "status": status,
                 "score": _status_score(status),
-                "rationale": st.get("rationale", "") or "",
+                "rationale": rationale,
             }
         )
     if not rows:

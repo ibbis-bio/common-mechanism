@@ -46,6 +46,8 @@ def expected_defaults():
         "skip_taxonomy_search": False,
         "resume": False,
         "skip_nt_search": False,
+        "assemble_oligos": False,
+        "assembly_min_overlap": 15,
         "verbose": False,
         "auto_update_databases": False,
     }
@@ -95,6 +97,8 @@ def expected_updated_from_custom_yaml():
         "skip_taxonomy_search": True,
         "resume": False,
         "skip_nt_search": False,
+        "assemble_oligos": False,
+        "assembly_min_overlap": 15,
         "verbose": False,
         "auto_update_databases": False,
     }

@@ -47,8 +47,10 @@ Output file handling:
 """
 
 import argparse
+import copy
 import datetime
 import logging
+import os
 import sys
 import time
 import traceback
@@ -61,6 +63,7 @@ from commec.config.constants import MAXIMUM_QUERY_LENGTH, MINIMUM_QUERY_LENGTH
 from commec.config.json_io import encode_screen_data_to_json
 from commec.config.query import Query
 from commec.config.result import (
+    AssemblyQueryResult,
     ControlListResult,
     QueryResult,
     ScreenResult,
@@ -78,6 +81,7 @@ from commec.tools.search_handler import DatabaseValidationError
 from commec.utils.file_utils import directory_arg, file_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
 from commec.utils.logger import (
+    restore_logging_handlers,
     set_log_level,
     setup_console_logging,
     setup_file_logging,
@@ -233,6 +237,19 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="Re-use any pre-existing output for this Screen run (cannot be used with --force)",
     )
     screen_logic_group.add_argument(
+        "--assemble-oligos",
+        dest="assemble_oligos",
+        action="store_true",
+        help="Also screen exact-overlap OliGraph contigs and attribute evidence to original oligos",
+    )
+    screen_logic_group.add_argument(
+        "--assembly-min-overlap",
+        dest="assembly_min_overlap",
+        type=int,
+        default=15,
+        help="Minimum exact overlap for optional oligo assembly (default: 15 bases)",
+    )
+    screen_logic_group.add_argument(
         "-r",
         "--regions",
         dest="regions",
@@ -263,16 +280,26 @@ class Screen:
         self.screen_data: ScreenResult = ScreenResult()
         self.start_time = time.time()
         self.success = False
+        self.assembly_records = []
+        self.assembly_manifest = None
+        self.assembly_contigs = []
+        self.assembly_screen = None
+        self.assembly_args = None
+        self._internal_assembly_run = False
+        self._exported = False
+        self._direct_status_finalized = False
 
-    def __del__(self):
-        """
-        Before we are finished, we attempt to write a JSON and HTML output.
-        Doing this in the destructor means that sometimes this will complete
-        successfully, despite exceptions, and premature exits.
-        """
-        if not self.params:
-            # Setup failed, so no need to output anything
+    def export_results(self):
+        """Write final results after direct and optional assembly screening."""
+        if (
+            not self.params
+            or not hasattr(self, "start_time")
+            or not getattr(self.params, "output_json", None)
+            or getattr(self, "_exported", False)
+        ):
+            # Setup failed, or results have already been exported.
             return
+        self._exported = True
 
         time_taken = time.time() - self.start_time
         hours, rem = divmod(time_taken, 3600)
@@ -280,7 +307,9 @@ class Screen:
         self.screen_data.commec_info.time_taken = (
             f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
         )
-        self.screen_data.update(self.queries)
+        self.finalize_assembly_results()
+        if not self.params.config["assemble_oligos"]:
+            self.screen_data.update(self.queries)
         encode_screen_data_to_json(self.screen_data, self.params.output_json)
 
         logger.debug(
@@ -324,7 +353,11 @@ class Screen:
         # Update console log-level
         set_log_level(log_level, update_only_handler_type=logging.StreamHandler)
 
-        # Needed to initialize parameters before logging to files
+        # Keep a nested assembly log separate from the direct screening log.
+        if not self._internal_assembly_run and self.params.config["assemble_oligos"]:
+            self._parent_log_handlers = list(logging.getLogger("commec").handlers)
+            for handler in self._parent_log_handlers:
+                logging.getLogger("commec").removeHandler(handler)
         setup_file_logging(self.params.output_screen_file, log_level)
 
         # Check for database updates.
@@ -445,6 +478,19 @@ class Screen:
                 qr = QueryResult(query.original_name, query.description, query.length)
                 self.screen_data.queries[query.name] = qr
                 query.result = qr
+                if self.params.config["assemble_oligos"]:
+                    qr.assembly = AssemblyQueryResult(
+                        enabled=True, coverage_status="pending"
+                    )
+                    self.assembly_records.append(
+                        {
+                            "id": query.name,
+                            "header": query.description,
+                            "original_id": query.original_name,
+                            "record_index": len(self.assembly_records),
+                            "sequence": query.sequence,
+                        }
+                    )
 
                 # Determine out-of-range queries as skipped:
                 if query.length < MINIMUM_QUERY_LENGTH:
@@ -552,12 +598,160 @@ class Screen:
             "%Y-%m-%d %H:%M:%S"
         )
 
+    # WORKFLOW 5 and 6: Attribute contig hits and combine results.
+    def finalize_assembly_results(self):
+        """Attach assembly evidence after both independent screening passes."""
+        if not self.params.config["assemble_oligos"]:
+            return
+        if self.assembly_manifest is None:
+            from commec.oligo_assembly import combine
+
+            if not getattr(self, "_direct_status_finalized", False):
+                if self.queries:
+                    self.screen_data.update(self.queries)
+                self._direct_status_finalized = True
+            records = self.assembly_records or [
+                {
+                    "id": name,
+                    "header": query.description,
+                    "original_id": query.query or name,
+                    "record_index": index,
+                    "length": query.length,
+                }
+                for index, (name, query) in enumerate(self.screen_data.queries.items())
+            ]
+            self.assembly_manifest = {
+                "records": records,
+                "contigs": [],
+                "exclusions": [],
+                "error": "Assembly did not start because screening exited early.",
+            }
+            self.screen_data, _ = combine(
+                self.screen_data, None, self.assembly_manifest
+            )
+            return
+        if not getattr(self, "_direct_status_finalized", False):
+            if self.queries:
+                self.screen_data.update(self.queries)
+            self._direct_status_finalized = True
+        from commec.oligo_assembly import combine, write_json
+
+        assembly_results = (
+            self.assembly_screen.screen_data
+            if self.assembly_screen is not None
+            else None
+        )
+        if (
+            assembly_results is None
+            and self.assembly_contigs
+            and not self.assembly_manifest.get("error")
+        ):
+            raise RuntimeError(
+                "Assembly screening did not return a result for every contig."
+            )
+        try:
+            self.screen_data, _ = combine(
+                self.screen_data, assembly_results, self.assembly_manifest
+            )
+        except Exception as e:
+            logger.error("Assembly result attribution failed: %s", e)
+            self.assembly_manifest["error"] = str(e)
+            self.screen_data, _ = combine(
+                self.screen_data, None, self.assembly_manifest
+            )
+        if self.assembly_manifest.get("path"):
+            write_json(self.assembly_manifest["path"], self.assembly_manifest)
+
+    # WORKFLOW 2 to 4: Assemble and screen every returned contig.
+    def prepare_oligo_assembly(self):
+        """Assemble without changing the direct queries or their screening."""
+        if not self.params.config["assemble_oligos"]:
+            return
+        from commec.oligo_assembly import assemble, write_fasta, write_json
+
+        directory = self.params.directory_prefix + ".assembly_work"
+        os.makedirs(directory, exist_ok=True)
+        manifest_path = os.path.join(directory, "assembly_manifest.json")
+        self.assembly_manifest = {
+            "records": self.assembly_records,
+            "contigs": [],
+            "exclusions": [],
+            "error": "",
+            "path": manifest_path,
+        }
+        from commec.config.result import AssemblyRunInfo
+
+        self.screen_data.assembly_info = AssemblyRunInfo(
+            enabled=True, status="assembly_pending"
+        )
+        try:
+            self.assembly_manifest, self.assembly_contigs = assemble(
+                self.assembly_records,
+                min_overlap=self.params.config["assembly_min_overlap"],
+            )
+            self.assembly_manifest["path"] = manifest_path
+            self.assembly_manifest["contig_screen_time"] = ""
+            self.screen_data.assembly_info.status = "screening_pending"
+            write_fasta(
+                os.path.join(directory, "assemblies.fasta"), self.assembly_contigs
+            )
+        except Exception as e:
+            logger.error("Oligo assembly failed. Direct screening continues: %s", e)
+            self.assembly_manifest["error"] = str(e)
+            self.screen_data.assembly_info.status = "error"
+            if self.screen_data.assembly_info is not None:
+                self.screen_data.assembly_info.error = str(e)
+        write_json(manifest_path, self.assembly_manifest)
+
+    def screen_oligo_assemblies(self, args):
+        """Run an independent screening pass for every returned contig."""
+        if not self.assembly_contigs or self.assembly_manifest.get("error"):
+            return
+        assembly_args = copy.copy(args)
+        directory = self.params.directory_prefix + ".assembly_work"
+        assembly_args.fasta_file = os.path.join(directory, "assemblies.fasta")
+        assembly_args.output_prefix = directory + os.sep
+        assembly_args.force = True
+        assembly_args.resume = False
+        assembly_args.assemble_oligos = False
+        assembly_args.user_specified_args = set(
+            getattr(assembly_args, "user_specified_args", set())
+        )
+        assembly_args.user_specified_args.update(
+            {"force", "resume", "assemble_oligos", "fasta_file", "output_prefix"}
+        )
+        self.assembly_screen = Screen()
+        self.assembly_screen._internal_assembly_run = True
+        try:
+            self.assembly_screen.run(assembly_args)
+        except SystemExit as error:
+            if error.code:
+                raise RuntimeError(
+                    f"Contig screening exited with code {error.code}."
+                ) from error
+        finally:
+            self._restore_parent_log_handlers()
+        self.assembly_manifest["contig_screen_time"] = (
+            self.assembly_screen.screen_data.commec_info.time_taken
+        )
+        if self.screen_data.assembly_info is not None:
+            self.screen_data.assembly_info.contig_screen_time = (
+                self.assembly_screen.screen_data.commec_info.time_taken
+            )
+
+    def _restore_parent_log_handlers(self):
+        if hasattr(self, "_parent_log_handlers"):
+            restore_logging_handlers(self._parent_log_handlers)
+            del self._parent_log_handlers
+
     def run(self, args: argparse.Namespace):
         """
         Wrapper so that args be parsed in main() or commec.py interface.
         """
+        # WORKFLOW 1 and 2A: Read the pool and screen original oligos.
         # Perform setup steps.
         self.setup(args)
+        self.prepare_oligo_assembly()
         self.params.output_yaml(self.params.input_prefix + "_config.yaml")
 
         # Biorisk screen
@@ -640,7 +834,17 @@ class Screen:
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
 
-        self.screen_data.update(self.queries)
+        if self.params.config["assemble_oligos"]:
+            try:
+                self.screen_oligo_assemblies(args)
+            except Exception as e:
+                logger.error(
+                    "Contig screening failed. Direct results remain available: %s", e
+                )
+                self.assembly_manifest["error"] = str(e)
+                self.assembly_screen = None
+
+        self.finalize_assembly_results()
 
         logger.info(
             "\n >> SUMMARY : \n%s",
@@ -653,6 +857,16 @@ class Screen:
             extra={"no_prefix": True},
         )
         self.success = True
+        self.export_results()
+
+    def __del__(self):
+        """Retain the previous best-effort output on premature exits."""
+        if (
+            self.__dict__.get("params")
+            and not self.__dict__.get("_internal_assembly_run", False)
+            and not self.__dict__.get("success", False)
+        ):
+            self.export_results()
 
     def screen_biorisks(self):
         """
