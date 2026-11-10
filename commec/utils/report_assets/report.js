@@ -75,7 +75,7 @@
   Report.prototype.prio = function (d) { return ["flagbio", "warning", "flagbest", "exempt", "cleared", "common"].indexOf(d); };
   Report.prototype.dotFor = function (d) { return { flagbio: "#C23A14", warning: "#E0A020", flagbest: "#F05023", exempt: "#419BB9", cleared: "#7FA8B8", common: "#B9C0CC" }[d] || "#B9C0CC"; };
   Report.prototype.dispoLabel = function (d) { return { flagbio: "Biorisk", warning: "Virulence factor", flagbest: "Flagged", exempt: "Regulated elsewhere", cleared: "Cleared", common: "Common" }[d] || "Recorded"; };
-  Report.prototype.dispoBadgeBg = function (d) {
+  Report.prototype.dispoBadgeBg = function (d, h) {
     if (d === "flagbio" || d === "flagbest") return "#F05023";
     if (d === "warning") return "#D98A00";
     if (d === "exempt") return "#419BB9";
@@ -288,7 +288,7 @@
       bioH: laneH("bio", 30), warnH: laneH("warn", 30), bestH: laneH("best", 42), annH: laneH("ann", 40),
       focus: focus, bandLeft: selG ? selG.left : 0, bandW: selG ? selG.w : 0,
       railSections: railSections, railLabel: "All hits · " + hits.length, hasHits: true, noHits: false,
-      selBadge: badge, selBadgeBg: this.dispoBadgeBg(d),
+      selBadge: badge, selBadgeBg: this.dispoBadgeBg(d, h),
       isBiorisk: isBiorisk, descMode: descMode, showBest: !descMode,
       selDesc: h.desc || h.description || "(no description provided)", selDomain: h.domain || "—",
       selSearch: this.stepShort(h.step), selName: this.shortName(h.name) || h.name,

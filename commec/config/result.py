@@ -937,7 +937,11 @@ class ScreenResult:
             data.append(
                 {
                     "query": query.query[:25],
-                    "overall": query.status.screen_status,
+                    "overall": (
+                        query.combined_status
+                        if query.assembly is not None and query.assembly.enabled
+                        else query.status.screen_status
+                    ),
                     "biorisk": query.status.biorisk,
                     "taxonomy_aa": query.status.protein_taxonomy,
                     "taxonomy_nt": query.status.nucleotide_taxonomy,
@@ -959,7 +963,11 @@ class ScreenResult:
             data.append(
                 {
                     "query": query.query[:25],
-                    "overall": query.status.screen_status,
+                    "overall": (
+                        query.combined_status
+                        if query.assembly is not None and query.assembly.enabled
+                        else query.status.screen_status
+                    ),
                     "rationale": query.status.rationale,
                 }
             )

@@ -476,6 +476,51 @@ def test_nested_taxonomy_coordinates_are_projected_and_reverse_strand_is_correct
     assert taxon["query_end"] == 70
 
 
+def test_empty_input_summary_has_zero_percentage():
+    _, summary = combine(
+        {"queries": {}}, None, {"records": [], "contigs": [], "exclusions": []}
+    )
+    assert summary["original_oligos"] == 0
+    assert summary["flagged_oligo_percentage"] == 0.0
+
+
+def test_nested_taxonomy_is_clipped_to_the_hit_intersection():
+    direct, assemblies, manifest = fixture_data()
+    hit = assemblies["queries"]["a0"]["hits"][0]
+    hit["annotations"] = {
+        "controlled_taxonomy": {
+            "controlled_taxa": [{"query_start": 111, "query_end": 150}],
+            "non-controlled_taxa": [],
+        }
+    }
+    manifest["contigs"][0]["placements"][1] = {
+        "id": "q1",
+        "strand": "-",
+        "start": 80,
+        "end": 180,
+    }
+    effective, _ = combine(direct, assemblies, manifest)
+    evidence = effective["queries"]["q1"]["assembly"]["evidence"][0]
+    assert evidence["hit"]["region"]["query_start"] == 31
+    assert evidence["hit"]["region"]["query_end"] == 70
+    taxon = evidence["hit"]["annotations"]["controlled_taxonomy"]["controlled_taxa"][0]
+    assert taxon["query_start"] == 31
+    assert taxon["query_end"] == 70
+
+
+def test_console_summary_uses_combined_status():
+    from commec.config.json_io import encode_dict_to_screen_data
+
+    direct, assemblies, manifest = fixture_data()
+    result, _ = combine(
+        encode_dict_to_screen_data(direct),
+        encode_dict_to_screen_data(assemblies),
+        manifest,
+    )
+    assert result.get_flag_data()["overall"].tolist() == ["Pass", "Flag", "Pass"]
+    assert result.get_rationale_data()["overall"].tolist() == ["Pass", "Flag", "Pass"]
+
+
 def test_combined_status_consumers_use_assembly_evidence(tmp_path):
     from commec.flag import read_flags_from_json
     from commec.gui.server import _summarize_output

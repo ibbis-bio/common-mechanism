@@ -226,7 +226,11 @@ def _assembly_evidence(contig, placement, hit, start, end):
                 isinstance(x, int) and not isinstance(x, bool) for x in (left, right)
             ):
                 continue
-            region = project_region(placement, min(left, right) - 1, max(left, right))
+            region = project_region(
+                placement,
+                max(start, min(left, right) - 1),
+                min(end, max(left, right)),
+            )
             if region is None:
                 continue
             taxon["query_start"], taxon["query_end"] = region[0] + 1, region[1]
@@ -476,7 +480,7 @@ def combine(direct, assemblies, manifest):
         "attribution_rule": "Nonempty intersection with an uncleared final hit in an actual contig path",
     }
     effective.assembly_summary["flagged_oligo_percentage"] = (
-        100 * effective.assembly_summary["flagged_oligos"] / len(rows)
+        100 * effective.assembly_summary["flagged_oligos"] / len(rows) if rows else 0.0
     )
     return (asdict(effective) if legacy else effective), effective.assembly_summary
 
@@ -558,7 +562,14 @@ def run(input_path, output_dir, databases, threads=8):
             "method": "all",
             "records": records,
             "contigs": [],
-            "exclusions": [],
+            "exclusions": [
+                {
+                    "id": record["id"],
+                    "reason": "Assembly was unavailable for this record.",
+                }
+                for record in records
+                if not record["sequence"] or set(record["sequence"]) - set("ACGT")
+            ],
             "error": str(error),
         }
         contigs = []
