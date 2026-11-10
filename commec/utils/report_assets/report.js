@@ -362,7 +362,7 @@
         if (s.assembly && s.assembly.enabled) {
           var sourceLabel = s.directStatus === "Pass" && mm.hasFlag ? "Assembly-derived" : "Direct and assembly evidence";
           var coverageLabel = { screened: "Assembly screened", incomplete: "Assembly incomplete", no_contig: "No contig", excluded: "Excluded from assembly", failed: "Assembly failed", pending: "Assembly pending" }[s.assembly.coverage] || s.assembly.coverage;
-          finding = sourceLabel + " · " + coverageLabel;
+          finding = sourceLabel + " · " + coverageLabel + (s.assembly.reason ? " · " + s.assembly.reason : "");
         }
         else if (t.status === "Flag") { var fg = mm.groups.filter(function (g) { return g.dispo === "flagbest" || g.dispo === "flagbio"; }).map(function (g) { return g.dispo === "flagbio" ? "Biorisk flag" : g.name; }); var uniq = []; fg.forEach(function (n) { if (uniq.indexOf(n) < 0) uniq.push(n); }); finding = uniq.slice(0, 3).join(", ") + (uniq.length > 3 ? " +" + (uniq.length - 3) : ""); }
         else if (t.status === "Warning") finding = mm.hasWarn ? "Virulence factor · review" : "No matches in scope · risk unknown";
@@ -375,7 +375,13 @@
           if (ex) bits.push(ex + " regulated elsewhere");
           finding = bits.length ? bits.join(" · ") : (s.rationale || "Nothing regulated in scope");
         }
-      } else { finding = s.rationale || "Not screened"; }
+      } else {
+        finding = s.rationale || "Not screened";
+        if (s.assembly && s.assembly.enabled && s.assembly.coverage !== "screened") {
+          var assemblyReason = { incomplete: "Assembly screening incomplete", no_contig: "No contig contains this oligo", excluded: "Excluded from assembly", failed: "Assembly failed", pending: "Assembly pending" }[s.assembly.coverage] || s.assembly.reason || "Assembly coverage unavailable";
+          finding = assemblyReason + (s.assembly.reason ? " · " + s.assembly.reason : "");
+        }
+      }
 
       var detail = open ? self.buildDetail(s, self.model(s)) : null;
 
