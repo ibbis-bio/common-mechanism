@@ -605,6 +605,10 @@ class Screen:
         if self.assembly_manifest is None:
             from commec.oligo_assembly import combine
 
+            if not getattr(self, "_direct_status_finalized", False):
+                if self.queries:
+                    self.screen_data.update(self.queries)
+                self._direct_status_finalized = True
             records = self.assembly_records or [
                 {
                     "id": name,
