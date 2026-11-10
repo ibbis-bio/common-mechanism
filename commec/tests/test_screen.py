@@ -5,6 +5,7 @@ Functional tests for commec screen.
 """
 
 import json
+import math
 import os
 from dataclasses import asdict
 
@@ -30,6 +31,27 @@ def sanitize_for_test(screen_result: ScreenResult):
 
     # Pytest increments the filename version, so ignore the input file.
     screen_result.query_info.file = "/test_placeholder/"
+
+
+def assert_e_values_close(expected, actual):
+    """Compare E-values across dependency-specific decimal parsing."""
+    if isinstance(expected, float) and isinstance(actual, float):
+        assert math.isclose(expected, actual, rel_tol=1e-12, abs_tol=0.0), (
+            expected,
+            actual,
+        )
+        return
+    if isinstance(expected, dict):
+        assert expected.keys() == actual.keys()
+        for key in expected:
+            assert_e_values_close(expected[key], actual[key])
+        return
+    if isinstance(expected, list):
+        assert len(expected) == len(actual)
+        for left, right in zip(expected, actual):
+            assert_e_values_close(left, right)
+        return
+    assert expected == actual
 
 
 def test_functional_screen(tmp_path, request):
@@ -350,11 +372,8 @@ def test_functional_screen(tmp_path, request):
     # Generates .gitignored functional.html for quick human comparison.
     generate_html_from_screen_data(actual_screen_result, html_output_path)
 
-    # Convert both original and retrieved data to dictionaries and compare
-    assert asdict(expected_screen_result) == asdict(actual_screen_result), (
-        "Functional test does not match predicted output, fix code,"
-        " or if new output is expected, run with --gen-examples\n"
-    )
+    # Decimal parsing can vary by one floating-point unit between dependency versions.
+    assert_e_values_close(asdict(expected_screen_result), asdict(actual_screen_result))
 
 
 def test_screen_factory(tmp_path):
