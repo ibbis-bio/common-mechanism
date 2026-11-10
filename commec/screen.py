@@ -294,6 +294,7 @@ class Screen:
         if (
             not self.params
             or not hasattr(self, "start_time")
+            or not getattr(self.params, "output_json", None)
             or getattr(self, "_exported", False)
         ):
             # Setup failed, or results have already been exported.
@@ -602,9 +603,31 @@ class Screen:
         if not self.params.config["assemble_oligos"]:
             return
         if self.assembly_manifest is None:
-            raise RuntimeError("Assembly was enabled without an assembly manifest.")
+            from commec.oligo_assembly import combine
+
+            records = self.assembly_records or [
+                {
+                    "id": name,
+                    "header": query.description,
+                    "original_id": query.query or name,
+                    "record_index": index,
+                    "length": query.length,
+                }
+                for index, (name, query) in enumerate(self.screen_data.queries.items())
+            ]
+            self.assembly_manifest = {
+                "records": records,
+                "contigs": [],
+                "exclusions": [],
+                "error": "Assembly did not start because screening exited early.",
+            }
+            self.screen_data, _ = combine(
+                self.screen_data, None, self.assembly_manifest
+            )
+            return
         if not getattr(self, "_direct_status_finalized", False):
-            self.screen_data.update(self.queries)
+            if self.queries:
+                self.screen_data.update(self.queries)
             self._direct_status_finalized = True
         from commec.oligo_assembly import combine, write_json
 
@@ -631,7 +654,8 @@ class Screen:
             self.screen_data, _ = combine(
                 self.screen_data, None, self.assembly_manifest
             )
-        write_json(self.assembly_manifest["path"], self.assembly_manifest)
+        if self.assembly_manifest.get("path"):
+            write_json(self.assembly_manifest["path"], self.assembly_manifest)
 
     def prepare_oligo_assembly(self):
         """Assemble without changing the direct queries or their screening."""

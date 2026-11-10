@@ -373,6 +373,21 @@ def test_nested_system_exit_restores_parent_handlers_and_blocks_export():
     logger.removeHandler(parent)
 
 
+def test_parent_early_exit_without_manifest_preserves_direct_results():
+    from types import SimpleNamespace
+
+    from commec.config.result import QueryResult, ScreenResult
+    from commec.screen import Screen
+
+    screen = Screen()
+    screen.params = SimpleNamespace(config={"assemble_oligos": True})
+    screen.queries = {}
+    screen.screen_data = ScreenResult(queries={"q": QueryResult("q")})
+    screen.finalize_assembly_results()
+    assert screen.screen_data.assembly_info.status == "error"
+    assert screen.screen_data.queries["q"].assembly.coverage_status == "failed"
+
+
 def test_missing_contig_results_are_failed_not_no_contig():
     direct, _, manifest = fixture_data()
     _, summary = combine(direct, None, manifest)
