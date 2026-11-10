@@ -20,6 +20,7 @@ import argparse
 import glob
 import os
 from json import JSONDecodeError
+from pathlib import Path
 
 import pandas as pd
 
@@ -259,9 +260,13 @@ def run(args: argparse.Namespace):
         ) from e
 
     search_pattern = "**/*.json" if search_recursive else "*.json"
-    screen_paths = glob.glob(
-        os.path.join(search_dir, search_pattern), recursive=search_recursive
-    )
+    screen_paths = [
+        path
+        for path in glob.glob(
+            os.path.join(search_dir, search_pattern), recursive=search_recursive
+        )
+        if ".assembly_work" not in Path(path).parts
+    ]
 
     if not screen_paths:
         raise FileNotFoundError(f"No .json files were found in directory: {search_dir}")

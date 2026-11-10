@@ -94,6 +94,31 @@ def assemble(records, min_overlap=15):
             exclusions.append({"id": record["id"], "reason": reason})
         else:
             valid[record["id"]] = sequence
+    if not valid:
+        return {
+            "assembler": "oligraph",
+            "version": oligraph.__version__,
+            "min_overlap": min_overlap,
+            "matching": "exact",
+            "method": "all",
+            "coordinate_system": "zero-based half-open source placements",
+            "contigs": [],
+            "exclusions": exclusions,
+            "stats": {
+                "n_sequences": 0,
+                "n_skipped": len(exclusions),
+                "len_min": 0,
+                "len_max": 0,
+                "n_edges": 0,
+                "n_isolated": 0,
+                "n_contigs": 0,
+            },
+            "records": [
+                {k: v for k, v in record.items() if k != "sequence"}
+                | {"length": len(record["sequence"])}
+                for record in records
+            ],
+        }, []
     graph = oligraph.build(
         valid, min_overlap=min_overlap, method="all", on_invalid="raise"
     )
@@ -233,7 +258,7 @@ def _initial_coverage(manifest, assemblies):
         reason = excluded.get(
             identifier, "No returned contig contains this original oligo."
         )
-        if failure:
+        if failure and identifier not in excluded:
             status, reason = "failed", failure
         coverage[identifier] = AssemblyQueryResult(
             enabled=True, coverage_status=status, coverage_reason=reason
@@ -246,25 +271,26 @@ def _initial_coverage(manifest, assemblies):
         for placement in contig["placements"]:
             query = coverage[placement["id"]]
             query.contig_ids.append(contig["id"])
-            query.coverage_status = "screened"
-            query.coverage_reason = ""
             if status in COVERAGE_INCOMPLETE:
                 query.coverage_status = "incomplete"
                 query.coverage_reason = f"Contig {contig['id']} screening: {status}."
+            elif query.coverage_status != "incomplete":
+                query.coverage_status = "screened"
+                query.coverage_reason = ""
     return coverage
 
 
 def _combined_status(direct_status, assembly):
-    """Keep operational failure visible while combining biological evidence."""
+    """Keep known biological evidence separate from incomplete screening."""
     inherited = {item.status for item in assembly.evidence}
-    if direct_status == ScreenStatus.ERROR:
-        return direct_status
-    if assembly.coverage_status == "incomplete":
-        return ScreenStatus.STOP
     if direct_status == ScreenStatus.FLAG or ScreenStatus.FLAG in inherited:
         return ScreenStatus.FLAG
     if direct_status == ScreenStatus.WARN or ScreenStatus.WARN in inherited:
         return ScreenStatus.WARN
+    if direct_status == ScreenStatus.ERROR:
+        return direct_status
+    if assembly.coverage_status == "incomplete":
+        return ScreenStatus.STOP
     return direct_status
 
 

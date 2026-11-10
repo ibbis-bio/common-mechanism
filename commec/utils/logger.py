@@ -158,6 +158,17 @@ def setup_file_logging(filename, log_level=logging.INFO, log_mode="w"):
     commec_logger.addHandler(file_handler)
 
 
+def restore_logging_handlers(handlers):
+    """Restore a parent screen's handlers after an internal nested run."""
+    commec_logger = logging.getLogger("commec")
+    for handler in list(commec_logger.handlers):
+        if isinstance(handler, logging.FileHandler):
+            handler.close()
+        commec_logger.removeHandler(handler)
+    for handler in handlers:
+        commec_logger.addHandler(handler)
+
+
 def add_logging_to_excepthook():
     """
     Ensure unhandled exceptions are logged to the commec package logger;

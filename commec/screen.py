@@ -81,6 +81,7 @@ from commec.tools.search_handler import DatabaseValidationError
 from commec.utils.file_utils import directory_arg, file_arg
 from commec.utils.json_html_output import generate_html_from_screen_data
 from commec.utils.logger import (
+    restore_logging_handlers,
     set_log_level,
     setup_console_logging,
     setup_file_logging,
@@ -289,7 +290,11 @@ class Screen:
 
     def export_results(self):
         """Write final results after direct and optional assembly screening."""
-        if not self.params or self._exported:
+        if (
+            not self.params
+            or not hasattr(self, "start_time")
+            or getattr(self, "_exported", False)
+        ):
             # Setup failed, or results have already been exported.
             return
         self._exported = True
@@ -346,7 +351,11 @@ class Screen:
         # Update console log-level
         set_log_level(log_level, update_only_handler_type=logging.StreamHandler)
 
-        # Needed to initialize parameters before logging to files
+        # Keep a nested assembly log separate from the direct screening log.
+        if self.assembly_args is None and self.params.config["assemble_oligos"]:
+            self._parent_log_handlers = list(logging.getLogger("commec").handlers)
+            for handler in self._parent_log_handlers:
+                logging.getLogger("commec").removeHandler(handler)
         setup_file_logging(self.params.output_screen_file, log_level)
 
         # Check for database updates.
@@ -629,7 +638,7 @@ class Screen:
             return
         from commec.oligo_assembly import assemble, write_fasta, write_json
 
-        directory = self.params.directory_prefix + ".assembly"
+        directory = self.params.directory_prefix + ".assembly_work"
         os.makedirs(directory, exist_ok=True)
         manifest_path = os.path.join(directory, "assembly_manifest.json")
         self.assembly_manifest = {
@@ -668,15 +677,31 @@ class Screen:
         if not self.assembly_contigs or self.assembly_manifest.get("error"):
             return
         assembly_args = copy.copy(args)
-        directory = self.params.directory_prefix + ".assembly"
+        directory = self.params.directory_prefix + ".assembly_work"
         assembly_args.fasta_file = os.path.join(directory, "assemblies.fasta")
         assembly_args.output_prefix = directory + os.sep
         assembly_args.force = True
         assembly_args.resume = False
         assembly_args.assemble_oligos = False
+        assembly_args.user_specified_args = set(
+            getattr(assembly_args, "user_specified_args", set())
+        )
+        assembly_args.user_specified_args.update(
+            {"force", "resume", "assemble_oligos", "fasta_file", "output_prefix"}
+        )
         self.assembly_args = None
         self.assembly_screen = Screen()
-        self.assembly_screen.run(assembly_args)
+        try:
+            self.assembly_screen.run(assembly_args)
+        except SystemExit as error:
+            if error.code:
+                raise RuntimeError(
+                    f"Contig screening exited with code {error.code}."
+                ) from error
+        except Exception:
+            self._restore_parent_log_handlers()
+            raise
+        self._restore_parent_log_handlers()
         self.assembly_manifest["contig_screen_time"] = (
             self.assembly_screen.screen_data.commec_info.time_taken
         )
@@ -684,6 +709,11 @@ class Screen:
             self.screen_data.assembly_info.contig_screen_time = (
                 self.assembly_screen.screen_data.commec_info.time_taken
             )
+
+    def _restore_parent_log_handlers(self):
+        if hasattr(self, "_parent_log_handlers"):
+            restore_logging_handlers(self._parent_log_handlers)
+            del self._parent_log_handlers
 
     def run(self, args: argparse.Namespace):
         """
@@ -801,7 +831,11 @@ class Screen:
 
     def __del__(self):
         """Retain the previous best-effort output on premature exits."""
-        if self.params and not self.success and not self.assembly_args:
+        if (
+            self.params
+            and not getattr(self, "success", False)
+            and not self.assembly_args
+        ):
             self.export_results()
 
     def screen_biorisks(self):

@@ -177,7 +177,7 @@ def test_contig_error_keeps_known_flag_and_marks_other_sources_incomplete():
     _, summary = combine(direct, assemblies, manifest)
     assert [r["final_status"] for r in summary["oligos"]] == [
         "Incomplete",
-        "Incomplete",
+        "Flag",
         "Incomplete",
     ]
     assert all(row["assembly_coverage"] == "incomplete" for row in summary["oligos"])
@@ -197,6 +197,35 @@ def test_direct_error_keeps_known_flag_evidence():
     assert summary["oligos"][0]["final_status"] == "Error"
     assert summary["oligos"][0]["incomplete_screening"]
     assert summary["newly_flagged_oligos"] == 0
+
+
+def test_known_flag_is_not_downgraded_by_incomplete_assembly():
+    direct, assemblies, manifest = fixture_data(contig_status="Error")
+    direct["queries"]["q0"]["status"]["screen_status"] = "Flag"
+    _, summary = combine(direct, assemblies, manifest)
+    assert summary["oligos"][0]["final_status"] == "Flag"
+    assert summary["oligos"][1]["final_status"] == "Flag"
+    assert all(row["assembly_coverage"] == "incomplete" for row in summary["oligos"])
+
+
+def test_screened_contig_does_not_erase_another_incomplete_contig():
+    direct, assemblies, manifest = fixture_data()
+    second = copy.deepcopy(manifest["contigs"][0])
+    second["id"] = "a1"
+    manifest["contigs"].append(second)
+    assemblies["queries"]["a0"]["status"]["screen_status"] = "Error"
+    assemblies["queries"]["a1"] = copy.deepcopy(assemblies["queries"]["a0"])
+    assemblies["queries"]["a1"]["status"]["screen_status"] = "Pass"
+    _, summary = combine(direct, assemblies, manifest)
+    assert all(row["assembly_coverage"] == "incomplete" for row in summary["oligos"])
+
+
+def test_all_excluded_records_keep_reasons_without_assembly_failure():
+    records = [{"id": "q0", "sequence": "N" * 30}]
+    manifest, contigs = assemble(records)
+    assert contigs == []
+    assert manifest["exclusions"][0]["id"] == "q0"
+    assert "error" not in manifest
 
 
 def test_html_shows_duplicate_record_numbers_and_assembly_skip(tmp_path):
@@ -229,9 +258,13 @@ def test_length_skipped_contig_preserves_direct_pass_and_marks_coverage_incomple
 ):
     direct, assemblies, manifest = fixture_data(contig_status=contig_status)
     _, summary = combine(direct, assemblies, manifest)
-    assert [row["final_status"] for row in summary["oligos"]] == ["Incomplete"] * 3
+    assert [row["final_status"] for row in summary["oligos"]] == [
+        "Incomplete",
+        "Flag",
+        "Incomplete",
+    ]
     assert all(row["assembly_coverage"] == "incomplete" for row in summary["oligos"])
-    assert summary["flagged_oligos"] == 0
+    assert summary["flagged_oligos"] == 1
 
 
 def test_deliberate_taxonomy_skip_is_complete_assembly_coverage():
@@ -267,6 +300,71 @@ def test_assembly_failure_does_not_replace_direct_result():
     assert [row["final_status"] for row in summary["oligos"]] == ["Pass"] * 3
     assert all(row["assembly_coverage"] == "failed" for row in summary["oligos"])
     assert all(row["incomplete_screening"] for row in summary["oligos"])
+
+
+def test_nested_arguments_force_single_assembly_pass():
+    from types import SimpleNamespace
+    from unittest.mock import patch
+
+    from commec.screen import Screen
+
+    outer = Screen.__new__(Screen)
+    outer.assembly_contigs = [{"id": "a0"}]
+    outer.assembly_manifest = {"error": ""}
+    outer.params = SimpleNamespace(directory_prefix="/tmp/example")
+    outer.screen_data = SimpleNamespace(assembly_info=None)
+    outer.assembly_screen = None
+    args = SimpleNamespace(
+        fasta_file="input",
+        output_prefix="out",
+        force=False,
+        resume=True,
+        assemble_oligos=True,
+        user_specified_args={"resume"},
+    )
+    captured = {}
+    with patch.object(
+        Screen, "run", lambda self, nested: captured.update(vars(nested))
+    ):
+        outer.screen_oligo_assemblies(args)
+    assert captured["force"] is True
+    assert captured["resume"] is False
+    assert captured["assemble_oligos"] is False
+    assert {"force", "resume", "assemble_oligos"}.issubset(
+        captured["user_specified_args"]
+    )
+    assert outer.assembly_manifest["contig_screen_time"] == ""
+
+
+def test_recursive_flag_search_excludes_internal_assembly_results(tmp_path):
+    import json
+
+    from commec.flag import run
+
+    result = {
+        "commec_info": {"json_output_version": "0.6"},
+        "queries": {
+            "q": {"query": "q", "status": {"screen_status": "Pass"}, "hits": []}
+        },
+    }
+    (tmp_path / "plain.output.json").write_text(json.dumps(result))
+    internal = tmp_path / ".assembly_work"
+    internal.mkdir()
+    (internal / "contig.output.json").write_text(json.dumps(result))
+    output = tmp_path / "out"
+    args = type(
+        "Args",
+        (),
+        {
+            "directory": str(tmp_path),
+            "recursive": True,
+            "output": str(output),
+            "evalportal_format": False,
+        },
+    )()
+    run(args)
+    text = (output / "screen_pipeline_status.csv").read_text()
+    assert text.count("q,") == 1
 
 
 def test_direct_pass_with_new_assembly_flag_and_typed_result():
