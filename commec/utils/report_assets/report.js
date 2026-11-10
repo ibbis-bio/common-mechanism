@@ -80,6 +80,7 @@
     if (d === "warning") return "#D98A00";
     if (d === "exempt") return "#419BB9";
     if (d === "cleared") return "#7FA8B8";
+    if (h.assembly) return "#23285A";
     return "#8a8f9e";
   };
   Report.prototype.stepShort = function (step) { if (step.indexOf("Nucleotide") === 0) return "Nucleotide search"; if (step.indexOf("Protein") === 0) return "Protein search"; if (step.indexOf("Biorisk") === 0) return "Biorisk HMM"; return step; };
@@ -231,7 +232,7 @@
       var on = i === sel, h = x.h;
       var ital = h.category === "Viruses" || h.category === "Bacteria";
       return {
-        name: self.shortName(h.name) || h.name, coords: self.coord(h) + " · " + self.stepShort(h.step).replace(/ search$/i, ""), pct: h.pctId || "", dot: self.dotFor(x.d),
+        name: self.shortName(h.name) || h.name, coords: self.coord(h) + " · " + (h.assembly ? "Assembly " + h.assembly.contigId : self.stepShort(h.step).replace(/ search$/i, "")), pct: h.pctId || "", dot: self.dotFor(x.d),
         weight: on ? 700 : 400, nameStyle: ital ? "font-style:italic;" : "",
         rowStyle: "display:flex; align-items:flex-start; gap:9px; padding:9px 11px; border-radius:3px; cursor:pointer; border:1px solid " + (on ? "#C7CBD8" : "transparent") + "; background:" + (on ? "#fff" : "transparent") + ";",
         onSelect: function () { selectHit(i); }
@@ -294,7 +295,7 @@
       selNameStyle: (h.category === "Viruses" || h.category === "Bacteria") ? "font-style:italic;" : "",
       selCategory: h.category || "—", selTaxid: h.taxid || "—",
       selTarget: h.target || "—", selTargetUrl: h.targetUrl || "", selTargetDesc: h.targetDesc || "", selPct: h.pctId || "—",
-      selEval: h.eValue || "—", selCoords: this.coord(h),
+      selEval: h.eValue || "—", selCoords: this.coord(h) + (h.assembly ? " · contig " + h.assembly.contigRegion[0] + "–" + h.assembly.contigRegion[1] + " bp in " + h.assembly.contigId + " · strand " + h.assembly.strand : ""),
       controlLabel: controlLabel, tags: tags, drill: drill
     };
   };
@@ -358,7 +359,12 @@
         // biorisk hit is never masked and neither lane looks less important than the other.
         buildTrack(function (x) { return isBio(x) ? 0 : (x.d === "flagbest" ? 2 : 1); }, function (sev) { return sev === 2 ? "#F05023" : "rgba(65,155,185,.5)"; }, 4, 3);
         buildTrack(function (x) { return !isBio(x) ? 0 : (x.d === "flagbio" ? 2 : 1); }, function (sev) { return sev === 2 ? "#C23A14" : "#E0A020"; }, 8, 3);
-        if (t.status === "Flag") { var fg = mm.groups.filter(function (g) { return g.dispo === "flagbest" || g.dispo === "flagbio"; }).map(function (g) { return g.dispo === "flagbio" ? "Biorisk flag" : g.name; }); var uniq = []; fg.forEach(function (n) { if (uniq.indexOf(n) < 0) uniq.push(n); }); finding = uniq.slice(0, 3).join(", ") + (uniq.length > 3 ? " +" + (uniq.length - 3) : ""); }
+        if (s.assembly && s.assembly.enabled) {
+          var sourceLabel = s.directStatus === "Pass" && mm.hasFlag ? "Assembly-derived" : "Direct and assembly evidence";
+          var coverageLabel = { screened: "Assembly screened", incomplete: "Assembly incomplete", no_contig: "No contig", excluded: "Excluded from assembly", failed: "Assembly failed", pending: "Assembly pending" }[s.assembly.coverage] || s.assembly.coverage;
+          finding = sourceLabel + " · " + coverageLabel;
+        }
+        else if (t.status === "Flag") { var fg = mm.groups.filter(function (g) { return g.dispo === "flagbest" || g.dispo === "flagbio"; }).map(function (g) { return g.dispo === "flagbio" ? "Biorisk flag" : g.name; }); var uniq = []; fg.forEach(function (n) { if (uniq.indexOf(n) < 0) uniq.push(n); }); finding = uniq.slice(0, 3).join(", ") + (uniq.length > 3 ? " +" + (uniq.length - 3) : ""); }
         else if (t.status === "Warning") finding = mm.hasWarn ? "Virulence factor · review" : "No matches in scope · risk unknown";
         else if (!mm.hits.length) { finding = s.rationale || "No hits"; }
         else {
@@ -403,7 +409,7 @@
       mFile: m.file || "Screening report",
       mLine1: (m.nQueries != null ? m.nQueries : seqs.length) + " sequences · " + this.num(m.totalLen) + " bp · screened " + (m.date || "") + " · run " + (m.time || ""),
       mLine2: "commec " + (m.version || "") + " · output " + (m.output || "") + (m.tools ? " · " + m.tools : ""),
-      mRevs: m.revisions ? ("databases · " + m.revisions) : "",
+      mRevs: (m.revisions ? ("databases · " + m.revisions) : "") + (ds.assembly && ds.assembly.enabled ? " · OliGraph " + ds.assembly.version + " · exact " + ds.assembly.min_overlap + " bp overlaps · no pool verdict" : ""),
       tabs: tabs, rows: rows,
       hasRows: rows.length > 0, isEmpty: rows.length === 0,
       emptyText: "No sequences with " + tab.toLowerCase() + " status in this run.",

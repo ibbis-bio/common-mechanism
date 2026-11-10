@@ -34,5 +34,7 @@ force: False
 skip_taxonomy_search: False
 resume: False
 skip_nt_search: False
+assemble_oligos: False
+assembly_min_overlap: 15
 verbose: False
 auto_update_databases: False

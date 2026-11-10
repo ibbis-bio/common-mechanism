@@ -174,26 +174,39 @@ def read_flags_from_json(file_path) -> list[dict[str, str | set[str] | bool]]:
         )
 
         overall_flag = query.status.screen_status
+        if query.assembly is not None and query.assembly.enabled:
+            overall_flag = query.combined_status
+            assembly = query.assembly
+            for evidence in assembly.evidence:
+                step = evidence.hit.recommendation.from_step
+                if step not in {ScreenStep.TAXONOMY_AA, ScreenStep.TAXONOMY_NT}:
+                    continue
+                info = evidence.hit.annotations["controlled_taxonomy"]["statistics"]
+                bacteria_flag |= int(info["controlled_bacteria"]) > 0
+                virus_flag |= int(info["controlled_viruses"]) > 0
+                eukaryote_flag |= int(info["controlled_fungi"]) > 0
+                eukaryote_flag |= int(info["controlled_parasites"]) > 0
 
-        results.append(
-            {
-                "name": query.query,
-                "description": query.description,
-                "filepath": file_path,
-                "flag": overall_flag,
-                "biorisk": query.status.biorisk,
-                "protein": protein_status,
-                "nucleotide": nucleotide_status,
-                "low_concern": query.status.low_concern,
-                "virus_flag": virus_flag,
-                "bacteria_flag": bacteria_flag,
-                "eukaryote_flag": eukaryote_flag,
-                "low_concern_protein": low_concern_protein,
-                "low_concern_rna": low_concern_rna,
-                "low_concern_dna": low_concern_synbio,
-                "rationale": output_rationale,
-            }
-        )
+        result = {
+            "name": query.query,
+            "description": query.description,
+            "filepath": file_path,
+            "flag": overall_flag,
+            "biorisk": query.status.biorisk,
+            "protein": protein_status,
+            "nucleotide": nucleotide_status,
+            "low_concern": query.status.low_concern,
+            "virus_flag": virus_flag,
+            "bacteria_flag": bacteria_flag,
+            "eukaryote_flag": eukaryote_flag,
+            "low_concern_protein": low_concern_protein,
+            "low_concern_rna": low_concern_rna,
+            "low_concern_dna": low_concern_synbio,
+            "rationale": output_rationale,
+        }
+        if query.assembly is not None and query.assembly.enabled:
+            result["assembly_coverage"] = query.assembly.coverage_status
+        results.append(result)
 
     return results
 

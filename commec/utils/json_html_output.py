@@ -36,7 +36,7 @@ import re
 from urllib.parse import unquote
 
 from commec.config.json_io import get_screen_data_from_json
-from commec.config.result import ScreenResult, ScreenStep
+from commec.config.result import ScreenResult, ScreenStatus, ScreenStep
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,13 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Small value helpers
 # ---------------------------------------------------------------------------
+def _json_default(value):
+    """Serialize result dataclasses and enums embedded in assembly metadata."""
+    if hasattr(value, "__dataclass_fields__"):
+        return {key: getattr(value, key) for key in value.__dataclass_fields__}
+    return str(value)
+
+
 def _is_nan(v) -> bool:
     return isinstance(v, float) and math.isnan(v)
 
@@ -369,21 +376,56 @@ def build_report_model(screen: ScreenResult) -> dict:
     sequences = []
     for query in getattr(screen, "queries", {}).values():
         status = getattr(query, "status", None)
+        assembly = getattr(query, "assembly", None)
+        assembly_enabled = bool(assembly and getattr(assembly, "enabled", False))
+        combined_status = (
+            getattr(query, "combined_status", None) or ScreenStatus.NULL
+            if assembly_enabled
+            else getattr(status, "screen_status", ScreenStatus.NULL)
+        )
+        hits = [_build_hit(h, list_lookup) for h in getattr(query, "hits", [])]
+        for evidence in getattr(assembly, "evidence", []) if assembly_enabled else []:
+            hit = _build_hit(evidence.hit, list_lookup)
+            hit["assembly"] = {
+                "contigId": evidence.contig_id,
+                "contigRegion": evidence.contig_region,
+                "oligoRegion": evidence.oligo_region,
+                "strand": evidence.strand,
+            }
+            hit["desc"] = (
+                (hit["desc"] + ". " if hit["desc"] else "")
+                + "Assembly-derived evidence from "
+                + evidence.contig_id
+                + "."
+            )
+            hits.append(hit)
         sequences.append(
             {
                 "id": getattr(query, "query", ""),
                 "name": getattr(query, "query", ""),
                 "desc": getattr(query, "description", "") or "",
                 "length": getattr(query, "length", 0),
-                "screenStatus": str(getattr(status, "screen_status", "") or ""),
+                "screenStatus": str(combined_status),
+                "directStatus": str(getattr(status, "screen_status", "") or ""),
                 "rationale": str(getattr(status, "rationale", "") or ""),
-                "hits": [
-                    _build_hit(h, list_lookup) for h in getattr(query, "hits", [])
-                ],
+                "assembly": {
+                    "enabled": assembly_enabled,
+                    "status": str(combined_status),
+                    "coverage": getattr(assembly, "coverage_status", "not_requested"),
+                    "reason": getattr(assembly, "coverage_reason", ""),
+                    "contigs": list(getattr(assembly, "contig_ids", [])),
+                },
+                "hits": hits,
             }
         )
 
-    return {"meta": meta, "lists": lists, "sequences": sequences}
+    assembly_info = getattr(screen, "assembly_info", None)
+    return {
+        "meta": meta,
+        "lists": lists,
+        "sequences": sequences,
+        "assembly": assembly_info,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -451,9 +493,9 @@ def render_report_model(model: dict) -> str:
     """Render a report model, including models with attributed assembly evidence."""
     # allow_nan=False is safe because _clean() removed every NaN; escape "</" so a stray
     # "</script>" inside a description can't break out of the data <script> block.
-    data_json = json.dumps(model, allow_nan=False, ensure_ascii=False).replace(
-        "</", "<\\/"
-    )
+    data_json = json.dumps(
+        model, allow_nan=False, ensure_ascii=False, default=_json_default
+    ).replace("</", "<\\/")
 
     css = _font_face_css() + "\n" + _asset("report.css")
     # Inline the logo markup into the renderer (kept as a separate editable asset).

@@ -4,7 +4,7 @@ import copy
 
 import pytest
 
-from commec.oligo_assembly_poc import assemble, combine, load_records, project_region
+from commec.oligo_assembly import assemble, combine, load_records, project_region
 
 
 def fixture_data(start=111, end=150, hit_status="Flag", contig_status="Flag"):
@@ -37,6 +37,11 @@ def fixture_data(start=111, end=150, hit_status="Flag", contig_status="Flag"):
         "queries": {"a0": {"status": {"screen_status": contig_status}, "hits": [hit]}}
     }
     manifest = {
+        "assembler": "oligraph",
+        "version": "0.2.2",
+        "min_overlap": 15,
+        "matching": "exact",
+        "method": "all",
         "records": records,
         "exclusions": [],
         "contigs": [
@@ -62,10 +67,18 @@ def test_only_the_oligo_overlapping_the_concern_is_flagged():
     assert summary["flagged_oligos"] == 1
     assert summary["pool_verdict"] is None
     assert direct == original
-    assert effective["queries"]["q1"]["hits"][0]["region"] == {
-        "query_start": 31,
-        "query_end": 70,
-    }
+    assert (
+        effective["queries"]["q1"]["assembly"]["evidence"][0]["hit"]["region"][
+            "query_start"
+        ]
+        == 31
+    )
+    assert (
+        effective["queries"]["q1"]["assembly"]["evidence"][0]["hit"]["region"][
+            "query_end"
+        ]
+        == 70
+    )
 
 
 def test_shared_overlap_attributes_both_actual_sources_once():
@@ -95,6 +108,7 @@ def test_warning_and_short_query_status_are_not_silently_cleared():
         "Warning",
         "Skip (too short)",
     ]
+    assert summary["oligos"][2]["assembly_coverage"] == "screened"
 
 
 def test_reverse_strand_and_half_open_boundaries():
@@ -163,10 +177,12 @@ def test_contig_error_keeps_known_flag_and_marks_other_sources_incomplete():
     _, summary = combine(direct, assemblies, manifest)
     assert [r["final_status"] for r in summary["oligos"]] == [
         "Incomplete",
-        "Flag",
+        "Incomplete",
         "Incomplete",
     ]
-    assert all(r["incomplete_screening"] for r in summary["oligos"])
+    assert all(row["assembly_coverage"] == "incomplete" for row in summary["oligos"])
+    assert summary["oligos"][1]["assembly_status"] == "Flag"
+    assert summary["oligos"][0]["assembly_status"] == "No attributed hit"
     assert summary["flagged_assemblies"] == 1
     assert summary["assembly_statuses"] == {"a0": "Error"}
 
@@ -178,15 +194,16 @@ def test_direct_error_keeps_known_flag_evidence():
     direct["queries"]["q0"]["status"]["screen_status"] = "Error"
     direct["queries"]["q0"]["hits"] = [{"recommendation": {"status": "Flag"}}]
     _, summary = combine(direct, assemblies, manifest)
-    assert summary["oligos"][0]["final_status"] == "Flag"
+    assert summary["oligos"][0]["final_status"] == "Error"
     assert summary["oligos"][0]["incomplete_screening"]
+    assert summary["newly_flagged_oligos"] == 0
 
 
 def test_html_shows_duplicate_record_numbers_and_assembly_skip(tmp_path):
     from dataclasses import asdict
 
     from commec.config.result import ScreenResult
-    from commec.oligo_assembly_poc import render, write_json
+    from commec.oligo_assembly import render, write_json
 
     direct, assemblies, manifest = fixture_data(
         hit_status="Flag (Cleared)", contig_status="Skip (too short)"
@@ -195,10 +212,150 @@ def test_html_shows_duplicate_record_numbers_and_assembly_skip(tmp_path):
     effective_path, output = tmp_path / "effective.json", tmp_path / "report.html"
     document = asdict(ScreenResult())
     document["queries"] = effective["queries"]
+    document["assembly_info"] = effective["assembly_info"]
     write_json(effective_path, document)
     render(effective_path, summary, manifest, output)
     page = output.read_text()
     assert "same_header (record 1)" in page
     assert "same_header (record 2)" in page
-    assert "Every assembly and its screening status" in page
-    assert "Skip (too short)" in page
+    assert '"enabled": true' in page
+    assert '"coverage": "incomplete"' in page
+    assert "Assembly screening proof of concept" not in page
+
+
+@pytest.mark.parametrize("contig_status", ["Skip (too short)", "Skip (too long)"])
+def test_length_skipped_contig_preserves_direct_pass_and_marks_coverage_incomplete(
+    contig_status,
+):
+    direct, assemblies, manifest = fixture_data(contig_status=contig_status)
+    _, summary = combine(direct, assemblies, manifest)
+    assert [row["final_status"] for row in summary["oligos"]] == ["Incomplete"] * 3
+    assert all(row["assembly_coverage"] == "incomplete" for row in summary["oligos"])
+    assert summary["flagged_oligos"] == 0
+
+
+def test_deliberate_taxonomy_skip_is_complete_assembly_coverage():
+    direct, assemblies, manifest = fixture_data(
+        hit_status="Flag (Cleared)", contig_status="Pass (Skipped Taxonomy)"
+    )
+    _, summary = combine(direct, assemblies, manifest)
+    assert all(row["assembly_coverage"] == "screened" for row in summary["oligos"])
+    assert not any(row["incomplete_screening"] for row in summary["oligos"])
+
+
+def test_excluded_and_isolated_sources_remain_direct_only_with_reasons():
+    direct, assemblies, manifest = fixture_data(
+        hit_status="Flag (Cleared)", contig_status="Pass"
+    )
+    manifest["exclusions"] = [{"id": "q0", "reason": "Non-ACGT symbol"}]
+    manifest["contigs"] = []
+    assemblies["queries"] = {}
+    _, summary = combine(direct, assemblies, manifest)
+    assert summary["oligos"][0]["assembly_coverage"] == "excluded"
+    assert summary["oligos"][0]["final_status"] == "Pass"
+    assert summary["oligos"][1]["assembly_coverage"] == "no_contig"
+    assert summary["oligos"][1]["final_status"] == "Pass"
+
+
+def test_assembly_failure_does_not_replace_direct_result():
+    direct, assemblies, manifest = fixture_data(
+        hit_status="Flag (Cleared)", contig_status="Pass"
+    )
+    manifest["contigs"] = []
+    manifest["error"] = "No usable sequences"
+    _, summary = combine(direct, None, manifest)
+    assert [row["final_status"] for row in summary["oligos"]] == ["Pass"] * 3
+    assert all(row["assembly_coverage"] == "failed" for row in summary["oligos"])
+    assert all(row["incomplete_screening"] for row in summary["oligos"])
+
+
+def test_direct_pass_with_new_assembly_flag_and_typed_result():
+    from commec.config.json_io import encode_dict_to_screen_data
+
+    direct, assemblies, manifest = fixture_data()
+    effective, summary = combine(
+        encode_dict_to_screen_data(direct),
+        encode_dict_to_screen_data(assemblies),
+        manifest,
+    )
+    query = effective.queries["q1"]
+    assert query.status.screen_status == "Pass"
+    assert query.combined_status == "Flag"
+    assert query.assembly.evidence[0].hit.region.query_start == 31
+    assert query.hits == []
+
+
+def test_nested_taxonomy_coordinates_are_projected_and_reverse_strand_is_correct():
+    direct, assemblies, manifest = fixture_data()
+    hit = assemblies["queries"]["a0"]["hits"][0]
+    hit["annotations"] = {
+        "controlled_taxonomy": {
+            "controlled_taxa": [{"query_start": 111, "query_end": 150}],
+            "non-controlled_taxa": [],
+        }
+    }
+    manifest["contigs"][0]["placements"][1]["strand"] = "-"
+    effective, _ = combine(direct, assemblies, manifest)
+    evidence = effective["queries"]["q1"]["assembly"]["evidence"][0]
+    taxon = evidence["hit"]["annotations"]["controlled_taxonomy"]["controlled_taxa"][0]
+    assert evidence["hit"]["region"]["query_start"] == 31
+    assert evidence["hit"]["region"]["query_end"] == 70
+    assert taxon["query_start"] == 31
+    assert taxon["query_end"] == 70
+
+
+def test_combined_status_consumers_use_assembly_evidence(tmp_path):
+    from commec.flag import read_flags_from_json
+    from commec.gui.server import _summarize_output
+    from commec.oligo_assembly import write_json
+
+    direct, assemblies, manifest = fixture_data()
+    direct["queries"]["q1"]["status"].update(
+        {
+            "screen_status": "Pass",
+            "biorisk": "Pass",
+            "protein_taxonomy": "Pass",
+            "nucleotide_taxonomy": "Pass",
+            "low_concern": "Skip",
+        }
+    )
+    hit = assemblies["queries"]["a0"]["hits"][0]
+    hit["annotations"] = {
+        "controlled_taxonomy": {
+            "statistics": {
+                "controlled_bacteria": 0,
+                "controlled_viruses": 1,
+                "controlled_fungi": 0,
+                "controlled_parasites": 0,
+                "number_of_non-controlled_taxids": 0,
+            }
+        }
+    }
+    effective, _ = combine(direct, assemblies, manifest)
+    effective["commec_info"] = {"json_output_version": "0.7"}
+    write_json(tmp_path / "combined.output.json", effective)
+    flagged = read_flags_from_json(tmp_path / "combined.output.json")
+    assert flagged[1]["flag"] == "Flag"
+    assert flagged[1]["virus_flag"] is True
+    summary = _summarize_output(tmp_path)
+    assert summary["queries"][1]["status"] == "Flag"
+    assert "Assembly coverage: screened" in summary["queries"][1]["rationale"]
+
+
+def test_disabled_json_keeps_legacy_shape(tmp_path):
+    from commec.config.json_io import (
+        encode_screen_data_to_json,
+        get_screen_data_from_json,
+    )
+    from commec.config.result import ScreenResult
+
+    path = tmp_path / "plain.output.json"
+    encode_screen_data_to_json(ScreenResult(), path)
+    document = path.read_text()
+    assert '"assembly_info"' not in document
+    assert '"assembly_summary"' not in document
+    assert '"assembly"' not in document
+    assert '"combined_status"' not in document
+    loaded = get_screen_data_from_json(path)
+    assert loaded.assembly_info is None
+    assert loaded.assembly_summary is None

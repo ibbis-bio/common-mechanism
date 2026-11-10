@@ -27,9 +27,14 @@ import os
 import string
 from dataclasses import asdict, fields, is_dataclass
 from enum import StrEnum
+from types import UnionType
 from typing import Any, Dict, Type, get_args, get_origin
 
-from commec.config.result import JSON_COMMEC_FORMAT_VERSION, ScreenResult
+from commec.config.result import (
+    ASSEMBLY_JSON_FORMAT_VERSION,
+    JSON_COMMEC_FORMAT_VERSION,
+    ScreenResult,
+)
 
 
 class IoVersionError(RuntimeError):
@@ -41,8 +46,15 @@ def encode_screen_data_to_json(
 ) -> None:
     """Converts a ScreenResult class object into a JSON file at the given filepath."""
     try:
+        document = asdict(input_result)
+        if input_result.assembly_info is None:
+            document.pop("assembly_info", None)
+            document.pop("assembly_summary", None)
+            for query in document["queries"].values():
+                query.pop("assembly", None)
+                query.pop("combined_status", None)
         with open(output_json_filepath, "w", encoding="utf-8") as json_file:
-            json.dump(asdict(input_result), json_file, indent=2)
+            json.dump(document, json_file, indent=2)
     except TypeError as e:
         print("Error outputting JSON:", e)
         print(input_result)
@@ -65,7 +77,10 @@ def dict_to_dataclass(cls: Type, data: Dict[str, Any]) -> Any:
     filtered_data = {}
 
     if data is None:
-        return filtered_data
+        return None
+    if get_origin(cls) in (UnionType,):
+        non_null = [item for item in get_args(cls) if item is not type(None)]
+        cls = non_null[0] if len(non_null) == 1 else cls
 
     for f in fields(cls):
         field_name = f.name
@@ -73,6 +88,19 @@ def dict_to_dataclass(cls: Type, data: Dict[str, Any]) -> Any:
 
         if field_name in data:
             field_value = data[field_name]
+
+            # Unwrap optional dataclasses before checking the dataclass itself.
+            if get_origin(field_type) is UnionType:
+                non_null = [
+                    item for item in get_args(field_type) if item is not type(None)
+                ]
+                if len(non_null) == 1 and is_dataclass(non_null[0]):
+                    filtered_data[field_name] = (
+                        dict_to_dataclass(non_null[0], field_value)
+                        if field_value is not None
+                        else None
+                    )
+                    continue
 
             # Check if the field is a dataclass
             if is_dataclass(field_type):
@@ -124,8 +152,17 @@ def dict_to_dataclass(cls: Type, data: Dict[str, Any]) -> Any:
                 filtered_data[field_name] = field_value
                 continue
 
+            if get_origin(field_type) is UnionType:
+                if field_value is None:
+                    filtered_data[field_name] = None
+                    continue
+                non_null = [
+                    item for item in get_args(field_type) if item is not type(None)
+                ]
+                field_type = non_null[0] if len(non_null) == 1 else field_type
+
             # Handle custom StrEnums
-            if issubclass(field_type, StrEnum):
+            if isinstance(field_type, type) and issubclass(field_type, StrEnum):
                 try:
                     filtered_data[field_name] = field_type(field_value)
                 except ValueError:
@@ -135,7 +172,18 @@ def dict_to_dataclass(cls: Type, data: Dict[str, Any]) -> Any:
                     )
                 continue
 
-            # Handle other field types
+            # Handle other field types, including optional enums.
+            if get_origin(field_type) is UnionType:
+                non_null = [
+                    item for item in get_args(field_type) if item is not type(None)
+                ]
+                if (
+                    len(non_null) == 1
+                    and isinstance(non_null[0], type)
+                    and issubclass(non_null[0], StrEnum)
+                ):
+                    filtered_data[field_name] = non_null[0](field_value)
+                    continue
             filtered_data[field_name] = field_value
 
     # Create an instance of the dataclass with the filtered data
@@ -155,9 +203,9 @@ def get_screen_data_from_json(input_json_filepath: string) -> ScreenResult:
         json_string = json_file.read()
     my_data: dict = json.loads(json_string)
 
-    # Check version of imported json.
+    # Version 0.6 lacks assembly evidence. Dataclass defaults preserve its behaviour.
     input_version = my_data["commec_info"]["json_output_version"]
-    if not input_version == JSON_COMMEC_FORMAT_VERSION:
+    if input_version not in {JSON_COMMEC_FORMAT_VERSION, ASSEMBLY_JSON_FORMAT_VERSION}:
         raise IoVersionError(
             f"Version difference between input (v.{input_version}) and"
             f" expected (v.{JSON_COMMEC_FORMAT_VERSION})"

@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 # Seperate versioning for the output JSON.
 JSON_COMMEC_FORMAT_VERSION = "0.6"
+ASSEMBLY_JSON_FORMAT_VERSION = "0.7"
 
 
 class ScreenStatus(StrEnum):
@@ -445,6 +446,41 @@ class QueryScreenStatus:
 
 
 @dataclass
+class AssemblyEvidence:
+    """One concern region projected from a contig to an original oligo."""
+
+    contig_id: str = ""
+    # Zero-based half-open intervals. HTML and summaries use one-based inclusive intervals.
+    contig_region: list[int] = field(default_factory=list)
+    oligo_region: list[int] = field(default_factory=list)
+    strand: str = ""
+    status: ScreenStatus = ScreenStatus.NULL
+    hit: HitResult = field(default_factory=HitResult)
+
+    def to_summary_dict(self):
+        """Return the compact, JSON-safe evidence table representation."""
+        return {
+            "contig": self.contig_id,
+            "contig_region": self.contig_region,
+            "oligo_region": self.oligo_region,
+            "strand": self.strand,
+            "status": str(self.status),
+            "hit": self.hit.name,
+        }
+
+
+@dataclass
+class AssemblyQueryResult:
+    """Assembly evidence and coverage for one original query."""
+
+    enabled: bool = False
+    coverage_status: str = "not_requested"
+    coverage_reason: str = ""
+    contig_ids: list[str] = field(default_factory=list)
+    evidence: list[AssemblyEvidence] = field(default_factory=list)
+
+
+@dataclass
 class QueryResult:
     """
     Container to hold screening result data pertinant to a single Query
@@ -455,6 +491,8 @@ class QueryResult:
     length: int = 0
     status: QueryScreenStatus = field(default_factory=QueryScreenStatus)
     hits: list[HitResult] = field(default_factory=list)
+    assembly: AssemblyQueryResult | None = None
+    combined_status: ScreenStatus | None = None
 
     def add_new_hit_information(self, new_hit: HitResult) -> bool:
         """
@@ -486,10 +524,7 @@ class QueryResult:
         return flagged_and_warnings_data
 
     def _update_step_flags(self, query_data):
-        """
-        Updates the steps within QueryScreenStatus to be congruent for every hit.
-        Then updates the Query flag to consolidate all.
-        """
+        """Update direct screening steps without rewriting assembly evidence."""
         logger.debug("Updating step status flags for query %s", self.query)
         logger.debug("Current status %s", self.status)
 
@@ -812,6 +847,25 @@ class DatabaseInfo:
 
 
 @dataclass
+class AssemblyRunInfo:
+    """Configuration and accounting for optional oligo assembly screening."""
+
+    enabled: bool = False
+    status: str = "not_requested"
+    assembler: str = "oligraph"
+    version: str = ""
+    min_overlap: int = 15
+    matching: str = "exact"
+    method: str = "all"
+    contigs: list[dict] = field(default_factory=list)
+    exclusions: list[dict] = field(default_factory=list)
+    unresolved_attributions: list[dict] = field(default_factory=list)
+    error: str = ""
+    contig_screen_time: str = ""
+    manifest: str = ""
+
+
+@dataclass
 class ScreenResult:
     """
     Root dataclass to hold all data related to the screening of an individual query by commec.
@@ -821,6 +875,9 @@ class ScreenResult:
     query_info: ScreenQueryInfo = field(default_factory=ScreenQueryInfo)
     queries: dict[str, QueryResult] = field(default_factory=dict)
     database_info: DatabaseInfo = field(default_factory=DatabaseInfo)
+    assembly_info: AssemblyRunInfo | None = None
+    assembly_summary: dict | None = None
+    # Both fields remain None unless the optional assembly path is enabled.
 
     def get_query(self, query_name: str) -> QueryResult:
         """
