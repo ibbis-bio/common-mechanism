@@ -683,6 +683,7 @@ class Screen:
         assembly_args.force = True
         assembly_args.resume = False
         assembly_args.assemble_oligos = False
+        self.assembly_args = assembly_args
         assembly_args.user_specified_args = set(
             getattr(assembly_args, "user_specified_args", set())
         )
@@ -698,10 +699,8 @@ class Screen:
                 raise RuntimeError(
                     f"Contig screening exited with code {error.code}."
                 ) from error
-        except Exception:
+        finally:
             self._restore_parent_log_handlers()
-            raise
-        self._restore_parent_log_handlers()
         self.assembly_manifest["contig_screen_time"] = (
             self.assembly_screen.screen_data.commec_info.time_taken
         )

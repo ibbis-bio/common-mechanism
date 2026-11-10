@@ -264,6 +264,12 @@ def _initial_coverage(manifest, assemblies):
             enabled=True, coverage_status=status, coverage_reason=reason
         )
     if assemblies is None:
+        if manifest["contigs"]:
+            for query in coverage.values():
+                query.coverage_status = "failed"
+                query.coverage_reason = manifest.get(
+                    "error", "Contig screening did not return results."
+                )
         return coverage
     for contig in manifest["contigs"]:
         result = assemblies.queries[contig["id"]]

@@ -336,6 +336,50 @@ def test_nested_arguments_force_single_assembly_pass():
     assert outer.assembly_manifest["contig_screen_time"] == ""
 
 
+def test_nested_system_exit_restores_parent_handlers_and_blocks_export():
+    import logging
+    from types import SimpleNamespace
+    from unittest.mock import patch
+
+    from commec.screen import Screen
+
+    outer = Screen.__new__(Screen)
+    outer.assembly_contigs = [{"id": "a0"}]
+    outer.assembly_manifest = {"error": ""}
+    outer.params = SimpleNamespace(directory_prefix="/tmp/example")
+    outer.screen_data = SimpleNamespace(assembly_info=None)
+    outer.assembly_screen = None
+    args = SimpleNamespace(
+        fasta_file="input",
+        output_prefix="out",
+        force=False,
+        resume=True,
+        assemble_oligos=True,
+        user_specified_args={"resume"},
+    )
+    logger = logging.getLogger("commec")
+    parent = logging.StreamHandler()
+    outer._parent_log_handlers = [parent]
+    nested = logging.FileHandler("/tmp/oligo-nested-test.log")
+    logger.addHandler(nested)
+    with patch.object(Screen, "run", side_effect=SystemExit(1)):
+        try:
+            outer.screen_oligo_assemblies(args)
+        except RuntimeError:
+            pass
+    assert parent in logger.handlers
+    assert nested not in logger.handlers
+    assert nested.stream is None
+    logger.removeHandler(parent)
+
+
+def test_missing_contig_results_are_failed_not_no_contig():
+    direct, _, manifest = fixture_data()
+    _, summary = combine(direct, None, manifest)
+    assert all(row["assembly_coverage"] == "failed" for row in summary["oligos"])
+    assert all(row["incomplete_screening"] for row in summary["oligos"])
+
+
 def test_recursive_flag_search_excludes_internal_assembly_results(tmp_path):
     import json
 
