@@ -285,6 +285,7 @@ class Screen:
         self.assembly_contigs = []
         self.assembly_screen = None
         self.assembly_args = None
+        self._internal_assembly_run = False
         self._exported = False
         self._direct_status_finalized = False
 
@@ -352,7 +353,7 @@ class Screen:
         set_log_level(log_level, update_only_handler_type=logging.StreamHandler)
 
         # Keep a nested assembly log separate from the direct screening log.
-        if self.assembly_args is None and self.params.config["assemble_oligos"]:
+        if not self._internal_assembly_run and self.params.config["assemble_oligos"]:
             self._parent_log_handlers = list(logging.getLogger("commec").handlers)
             for handler in self._parent_log_handlers:
                 logging.getLogger("commec").removeHandler(handler)
@@ -683,15 +684,14 @@ class Screen:
         assembly_args.force = True
         assembly_args.resume = False
         assembly_args.assemble_oligos = False
-        self.assembly_args = assembly_args
         assembly_args.user_specified_args = set(
             getattr(assembly_args, "user_specified_args", set())
         )
         assembly_args.user_specified_args.update(
             {"force", "resume", "assemble_oligos", "fasta_file", "output_prefix"}
         )
-        self.assembly_args = None
         self.assembly_screen = Screen()
+        self.assembly_screen._internal_assembly_run = True
         try:
             self.assembly_screen.run(assembly_args)
         except SystemExit as error:
@@ -831,9 +831,9 @@ class Screen:
     def __del__(self):
         """Retain the previous best-effort output on premature exits."""
         if (
-            self.params
-            and not getattr(self, "success", False)
-            and not self.assembly_args
+            self.__dict__.get("params")
+            and not self.__dict__.get("_internal_assembly_run", False)
+            and not self.__dict__.get("success", False)
         ):
             self.export_results()
 
