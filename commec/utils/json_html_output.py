@@ -368,7 +368,7 @@ def _build_hit(hit, list_lookup: dict) -> dict:
     return common
 
 
-# ## Workflow step 7: Report original oligos and assembly evidence.
+# WORKFLOW 7: Report original oligos and assembly evidence.
 def build_report_model(screen: ScreenResult) -> dict:
     """Flatten a :class:`ScreenResult` into the model consumed by ``report.js``."""
     lists, list_lookup = _build_list_meta(screen)

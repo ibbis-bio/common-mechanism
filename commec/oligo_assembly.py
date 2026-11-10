@@ -54,7 +54,7 @@ def write_json(path, value):
     )
 
 
-# ## Workflow step 1: Read records and preserve stable identities.
+# WORKFLOW 1: Read records and preserve stable identities.
 def load_records(path):
     """Keep record identity separate from possibly repeated FASTA headers."""
     records = []
@@ -79,7 +79,7 @@ def write_fasta(path, records):
     )
 
 
-# ## Workflow step 2: Assemble exact overlaps and verify source placements.
+# WORKFLOW 2 and 3: Assemble exact overlaps and verify source placements.
 def assemble(records, min_overlap=15):
     """Replay each actual walk and verify every source placement."""
     import oligraph
@@ -202,7 +202,7 @@ def flip(strand):
     return "-" if strand == "+" else "+"
 
 
-# ## Workflow step 5: Project contig concern intervals to source oligos.
+# WORKFLOW 5: Project contig concern intervals to source oligos.
 def project_region(placement, start, end):
     """Return the original oligo interval intersecting a contig region."""
     left, right = max(start, placement["start"]), min(end, placement["end"])
@@ -322,7 +322,7 @@ def _restore_contig_coverage(coverage, assemblies, contigs):
                 )
 
 
-# ## Workflow step 6: Combine direct and assembly evidence.
+# WORKFLOW 6: Combine direct and assembly evidence.
 def combine(direct, assemblies, manifest):
     """Combine two ScreenResults, or two legacy dictionaries, without losing evidence."""
     legacy = isinstance(direct, dict)

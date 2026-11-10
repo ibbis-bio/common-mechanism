@@ -598,7 +598,7 @@ class Screen:
             "%Y-%m-%d %H:%M:%S"
         )
 
-    # ## Workflow steps 5 and 6: Attribute contig hits and combine results.
+    # WORKFLOW 5 and 6: Attribute contig hits and combine results.
     def finalize_assembly_results(self):
         """Attach assembly evidence after both independent screening passes."""
         if not self.params.config["assemble_oligos"]:
@@ -662,7 +662,7 @@ class Screen:
         if self.assembly_manifest.get("path"):
             write_json(self.assembly_manifest["path"], self.assembly_manifest)
 
-    # ## Workflow steps 2 to 4: Assemble and screen every returned contig.
+    # WORKFLOW 2 to 4: Assemble and screen every returned contig.
     def prepare_oligo_assembly(self):
         """Assemble without changing the direct queries or their screening."""
         if not self.params.config["assemble_oligos"]:
@@ -748,6 +748,7 @@ class Screen:
         """
         Wrapper so that args be parsed in main() or commec.py interface.
         """
+        # WORKFLOW 1 and 2A: Read the pool and screen original oligos.
         # Perform setup steps.
         self.setup(args)
         self.prepare_oligo_assembly()
