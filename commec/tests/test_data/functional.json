@@ -588,7 +588,7 @@
           "name": "Toxin2",
           "description": "WarningExample",
           "region": {
-            "e_value": 1.0000000000000001e-24,
+            "e_value": 1e-24,
             "query_start": 106,
             "query_end": 189
           },
@@ -609,7 +609,7 @@
           "name": "Toxin3",
           "description": "ReverseExample",
           "region": {
-            "e_value": 9.999999999999999e-26,
+            "e_value": 1e-25,
             "query_start": 507,
             "query_end": 596
           },
@@ -630,7 +630,7 @@
           "name": "BENIGNPROT",
           "description": "",
           "region": {
-            "e_value": 9.999999999999999e-27,
+            "e_value": 1e-26,
             "query_start": 199,
             "query_end": 369
           },
@@ -660,7 +660,7 @@
           "name": "BENIGNSYNBIO",
           "description": "BENIGNSYNBIO",
           "region": {
-            "e_value": 1.0000000000000001e-28,
+            "e_value": 1e-28,
             "query_start": 410,
             "query_end": 480
           },
