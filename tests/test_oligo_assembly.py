@@ -302,6 +302,69 @@ def test_assembly_failure_does_not_replace_direct_result():
     assert all(row["incomplete_screening"] for row in summary["oligos"])
 
 
+def test_assembly_is_default_and_cli_can_disable_it(tmp_path):
+    from commec.cli import ScreenArgumentParser
+    from commec.screen import add_args
+
+    fasta = tmp_path / "input.fasta"
+    fasta.write_text(">synthetic\nACGT\n")
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    default = parser.parse_args([str(fasta)])
+    assert default.assemble_oligos is True
+    assert "assemble_oligos" not in default.user_specified_args
+
+    disabled = parser.parse_args([str(fasta), "--no-assemble-oligos"])
+    assert disabled.assemble_oligos is False
+    assert "assemble_oligos" in disabled.user_specified_args
+
+
+def test_yaml_can_disable_default_assembly(tmp_path):
+    import yaml
+
+    from commec.cli import ScreenArgumentParser
+    from commec.config.screen_io import ScreenIO
+    from commec.screen import add_args
+
+    config = tmp_path / "config.yaml"
+    config.write_text(
+        yaml.safe_dump(
+            {"base_paths": {"default": str(tmp_path)}, "assemble_oligos": False}
+        )
+    )
+    parser = ScreenArgumentParser()
+    add_args(parser)
+    fasta = tmp_path / "input.fasta"
+    fasta.write_text(">synthetic\nACGT\n")
+    args = parser.parse_args([str(fasta), "--config", str(config)])
+    args.output_prefix = str(tmp_path / "out")
+    params = ScreenIO(args)
+    assert params.config["assemble_oligos"] is False
+
+
+def test_default_preparation_uses_oligraph(tmp_path):
+    from types import SimpleNamespace
+
+    from commec.config.result import QueryResult, ScreenResult
+    from commec.screen import Screen
+
+    screen = Screen()
+    screen.params = SimpleNamespace(
+        config={"assemble_oligos": True, "assembly_min_overlap": 15},
+        directory_prefix=str(tmp_path / "synthetic"),
+    )
+    screen.screen_data = ScreenResult(queries={"q": QueryResult("q")})
+    screen.assembly_records = [
+        {"id": "q", "header": "synthetic", "original_id": "q", "sequence": "A" * 60}
+    ]
+    screen.prepare_oligo_assembly()
+    assert screen.assembly_manifest["assembler"] == "oligraph"
+    assert screen.assembly_manifest["version"] == "0.2.2"
+    assert screen.assembly_manifest.get("error", "") == ""
+    assert screen.assembly_contigs == []
+    assert screen.screen_data.queries["q"].hits == []
+
+
 def test_nested_arguments_force_single_assembly_pass():
     from types import SimpleNamespace
     from unittest.mock import patch

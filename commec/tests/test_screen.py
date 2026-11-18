@@ -354,7 +354,7 @@ def test_functional_screen(tmp_path, request):
         evalue=1e-28,
     )
 
-    result = functional_test.run()
+    result = functional_test.run("--no-assemble-oligos")
 
     # If we are writing exemplare data, do it in raw, to test the json_io simultaneously.
     gen_examples = request.config.getoption("--gen-examples")

@@ -236,18 +236,26 @@ def add_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         action="store_true",
         help="Re-use any pre-existing output for this Screen run (cannot be used with --force)",
     )
-    screen_logic_group.add_argument(
+    assembly_group = screen_logic_group.add_mutually_exclusive_group()
+    assembly_group.add_argument(
         "--assemble-oligos",
         dest="assemble_oligos",
         action="store_true",
-        help="Also screen exact-overlap OliGraph contigs and attribute evidence to original oligos",
+        help="Screen exact-overlap OliGraph contigs and attribute evidence to original oligos (default)",
     )
+    assembly_group.add_argument(
+        "--no-assemble-oligos",
+        dest="assemble_oligos",
+        action="store_false",
+        help="Screen only original oligos without OliGraph assembly",
+    )
+    parser.set_defaults(assemble_oligos=True)
     screen_logic_group.add_argument(
         "--assembly-min-overlap",
         dest="assembly_min_overlap",
         type=int,
         default=15,
-        help="Minimum exact overlap for optional oligo assembly (default: 15 bases)",
+        help="Minimum exact overlap for OliGraph assembly (default: 15 bases)",
     )
     screen_logic_group.add_argument(
         "-r",
