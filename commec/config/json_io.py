@@ -25,7 +25,7 @@ Set of tools for retrieving and storing information important to screen
 import json
 import os
 import string
-from dataclasses import asdict, fields, is_dataclass
+from dataclasses import fields, is_dataclass
 from enum import StrEnum
 from typing import Any, Dict, Type, get_args, get_origin
 
@@ -36,13 +36,64 @@ class IoVersionError(RuntimeError):
     """Custom exception when handling differing versions with Commec output JSON."""
 
 
+def _stream_json_value(
+    obj: Any, json_file: Any, indent: int = 2, _level: int = 0
+) -> None:
+    """Stream dataclasses, dicts, lists, and scalars directly to file in O(1) extra RAM."""
+    if is_dataclass(obj) and not isinstance(obj, type):
+        dc_fields = fields(obj)
+        if not dc_fields:
+            json_file.write("{}")
+            return
+        json_file.write("{\n")
+        next_level = _level + 1
+        pad = " " * (indent * next_level)
+        last_idx = len(dc_fields) - 1
+        for idx, f in enumerate(dc_fields):
+            json_file.write(f"{pad}{json.dumps(f.name)}: ")
+            _stream_json_value(getattr(obj, f.name), json_file, indent, next_level)
+            json_file.write(",\n" if idx < last_idx else "\n")
+        json_file.write(" " * (indent * _level) + "}")
+    elif isinstance(obj, dict):
+        if not obj:
+            json_file.write("{}")
+            return
+        json_file.write("{\n")
+        next_level = _level + 1
+        pad = " " * (indent * next_level)
+        last_idx = len(obj) - 1
+        for idx, (k, v) in enumerate(obj.items()):
+            key_str = k if isinstance(k, str) else str(k)
+            json_file.write(f"{pad}{json.dumps(key_str)}: ")
+            _stream_json_value(v, json_file, indent, next_level)
+            json_file.write(",\n" if idx < last_idx else "\n")
+        json_file.write(" " * (indent * _level) + "}")
+    elif isinstance(obj, (list, tuple)):
+        if not obj:
+            json_file.write("[]")
+            return
+        json_file.write("[\n")
+        next_level = _level + 1
+        pad = " " * (indent * next_level)
+        last_idx = len(obj) - 1
+        for idx, item in enumerate(obj):
+            json_file.write(pad)
+            _stream_json_value(item, json_file, indent, next_level)
+            json_file.write(",\n" if idx < last_idx else "\n")
+        json_file.write(" " * (indent * _level) + "]")
+    elif isinstance(obj, StrEnum):
+        json_file.write(json.dumps(str(obj)))
+    else:
+        json_file.write(json.dumps(obj))
+
+
 def encode_screen_data_to_json(
-    input_result: ScreenResult, output_json_filepath: string = "output.json"
+    input_result: ScreenResult, output_json_filepath: str | os.PathLike = "output.json"
 ) -> None:
     """Converts a ScreenResult class object into a JSON file at the given filepath."""
     try:
         with open(output_json_filepath, "w", encoding="utf-8") as json_file:
-            json.dump(asdict(input_result), json_file, indent=2)
+            _stream_json_value(input_result, json_file, indent=2)
     except TypeError as e:
         print("Error outputting JSON:", e)
         print(input_result)
