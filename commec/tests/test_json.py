@@ -160,3 +160,40 @@ def test_adding_data_to_existing():
     write_query, _ = new_screen_data.get_query("test01")
     write_info(write_query)
     assert new_screen_data.queries["test01"].status.biorisk == ScreenStatus.PASS
+
+
+def test_streaming_json_byte_identical_and_bounded_memory(tmp_path, test_screendata):
+    """Ensure streaming JSON output matches json.dumps(asdict(...), indent=2) in O(1) RAM."""
+    import json
+    import tracemalloc
+
+    batch = test_screendata
+    for i in range(500):
+        batch.queries[f"SynthQuery_{i:04d}"] = QueryResult(
+            query=f"SynthQuery_{i:04d}",
+            length=120,
+            status=QueryScreenStatus(),
+            hits={
+                "HitA": HitResult(
+                    recommendation=HitScreenStatus(
+                        ScreenStatus.FLAG, ScreenStep.BIORISK
+                    ),
+                    name="RegulatedPart",
+                    annotations={"domain": ["Viruses"], "note": "x" * 100},
+                    region=MatchRange(e_value=1e-12, query_start=1, query_end=120),
+                )
+            },
+        )
+
+    expected = json.dumps(asdict(batch), indent=2)
+    out_file = tmp_path / "streamed_batch.json"
+
+    tracemalloc.start()
+    encode_screen_data_to_json(batch, out_file)
+    _, stream_peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    actual = out_file.read_text(encoding="utf-8")
+    assert actual == expected
+    # Streaming peak allocation stays well below 256 KB even as batch grows
+    assert stream_peak < 256 * 1024
