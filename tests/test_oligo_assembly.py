@@ -228,7 +228,7 @@ def test_all_excluded_records_keep_reasons_without_assembly_failure():
     assert "error" not in manifest
 
 
-def test_html_shows_duplicate_record_numbers_and_assembly_skip(tmp_path):
+def test_html_preserves_original_fasta_names_and_assembly_skip(tmp_path):
     from dataclasses import asdict
 
     from commec.config.result import ScreenResult
@@ -245,8 +245,9 @@ def test_html_shows_duplicate_record_numbers_and_assembly_skip(tmp_path):
     write_json(effective_path, document)
     render(effective_path, summary, manifest, output)
     page = output.read_text()
-    assert "same_header (record 1)" in page
-    assert "same_header (record 2)" in page
+    assert "(record 1)" not in page
+    assert "(record 2)" not in page
+    assert '"name": "same_header"' in page
     assert '"enabled": true' in page
     assert '"coverage": "incomplete"' in page
     assert "Assembly screening proof of concept" not in page

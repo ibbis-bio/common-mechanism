@@ -539,7 +539,7 @@ def render(effective_path, summary, manifest, output):
 
     model = build_report_model(get_screen_data_from_json(str(effective_path)))
     names = {
-        record["id"]: f"{record['original_id']} (record {record['record_index'] + 1})"
+        record["id"]: record["original_id"]
         for record in manifest["records"]
         if "original_id" in record
     }

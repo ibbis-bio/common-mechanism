@@ -95,6 +95,33 @@
   };
   Report.prototype.coord = function (h) { return this.num(h.qs) + "–" + this.num(h.qe) + " bp"; };
 
+  // Plain-language finding for one original oligo. Direct screening and
+  // contig-derived evidence stay separate so a new contig flag is explicit.
+  Report.prototype.finding = function (s) {
+    var a = s.assembly;
+    if (!a || !a.enabled) return "";
+    var direct = s.directStatus || "";
+    var directActive = direct === "Flag" || direct === "Warning";
+    var contigActive = (s.hits || []).some(function (h) {
+      return h.assembly && (h.rawStatus === "Flag" || h.rawStatus === "Warning");
+    });
+    if (directActive && contigActive) return "Flagged by direct screening and its contig";
+    if (directActive) return "Flagged by direct screening";
+    if (contigActive) return "Found through contig screening";
+    if (a.coverage === "incomplete") {
+      if (direct === "Skip (too short)") return "Oligo and contig were too short to screen";
+      return "Contig screening did not finish";
+    }
+    if (a.coverage === "failed") return "Contig screening did not finish";
+    if (a.coverage === "no_contig") return "No contig contains this oligo";
+    if (a.coverage === "excluded") return "Not eligible for contig assembly";
+    if (direct === "Skip (too short)") return "Oligo too short for direct screening; contig passed";
+    if (direct === "Skip (too long)") return "Oligo too long for direct screening; contig passed";
+    if (direct === "Error") return "Direct screening failed";
+    if (a.coverage === "screened") return "Passed direct and contig screening";
+    return "Contig screening did not finish";
+  };
+
   // Group hits by organism, choose a representative, sort by severity + e-value.
   Report.prototype.model = function (s) {
     var self = this;
@@ -334,7 +361,10 @@
       var lengthLabel = self.num(s.length) + " bp";
 
       var finding = "", mapBars = [];
-      if (!skip) {
+      if (s.assembly && s.assembly.enabled) {
+        finding = self.finding(s);
+      }
+      else if (!skip) {
         var mm = self.model(s);
         var isBio = function (x) { return (x.h.step || "").indexOf("Biorisk") === 0; };
         var buildTrack = function (sevOf, colorOf, top, hgt) {
@@ -359,13 +389,7 @@
         // biorisk hit is never masked and neither lane looks less important than the other.
         buildTrack(function (x) { return isBio(x) ? 0 : (x.d === "flagbest" ? 2 : 1); }, function (sev) { return sev === 2 ? "#F05023" : "rgba(65,155,185,.5)"; }, 4, 3);
         buildTrack(function (x) { return !isBio(x) ? 0 : (x.d === "flagbio" ? 2 : 1); }, function (sev) { return sev === 2 ? "#C23A14" : "#E0A020"; }, 8, 3);
-        // WORKFLOW 7: Show assembly coverage in the existing verdict tabs.
-        if (s.assembly && s.assembly.enabled) {
-          var sourceLabel = s.directStatus === "Pass" && mm.hasFlag ? "Assembly-derived" : "Direct and assembly evidence";
-          var coverageLabel = { screened: "Assembly screened", incomplete: "Assembly incomplete", no_contig: "No contig", excluded: "Excluded from assembly", failed: "Assembly failed", pending: "Assembly pending" }[s.assembly.coverage] || s.assembly.coverage;
-          finding = sourceLabel + " · " + coverageLabel + (s.assembly.reason ? " · " + s.assembly.reason : "");
-        }
-        else if (t.status === "Flag") { var fg = mm.groups.filter(function (g) { return g.dispo === "flagbest" || g.dispo === "flagbio"; }).map(function (g) { return g.dispo === "flagbio" ? "Biorisk flag" : g.name; }); var uniq = []; fg.forEach(function (n) { if (uniq.indexOf(n) < 0) uniq.push(n); }); finding = uniq.slice(0, 3).join(", ") + (uniq.length > 3 ? " +" + (uniq.length - 3) : ""); }
+        if (t.status === "Flag") { var fg = mm.groups.filter(function (g) { return g.dispo === "flagbest" || g.dispo === "flagbio"; }).map(function (g) { return g.dispo === "flagbio" ? "Biorisk flag" : g.name; }); var uniq = []; fg.forEach(function (n) { if (uniq.indexOf(n) < 0) uniq.push(n); }); finding = uniq.slice(0, 3).join(", ") + (uniq.length > 3 ? " +" + (uniq.length - 3) : ""); }
         else if (t.status === "Warning") finding = mm.hasWarn ? "Virulence factor · review" : "No matches in scope · risk unknown";
         else if (!mm.hits.length) { finding = s.rationale || "No hits"; }
         else {
