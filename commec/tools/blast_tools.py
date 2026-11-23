@@ -202,8 +202,9 @@ def get_controlled_labels(
     logger.debug(
         "Removing %s ignored taxids: \n%s", len(taxids_to_ignore), taxids_to_ignore
     )
-    ignored_mask = blast[taxids_column_name].map(taxids_to_ignore)
-    blast = blast[~ignored_mask]
+    if taxids_to_ignore:
+        ignored_mask = blast[taxids_column_name].map(taxids_to_ignore)
+        blast = blast[~ignored_mask]
 
     # Build a mapping {taxid: truthiness} and Map back to the dataframe
     taxid_to_regulated = {
@@ -273,9 +274,10 @@ def split_by_tax_id(blast: pd.DataFrame, taxids_col_name="subject tax ids"):
         # If there's only one tax ID, keep the original row
         new_rows.append(row)
 
-    # Create a new DataFrame from the list of rows
-    split = pd.DataFrame(new_rows)
-    return split
+    # Preserve the schema when every hit was removed.
+    if not new_rows:
+        return blast.iloc[0:0].copy()
+    return pd.DataFrame(new_rows)
 
 
 def find_clusters(
