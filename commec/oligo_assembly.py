@@ -496,6 +496,7 @@ def screen(fasta, directory, databases, threads):
         "-m",
         "commec.cli",
         "screen",
+        "--no-assemble-oligos",
         "-d",
         str(databases),
         "-t",

@@ -366,6 +366,27 @@ def test_default_preparation_uses_oligraph(tmp_path):
     assert screen.screen_data.queries["q"].hits == []
 
 
+def test_standalone_contig_screen_forces_direct_only(tmp_path):
+    import json
+    import subprocess
+    from unittest.mock import patch
+
+    from commec.oligo_assembly import screen
+
+    output = {"queries": {}, "commec_info": {}}
+    output_path = tmp_path / "contig.output.json"
+    output_path.write_text(json.dumps(output))
+    with patch.object(
+        subprocess,
+        "run",
+        return_value=subprocess.CompletedProcess([], 0, stdout="", stderr=""),
+    ) as mocked:
+        result = screen(tmp_path / "contigs.fasta", tmp_path, "databases", 8)
+    command = mocked.call_args.args[0]
+    assert command[command.index("screen") + 1] == "--no-assemble-oligos"
+    assert result == output
+
+
 def test_nested_arguments_force_single_assembly_pass():
     from types import SimpleNamespace
     from unittest.mock import patch
