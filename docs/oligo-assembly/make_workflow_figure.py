@@ -57,31 +57,55 @@ DETAIL_GROUPS = [
     (
         "2A",
         [
-            ("COMMEC direct", "COMMEC found a concern in this oligo. Step 2A is the direct screen of the original fragment."),
-            ("Incomplete", "Skipped because the oligo was too short. 4B found no concern in the assembled contig."),
+            (
+                "COMMEC direct",
+                "COMMEC found a concern in this oligo. Step 2A is the direct screen of the original fragment.",
+            ),
+            (
+                "Incomplete",
+                "Skipped because the oligo was too short. 4B found no concern in the assembled contig.",
+            ),
             ("Incomplete", "COMMEC failed while screening this original oligo."),
         ],
     ),
     (
         "2B",
         [
-            ("Incomplete", "OliGraph built no contig that includes this oligo, so there was no assembled piece to screen."),
+            (
+                "Incomplete",
+                "OliGraph built no contig that includes this oligo, so there was no assembled piece to screen.",
+            ),
             ("Incomplete", "This oligo was not eligible for OliGraph assembly."),
         ],
     ),
     (
         "4B",
         [
-            ("COMMEC on OliGraph contig", "COMMEC found a concern in an OliGraph contig. Step 2B built the contig. Step 4B screened it."),
-            ("Incomplete", "COMMEC started screening the assembled contig but did not finish."),
+            (
+                "COMMEC on OliGraph contig",
+                "COMMEC found a concern in an OliGraph contig. Step 2B built the contig. Step 4B screened it.",
+            ),
+            (
+                "Incomplete",
+                "COMMEC started screening the assembled contig but did not finish.",
+            ),
         ],
     ),
     (
         "2A+4B",
         [
-            ("COMMEC direct and OliGraph contig", "COMMEC found a concern in both the original fragment and its assembled contig."),
-            ("No concern", "COMMEC checked both the original fragment and its contig and found no concern."),
-            ("Incomplete", "Both skipped because the oligo and the contig were too short to screen."),
+            (
+                "COMMEC direct and OliGraph contig",
+                "COMMEC found a concern in both the original fragment and its assembled contig.",
+            ),
+            (
+                "No concern",
+                "COMMEC checked both the original fragment and its contig and found no concern.",
+            ),
+            (
+                "Incomplete",
+                "Both skipped because the oligo and the contig were too short to screen.",
+            ),
         ],
     ),
 ]
@@ -89,7 +113,9 @@ DETAIL_GROUPS = [
 
 def font(size, bold=False):
     candidates = [
-        "/System/Library/Fonts/Supplemental/Arial Bold.ttf" if bold else "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+        if bold
+        else "/System/Library/Fonts/Supplemental/Arial.ttf",
         "/Library/Fonts/Arial Bold.ttf" if bold else "/Library/Fonts/Arial.ttf",
         "/System/Library/Fonts/Helvetica.ttc",
     ]
@@ -134,7 +160,12 @@ def draw_badge(draw, x, y, label, color, badge_font, width=132, height=28):
 def draw_step_pill(draw, x, y, label, pill_font, width=72, height=28):
     rounded_rect(draw, [x, y, x + width, y + height], 6, fill=(35, 40, 90))
     tw = draw.textlength(label, font=pill_font)
-    draw.text((x + (width - tw) / 2, y + (height - 13) / 2), label, fill=(255, 255, 255), font=pill_font)
+    draw.text(
+        (x + (width - tw) / 2, y + (height - 13) / 2),
+        label,
+        fill=(255, 255, 255),
+        font=pill_font,
+    )
     return height
 
 
@@ -191,7 +222,9 @@ def main():
     draw = ImageDraw.Draw(canvas)
 
     draw.line([(sep_x, 20), (sep_x, total_h - 20)], fill=(35, 40, 90), width=3)
-    draw.line([(sep_x + 4, 20), (sep_x + 4, total_h - 20)], fill=(180, 186, 200), width=1)
+    draw.line(
+        [(sep_x + 4, 20), (sep_x + 4, total_h - 20)], fill=(180, 186, 200), width=1
+    )
 
     panel_top = 16
     panel_bottom = total_h - 16
@@ -225,7 +258,15 @@ def main():
         text_x = x + badge_w + 14
         lines = wrap(draw, text, body_f, content_width - badge_w - 16)
         block_h = max(32, len(lines) * 16)
-        draw_badge(draw, x, y + max(0, (block_h - 28) // 2), label, color, badge_f, width=badge_w)
+        draw_badge(
+            draw,
+            x,
+            y + max(0, (block_h - 28) // 2),
+            label,
+            color,
+            badge_f,
+            width=badge_w,
+        )
         ty = y + max(0, (block_h - len(lines) * 16) // 2)
         for line in lines:
             draw.text((text_x, ty), line, fill=(60, 65, 86), font=body_f)
@@ -257,9 +298,20 @@ def main():
             # vertical rail
             rail_top = y + 8
             rail_bottom = y + card_h - (card_h // 2 if is_last else 0)
-            draw.line([(rail_x, rail_top), (rail_x, rail_bottom)], fill=color + (180,), width=2)
-            draw.line([(rail_x, y + 14), (rail_x + 12, y + 14)], fill=color + (180,), width=2)
-            draw.ellipse([rail_x - 5, y + 9, rail_x + 5, y + 19], fill=color, outline=(255, 255, 255), width=2)
+            draw.line(
+                [(rail_x, rail_top), (rail_x, rail_bottom)],
+                fill=color + (180,),
+                width=2,
+            )
+            draw.line(
+                [(rail_x, y + 14), (rail_x + 12, y + 14)], fill=color + (180,), width=2
+            )
+            draw.ellipse(
+                [rail_x - 5, y + 9, rail_x + 5, y + 19],
+                fill=color,
+                outline=(255, 255, 255),
+                width=2,
+            )
 
             # Card with colored left border.
             rounded_rect(
@@ -273,7 +325,9 @@ def main():
             draw.rectangle([card_x, y + 2, card_x + 4, y + card_h - 2], fill=color)
             # Mini badge pill
             bw = max(54, int(draw.textlength(short, font=mini_f) + 16))
-            rounded_rect(draw, [card_x + 12, y + 8, card_x + 12 + bw, y + 24], 999, fill=color)
+            rounded_rect(
+                draw, [card_x + 12, y + 8, card_x + 12 + bw, y + 24], 999, fill=color
+            )
             draw.text((card_x + 20, y + 10), short, fill=(255, 255, 255), font=mini_f)
             ty = y + 28
             for line in lines:
