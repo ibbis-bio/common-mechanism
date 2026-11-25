@@ -68,7 +68,7 @@ a:hover { color: #2F7C97; text-decoration: underline; }
 <li>Select <strong>synthetic_oligo_02</strong> for a short oligo with assembly-derived evidence.</li>
 <li>Expand a record and select a hit to see its coordinates. The assembly-derived hit also shows its contig, contig interval, source-oligo interval, and strand.</li>
 </ol>
-<p class="note"><strong>How to interpret it:</strong> Direct screening and assembly screening are separate evidence sources. An attributed contig concern can flag an original oligo even when direct screening skipped it. This example does not measure detection performance. The Flag, Warning, Clear, and Skipped tabs are the normal COMMEC report views.</p>
+<p class="note"><strong>How to interpret it:</strong> An oligo is a short DNA fragment. Status is the combined call after step 5. <strong>Main findings summary</strong> says whether a concern came from COMMEC on the original fragment or from COMMEC on an OliGraph contig. <strong>Detailed findings</strong> name the workflow steps. OliGraph only joins fragments. COMMEC always screens. This example does not measure detection performance.</p>
 </section>
 <div id="commec-report"><noscript><div style="max-width:640px;margin:60px auto;padding:0 24px;font-family:Arial,sans-serif;color:#23285A;line-height:1.6;"><strong>This Commec screening report needs JavaScript to display.</strong><br>It is a single self-contained file &mdash; save it and open it in a web browser (email clients block the embedded script when shown inline).</div></noscript></div>
 <script>window.COMMEC_REPORT = {"meta": {"file": "synthetic_oligo_assembly_example.fasta", "nQueries": 2, "totalLen": 114, "version": "2.1.0", "output": "0.7", "date": "Synthetic example", "time": "00:00:00", "tools": "x.x.x · x.x.x · x.x.x · x.x.x", "revisions": ""}, "lists": [], "sequences": [{"id": "synthetic_oligo_01", "name": "synthetic_oligo_01", "desc": "Synthetic direct-screening example", "length": 90, "screenStatus": "Flag", "directStatus": "Flag", "rationale": "Synthetic direct biorisk flag. This is not a biological assessment.", "assembly": {"enabled": true, "status": "Flag", "coverage": "screened", "reason": "", "contigs": ["contig_01"]}, "hits": [{"step": "Biorisk Search", "rawStatus": "Flag", "name": "synthetic_biorisk_model", "desc": "Synthetic example only", "qs": 10, "qe": 80, "eValue": "1e-12", "regulated": "Synthetic example", "domain": null, "category": null, "lists": [], "pctId": null, "target": null, "targetUrl": null, "targetDesc": null, "taxid": null, "genus": null, "species": null, "nControlled": 0, "nNonControlled": 0, "coverage": null}]}, {"id": "synthetic_oligo_02", "name": "synthetic_oligo_02", "desc": "Synthetic assembly-attribution example", "length": 24, "screenStatus": "Flag", "directStatus": "Skip (too short)", "rationale": "Direct query was too short. Synthetic assembly evidence is shown separately.", "assembly": {"enabled": true, "status": "Flag", "coverage": "screened", "reason": "", "contigs": ["contig_01"]}, "hits": [{"step": "Biorisk Search", "rawStatus": "Flag", "name": "synthetic_contig_model", "desc": "Synthetic example only. Assembly-derived evidence from contig_01.", "qs": 1, "qe": 24, "eValue": "1e-10", "regulated": "Synthetic example", "domain": null, "category": null, "lists": [], "pctId": null, "target": null, "targetUrl": null, "targetDesc": null, "taxid": null, "genus": null, "species": null, "nControlled": 0, "nNonControlled": 0, "coverage": null, "assembly": {"contigId": "contig_01", "contigRegion": [101, 124], "oligoRegion": [1, 24], "strand": "+"}}]}], "assembly": {"enabled": true, "status": "complete", "assembler": "oligraph", "version": "0.2.2", "min_overlap": 15, "matching": "exact", "method": "all", "contigs": [], "exclusions": [], "unresolved_attributions": [], "error": "", "contig_screen_time": "", "manifest": ""}};</script>
@@ -95,7 +95,7 @@ a:hover { color: #2F7C97; text-decoration: underline; }
   "use strict";
 
   // The logo markup is injected at HTML-assembly time from report_assets/commec-logo.svg.
-  var COMMEC_LOGO = "<svg style=\"height:24px;width:auto;display:block;\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 342 53.19\"><defs><style>.cls-1{fill:#fff;}.cls-2{fill:#f05023;}</style></defs><rect class=\"cls-1\" x=\"211.47\" y=\"6.18\" width=\"1\" height=\"41.21\"/><polygon class=\"cls-2\" points=\"98.37 38.37 96.2 37.22 107.61 15.89 109.78 17.05 98.37 38.37\"/><path class=\"cls-1\" d=\"M11.32,27.26v-.08c0-6.39,4.94-11.75,11.71-11.75,4.21,0,6.85,1.58,8.98,3.87l-3.24,3.45c-1.58-1.66-3.24-2.81-5.79-2.81-3.75,0-6.51,3.24-6.51,7.15v.08c0,4,2.77,7.19,6.73,7.19,2.43,0,4.21-1.11,5.83-2.77l3.11,3.06c-2.21,2.47-4.81,4.21-9.2,4.21-6.68,0-11.62-5.24-11.62-11.62Z\"/><path class=\"cls-1\" d=\"M34.98,27.26v-.08c0-6.43,5.11-11.75,12-11.75s11.96,5.24,11.96,11.67v.08c0,6.39-5.11,11.71-12.05,11.71s-11.92-5.24-11.92-11.62ZM53.8,27.26v-.08c0-3.96-2.85-7.24-6.9-7.24s-6.77,3.24-6.77,7.15v.08c0,3.92,2.85,7.19,6.85,7.19s6.81-3.24,6.81-7.11Z\"/><path class=\"cls-1\" d=\"M64.18,15.89h5.15v3.41c1.45-2,3.41-3.87,6.85-3.87,3.24,0,5.53,1.58,6.73,3.96,1.79-2.38,4.17-3.96,7.58-3.96,4.9,0,7.88,3.11,7.88,8.6v14.35h-5.15v-12.77c0-3.58-1.66-5.49-4.55-5.49s-4.81,1.96-4.81,5.58v12.69h-5.15v-12.81c0-3.49-1.7-5.45-4.56-5.45s-4.81,2.13-4.81,5.58v12.69h-5.15V15.89Z\"/><path class=\"cls-2\" d=\"M107.6,15.89h5.15v3.41c1.45-2,3.41-3.87,6.85-3.87,3.24,0,5.53,1.58,6.73,3.96,1.79-2.38,4.17-3.96,7.58-3.96,4.9,0,7.88,3.11,7.88,8.6v14.35h-5.15v-12.77c0-3.58-1.66-5.49-4.55-5.49s-4.81,1.96-4.81,5.58v12.69h-5.15v-12.81c0-3.49-1.7-5.45-4.56-5.45s-4.81,2.13-4.81,5.58v12.69h-5.15V15.89Z\"/><path class=\"cls-2\" d=\"M146.8,27.22v-.08c0-6.43,4.55-11.71,10.98-11.71,7.15,0,10.77,5.62,10.77,12.09,0,.47-.04.94-.08,1.45h-16.52c.55,3.66,3.15,5.7,6.47,5.7,2.51,0,4.3-.94,6.09-2.68l3.02,2.68c-2.13,2.55-5.07,4.21-9.2,4.21-6.51,0-11.54-4.73-11.54-11.67ZM163.45,25.56c-.34-3.32-2.3-5.92-5.7-5.92-3.15,0-5.36,2.43-5.83,5.92h11.54Z\"/><path class=\"cls-2\" d=\"M172.51,27.26v-.08c0-6.39,4.94-11.75,11.71-11.75,4.21,0,6.85,1.58,8.98,3.87l-3.24,3.45c-1.58-1.66-3.24-2.81-5.79-2.81-3.75,0-6.51,3.24-6.51,7.15v.08c0,4,2.77,7.19,6.73,7.19,2.43,0,4.21-1.11,5.83-2.77l3.11,3.06c-2.21,2.47-4.81,4.21-9.2,4.21-6.68,0-11.62-5.24-11.62-11.62Z\"/><path class=\"cls-2\" d=\"M331.94,20.2c-2.81-2.87-7.48-2.97-10.41-.22-.78.73-1.23,1.65-2.03,2.36-1.2,1.08-2.91,1.79-4.53,1.87-.69.03-1.38-.08-2.07-.06-1.3.04-2.61.46-3.69,1.15-.61.39-1.13.91-1.89,1.03l.31-.8c3.07-1.43,4.8-4.69,4.26-8.06-.25-1.59-1.18-3.01-1.34-4.61-.31-3.06,1.57-6.04,4.49-7,.11-.04.47-.17.55-.11.06.05.29.44.36.54,1.91,3.01,2.51,6.8,1.7,10.28-.19.83-.56,1.43-.15,2.29.56,1.18,2.11,1.43,3.05.54.4-.38.69-.69,1.16-1.03.13-.09.48-.28.56-.36.07-.08.11-.31.17-.43.74-1.63,2.84-1.86,4-.53,2.03.15,3.94,1.14,5.22,2.71l.3.43Z\"/><path class=\"cls-1\" d=\"M295.58,38.56c-2.84-.1-5.79-1.08-7.52-3.44-1.04-1.42-1.53-3.2-1.48-4.96l2.75-.18c.08,2.34,1.18,4.46,3.34,5.47,2.85,1.33,8.95.97,8.78-3.3-.1-2.59-2.6-3.1-4.67-3.53-3.44-.7-8.32-.85-9.36-5-.7-2.82.42-5.61,2.93-7.04,2.81-1.61,7.56-1.5,10.31.2,2.32,1.44,3.41,3.96,3.35,6.65l-2.78.15c-.07-1.7-.59-3.4-1.95-4.5-2.56-2.08-8.78-1.81-9.07,2.33-.15,2.12.91,2.98,2.81,3.5,4.16,1.16,11.03.74,11.35,6.6.26,4.77-3.62,6.88-7.87,7.04-.3.01-.63.01-.93,0Z\"/><rect class=\"cls-1\" x=\"231.35\" y=\"15.87\" width=\"3.08\" height=\"22.28\"/><path class=\"cls-1\" d=\"M277.14,31.31c-.27-2.59-2.19-4.31-4.7-4.71,0-.05.04-.05.08-.06.19-.06.42-.09.62-.16,2.84-.95,3.95-3.6,3.16-6.43-.88-3.11-4.08-3.99-6.98-4.09h-9.65v22.28h9.65c4.26.02,8.33-1.94,7.82-6.83ZM262.66,18.38h6.3c2.61.05,4.67,1.07,4.47,3.99-.15,2.16-2.08,3-4,3.09h-6.78v-7.09ZM269.65,35.6h-6.99v-7.75h6.9c2.31.11,4.44,1.12,4.56,3.69.13,2.75-2.01,3.93-4.47,4.05Z\"/><path class=\"cls-1\" d=\"M255.94,29.26c-.83-1.49-2.42-2.41-4.09-2.66,0-.04.03-.03.06-.04.28-.1.59-.15.88-.25,2.69-.99,3.68-3.63,2.94-6.32-.87-3.13-4.06-4.02-6.98-4.12h-9.65v22.28h9.62c2.47-.06,5.36-.58,6.88-2.72,1.2-1.69,1.34-4.34.33-6.16ZM242.07,18.42l.1-.05c2.06.06,4.17-.07,6.23,0,2.51.09,4.64.99,4.47,3.87-.13,2.25-1.97,3.1-4,3.21h-6.81v-7.04ZM249.09,35.6h-7.02v-7.75h6.93c2.04.1,4.14.92,4.49,3.16.48,3-1.68,4.45-4.4,4.58Z\"/><rect class=\"cls-1\" x=\"280.22\" y=\"15.87\" width=\"3.08\" height=\"22.28\"/></svg>";
+  var COMMEC_LOGO = "__COMMEC_LOGO__";
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
@@ -169,6 +169,108 @@ a:hover { color: #2F7C97; text-decoration: underline; }
     return { left: left, w: w };
   };
   Report.prototype.coord = function (h) { return this.num(h.qs) + "–" + this.num(h.qe) + " bp"; };
+
+  // Assembly findings use two fields.
+  // Main Finding: which path produced concern evidence (COMMEC direct vs OliGraph contig).
+  // Detail: workflow-step tags from the assembly flowchart (2A, 2B, 4B).
+  // OliGraph only assembles (2B). COMMEC always screens (2A and 4B).
+  Report.prototype._assemblySignals = function (s) {
+    var a = s.assembly || {};
+    var direct = s.directStatus || "";
+    var directActive = direct === "Flag" || direct === "Warning";
+    var contigActive = (s.hits || []).some(function (h) {
+      return h.assembly && (h.rawStatus === "Flag" || h.rawStatus === "Warning");
+    });
+    return { a: a, direct: direct, directActive: directActive, contigActive: contigActive };
+  };
+
+  Report.prototype.findingMain = function (s) {
+    var a = s.assembly;
+    if (!a || !a.enabled) return "";
+    var sig = this._assemblySignals(s);
+    if (sig.directActive && sig.contigActive) return "COMMEC direct and OliGraph contig";
+    if (sig.directActive) return "COMMEC direct";
+    if (sig.contigActive) return "COMMEC on OliGraph contig";
+    if (sig.direct === "Error") return "Incomplete";
+    if (sig.direct === "Skip (too short)" || sig.direct === "Skip (too long)") return "Incomplete";
+    if (a.coverage === "incomplete" || a.coverage === "failed" || a.coverage === "no_contig" || a.coverage === "excluded" || a.coverage === "pending") {
+      return "Incomplete";
+    }
+    if (a.coverage === "screened") return "No concern";
+    return "Incomplete";
+  };
+
+  Report.prototype.findingDetail = function (s) {
+    var a = s.assembly;
+    if (!a || !a.enabled) return "";
+    var sig = this._assemblySignals(s);
+    if (sig.directActive && sig.contigActive) {
+      return "2A+4B: COMMEC found a concern in the oligo and its OliGraph contig";
+    }
+    if (sig.directActive) return "2A: COMMEC found a concern in this oligo";
+    if (sig.contigActive) return "4B: COMMEC found a concern in an OliGraph contig";
+    if (a.coverage === "incomplete") {
+      if (sig.direct === "Skip (too short)") return "2A and 4B skipped (too short)";
+      if (sig.direct === "Skip (too long)") return "2A and 4B skipped (too long)";
+      return "4B: COMMEC did not finish screening the OliGraph contig";
+    }
+    if (a.coverage === "failed") return "4B: COMMEC did not finish screening the OliGraph contig";
+    if (a.coverage === "no_contig") return "2B: OliGraph built no contig for this oligo";
+    if (a.coverage === "excluded") return "2B: not eligible for OliGraph assembly";
+    if (a.coverage === "pending") return "4B: COMMEC did not finish screening the OliGraph contig";
+    if (sig.direct === "Skip (too short)") {
+      return "2A skipped (too short). 4B: no concern in OliGraph contig";
+    }
+    if (sig.direct === "Skip (too long)") {
+      return "2A skipped (too long). 4B: no concern in OliGraph contig";
+    }
+    if (sig.direct === "Error") return "2A: COMMEC failed while screening this oligo";
+    if (a.coverage === "screened") {
+      return "2A+4B: COMMEC found no concern in the oligo or its OliGraph contig";
+    }
+    return "4B: COMMEC did not finish screening the OliGraph contig";
+  };
+
+  // Backward-compatible single-line finding used by older callers.
+  Report.prototype.finding = function (s) {
+    var main = this.findingMain(s);
+    var detail = this.findingDetail(s);
+    if (!main) return "";
+    return detail ? (main + " · " + detail) : main;
+  };
+
+  // Colored badges for Main Finding, matching the Status legend style.
+  Report.prototype.findingMainColor = function (main) {
+    if (main === "COMMEC direct") return "#F05023";
+    if (main === "COMMEC on OliGraph contig") return "#6B4C9A";
+    if (main === "COMMEC direct and OliGraph contig") return "#C23A14";
+    if (main === "No concern") return "#419BB9";
+    if (main === "Incomplete") return "#8a8f9e";
+    return "#8a8f9e";
+  };
+
+  // Short badge label for a fixed-width colored chip. Full meaning stays in help text.
+  Report.prototype.findingMainBadge = function (main) {
+    if (main === "COMMEC direct") return "Direct";
+    if (main === "COMMEC on OliGraph contig") return "Contig";
+    if (main === "COMMEC direct and OliGraph contig") return "Direct + contig";
+    if (main === "No concern") return "No concern";
+    if (main === "Incomplete") return "Incomplete";
+    return main || "";
+  };
+
+  Report.prototype.findingBadgeHtml = function (main, opts) {
+    opts = opts || {};
+    var width = opts.width || "132px";
+    var bg = this.findingMainColor(main);
+    var label = this.findingMainBadge(main);
+    return '<span class="badge" title="' + esc(main) + '" style="' +
+      'display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; ' +
+      'width:' + width + '; min-width:' + width + '; max-width:' + width + '; ' +
+      'min-height:28px; padding:6px 8px; background:' + bg + '; color:#fff; ' +
+      'white-space:normal; line-height:1.2; text-align:center; vertical-align:top;">' +
+      esc(label) + '</span>';
+  };
 
   // Group hits by organism, choose a representative, sort by severity + e-value.
   Report.prototype.model = function (s) {
@@ -401,6 +503,7 @@ a:hover { color: #2F7C97; text-decoration: underline; }
       };
     });
 
+    var assemblyEnabled = !!(ds.assembly && ds.assembly.enabled);
     var filtered = tagged.filter(function (t) { return t.status === tab; });
     var rows = filtered.map(function (t) {
       var s = t.s, sid = s.id;
@@ -408,8 +511,13 @@ a:hover { color: #2F7C97; text-decoration: underline; }
       var open = !!self.state.open[sid] && !skip;
       var lengthLabel = self.num(s.length) + " bp";
 
-      var finding = "", mapBars = [];
-      if (!skip) {
+      var finding = "", findingMain = "", findingDetail = "", mapBars = [];
+      if (s.assembly && s.assembly.enabled) {
+        findingMain = self.findingMain(s);
+        findingDetail = self.findingDetail(s);
+        finding = self.finding(s);
+      }
+      else if (!skip) {
         var mm = self.model(s);
         var isBio = function (x) { return (x.h.step || "").indexOf("Biorisk") === 0; };
         var buildTrack = function (sevOf, colorOf, top, hgt) {
@@ -434,13 +542,7 @@ a:hover { color: #2F7C97; text-decoration: underline; }
         // biorisk hit is never masked and neither lane looks less important than the other.
         buildTrack(function (x) { return isBio(x) ? 0 : (x.d === "flagbest" ? 2 : 1); }, function (sev) { return sev === 2 ? "#F05023" : "rgba(65,155,185,.5)"; }, 4, 3);
         buildTrack(function (x) { return !isBio(x) ? 0 : (x.d === "flagbio" ? 2 : 1); }, function (sev) { return sev === 2 ? "#C23A14" : "#E0A020"; }, 8, 3);
-        // Workflow step 7: Show assembly coverage in the existing verdict tabs.
-        if (s.assembly && s.assembly.enabled) {
-          var sourceLabel = s.directStatus === "Pass" && mm.hasFlag ? "Assembly-derived" : "Direct and assembly evidence";
-          var coverageLabel = { screened: "Assembly screened", incomplete: "Assembly incomplete", no_contig: "No contig", excluded: "Excluded from assembly", failed: "Assembly failed", pending: "Assembly pending" }[s.assembly.coverage] || s.assembly.coverage;
-          finding = sourceLabel + " · " + coverageLabel + (s.assembly.reason ? " · " + s.assembly.reason : "");
-        }
-        else if (t.status === "Flag") { var fg = mm.groups.filter(function (g) { return g.dispo === "flagbest" || g.dispo === "flagbio"; }).map(function (g) { return g.dispo === "flagbio" ? "Biorisk flag" : g.name; }); var uniq = []; fg.forEach(function (n) { if (uniq.indexOf(n) < 0) uniq.push(n); }); finding = uniq.slice(0, 3).join(", ") + (uniq.length > 3 ? " +" + (uniq.length - 3) : ""); }
+        if (t.status === "Flag") { var fg = mm.groups.filter(function (g) { return g.dispo === "flagbest" || g.dispo === "flagbio"; }).map(function (g) { return g.dispo === "flagbio" ? "Biorisk flag" : g.name; }); var uniq = []; fg.forEach(function (n) { if (uniq.indexOf(n) < 0) uniq.push(n); }); finding = uniq.slice(0, 3).join(", ") + (uniq.length > 3 ? " +" + (uniq.length - 3) : ""); }
         else if (t.status === "Warning") finding = mm.hasWarn ? "Virulence factor · review" : "No matches in scope · risk unknown";
         else if (!mm.hits.length) { finding = s.rationale || "No hits"; }
         else {
@@ -453,18 +555,26 @@ a:hover { color: #2F7C97; text-decoration: underline; }
         }
       } else {
         finding = s.rationale || "Not screened";
-        if (s.assembly && s.assembly.enabled && s.assembly.coverage !== "screened") {
-          var assemblyReason = { incomplete: "Assembly screening incomplete", no_contig: "No contig contains this oligo", excluded: "Excluded from assembly", failed: "Assembly failed", pending: "Assembly pending" }[s.assembly.coverage] || s.assembly.reason || "Assembly coverage unavailable";
-          finding = assemblyReason + (s.assembly.reason ? " · " + s.assembly.reason : "");
+        if (s.assembly && s.assembly.enabled) {
+          findingMain = self.findingMain(s);
+          findingDetail = self.findingDetail(s);
+          finding = self.finding(s);
         }
       }
 
       var detail = open ? self.buildDetail(s, self.model(s)) : null;
+      var gridCols = (s.assembly && s.assembly.enabled)
+        ? "18px 2.2fr 1.5fr 148px minmax(0, 2.6fr)"
+        : "18px 3.1fr 2.4fr 3.0fr";
 
       return {
-        name: s.name, lengthLabel: lengthLabel, finding: finding, mapBars: mapBars, open: open,
+        name: s.name, lengthLabel: lengthLabel, finding: finding,
+        findingMain: findingMain, findingDetail: findingDetail,
+        findingMainBg: findingMain ? self.findingMainColor(findingMain) : "",
+        assemblyColumns: !!(s.assembly && s.assembly.enabled),
+        mapBars: mapBars, open: open,
         wrapBg: open ? "#FBFCFE" : "#fff",
-        rowStyle: "display:grid; grid-template-columns:18px 3.1fr 2.4fr 3.0fr; align-items:center; gap:18px; padding:13px 40px; " + (skip ? "cursor:default;" : "cursor:pointer;") + (open ? "background:#FBFCFE;" : ""),
+        rowStyle: "display:grid; grid-template-columns:" + gridCols + "; align-items:center; gap:18px; padding:13px 40px; " + (skip ? "cursor:default;" : "cursor:pointer;") + (open ? "background:#FBFCFE;" : ""),
         chevStyle: "font-size:14px; color:" + (open ? "#F05023" : "#9a9fb0") + "; transition:transform .18s cubic-bezier(.2,.7,.2,1); transform:rotate(" + (open ? 90 : 0) + "deg);" + (skip ? "visibility:hidden;" : ""),
         onToggle: skip ? function () {} : (function () {
           var o = {}; var k; for (k in self.state.open) o[k] = self.state.open[k];
@@ -493,6 +603,7 @@ a:hover { color: #2F7C97; text-decoration: underline; }
       mLine2: "commec " + (m.version || "") + " · output " + (m.output || "") + (m.tools ? " · " + m.tools : ""),
       mRevs: (m.revisions ? ("databases · " + m.revisions) : "") + (ds.assembly && ds.assembly.enabled ? " · OliGraph " + ds.assembly.version + " · exact " + ds.assembly.min_overlap + " bp overlaps · no pool verdict" : ""),
       tabs: tabs, rows: rows,
+      assemblyEnabled: assemblyEnabled,
       hasRows: rows.length > 0, isEmpty: rows.length === 0,
       emptyText: "No sequences with " + tab.toLowerCase() + " status in this run.",
       listCount: (ds.lists || []).length,
@@ -540,9 +651,19 @@ a:hover { color: #2F7C97; text-decoration: underline; }
     var toggleAll = v.showToggleAll
       ? '<span data-cb="' + self.cb(v.onToggleAll) + '" style="cursor:pointer; font-size:11px; font-weight:700; letter-spacing:.08em; color:#419BB9;">' + esc(v.toggleAllLabel) + '</span>'
       : '';
-    var tableHeader = v.hasRows ?
-      '<div class="cap" style="display:grid; grid-template-columns:18px 3.1fr 2.4fr 3.0fr; align-items:center; gap:18px; padding:12px 40px 10px; font-size:12px; font-weight:700; letter-spacing:.1em; color:#9a9fb0; border-bottom:1px solid #E4E7EE;">' +
-        '<div></div><div>Sequence</div><div>Map</div><div style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><span>Finding</span>' + toggleAll + '</div></div>' : "";
+    var tableHeader = "";
+    if (v.hasRows) {
+      if (v.assemblyEnabled) {
+        tableHeader =
+          '<div class="cap" style="display:grid; grid-template-columns:18px 2.2fr 1.5fr 148px minmax(0, 2.6fr); align-items:center; gap:18px; padding:12px 40px 10px; font-size:12px; font-weight:700; letter-spacing:.1em; color:#9a9fb0; border-bottom:1px solid #E4E7EE;">' +
+            '<div></div><div>Sequence</div><div>Map</div><div>Main Finding</div>' +
+            '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><span>Detail</span>' + toggleAll + '</div></div>';
+      } else {
+        tableHeader =
+          '<div class="cap" style="display:grid; grid-template-columns:18px 3.1fr 2.4fr 3.0fr; align-items:center; gap:18px; padding:12px 40px 10px; font-size:12px; font-weight:700; letter-spacing:.1em; color:#9a9fb0; border-bottom:1px solid #E4E7EE;">' +
+            '<div></div><div>Sequence</div><div>Map</div><div style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><span>Finding</span>' + toggleAll + '</div></div>';
+      }
+    }
 
     var rows = v.rows.map(function (r) { return self.rowTemplate(r); }).join("");
 
@@ -555,6 +676,10 @@ a:hover { color: #2F7C97; text-decoration: underline; }
   Report.prototype.rowTemplate = function (r) {
     var self = this;
     var mapBars = r.mapBars.map(function (b) { return '<div style="' + b.style + '"></div>'; }).join("");
+    var findingCells = r.assemblyColumns
+      ? '<div style="display:flex; align-items:flex-start;">' + self.findingBadgeHtml(r.findingMain, { width: "132px" }) + '</div>' +
+        '<div class="sans" style="font-size:13px; color:#5b6070; line-height:1.4; overflow:hidden; text-overflow:ellipsis;">' + esc(r.findingDetail) + '</div>'
+      : '<div class="sans" style="font-size:14px; color:#5b6070; line-height:1.4; overflow:hidden; text-overflow:ellipsis;">' + esc(r.finding) + '</div>';
     var head =
       '<div class="row-hover" data-cb="' + self.cb(r.onToggle) + '" style="' + r.rowStyle + '">' +
         '<span style="' + r.chevStyle + '">▸</span>' +
@@ -563,7 +688,7 @@ a:hover { color: #2F7C97; text-decoration: underline; }
           '<div class="mono" style="font-size:12.5px; color:#9a9fb0; margin-top:2px;">' + esc(r.lengthLabel) + '</div>' +
         '</div>' +
         '<div style="position:relative; height:14px; background:#F4F5FA; border:1px solid #E7EAF1; border-radius:2px;">' + mapBars + '</div>' +
-        '<div class="sans" style="font-size:14px; color:#5b6070; line-height:1.4; overflow:hidden; text-overflow:ellipsis;">' + esc(r.finding) + '</div>' +
+        findingCells +
       '</div>';
 
     var expanded = (r.open && r.detail) ? this.detailTemplate(r.detail) : "";
@@ -726,9 +851,81 @@ a:hover { color: #2F7C97; text-decoration: underline; }
   };
 
   Report.prototype.howToRead = function () {
+    var assembly = this.data.assembly && this.data.assembly.enabled;
+    var intro = assembly
+      ? "An oligo is a short DNA fragment in this pool. Pick a status tab, then click any oligo. Status is the final combined call after step 5. Main Finding says whether a concern came from COMMEC on the original fragment or from COMMEC on an OliGraph-assembled contig. Detailed findings name the workflow steps. OliGraph only joins fragments. COMMEC always does the screening."
+      : "Pick a status tab, then click any sequence to see its screening results, including matching HMM models or sequences, and the control list entries behind each hit.";
+    var self = this;
+    var findingRow = function (main, text) {
+      return '<div style="display:grid; grid-template-columns:132px 1fr; gap:12px; align-items:start;">' +
+        self.findingBadgeHtml(main, { width: "132px" }) +
+        '<div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;">' + text + '</div></div>';
+    };
+    var stepGroup = function (step, items) {
+      var branches = items.map(function (item, idx) {
+        var isLast = idx === items.length - 1;
+        var color = self.findingMainColor(item.main);
+        var shortLabel = self.findingMainBadge(item.main);
+        var rail =
+          '<div style="position:absolute; left:9px; top:0; bottom:' + (isLast ? "50%" : "-10px") + '; width:2px; background:' + color + '; opacity:.55;"></div>' +
+          '<div style="position:absolute; left:9px; top:14px; width:14px; height:2px; background:' + color + '; opacity:.55;"></div>' +
+          '<div style="position:absolute; left:4px; top:9px; width:12px; height:12px; border-radius:50%; background:' + color + '; border:2px solid #fff; box-shadow:0 0 0 1px ' + color + ';"></div>';
+        return '<div style="position:relative; display:grid; grid-template-columns:28px 1fr; gap:8px; align-items:start; margin:0 0 10px;">' +
+          '<div style="position:relative; min-height:28px;">' + rail + '</div>' +
+          '<div style="border:1px solid #E4E7EE; border-left:4px solid ' + color + '; border-radius:8px; background:#fff; padding:8px 10px 9px;">' +
+            '<div style="display:inline-block; font-family:\'Manrope\',Arial,sans-serif; font-size:11px; font-weight:700; letter-spacing:.04em; color:#fff; background:' + color + '; border-radius:999px; padding:2px 8px; margin-bottom:5px;">' + esc(shortLabel) + '</div>' +
+            '<div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.45; color:#3c4156;">' + item.text + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join("");
+      return '<div style="display:grid; grid-template-columns:72px 1fr; gap:12px; align-items:start;">' +
+        '<span class="badge" style="display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:72px; min-width:72px; max-width:72px; min-height:28px; padding:6px 8px; background:#23285A; color:#fff; text-align:center;">' + step + '</span>' +
+        '<div>' + branches + '</div>' +
+      '</div>';
+    };
+    var assemblyLegend = !assembly ? "" :
+      '<div style="margin-top:22px; padding-top:18px; border-top:1px solid #E4E7EE;">' +
+        '<div class="cap" style="font-size:12px; font-weight:700; letter-spacing:.1em; color:#23285A; margin-bottom:6px;">OliGraph assembly findings</div>' +
+        '<p style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#4c5262; margin:0 0 14px; max-width:900px;">Assembly is on by default. OliGraph only joins short fragments into contigs. COMMEC always does the screening. Direct-only runs hide this section. Detailed finding cards use the same colors as Main findings summary.</p>' +
+        '<div style="display:grid; grid-template-columns:1fr 1fr; gap:26px;">' +
+          '<div>' +
+            '<div class="cap" style="font-size:12px; font-weight:700; letter-spacing:.1em; color:#23285A; padding-bottom:7px; border-bottom:1px solid #E4E7EE; margin-bottom:12px;">Main findings summary</div>' +
+            '<div style="display:flex; flex-direction:column; gap:11px;">' +
+              findingRow("COMMEC direct", "COMMEC found a concern in this short fragment itself, before any assembly (COMMEC direct). This is workflow step 2A.") +
+              findingRow("COMMEC on OliGraph contig", "This fragment alone did not show a concern. COMMEC found a concern after OliGraph joined it into a longer contig (COMMEC on OliGraph contig). Steps 2B then 4B.") +
+              findingRow("COMMEC direct and OliGraph contig", "COMMEC found a concern both in the original fragment and in the longer assembled piece (COMMEC direct and OliGraph contig). Steps 2A and 4B.") +
+              findingRow("No concern", "COMMEC did not find a concern in the original fragment or in any assembled contig that includes it (No concern). Steps 2A and 4B.") +
+              findingRow("Incomplete", "Screening could not finish for a practical reason, such as a fragment that is too short or too long, no contig, exclusion from assembly, or a failed screen (Incomplete). Related steps can be 2A, 2B, or 4B.") +
+            '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div class="cap" style="font-size:12px; font-weight:700; letter-spacing:.1em; color:#23285A; padding-bottom:7px; border-bottom:1px solid #E4E7EE; margin-bottom:12px;">Detailed findings</div>' +
+            '<div style="display:flex; flex-direction:column; gap:16px;">' +
+              stepGroup("2A", [
+                { main: "COMMEC direct", text: "COMMEC found a concern in this oligo. Step 2A is the direct screen of the original fragment." },
+                { main: "Incomplete", text: "Skipped because the oligo was too short. 4B found no concern in the assembled contig." },
+                { main: "Incomplete", text: "COMMEC failed while screening this original oligo." }
+              ]) +
+              stepGroup("2B", [
+                { main: "Incomplete", text: "OliGraph built no contig that includes this oligo, so there was no assembled piece to screen." },
+                { main: "Incomplete", text: "This oligo was not eligible for OliGraph assembly." }
+              ]) +
+              stepGroup("4B", [
+                { main: "COMMEC on OliGraph contig", text: "COMMEC found a concern in an OliGraph contig. Step 2B built the contig. Step 4B screened it." },
+                { main: "Incomplete", text: "COMMEC started screening the assembled contig but did not finish." }
+              ]) +
+              stepGroup("2A+4B", [
+                { main: "COMMEC direct and OliGraph contig", text: "COMMEC found a concern in both the original fragment and its assembled contig." },
+                { main: "No concern", text: "COMMEC checked both the original fragment and its contig and found no concern." },
+                { main: "Incomplete", text: "Both skipped because the oligo and the contig were too short to screen." }
+              ]) +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
     return '<div style="padding:24px 40px 28px; background:#F8F9FC; border-top:1px solid #E4E7EE;">' +
       '<div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:19px; font-weight:700; margin-bottom:10px;">How to read this report</div>' +
-      '<p style="font-family:\'Crimson Pro\',Georgia,serif; font-size:15.5px; line-height:1.6; color:#4c5262; margin:0 0 20px; max-width:840px;">Pick a status tab, then click any sequence to see its screening results, including matching HMM models or sequences, and the control list entries behind each hit.</p>' +
+      '<p style="font-family:\'Crimson Pro\',Georgia,serif; font-size:15.5px; line-height:1.6; color:#4c5262; margin:0 0 20px; max-width:900px;">' + intro + '</p>' +
       '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:26px;">' +
         '<div>' +
           '<div class="cap" style="font-size:12px; font-weight:700; letter-spacing:.1em; color:#23285A; padding-bottom:7px; border-bottom:1px solid #E4E7EE; margin-bottom:12px;">Status</div>' +
@@ -741,20 +938,21 @@ a:hover { color: #2F7C97; text-decoration: underline; }
         '<div>' +
           '<div class="cap" style="font-size:12px; font-weight:700; letter-spacing:.1em; color:#23285A; padding-bottom:7px; border-bottom:1px solid #E4E7EE; margin-bottom:12px;">Screening lanes</div>' +
           '<div style="display:flex; flex-direction:column; gap:11px;">' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#C23A14;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Biorisk</strong> — HMM screen for curated sequences of concern and virulence factors.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#F05023;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Best match</strong> — closest reference is an organism controlled in the selected regions.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#419BB9;margin-top:3px;flex-shrink:0;opacity:.7;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Annotations</strong> — regulated-elsewhere, cleared and low-concern context.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#C23A14;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Biorisk</strong>. HMM screen for curated sequences of concern and virulence factors.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#F05023;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Best match</strong>. Closest reference is an organism controlled in the selected regions.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:11px;height:11px;border-radius:2px;background:#419BB9;margin-top:3px;flex-shrink:0;opacity:.7;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Annotations</strong>. Regulated-elsewhere, cleared, and low-concern context.</div></div>' +
           '</div>' +
         '</div>' +
         '<div>' +
           '<div class="cap" style="font-size:12px; font-weight:700; letter-spacing:.1em; color:#23285A; padding-bottom:7px; border-bottom:1px solid #E4E7EE; margin-bottom:12px;">Annotation types</div>' +
           '<div style="display:flex; flex-direction:column; gap:11px;">' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:#419BB9;opacity:.55;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Regulated elsewhere</strong> — controlled only under lists outside the screened regions.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:rgba(127,168,184,.55);margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Cleared</strong> — matched a controlled organism but cleared as common / low-concern.</div></div>' +
-            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:#B9C0CC;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Common / low-concern</strong> — housekeeping genes, rRNA, common vectors.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:#419BB9;opacity:.55;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Regulated elsewhere</strong>. Controlled only under lists outside the screened regions.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:rgba(127,168,184,.55);margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Cleared</strong>. Matched a controlled organism but cleared as common or low-concern.</div></div>' +
+            '<div style="display:flex; gap:11px; align-items:flex-start;"><span style="width:18px;height:11px;border-radius:2px;background:#B9C0CC;margin-top:3px;flex-shrink:0;"></span><div style="font-family:\'Crimson Pro\',Georgia,serif; font-size:14.5px; line-height:1.5; color:#3c4156;"><strong>Common / low-concern</strong>. Housekeeping genes, rRNA, and common vectors.</div></div>' +
           '</div>' +
         '</div>' +
       '</div>' +
+      assemblyLegend +
     '</div>';
   };
 
