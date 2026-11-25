@@ -11,6 +11,7 @@ cluster-level hit creation, per-query aggregation, and the main entry point.
 import json
 import logging
 from dataclasses import asdict
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
@@ -522,6 +523,19 @@ class TestParseTaxonomyHits:
                 self.STEP,
                 1,
             )
+        assert ret == 0
+        assert data.queries["seq1"].status.protein_taxonomy == ScreenStatus.PASS
+
+    def test_returns_0_and_pass_when_hits_have_no_taxids(self, tmp_path):
+        handler = self._make_handler()
+        handler.out_file = str(tmp_path / "hits.blast")
+        Path(handler.out_file).write_text(
+            "seq1\tSUBJECT\tSUBJECT_ACC\tN/A\t0.0\tBITSCORE\t"
+            "99.999\t300\t101\t200\t500\t1\t100\n"
+        )
+        data = _make_screen_result("seq1")
+        with patch("os.path.exists", return_value=True):
+            ret = parse_taxonomy_hits(handler, data, {}, self.STEP, 1)
         assert ret == 0
         assert data.queries["seq1"].status.protein_taxonomy == ScreenStatus.PASS
 

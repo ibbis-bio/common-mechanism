@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from commec.tools.blast_tools import read_blast
+from commec.tools.blast_tools import get_controlled_labels, read_blast
 
 
 @pytest.fixture
@@ -23,6 +23,23 @@ def blast_df():
         """
     )
     return read_blast(StringIO(blast_to_parse))
+
+
+def test_controlled_labels_preserve_columns_when_taxids_are_missing():
+    """Hits without taxon identifiers produce an empty, usable taxonomy table."""
+    blast_to_parse = textwrap.dedent(
+        """\
+        BT_01	SUBJECT	SUBJECT_ACC	N/A	0.0	BITSCORE	99.999	300	101	200	500	1	100
+        """
+    )
+    blast = read_blast(StringIO(blast_to_parse))
+    assert blast.empty
+
+    labelled = get_controlled_labels(blast)
+    assert labelled.empty
+    assert "subject tax ids" in labelled.columns
+    assert "regulated" in labelled.columns
+    assert "control_hash" in labelled.columns
 
 
 @pytest.fixture
